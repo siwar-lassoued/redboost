@@ -1,0 +1,181 @@
+<!-- Update Entrepreneur Modal -->
+<div *ngIf="showModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4">
+    <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <!-- Modal Header -->
+        <div class="sticky top-0 bg-white border-b border-[#568086]/30 p-6 flex items-center justify-between rounded-t-2xl">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-[#245C67] rounded-lg flex items-center justify-center text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold text-[#0A4955]">
+                        Modifier l'entrepreneur
+                    </h2>
+                    <p class="text-sm text-[#568086]">
+                        Modifiez les informations de l'entrepreneur
+                    </p>
+                </div>
+            </div>
+            <button (click)="closeModal()" class="text-[#568086] hover:text-[#0A4955] transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Modal Body -->
+        <form (ngSubmit)="onSubmit()" class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-[#0A4955] mb-2">
+                        Prénom <span class="text-[#DB1E37]">*</span>
+                    </label>
+                    <input
+                        type="text"
+                        [(ngModel)]="entrepreneur.firstName"
+                        name="firstName"
+                        placeholder="Ex: Oussama"
+                        required
+                        class="w-full border border-[#568086]/50 rounded-lg px-4 py-3 bg-[#0A4955]/5 focus:border-[#245C67] focus:outline-none"
+                    />
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-[#0A4955] mb-2">
+                        Nom <span class="text-[#DB1E37]">*</span>
+                    </label>
+                    <input
+                        type="text"
+                        [(ngModel)]="entrepreneur.lastName"
+                        name="lastName"
+                        placeholder="Ex: Lamine"
+                        required
+                        class="w-full border border-[#568086]/50 rounded-lg px-4 py-3 bg-[#0A4955]/5 focus:border-[#245C67] focus:outline-none"
+                    />
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-[#0A4955] mb-2">
+                        Email <span class="text-[#DB1E37]">*</span>
+                    </label>
+                    <input
+                        type="email"
+                        [(ngModel)]="entrepreneur.email"
+                        name="email"
+                        placeholder="Ex: oussama@example.com"
+                        required
+                        class="w-full border border-[#568086]/50 rounded-lg px-4 py-3 bg-[#0A4955]/5 focus:border-[#245C67] focus:outline-none"
+                    />
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-[#0A4955] mb-2">
+                        Téléphone <span class="text-[#DB1E37]">*</span>
+                    </label>
+                    <input
+                        type="tel"
+                        [(ngModel)]="entrepreneur.phoneNumber"
+                        name="phoneNumber"
+                        placeholder="Ex: +216 20 123 456"
+                        required
+                        class="w-full border border-[#568086]/50 rounded-lg px-4 py-3 bg-[#0A4955]/5 focus:border-[#245C67] focus:outline-none"
+                    />
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-[#0A4955] mb-2">
+                        Entreprise
+                    </label>
+                    <input
+                        type="text"
+                        [(ngModel)]="entrepreneur.entreprise"
+                        name="entreprise"
+                        placeholder="Ex: TechStart"
+                        class="w-full border border-[#568086]/50 rounded-lg px-4 py-3 bg-[#0A4955]/5 focus:border-[#245C67] focus:outline-none"
+                    />
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-[#0A4955] mb-2">
+                        Secteur
+                    </label>
+                    <input
+                        type="text"
+                        [(ngModel)]="entrepreneur.secteur"
+                        name="secteur"
+                        placeholder="Ex: Technologie"
+                        class="w-full border border-[#568086]/50 rounded-lg px-4 py-3 bg-[#0A4955]/5 focus:border-[#245C67] focus:outline-none"
+                    />
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-[#0A4955] mb-2">
+                        Région
+                    </label>
+                    <select
+                        [(ngModel)]="entrepreneur.region"
+                        name="region"
+                        class="w-full border border-[#568086]/50 rounded-lg px-4 py-3 bg-[#0A4955]/5 focus:border-[#245C67] focus:outline-none cursor-pointer"
+                    >
+                        <option value="">Sélectionnez une région</option>
+                        <option *ngFor="let region of tunisiaRegions" [value]="region">
+                            {{ region }}
+                        </option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="mt-6">
+                <div class="block text-sm font-medium text-[#0A4955] mb-3">
+                    Programmes associés <span class="text-[#DB1E37]">*</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div
+                        *ngFor="let prog of localProgrammes"
+                        class="flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition-colors"
+                        [class.bg-[#245C67]]="prog.checked"
+                        [class.border-[#245C67]]="prog.checked"
+                        [class.text-white]="prog.checked"
+                        [class.border-[#568086]]="!prog.checked"
+                        [class.hover:bg-[#0A4955]]="!prog.checked"
+                    >
+                        <input
+                            type="checkbox"
+                            [checked]="prog.checked"
+                            (change)="onProgrammeChange(prog)"
+                            class="w-5 h-5 text-[#245C67] border-[#568086]/50 rounded focus:ring-[#245C67]"
+                        />
+                        <span class="font-medium" [class.text-white]="prog.checked" [class.text-[#0A4955]]="!prog.checked">
+                            {{ prog.name }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 mt-8 pt-6 border-t border-[#568086]/30">
+                <button
+                    type="button"
+                    (click)="closeModal()"
+                    class="px-6 py-3 border-2 border-[#568086]/50 text-[#0A4955] rounded-lg hover:bg-[#0A4955]/5 transition-colors font-medium"
+                >
+                    Annuler
+                </button>
+                <button
+                    type="submit"
+                    [disabled]="isSubmitting"
+                    class="px-6 py-3 bg-[#245C67] hover:bg-[#0A4955] text-white rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                    <span *ngIf="isSubmitting">
+                        <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </span>
+                    <span>{{ isSubmitting ? 'Modification en cours...' : 'Modifier' }}</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

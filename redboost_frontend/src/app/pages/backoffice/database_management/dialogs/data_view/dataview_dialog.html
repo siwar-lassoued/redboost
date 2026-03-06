@@ -1,0 +1,109 @@
+<!-- dialogs/data-view-dialog/data-view-dialog.component.html -->
+<div class="data-view-dialog">
+    <div class="dialog-header">
+        <div class="header-content">
+            <div class="template-info">
+                <mat-icon class="template-icon">storage</mat-icon>
+                <div>
+                    <h2 mat-dialog-title>{{ data.template.name }}</h2>
+                    <p class="template-description">
+                        {{ data.template.description }}
+                    </p>
+                </div>
+            </div>
+            <button mat-icon-button (click)="close()">
+                <mat-icon>close</mat-icon>
+            </button>
+        </div>
+
+        <div class="header-actions">
+            <div class="data-count">
+                <mat-icon>table_rows</mat-icon>
+                <span>{{ dataRows.length }} entrées</span>
+            </div>
+            <button mat-stroked-button (click)="exportExcel()">
+                <mat-icon>download</mat-icon>
+                Exporter Excel
+            </button>
+        </div>
+    </div>
+
+    <mat-dialog-content>
+        <!-- Loading State -->
+        <div *ngIf="loading" class="loading-container">
+            <mat-spinner diameter="50"></mat-spinner>
+            <p>Chargement des données...</p>
+        </div>
+
+        <!-- Empty State -->
+        <div *ngIf="!loading && dataRows.length === 0" class="empty-state">
+            <mat-icon>inbox</mat-icon>
+            <h3>Aucune donnée</h3>
+            <p>Cette base de données ne contient pas encore de données</p>
+        </div>
+
+        <!-- Data Table -->
+        <div *ngIf="!loading && dataRows.length > 0" class="table-container">
+            <table mat-table [dataSource]="dataRows" class="data-table">
+                <!-- Row ID Column -->
+                <ng-container matColumnDef="rowId">
+                    <th mat-header-cell *matHeaderCellDef class="row-id-header">
+                        ID
+                    </th>
+                    <td mat-cell *matCellDef="let row" class="row-id-cell">
+                        {{ row.rowId.substring(0, 8) }}...
+                    </td>
+                </ng-container>
+
+                <!-- Dynamic Columns -->
+                <ng-container
+                    *ngFor="let column of columnNames"
+                    [matColumnDef]="column"
+                >
+                    <th mat-header-cell *matHeaderCellDef>{{ column }}</th>
+                    <td mat-cell *matCellDef="let row">
+                        <span
+                            [ngClass]="'cell-' + getColumnType(column).toLowerCase()"
+                        >
+                            {{ getCellValue(row, column) }}
+                        </span>
+                    </td>
+                </ng-container>
+
+                <!-- Actions Column -->
+                <ng-container matColumnDef="actions">
+                    <th
+                        mat-header-cell
+                        *matHeaderCellDef
+                        class="actions-header"
+                    >
+                        Actions
+                    </th>
+                    <td mat-cell *matCellDef="let row" class="actions-cell">
+                        <button
+                            mat-icon-button
+                            color="warn"
+                            (click)="deleteRow(row.rowId)"
+                            class="delete-button"
+                        >
+                            <mat-icon>delete</mat-icon>
+                        </button>
+                    </td>
+                </ng-container>
+
+                <tr
+                    mat-header-row
+                    *matHeaderRowDef="displayedColumns; sticky: true"
+                ></tr>
+                <tr
+                    mat-row
+                    *matRowDef="let row; columns: displayedColumns;"
+                ></tr>
+            </table>
+        </div>
+    </mat-dialog-content>
+
+    <mat-dialog-actions>
+        <button mat-button (click)="close()">Fermer</button>
+    </mat-dialog-actions>
+</div>

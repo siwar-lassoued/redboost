@@ -1,0 +1,519 @@
+<!-- Sprint Management Template -->
+<div class="sprint-view-wrapper">
+    <div class="flex justify-between items-start mb-8">
+        <div>
+            <h1 class="page-title">Gestion des Sprints</h1>
+            <p class="page-subtitle">Créez et gérez les sprints du programme</p>
+        </div>
+        <button
+            class="bg-[#ea5073] hover:bg-[#d63d5f] text-white px-6 py-2.5 rounded-lg font-semibold shadow-sm flex items-center gap-2 transition-colors"
+            (click)="openSprintModal()"
+        >
+            <span class="icon-plus"></span>
+            Nouveau Sprint
+        </button>
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-bar">
+        <div class="search-input-wrapper">
+            <span class="search-icon">🔍</span>
+            <input type="text" placeholder="Rechercher un sprint..." class="custom-input" />
+        </div>
+        <select class="custom-select">
+            <option>Tous les statuts</option>
+            <option>En cours</option>
+            <option>En retard</option>
+            <option>Terminé</option>
+        </select>
+        <select class="custom-select">
+            <option>Toutes les périodes</option>
+            <option>Q1 2025</option>
+            <option>Q2 2025</option>
+        </select>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="sprintsLoading()" class="loading-container">
+        <mat-spinner diameter="40"></mat-spinner>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!sprintsLoading() && sprints().length === 0" class="empty-state">
+        <span style="font-size: 4rem;">📋</span>
+        <p class="text-slate-500 mt-4">Aucun sprint créé pour ce programme.</p>
+        <button
+            class="mt-4 px-6 py-2.5 bg-[#ea5073] text-white rounded-lg font-semibold hover:bg-[#d63d5f] transition-colors"
+            (click)="openSprintModal()"
+        >
+            Créer le premier sprint
+        </button>
+    </div>
+
+    <!-- Sprint Cards -->
+    <div *ngIf="!sprintsLoading() && sprints().length > 0" class="space-y-4">
+
+        <!--
+            ▶ Each sprint card has id="sprint-{id}" so applyDeepLink() can
+              scroll to it if needed.
+        -->
+        <div *ngFor="let sprint of sprints()"
+             [id]="'sprint-' + sprint.id"
+             class="card-container">
+
+            <div class="overflow-hidden border-2 border-[#ea5073]/30 shadow-lg rounded-xl"
+                 [class.ring-4]="deepLinkSprintId === sprint.id && !deepLinkActiviteId"
+                 [class.ring-[#ea5073]]="deepLinkSprintId === sprint.id && !deepLinkActiviteId">
+
+                <div class="p-6 bg-gradient-to-r from-[#ea5073]/5 to-transparent">
+
+                    <div class="flex items-start justify-between gap-3 mb-4">
+
+                        <!-- LEFT: Sprint info -->
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 mb-2 flex-wrap">
+                                <h3 class="text-xl font-bold text-[#ea5073] truncate max-w-[300px]" [title]="sprint.nom">
+                                    {{ sprint.nom }}
+                                </h3>
+                                <span class="badge rounded-full flex-shrink-0" [ngClass]="getSprintStatusBadge(sprint)">
+                                    {{ getStatusLabel(sprint) }}
+                                </span>
+                                <span *ngIf="isLate(sprint) && sprint.status !== 'TERMINEE'"
+                                      class="badge text-red-600 border-red-300 bg-red-50 rounded-full flex-shrink-0">
+                                    <span class="icon-clock"></span> +{{ getDelayDays(sprint) }} jours de retard
+                                </span>
+                            </div>
+                            <p class="text-sm text-gray-600 line-clamp-2 break-words" [title]="sprint.description">
+                                {{ sprint.description }}
+                            </p>
+                            <div class="flex items-center gap-4 mt-3 text-sm text-gray-600 flex-wrap">
+                                <span class="flex items-center gap-1 flex-shrink-0">
+                                    <span class="icon-calendar"></span>
+                                    {{ sprint.dateDebut | date:'dd/MM/yyyy' }} - {{ sprint.dateFin || sprint.dateLimite | date:'dd/MM/yyyy' }}
+                                </span>
+                                <span class="flex items-center gap-1 flex-shrink-0">
+                                    <span class="icon-activity"></span>
+                                    {{ sprint.activites?.length || 0 }} activité(s)
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- RIGHT: Actions -->
+                        <div class="flex gap-2 flex-shrink-0 items-start">
+                            <button class="btn btn-outline btn-sm rounded-lg whitespace-nowrap" (click)="toggleSprint(sprint.id!)">
+                                <span *ngIf="expandedSprints().includes(sprint.id!)" class="icon-chevron-up"></span>
+                                <span *ngIf="!expandedSprints().includes(sprint.id!)" class="icon-chevron-down"></span>
+                                <span *ngIf="expandedSprints().includes(sprint.id!)">Réduire</span>
+                                <span *ngIf="!expandedSprints().includes(sprint.id!)">Développer</span>
+                            </button>
+                            <button class="action-icon-btn edit flex-shrink-0" (click)="$event.stopPropagation(); openSprintModal(sprint)" title="Modifier">
+                                <mat-icon>edit</mat-icon>
+                            </button>
+                            <button class="action-icon-btn delete flex-shrink-0" (click)="$event.stopPropagation(); deleteSprint(sprint.id!)" title="Supprimer">
+                                <mat-icon>delete</mat-icon>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Progress bar -->
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-gray-600">Progression</span>
+                            <span class="text-gray-900 font-semibold">{{ sprint.progression || 0 }}%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-[#ea5073] h-2 rounded-full transition-all duration-300"
+                                 [style.width.%]="sprint.progression || 0"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ══ Expanded Sprint Content ═══════════════════════════════════ -->
+                <div *ngIf="expandedSprints().includes(sprint.id!)"
+                     class="border-t bg-gray-50 p-6 space-y-8">
+
+                    <!-- Sprint documents -->
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <h4 class="text-sm font-semibold text-gray-700">Documents Justificatifs du Sprint</h4>
+                            <button class="btn btn-sm btn-outline rounded-lg flex-shrink-0" (click)="openDocumentUploadDialog(sprint.id!)">
+                                <span class="icon-paperclip"></span> Ajouter un document
+                            </button>
+                        </div>
+                        <div *ngIf="sprint.documents && sprint.documents.length > 0"
+                             class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+                            <div *ngFor="let doc of sprint.documents"
+                                 class="flex items-center gap-3 p-3 bg-white rounded-lg border border-slate-200 hover:border-slate-300 transition-all">
+                                <div class="w-10 h-10 bg-slate-50 rounded-lg flex items-center justify-center border border-slate-200 flex-shrink-0">
+                                    <span style="font-size: 1.25rem;">📄</span>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <a [href]="'https://redboost.tn' + doc.cheminFichier" target="_blank"
+                                       class="text-sm font-medium text-slate-900 hover:text-[#ea5073] truncate block transition-colors">
+                                        {{ doc.nom }}
+                                    </a>
+                                    <div class="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5">
+                                        <span>{{ formatFileSize(doc.tailleFichier) }}</span>
+                                        <span>•</span>
+                                        <span>{{ formatDate(doc.dateUpload) }}</span>
+                                    </div>
+                                </div>
+                                <a [href]="'https://redboost.tn' + doc.cheminFichier" download
+                                   class="action-icon-btn-small download flex-shrink-0" title="Télécharger">
+                                    <mat-icon>download</mat-icon>
+                                </a>
+                                <button class="action-icon-btn-small delete flex-shrink-0"
+                                        (click)="deleteDocument(doc.id, sprint.id!)" title="Supprimer">
+                                    <mat-icon>delete</mat-icon>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Activités -->
+                    <div class="border-l-4 border-[#ea5073]/30 pl-8 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h4 class="text-lg font-semibold text-[#2a7b8c]">Activités du sprint</h4>
+                            <button class="btn btn-sm bg-[#2a7b8c] hover:bg-[#2a5f6f] text-white rounded-lg flex-shrink-0"
+                                    (click)="openActivityModal(sprint.id!)">
+                                <span class="icon-plus"></span> Ajouter une activité
+                            </button>
+                        </div>
+
+                        <div class="space-y-3">
+
+                            <!--
+                                ▶ Each activité has id="activite-{id}" as scroll anchor.
+                                  A subtle ring highlights the target activité when deep-linking.
+                            -->
+                            <div *ngFor="let act of sprint.activites"
+                                 [id]="'activite-' + act.id"
+                                 class="activity-container">
+
+                                <div class="overflow-hidden border-l-4 border-l-[#2a7b8c]/60 shadow-md bg-gradient-to-r from-[#2a7b8c]/5 to-transparent rounded-xl transition-all"
+                                     [class.ring-2]="deepLinkActiviteId === act.id"
+                                     [class.ring-[#2a7b8c]]="deepLinkActiviteId === act.id">
+
+                                    <div class="p-4">
+                                        <div class="flex items-start justify-between gap-3 mb-3">
+
+                                            <!-- LEFT: Activity info -->
+                                            <div class="flex-1 min-w-0">
+                                                <div class="flex items-center gap-2 mb-1 flex-wrap">
+                                                    <h5 class="text-base font-semibold text-[#2a7b8c] truncate max-w-[260px]"
+                                                        [title]="act.nom">
+                                                        {{ act.nom }}
+                                                    </h5>
+                                                    <span class="badge rounded-full flex-shrink-0"
+                                                          [ngClass]="getActivityStatusBadge(act)">
+                                                        {{ act.status === 'TERMINEE' ? 'Terminée' : isActivityLate(act) ? 'Retard' : 'En cours' }}
+                                                    </span>
+                                                    <span *ngIf="act.responsableId"
+                                                          class="badge bg-[#2a7b8c]/10 text-[#2a7b8c] border-[#2a7b8c]/30 text-xs rounded-full flex-shrink-0">
+                                                        <span class="icon-users"></span> {{ getResponsableName(act.responsableId) }}
+                                                    </span>
+                                                </div>
+                                                <p class="text-xs text-gray-600 mb-2 line-clamp-2 break-words" [title]="act.description">
+                                                    {{ act.description }}
+                                                </p>
+
+                                                <div *ngIf="act.kpis && act.kpis.length > 0" class="space-y-1.5 mb-2">
+                                                    <div *ngFor="let category of groupKpisByCategory(act.kpis)">
+                                                        <span class="badge border border-[#2a7b8c] text-[#2a7b8c] text-[10px] px-1.5 py-0.5 rounded-full"
+                                                              style="border-width: 1px;">
+                                                            {{ category.name }}
+                                                        </span>
+                                                        <div class="flex flex-wrap gap-1 ml-4 mt-0.5">
+                                                            <div *ngFor="let kpi of category.kpis">
+                                                                <span class="badge bg-[#ea5073]/10 text-[#ea5073] border-[#ea5073]/30 text-xs rounded-full">
+                                                                    {{ kpi.nom }}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="flex items-center gap-3 text-xs text-gray-600 flex-wrap">
+                                                    <span class="flex items-center gap-1 flex-shrink-0">
+                                                        <span class="icon-calendar"></span>
+                                                        {{ act.dateDebut | date:'dd/MM/yyyy' }} - {{ act.dateFin || act.dateLimite | date:'dd/MM/yyyy' }}
+                                                    </span>
+                                                    <span class="flex items-center gap-1 flex-shrink-0">
+                                                        <span class="icon-check-square"></span>
+                                                        {{ act.taches?.length || 0 }} tâche(s)
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            <!-- RIGHT: Activity actions -->
+                                            <div class="flex gap-1 flex-shrink-0 items-start">
+                                                <button class="btn btn-ghost btn-sm rounded-lg" (click)="toggleActivite(act.id!)">
+                                                    <span *ngIf="expandedActivites().includes(act.id!)" class="icon-chevron-up"></span>
+                                                    <span *ngIf="!expandedActivites().includes(act.id!)" class="icon-chevron-down"></span>
+                                                </button>
+                                                <button class="action-icon-btn-small edit flex-shrink-0"
+                                                        (click)="$event.stopPropagation(); openActivityModal(sprint.id!, act)" title="Modifier">
+                                                    <mat-icon>edit</mat-icon>
+                                                </button>
+                                                <button class="action-icon-btn-small delete flex-shrink-0"
+                                                        (click)="$event.stopPropagation(); deleteActivity(act.id!)" title="Supprimer">
+                                                    <mat-icon>delete</mat-icon>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <!-- Activity progress bar -->
+                                        <div class="space-y-1">
+                                            <div class="flex items-center justify-between text-xs">
+                                                <span class="text-gray-600">Progression</span>
+                                                <span class="text-gray-900 font-semibold">{{ act.progression || 0 }}%</span>
+                                            </div>
+                                            <div class="w-full bg-gray-200 rounded-full h-1.5">
+                                                <div class="bg-[#ea5073] h-1.5 rounded-full transition-all duration-300"
+                                                     [style.width.%]="act.progression || 0"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- ══ Expanded Activity Content ════════════════════════ -->
+                                    <div *ngIf="expandedActivites().includes(act.id!)"
+                                         class="border-t bg-gray-50 p-4 space-y-4">
+
+                                        <!-- Activity documents -->
+                                        <div>
+                                            <div class="flex items-center justify-between mb-2">
+                                                <h4 class="text-sm font-semibold text-gray-700">Documents Justificatifs de l'Activité</h4>
+                                                <button class="btn btn-sm btn-outline rounded-lg flex-shrink-0"
+                                                        (click)="openActivityDocumentUploadDialog(act.id!)">
+                                                    <span class="icon-paperclip"></span> Ajouter un document
+                                                </button>
+                                            </div>
+                                            <div *ngIf="act.documents && act.documents.length > 0"
+                                                 class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+                                                <div *ngFor="let doc of act.documents"
+                                                     class="flex items-center gap-3 p-3 bg-white rounded-lg border border-slate-200 hover:border-slate-300 transition-all">
+                                                    <div class="w-10 h-10 bg-slate-50 rounded-lg flex items-center justify-center border border-slate-200 flex-shrink-0">
+                                                        <span style="font-size: 1.25rem;">📄</span>
+                                                    </div>
+                                                    <div class="flex-1 min-w-0">
+                                                        <a [href]="'https://redboost.tn' + doc.cheminFichier" target="_blank"
+                                                           class="text-sm font-medium text-slate-900 hover:text-[#ea5073] truncate block transition-colors">
+                                                            {{ doc.nom }}
+                                                        </a>
+                                                        <div class="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5">
+                                                            <span>{{ formatFileSize(doc.tailleFichier) }}</span>
+                                                            <span>•</span>
+                                                            <span>{{ formatDate(doc.dateUpload) }}</span>
+                                                        </div>
+                                                    </div>
+                                                    <a [href]="'https://redboost.tn' + doc.cheminFichier" download
+                                                       class="action-icon-btn-small download flex-shrink-0" title="Télécharger">
+                                                        <mat-icon>download</mat-icon>
+                                                    </a>
+                                                    <button class="action-icon-btn-small delete flex-shrink-0"
+                                                            (click)="deleteActivityDocument(doc.id, act.id!)" title="Supprimer">
+                                                        <mat-icon>delete</mat-icon>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Tâches header -->
+                                        <div class="flex items-center justify-between ml-6">
+                                            <h6 class="text-sm font-medium text-[#6d3345]">Tâches de l'activité</h6>
+                                            <button class="btn btn-sm btn-outline text-xs h-8 border-[#6d3345] text-[#6d3345] hover:bg-[#6d3345]/10 rounded-lg flex-shrink-0"
+                                                    (click)="openTacheModal(act.id!)">
+                                                <span class="icon-plus"></span> Ajouter une tâche
+                                            </button>
+                                        </div>
+
+                                        <!-- Tâches list -->
+                                        <div class="ml-6 border-l-4 border-[#2a7b8c]/30 pl-6 space-y-2">
+
+                                            <!--
+                                                ▶ Each task has id="task-{id}" as the primary scroll target.
+                                                  A pulse ring highlights it when arriving via deep-link.
+                                            -->
+                                            <div *ngFor="let tache of act.taches"
+                                                 [id]="'task-' + tache.id"
+                                                 class="task-container transition-all duration-300"
+                                                 [class.ring-4]="highlightedTacheId() === tache.id"
+                                                 [class.ring-[#ea5073]]="highlightedTacheId() === tache.id"
+                                                 [class.shadow-2xl]="highlightedTacheId() === tache.id"
+                                                 [class.animate-pulse-once]="highlightedTacheId() === tache.id">
+
+                                                <div class="flex items-start gap-3 p-3 bg-white border rounded-xl hover:border-[#ea5073]/30 transition-all">
+
+                                                    <!-- Checkbox -->
+                                                    <input
+                                                        type="checkbox"
+                                                        [checked]="tache.status === 'TERMINEE'"
+                                                        (click)="toggleTacheStatus(tache)"
+                                                        class="mt-1 rounded border-gray-300 text-[#ea5073] focus:ring-[#ea5073] accent-[#ea5073] cursor-pointer w-4 h-4 flex-shrink-0"
+                                                    />
+
+                                                    <!-- Task content -->
+                                                    <div class="flex-1 min-w-0">
+                                                        <div class="flex items-center gap-2 mb-1 flex-wrap">
+                                                            <span class="text-sm truncate max-w-[220px]"
+                                                                  [title]="tache.titre"
+                                                                  [class.line-through]="tache.status === 'TERMINEE'"
+                                                                  [class.text-gray-500]="tache.status === 'TERMINEE'">
+                                                                {{ tache.titre }}
+                                                            </span>
+                                                            <span class="badge rounded-full flex-shrink-0"
+                                                                  [ngClass]="getTaskStatusBadge(tache)">
+                                                                {{ isTaskLate(tache) && tache.status !== 'TERMINEE' ? 'En retard' : formatStatus(tache.status) }}
+                                                            </span>
+                                                            <span class="badge border rounded-full flex-shrink-0"
+                                                                  [ngClass]="getPriorityBadge(tache.priorite)">
+                                                                {{ tache.priorite }}
+                                                            </span>
+                                                            <span *ngIf="tache.responsableId"
+                                                                  class="badge bg-[#6d3345]/10 text-[#6d3345] border-[#6d3345]/30 text-xs rounded-full flex-shrink-0">
+                                                                <span class="icon-user"></span> {{ getResponsableName(tache.responsableId) }}
+                                                            </span>
+                                                            <span *ngIf="isTaskLate(tache) && tache.status !== 'TERMINEE'"
+                                                                  class="badge flex items-center gap-1.5 bg-white border border-red-600 text-red-600 rounded-full px-3 py-1 shadow-sm transition-all hover:bg-red-50 flex-shrink-0">
+                                                                <mat-icon class="!w-5 !h-5 text-[16px] flex items-center justify-center leading-none">schedule</mat-icon>
+                                                                <span class="font-medium text-xs">+{{ getTaskDelayDays(tache) }} jours de retard</span>
+                                                            </span>
+                                                        </div>
+
+                                                        <p class="text-xs text-gray-600 mb-2 line-clamp-2 break-words" [title]="tache.description">
+                                                            {{ tache.description }}
+                                                        </p>
+
+                                                        <div *ngIf="tache.kpis && tache.kpis.length > 0" class="space-y-1.5 mb-2">
+                                                            <div *ngFor="let category of groupKpisByCategory(tache.kpis)">
+                                                                <span class="badge border border-[#2a7b8c] text-[#2a7b8c] text-[10px] px-1.5 py-0.5"
+                                                                      style="border-width: 1px;">
+                                                                    {{ category.name }}
+                                                                </span>
+                                                                <div class="flex flex-wrap gap-1 ml-4 mt-0.5">
+                                                                    <div *ngFor="let kpi of category.kpis">
+                                                                        <span class="badge bg-[#ea5073]/10 text-[#ea5073] border-[#ea5073]/30 text-xs rounded-full">
+                                                                            {{ kpi.nom }}
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div *ngIf="tache.difficulte"
+                                                             class="flex items-start gap-2 p-2 bg-yellow-50 border border-yellow-200 rounded-lg mb-2">
+                                                            <mat-icon class="text-yellow-700 !w-4 !h-4 !text-[14px] min-w-[14px] mt-[2px]">
+                                                                error_outline
+                                                            </mat-icon>
+                                                            <p class="text-xs text-yellow-800 leading-5">
+                                                                <strong>Difficultés:</strong> {{ tache.difficulte }}
+                                                            </p>
+                                                        </div>
+
+                                                        <div class="flex items-center gap-3 text-xs text-gray-600 flex-wrap">
+                                                            <span class="flex items-center gap-1 flex-shrink-0">
+                                                                <span class="icon-calendar"></span>
+                                                                {{ tache.dateDebut | date:'dd/MM/yyyy' }} - {{ tache.dateLimite | date:'dd/MM/yyyy' }}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- RIGHT: Task actions -->
+                                                    <div class="flex flex-row gap-1 flex-shrink-0 items-start">
+                                                        <button class="action-icon-btn-tiny view"
+                                                                (click)="openTaskViewDetails(tache, $event)" title="Voir les détails">
+                                                            <mat-icon>visibility</mat-icon>
+                                                        </button>
+                                                        <button class="action-icon-btn-tiny edit"
+                                                                (click)="openTacheModal(act.id!, tache)" title="Modifier">
+                                                            <mat-icon>edit</mat-icon>
+                                                        </button>
+                                                        <button class="action-icon-btn-tiny delete"
+                                                                (click)="deleteTache(tache.id!)" title="Supprimer">
+                                                            <mat-icon>delete</mat-icon>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div *ngIf="act.taches?.length === 0"
+                                                 class="text-center py-4 text-xs text-gray-500 bg-gray-50 rounded-lg border-2 border-dashed">
+                                                Aucune tâche dans cette activité
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- end expanded activité -->
+
+                                </div>
+                            </div>
+                            <!-- end *ngFor activités -->
+
+                            <div *ngIf="sprint.activites?.length === 0"
+                                 class="text-center py-8 text-gray-500 bg-gray-50 rounded-xl border-2 border-dashed">
+                                Aucune activité dans ce sprint
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <!-- end expanded sprint -->
+
+            </div>
+        </div>
+        <!-- end *ngFor sprints -->
+
+    </div>
+</div>
+
+<!-- ══ Modals ═══════════════════════════════════════════════════════════════ -->
+<app-sprint-modal
+    [show]="showSprintModal()"
+    [sprint]="currentSprint()"
+    [error]="sprintValidationError()"
+    (close)="closeSprintModal()"
+    (save)="onSaveSprint($event)"
+></app-sprint-modal>
+
+<app-activity-modal
+    [show]="showActivityModal()"
+    [activity]="currentActivity()"
+    [responsables]="service.responsables()"
+    [availableKpis]="optionnelKpis()"
+    [error]="activityValidationError()"
+    (close)="closeActivityModal()"
+    (save)="onSaveActivity($event)"
+></app-activity-modal>
+
+<app-task-modal
+    [show]="showTacheModal()"
+    [task]="currentTask()"
+    [responsables]="service.responsables()"
+    [activityKpis]="currentActivityKpis()"
+    [error]="tacheValidationError()"
+    (close)="closeTacheModal()"
+    (save)="onSaveTask($event)"
+    (deleteDoc)="onDeleteTacheDocument($event)"
+></app-task-modal>
+
+<app-task-view-details
+    #taskViewComponent
+    [show]="showTaskViewModal"
+    [task]="currentTaskForView"
+    [responsables]="service.responsables()"
+    (close)="closeTaskViewDetails()"
+    (edit)="onEditFromView()"
+    (uploadDocuments)="onUploadDocumentsFromView($event)"
+    (removeDocument)="onRemoveDocumentFromView($event)"
+></app-task-view-details>
+
+<app-document-upload-dialog
+    [show]="showDocumentUploadDialog()"
+    (close)="closeDocumentUploadDialog()"
+    (upload)="onUploadDocuments($event)"
+></app-document-upload-dialog>
+
+<app-activity-document-upload-dialog
+    [show]="showActivityDocumentUploadDialog()"
+    (close)="closeActivityDocumentUploadDialog()"
+    (upload)="onUploadActivityDocuments($event)"
+></app-activity-document-upload-dialog>

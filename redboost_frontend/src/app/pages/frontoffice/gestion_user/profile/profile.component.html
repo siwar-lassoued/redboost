@@ -1,0 +1,409 @@
+<div class="profile-container">
+    <p-toast [style]="{ marginTop: '70px' }"></p-toast>
+    <div class="profile-card">
+        <!-- Section En-tête -->
+        <div class="profile-header">
+            <div class="header-bg"></div>
+            <div class="profile-intro">
+                <div class="profile-img-container">
+                    <img
+                        [src]="profilePictureDataUrl"
+                        class="profile-img"
+                        alt="Photo de profil"
+                    />
+                    <div class="upload-overlay">
+                        <button
+                            class="upload-button"
+                            (click)="fileInput.click()"
+                        >
+                            <i class="fas fa-camera"></i>
+                        </button>
+                        <input
+                            type="file"
+                            #fileInput
+                            (change)="onFileSelected($event)"
+                            accept="image/*"
+                            style="display: none"
+                        />
+                    </div>
+                </div>
+                <div class="profile-title">
+                    <h1 class="profile-name">
+                        <span class="name-text">
+                            <ng-container
+                                *ngIf="isEditingName; else displayName"
+                            >
+                                <input
+                                    type="text"
+                                    [(ngModel)]="tempFirstName"
+                                    placeholder="Prénom"
+                                    class="name-input"
+                                />
+                                <input
+                                    type="text"
+                                    [(ngModel)]="tempLastName"
+                                    placeholder="Nom"
+                                    class="name-input"
+                                />
+                                <button
+                                    class="save-button"
+                                    (click)="saveName()"
+                                >
+                                    Enregistrer
+                                </button>
+                                <button
+                                    class="cancel-button"
+                                    (click)="cancelEditingName()"
+                                >
+                                    Annuler
+                                </button>
+                            </ng-container>
+                            <ng-template #displayName>
+                                {{ user?.firstName }} {{ user?.lastName }}
+                                <i
+                                    class="fas fa-edit edit-icon"
+                                    (click)="startEditingName()"
+                                ></i>
+                            </ng-template>
+                        </span>
+                    </h1>
+                    <div class="profile-badge">
+                        {{ user?.role | titlecase }}
+                    </div>
+                    <div class="profile-stats">
+                        <div class="stat-item" *ngFor="let stat of stats">
+                            <div class="stat-number">
+                                {{ stat.currentValue }}
+                            </div>
+                            <div class="stat-label">{{ stat.label }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Edit Profile Button -->
+            <div class="edit-profile-action">
+                <button class="edit-profile-btn" (click)="openUpdateDialog()">
+                    <i class="pi pi-pencil"></i>
+                    Modifier le profil
+                </button>
+            </div>
+        </div>
+
+        <!-- Contenu Principal -->
+        <div class="profile-content">
+            <!-- Colonne de Gauche -->
+            <div class="left-column">
+                <!-- Informations de Contact -->
+                <div class="section">
+                    <h3 class="section-title">
+                        <i class="fas fa-user"></i> Contacts
+                    </h3>
+                    <div class="section-content">
+                        <div class="contact-item">
+                            <i class="fas fa-envelope"></i>
+                            <span>{{ user?.email || "Non spécifié" }}</span>
+                        </div>
+                        <div class="contact-item">
+                            <i class="fas fa-phone"></i>
+                            <span>{{
+                                user?.phoneNumber || "Non spécifié"
+                            }}</span>
+                        </div>
+                        <div class="social-links">
+                            <a
+                                *ngIf="user?.facebookUrl"
+                                [href]="user.facebookUrl"
+                                target="_blank"
+                                class="social-link"
+                            >
+                                <i class="fab fa-facebook"></i>
+                            </a>
+                            <a
+                                *ngIf="user?.instagramUrl"
+                                [href]="user.instagramUrl"
+                                target="_blank"
+                                class="social-link"
+                            >
+                                <i class="fab fa-instagram"></i>
+                            </a>
+                            <a
+                                *ngIf="user?.linkedinUrl"
+                                [href]="user.linkedinUrl"
+                                target="_blank"
+                                class="social-link"
+                            >
+                                <i class="fab fa-linkedin"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section Biographie -->
+                <div class="section" *ngIf="user?.bio">
+                    <h3 class="section-title">
+                        <i class="fas fa-user-circle"></i> Biographie
+                    </h3>
+                    <div class="section-content">
+                        <p class="profile-bio">{{ user?.bio }}</p>
+                    </div>
+                </div>
+
+                <!-- Section Compétences (Coach only) -->
+                <div
+                    class="section"
+                    *ngIf="
+                        user?.role === 'COACH' &&
+                        (user?.skills || user?.expertise)
+                    "
+                >
+                    <h3 class="section-title">
+                        <i class="fas fa-tools"></i> Compétences
+                    </h3>
+                    <div class="section-content">
+                        <div class="tags-container" *ngIf="user?.skills">
+                            <div class="tag-list">
+                                <span
+                                    *ngFor="
+                                        let skill of user?.skills
+                                            ? user.skills.split(',')
+                                            : []
+                                    "
+                                    class="tag skill-tag"
+                                >
+                                    {{ skill || "Non spécifié" }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <h3 class="section-title">
+                        <i class="fas fa-tools"></i> Expertise
+                    </h3>
+                    <div class="section-content">
+                        <div class="tags-container" *ngIf="user?.expertise">
+                            <div class="tag-list">
+                                <span
+                                    *ngFor="
+                                        let expertise of user?.expertise
+                                            ? user.expertise.split(',')
+                                            : []
+                                    "
+                                    class="tag expertise-tag"
+                                >
+                                    {{ expertise || "Non spécifié" }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Colonne de Droite -->
+            <div class="right-column">
+                <!-- Informations Spécifiques au Rôle -->
+                <div class="section">
+                    <h3 class="section-title">
+                        <i
+                            [ngClass]="{
+                                'fas fa-graduation-cap': user?.role === 'COACH',
+                                'fas fa-briefcase':
+                                    user?.role === 'ENTREPRENEUR',
+                                'fas fa-money-bill-wave':
+                                    user?.role === 'INVESTOR',
+                                'fas fa-user-shield':
+                                    user?.role === 'ADMIN' ||
+                                    user?.role === 'SUPERADMIN' ||
+                                    user?.role === 'EMPLOYEE',
+                            }"
+                        ></i>
+                        {{ getRoleSectionTitle(user?.role) }}
+                    </h3>
+                    <div class="section-content">
+                        <ng-container *ngIf="user?.role === 'COACH'">
+                            <div
+                                class="info-row"
+                                *ngIf="user?.yearsOfExperience"
+                            >
+                                <div class="info-label">Expérience</div>
+                                <div class="info-value">
+                                    {{ user?.yearsOfExperience }} ans
+                                </div>
+                            </div>
+                            <div
+                                class="info-group"
+                                *ngIf="user?.formationAcademNom"
+                            >
+                                <h4 class="info-group-title">
+                                    Formation Educative
+                                </h4>
+                                <div class="academic-item">
+                                    <div class="academic-name">
+                                        {{ user?.formationAcademNom }}
+                                    </div>
+                                    <div class="academic-details">
+                                        <span class="academic-date">{{
+                                            user?.formationAcademDate ||
+                                                "Non spécifié"
+                                        }}</span>
+                                        <span class="academic-achievement">{{
+                                            user?.formationAcademRealisations ||
+                                                "Non spécifié"
+                                        }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div
+                                class="info-group"
+                                *ngIf="user?.competencesProNom"
+                            >
+                                <h4 class="info-group-title">
+                                    Certifications Professionnelles
+                                </h4>
+                                <div class="academic-item">
+                                    <div class="academic-name">
+                                        {{ user?.competencesProNom }}
+                                    </div>
+                                    <div class="academic-details">
+                                        <span class="academic-date">{{
+                                            user?.competencesProDate ||
+                                                "Non spécifié"
+                                        }}</span>
+                                        <span class="academic-achievement">{{
+                                            user?.competencesProCertificat ||
+                                                "Non spécifié"
+                                        }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="info-row" *ngIf="user?.nbEntreCoaches">
+                                <div class="info-label">
+                                    Entrepreneurs Coachés
+                                </div>
+                                <div class="info-value">
+                                    {{ user?.nbEntreCoaches }}
+                                </div>
+                            </div>
+                            <div class="info-row" *ngIf="user?.succesClient">
+                                <div class="info-label">Succès Client</div>
+                                <div class="info-value">
+                                    {{ user?.succesClient }}
+                                </div>
+                            </div>
+                            <div
+                                class="info-row"
+                                *ngIf="user?.engagementCommunautaire"
+                            >
+                                <div class="info-label">
+                                    Engagement Communautaire
+                                </div>
+                                <div class="info-value">
+                                    {{ user?.engagementCommunautaire }}
+                                </div>
+                            </div>
+                            <div
+                                class="info-row"
+                                *ngIf="user?.sessionEssai !== null"
+                            >
+                                <div class="info-label">Session d'Essai</div>
+                                <div class="info-value">
+                                    {{ user?.sessionEssai ? "Oui" : "Non" }}
+                                </div>
+                            </div>
+                        </ng-container>
+                        <ng-container *ngIf="user?.role === 'ENTREPRENEUR'">
+                            <div class="info-row" *ngIf="user?.startupName">
+                                <div class="info-label">Startup</div>
+                                <div class="info-value">
+                                    {{ user?.startupName }}
+                                </div>
+                            </div>
+                            <div class="info-row" *ngIf="user?.industry">
+                                <div class="info-label">Secteur</div>
+                                <div class="info-value">
+                                    {{ user?.industry }}
+                                </div>
+                            </div>
+                            <div
+                                class="info-group"
+                                *ngIf="user?.formaAcademNom"
+                            >
+                                <h4 class="info-group-title">Formation</h4>
+                                <div class="academic-item">
+                                    <div class="academic-name">
+                                        {{ user?.formaAcademNom }}
+                                    </div>
+                                    <div class="academic-details">
+                                        <span class="academic-date">{{
+                                            user?.formaAcademDate ||
+                                                "Non spécifié"
+                                        }}</span>
+                                        <span class="academic-achievement">{{
+                                            user?.formaAcademRealisations ||
+                                                "Non spécifié"
+                                        }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div
+                                class="info-group"
+                                *ngIf="user?.apprentInformelNom"
+                            >
+                                <h4 class="info-group-title">
+                                    Apprentissage Informel
+                                </h4>
+                                <div class="academic-item">
+                                    <div class="academic-name">
+                                        {{ user?.apprentInformelNom }}
+                                    </div>
+                                    <div class="academic-details">
+                                        <span class="academic-date">{{
+                                            user?.apprentInformelDate ||
+                                                "Non spécifié"
+                                        }}</span>
+                                        <span class="academic-achievement">{{
+                                            user?.apprentInformelCertificat ||
+                                                "Non spécifié"
+                                        }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div
+                                class="info-row"
+                                *ngIf="user?.obstaclePrincipal"
+                            >
+                                <div class="info-label">Défi Principal</div>
+                                <div class="info-value">
+                                    {{ user?.obstaclePrincipal }}
+                                </div>
+                            </div>
+                        </ng-container>
+                        <ng-container
+                            *ngIf="
+                                [
+                                    'INVESTOR',
+                                    'ADMIN',
+                                    'SUPERADMIN',
+                                    'EMPLOYEE',
+                                ].includes(user?.role)
+                            "
+                        >
+                            <div class="info-row">
+                                <div class="info-label">Rôle</div>
+                                <div class="info-value">
+                                    {{ user?.role | titlecase }}
+                                </div>
+                            </div>
+                        </ng-container>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Profile Update Dialog -->
+    <app-profile-update-dialog
+        [(visible)]="showUpdateDialog"
+        [user]="user"
+        (profileUpdated)="onProfileUpdated()"
+    ></app-profile-update-dialog>
+</div>

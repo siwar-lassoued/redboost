@@ -1,0 +1,102 @@
+<div class="section-content">
+    <div class="section-card">
+        <h2 class="section-title">Documents & Justificatifs</h2>
+        <p class="section-description">
+            Consultez tous les documents justificatifs attachés aux activités et tâches de vos sprints
+        </p>
+
+        <div class="documents-info">
+            <div class="documents-icon">📎</div>
+            <div>
+                <h3>Documents justificatifs des activités et tâches</h3>
+                <p>Liste consolidée de tous les documents attachés aux sprints, activités et tâches</p>
+            </div>
+            <div class="documents-badges">
+                <span class="badge-dark">{{ documents.length }} / {{ documents.length }} documents</span>
+                <span class="badge-dark">{{ selectedSprintIds.length }} sprints</span>
+            </div>
+        </div>
+
+        <div class="filters-section">
+            <div class="filter-icon">🔍</div>
+            <span class="filter-label">Filtres avancés</span>
+        </div>
+
+        <div class="search-filters">
+            <div class="search-box">
+                <i class="icon-search"></i>
+                <input type="text" [(ngModel)]="searchText" placeholder="Nom, activité, tâche..." />
+            </div>
+            
+            <!-- Filtre par Sprint -->
+            <div class="filter-group">
+                <label>Filtrer par Sprint</label>
+                <select [(ngModel)]="selectedSprint">
+                    <option value="Tous">Tous ({{ documents.length }} docs)</option>
+                    <option *ngFor="let sprint of uniqueSprints" [value]="sprint">
+                        {{ sprint }} ({{ getSprintDocumentCount(sprint) }})
+                    </option>
+                </select>
+            </div>
+
+            <!-- Filtre par Tâche -->
+            <div class="filter-group">
+                <label>Filtrer par Tâche</label>
+                <select [(ngModel)]="selectedTask">
+                    <option value="Toutes">Toutes ({{ documents.length }} docs)</option>
+                    <option *ngFor="let task of uniqueTasks" [value]="task">
+                        {{ task }} ({{ getTaskDocumentCount(task) }})
+                    </option>
+                </select>
+            </div>
+        </div>
+
+        <div class="documents-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Sprint</th>
+                        <th>Activité</th>
+                        <th>Tâche</th>
+                        <th>Nom du document</th>
+                        <th>Date</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let doc of filteredDocuments">
+                        <td>
+                            <span class="badge-sprint">{{ doc.sprint }}</span>
+                        </td>
+                        <td>{{ getSafeActivity(doc) }}</td>
+                        <td>
+                            <span *ngIf="isActivityLevel(doc)" class="badge-activity">
+                                {{ doc.task }}
+                            </span>
+                            <span *ngIf="!isActivityLevel(doc)">
+                                {{ doc.task }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="document-name">
+                                <span class="file-icon" [class]="'file-' + doc.fileType">
+                                    {{ getFileIcon(doc.fileType) }}
+                                </span>
+                                <div>
+                                    <div class="doc-title">{{ doc.documentName }}</div>
+                                    <div class="doc-author">Par {{ doc.author }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ doc.date }}</td>
+                        <td>
+                            <button class="btn-icon-table" (click)="downloadDocument(doc)">
+                                <i class="icon-download"></i>
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

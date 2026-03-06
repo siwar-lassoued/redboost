@@ -1,0 +1,119 @@
+<div class="rapport-container">
+    <!-- Header -->
+    <div class="header-row">
+        <div class="header-text">
+            <h1 class="rapport-title">Rédaction du Rapport</h1>
+            <p class="rapport-subtitle">Saisissez les informations avec l'assistance de l'IA</p>
+        </div>
+
+        <div class="header-actions">
+            <button class="btn-outline-teal">
+                <i class="icon-import"></i>
+                Importer Programme Workflow
+            </button>
+            <button class="btn-outline-pink">
+                <i class="icon-settings"></i>
+                Modifier les KPI
+            </button>
+            <span class="badge-step">Étape {{ currentSection }}/{{ totalSections }}</span>
+        </div>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="progress-card">
+        <div class="progress-info-row">
+            <span class="progress-label">Progression globale</span>
+            <span class="progress-percentage">{{ progress }}%</span>
+        </div>
+        
+        <div class="progress-track">
+            <div class="progress-fill" [style.width.%]="progress"></div>
+        </div>
+        
+        <div class="progress-sections-labels">
+            <span>Section {{ currentSection }}/{{ totalSections }}</span>
+            <span class="text-right">{{ sectionLabel }}</span>
+        </div>
+    </div>
+
+    <!-- Section Navigation Tabs -->
+    <div class="section-tabs">
+        <button class="section-tab" [class.active]="currentSection === 1" [class.completed]="isSectionCompleted(1)" (click)="goToSection(1)">
+            <i *ngIf="isSectionCompleted(1)" class="icon-check"></i>
+            Résumé Exécutif
+        </button>
+        <button class="section-tab" [class.active]="currentSection === 2" [class.completed]="isSectionCompleted(2)" (click)="goToSection(2)">
+            <i *ngIf="isSectionCompleted(2)" class="icon-check"></i>
+            Contexte & Objectifs
+        </button>
+        <button class="section-tab" [class.active]="currentSection === 3" [class.completed]="isSectionCompleted(3)" (click)="goToSection(3)">
+            <i *ngIf="isSectionCompleted(3)" class="icon-check"></i>
+            Méthodologie et résultats
+        </button>
+        <button class="section-tab" [class.active]="currentSection === 4" [class.completed]="isSectionCompleted(4)" (click)="goToSection(4)">
+            <i *ngIf="isSectionCompleted(4)" class="icon-check"></i>
+            Conclusion et Recommandations
+        </button>
+        <button class="section-tab" [class.active]="currentSection === 5" (click)="goToSection(5)">
+            Documents & Justificatifs
+        </button>
+    </div>
+
+    <!-- Section Components -->
+    <app-rapport-section1 
+        *ngIf="currentSection === 1"
+        [programObjectives]="programObjectives"
+        [keyResults]="keyResults"
+        [globalImpact]="globalImpact"
+        [programmeName]="programmeName"
+        (dataChange)="onSection1Change($event)">
+    </app-rapport-section1>
+
+    <app-rapport-section2 
+        *ngIf="currentSection === 2"
+        [globalObjectives]="globalObjectives"
+        [programmeId]="programmeId"
+        (objectivesChange)="onSection2Change($event)">
+    </app-rapport-section2>
+
+    <app-rapport-section3 
+        *ngIf="currentSection === 3"
+        [selectedSprintIds]="selectedSprintIds"
+        [programmeId]="programmeId"
+        (sprintIdsChange)="onSection3Change($event)">
+    </app-rapport-section3>
+
+    <app-rapport-section4 
+        *ngIf="currentSection === 4"
+        [recommendations]="recommendations"
+        [conclusionText]="conclusionText"
+        [rapportId]="rapportId"
+        [programmeName]="programmeName"
+        [programObjectives]="programObjectives"
+        [globalImpact]="globalImpact"
+        (dataChange)="onSection4Change($event)">
+    </app-rapport-section4>
+
+    <app-rapport-section5 
+        *ngIf="currentSection === 5"
+        [programmeId]="programmeId"
+        [selectedSprintIds]="selectedSprintIds">
+    </app-rapport-section5>
+
+    <!-- Navigation Footer -->
+    <div class="navigation-footer">
+        <button class="btn-nav-secondary" *ngIf="currentSection > 1" (click)="previousSection()">
+            <i class="icon-arrow-left"></i>
+            Précédent
+        </button>
+        <div class="spacer"></div>
+        <button class="btn-nav-save" (click)="saveCurrentSection()" [disabled]="isLoading">
+            <i class="icon-save"></i>
+            {{ isLoading ? "Enregistrement..." : "Enregistrer" }}
+        </button>
+        <button class="btn-nav-primary" *ngIf="currentSection < totalSections" (click)="nextSection()">
+            Suivant
+            <i class="icon-arrow-right"></i>
+        </button>
+    </div>
+</div>

@@ -1,0 +1,206 @@
+<!-- insertdata.component.html -->
+<div class="insertdata-container">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="header-content">
+            <mat-icon class="header-icon">storage</mat-icon>
+            <div class="header-text">
+                <h1 class="title">Bases de Données - Insertion de données</h1>
+                <p class="subtitle">
+                    Consultez, importez et exportez les données de vos
+                    différentes bases de données
+                </p>
+            </div>
+        </div>
+        <button
+            mat-raised-button
+            class="add-button"
+            (click)="createNewTemplate()"
+        >
+            <mat-icon>add</mat-icon>
+            Ajouter un Template
+        </button>
+    </div>
+
+    <!-- Search and Filter Bar -->
+    <div class="search-filter-bar">
+        <div class="search-box">
+            <mat-icon class="search-icon">search</mat-icon>
+            <input
+                type="text"
+                placeholder="Rechercher une base (nom, description)..."
+                [(ngModel)]="searchText"
+                (input)="onSearch()"
+                class="search-input"
+            />
+        </div>
+
+        <div class="filter-select">
+            <mat-icon class="filter-icon">storage</mat-icon>
+            <select [(ngModel)]="selectedFilter" class="filter-dropdown">
+                <option value="all">Toutes les bases</option>
+                <option value="principal">Bases principales</option>
+                <option value="recent">Récentes</option>
+            </select>
+            <mat-icon class="dropdown-arrow">arrow_drop_down</mat-icon>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-content">
+                <div class="stat-info">
+                    <div class="stat-label">Total Bases</div>
+                    <div class="stat-value">{{ stats.totalBases }}</div>
+                </div>
+                <div class="stat-icon pink">
+                    <mat-icon>storage</mat-icon>
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-content">
+                <div class="stat-info">
+                    <div class="stat-label">Total Enregistrements</div>
+                    <div class="stat-value">
+                        {{ stats.totalEnregistrements }}
+                    </div>
+                </div>
+                <div class="stat-icon blue">
+                    <mat-icon>people</mat-icon>
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-content">
+                <div class="stat-info">
+                    <div class="stat-label">Dernière mise à jour</div>
+                    <div class="stat-value date">Aujourd'hui</div>
+                </div>
+                <div class="stat-icon purple">
+                    <mat-icon>event</mat-icon>
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-content">
+                <div class="stat-info">
+                    <div class="stat-label">Bases configurables</div>
+                    <div class="stat-value">Illimité</div>
+                </div>
+                <div class="stat-icon violet">
+                    <mat-icon>add_circle</mat-icon>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Templates Section -->
+    <div class="templates-section">
+        <div class="section-header">
+            <h2 class="section-title">Bases de données disponibles</h2>
+            <span class="template-count"
+                >{{ filteredTemplates.length }} bases</span
+            >
+        </div>
+
+        <!-- Loading State -->
+        <div *ngIf="loading" class="loading-container">
+            <mat-spinner diameter="50"></mat-spinner>
+            <p>Chargement des bases de données...</p>
+        </div>
+
+        <!-- Templates Grid -->
+        <div
+            *ngIf="!loading && filteredTemplates.length > 0"
+            class="templates-grid"
+        >
+            <!-- Template Cards -->
+            <div
+                *ngFor="let template of filteredTemplates"
+                class="template-card"
+                (click)="navigateToTemplateData(template)"
+            >
+                <div class="template-header">
+                    <div
+                        class="template-icon"
+                        [style.background]="getTemplateColor(template)"
+                    >
+                        <mat-icon>{{ getTemplateIcon(template) }}</mat-icon>
+                    </div>
+                    <button mat-icon-button class="chevron-button">
+                        <mat-icon>chevron_right</mat-icon>
+                    </button>
+                </div>
+
+                <div class="template-content">
+                    <h3 class="template-name">{{ template.name }}</h3>
+                    <div class="template-badge">
+                        {{ getTemplateEntries(template) }} enregistrements
+                    </div>
+
+                    <p class="template-description">
+                        {{ template.description }}
+                    </p>
+
+                    <div class="template-footer">
+                        <mat-icon class="columns-icon">view_column</mat-icon>
+                        <span class="columns-text"
+                            >{{ template.columns.length }} colonnes
+                            configurées</span
+                        >
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add New Template Card -->
+            <div class="template-card add-card" (click)="createNewTemplate()">
+                <div class="add-card-content">
+                    <div class="add-icon-circle">
+                        <mat-icon>add</mat-icon>
+                    </div>
+                    <h3>Ajouter une base de données</h3>
+                    <p>Créez une nouvelle base de données personnalisée</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Empty State -->
+        <div
+            *ngIf="!loading && filteredTemplates.length === 0 && !searchText"
+            class="empty-state"
+        >
+            <mat-icon>inbox</mat-icon>
+            <h3>Aucune base de données</h3>
+            <p>Créez votre première base de données pour commencer</p>
+            <button
+                mat-raised-button
+                class="add-button"
+                (click)="createNewTemplate()"
+            >
+                <mat-icon>add</mat-icon>
+                Créer une base
+            </button>
+        </div>
+
+        <!-- No Results State -->
+        <div
+            *ngIf="!loading && filteredTemplates.length === 0 && searchText"
+            class="empty-state"
+        >
+            <mat-icon>search_off</mat-icon>
+            <h3>Aucun résultat trouvé</h3>
+            <p>Essayez de modifier vos critères de recherche</p>
+        </div>
+    </div>
+
+    <!-- Guide Section -->
+    <div class="guide-section">
+        <mat-icon class="guide-icon">storage</mat-icon>
+        <span class="guide-text">Guide d'utilisation</span>
+    </div>
+</div>

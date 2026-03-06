@@ -1,0 +1,217 @@
+<!-- create-template-dialog.component.html -->
+<div class="dialog-container">
+    <!-- Header -->
+    <div class="dialog-header">
+        <div class="header-content">
+            <mat-icon class="header-icon">description</mat-icon>
+            <div class="header-text">
+                <h2 class="dialog-title">
+                    {{ isEditMode ? 'Modifier' : 'Créer' }} un Template de Base
+                    de Données
+                </h2>
+                <p class="dialog-subtitle">
+                    Définissez la structure de votre base de données en ajoutant
+                    des colonnes
+                </p>
+            </div>
+        </div>
+        <button mat-icon-button class="close-button" (click)="onCancel()">
+            <mat-icon>close</mat-icon>
+        </button>
+    </div>
+
+    <!-- Form Content -->
+    <div class="dialog-content">
+        <form [formGroup]="templateForm">
+            <!-- Template Name -->
+            <div class="form-field">
+                <label class="field-label">Nom du template *</label>
+                <input
+                    type="text"
+                    class="field-input"
+                    formControlName="name"
+                    placeholder="Ex: Base Partenaires"
+                    [class.error]="isFieldInvalid('name')"
+                />
+                <span *ngIf="isFieldInvalid('name')" class="field-error">
+                    {{ getErrorMessage('name') }}
+                </span>
+            </div>
+
+            <!-- Description -->
+            <div class="form-field">
+                <label class="field-label">Description</label>
+                <textarea
+                    class="field-input field-textarea"
+                    formControlName="description"
+                    placeholder="Ex: Template pour la gestion des partenaires"
+                    rows="2"
+                    [class.error]="isFieldInvalid('description')"
+                ></textarea>
+                <span *ngIf="isFieldInvalid('description')" class="field-error">
+                    {{ getErrorMessage('description') }}
+                </span>
+            </div>
+
+            <!-- Type -->
+            <div class="form-field">
+                <label class="field-label">Type</label>
+                <input
+                    type="text"
+                    class="field-input"
+                    formControlName="type"
+                    placeholder="Ex: Marketing, Finance"
+                    [class.error]="isFieldInvalid('type')"
+                />
+                <span *ngIf="isFieldInvalid('type')" class="field-error">
+                    {{ getErrorMessage('type') }}
+                </span>
+            </div>
+
+            <!-- Columns List -->
+            <div class="columns-section" formArrayName="columns" cdkDropList (cdkDropListDropped)="onDropColumn($event)">
+                <div
+                    *ngFor="let column of columns.controls; let i = index"
+                    [formGroupName]="i"
+                    class="column-item"
+                    cdkDrag
+                >
+                    <div class="column-header">
+                        <div class="drag-handle" cdkDragHandle>
+                            <mat-icon>drag_indicator</mat-icon>
+                        </div>
+                        <button
+                            type="button"
+                            class="remove-column-button"
+                            (click)="removeColumn(i)"
+                        >
+                            <mat-icon>delete</mat-icon>
+                        </button>
+                    </div>
+                    
+                    <div class="column-fields">
+                        <!-- Column Name and Type -->
+                        <div class="field-row">
+                            <div class="form-field">
+                                <label class="field-label"
+                                    >Nom de la colonne *</label
+                                >
+                                <input
+                                    type="text"
+                                    class="field-input"
+                                    formControlName="columnName"
+                                    placeholder="Ex: Nom, Email, Téléphone"
+                                    [class.error]="isColumnFieldInvalid(i, 'columnName')"
+                                />
+                                <span
+                                    *ngIf="isColumnFieldInvalid(i, 'columnName')"
+                                    class="field-error"
+                                >
+                                    {{ getColumnErrorMessage(i, 'columnName') }}
+                                </span>
+                            </div>
+
+                            <div class="form-field">
+                                <label class="field-label"
+                                    >Type de données *</label
+                                >
+                                <select
+                                    class="field-select"
+                                    formControlName="columnType"
+                                >
+                                    <option
+                                        *ngFor="let type of columnTypes"
+                                        [value]="type.value"
+                                    >
+                                        {{ type.label }}
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Checkboxes -->
+                        <div class="checkbox-row">
+                            <label class="checkbox-label">
+                                <input
+                                    type="checkbox"
+                                    formControlName="isRequired"
+                                    class="checkbox-input"
+                                />
+                                <span class="checkbox-text"
+                                    >Champ obligatoire</span
+                                >
+                            </label>
+                            <label class="checkbox-label">
+                                <input
+                                    type="checkbox"
+                                    formControlName="isUnique"
+                                    class="checkbox-input"
+                                />
+                                <span class="checkbox-text">Valeur unique</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <button
+                        type="button"
+                        class="add-column-inline-button"
+                        (click)="addColumn()"
+                    >
+                        <mat-icon>add</mat-icon>
+                        Ajouter la colonne
+                    </button>
+                </div>
+
+                <!-- Empty State -->
+                <div *ngIf="columns.length === 0" class="empty-columns">
+                    <mat-icon>view_column</mat-icon>
+                    <p>Aucune colonne ajoutée</p>
+                    <p class="hint">
+                        Cliquez sur le bouton ci-dessous pour commencer
+                    </p>
+                </div>
+            </div>
+
+            <!-- Add First Column Button (only shown when no columns) -->
+            <div *ngIf="columns.length === 0" class="add-first-column">
+                <button
+                    type="button"
+                    class="add-column-inline-button"
+                    (click)="addColumn()"
+                >
+                    <mat-icon>add</mat-icon>
+                    Ajouter la colonne
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Footer Actions -->
+    <div class="dialog-footer">
+        <button
+            type="button"
+            class="cancel-button"
+            (click)="onCancel()"
+            [disabled]="loading"
+        >
+            Annuler
+        </button>
+        <button
+            type="button"
+            class="submit-button"
+            (click)="onSubmit()"
+            [disabled]="loading || templateForm.invalid"
+        >
+            <mat-spinner
+                *ngIf="loading"
+                diameter="18"
+                class="button-spinner"
+            ></mat-spinner>
+            <mat-icon *ngIf="!loading">description</mat-icon>
+            <span *ngIf="!loading"
+                >{{ isEditMode ? 'Mettre à jour' : 'Créer le template' }}</span
+            >
+            <span *ngIf="loading">Enregistrement...</span>
+        </button>
+    </div>
+</div>

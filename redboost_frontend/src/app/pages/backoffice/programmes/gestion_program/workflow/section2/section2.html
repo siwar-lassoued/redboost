@@ -1,0 +1,353 @@
+<div class="section-content">
+    <div class="section-card">
+        <h2 class="section-title">Contexte & Objectifs</h2>
+        <p class="section-description">
+            Définissez vos objectifs globaux, déclinez-les en objectifs spécifiques avec leurs KPIs, puis ajoutez des résultats mesurables
+        </p>
+
+        <div class="objectives-section">
+            <div class="objectives-header">
+                <div class="objectives-icon">🎯</div>
+                <div>
+                    <h3>Objectifs Globaux</h3>
+                    <p>Définissez les objectifs principaux du programme avec leurs KPIs et résultats attendus</p>
+                </div>
+                <button class="btn-add" (click)="addGlobalObjective()">
+                    <i class="icon-plus"></i>
+                    Ajouter un objectif global
+                </button>
+            </div>
+
+            <div class="objectives-list">
+                <div *ngFor="let objective of localObjectives; let i = index" class="objective-card">
+                    <div class="objective-number">{{ i + 1 }}</div>
+                    <div class="objective-content">
+                        <input
+                            type="text"
+                            [(ngModel)]="objective.nom"
+                            (ngModelChange)="emitChanges()"
+                            placeholder="Renforcer les compétences entrepreneuriales"
+                            class="objective-title-input" />
+                        <textarea
+                            [(ngModel)]="objective.description"
+                            (ngModelChange)="emitChanges()"
+                            placeholder="Développer les compétences clés nécessaires au succès entrepreneurial"
+                            rows="2"
+                            class="objective-description-input">
+                        </textarea>
+                        <button class="btn-link" (click)="addSpecificObjective(i)">
+                            {{ objective.objectifsSpecifiques?.length || 0 }} objectif(s) spécifique(s) - Cliquer pour ajouter
+                        </button>
+
+                        <!-- Specific Objectives -->
+                        <div *ngIf="objective.objectifsSpecifiques && objective.objectifsSpecifiques.length > 0"
+                             style="margin-top: 1rem; padding-left: 1rem; border-left: 3px solid #ec4899;">
+                            <div *ngFor="let specific of objective.objectifsSpecifiques; let si = index"
+                                 style="margin-bottom: 1.5rem; padding: 1rem; background: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;">
+                                <div style="display: flex; gap: 0.5rem; align-items: start;">
+                                    <span style="font-weight: 600; color: #ec4899; font-size: 1rem;">{{ i + 1 }}.{{ si + 1 }}</span>
+                                    <div style="flex: 1">
+                                        <input
+                                            type="text"
+                                            [(ngModel)]="specific.nom"
+                                            (ngModelChange)="emitChanges()"
+                                            placeholder="Objectif spécifique"
+                                            style="width: 100%; margin-bottom: 0.5rem; padding: 0.5rem; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 0.9375rem;" />
+                                        <textarea
+                                            [(ngModel)]="specific.description"
+                                            (ngModelChange)="emitChanges()"
+                                            placeholder="Description de l'objectif spécifique"
+                                            rows="2"
+                                            style="width: 100%; padding: 0.5rem; border: 1px solid #e5e7eb; border-radius: 4px; margin-bottom: 0.75rem; font-size: 0.875rem;">
+                                        </textarea>
+
+                                        <!-- Direct KPIs Section -->
+                                        <div style="margin-top: 0.75rem; padding: 0.75rem; background: white; border-radius: 6px; border: 1px solid #e5e7eb;">
+                                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                                                <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; color: #6b7280; font-weight: 500;">
+                                                    <span>📊</span>
+                                                    <span>KPIs directs de l'objectif</span>
+                                                </div>
+                                                <button class="btn-select-kpis" (click)="toggleKpiSelection(i, si, 'direct')" type="button">
+                                                    Sélectionner KPIs
+                                                </button>
+                                            </div>
+
+                                            <!-- KPI Selection Dropdown -->
+                                            <div *ngIf="isKpiSelectionOpen(i, si, 'direct')" class="kpi-selection-dropdown">
+                                                <div class="kpi-dropdown-header">
+                                                    <input type="text" [(ngModel)]="kpiSearchText" placeholder="Rechercher un KPI..." class="kpi-search-input" />
+                                                    <button class="btn-close-dropdown" (click)="closeKpiSelection(i, si, 'direct')" type="button">
+                                                        Masquer
+                                                    </button>
+                                                </div>
+
+                                                <div class="kpi-list">
+                                                    <div *ngFor="let kpi of getFilteredKpis()" class="kpi-item">
+                                                        <label class="kpi-checkbox-label">
+                                                            <input
+                                                                type="checkbox"
+                                                                [checked]="isKpiSelected(i, si, kpi.id, 'direct')"
+                                                                (change)="toggleKpiForObjective(i, si, kpi.id, 'direct')" />
+                                                            <div class="kpi-info">
+                                                                <div class="kpi-name">{{ kpi.nom }}</div>
+                                                                <div class="kpi-meta">
+                                                                    <span class="kpi-uniteMesure">{{ kpi.uniteMesure }}</span>
+                                                                    <span class="kpi-description">{{ kpi.description }}</span>
+                                                                    <span class="kpi-values" *ngIf="kpi.valeurCible">
+                                                                        Cible: {{ kpi.valeurCible }} | Actuelle: {{ kpi.valeurActuelle || 0 }}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </label>
+                                                    </div>
+
+                                                    <div *ngIf="getFilteredKpis().length === 0" class="no-kpis">
+                                                        Aucun KPI trouvé
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Selected KPIs Display -->
+                                            <div *ngIf="specific.kpiIds && specific.kpiIds.length > 0" class="selected-kpis-display">
+                                                <div *ngFor="let kpi of specific.kpis" class="selected-kpi-tag">
+                                                    <span class="kpi-tag-icon">📊</span>
+                                                    <span class="kpi-tag-name">{{ kpi.nom }}</span>
+                                                    <span class="kpi-tag-uniteMesure">{{ kpi.uniteMesure }}</span>
+                                                    <button class="kpi-tag-remove" (click)="toggleKpiForObjective(i, si, kpi.id, 'direct')" type="button">
+                                                        ✕
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div *ngIf="!specific.kpiIds || specific.kpiIds.length === 0"
+                                                 style="font-size: 0.8125rem; color: #9ca3af; font-style: italic; margin-top: 0.25rem;">
+                                                Aucun KPI sélectionné. Cliquez sur "Sélectionner KPIs" pour en ajouter.
+                                            </div>
+                                        </div>
+
+                                        <!-- Results Section -->
+                                        <div style="margin-top: 1rem; padding: 0.75rem; background: #fff7ed; border-radius: 6px; border: 1px solid #fed7aa;">
+                                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+                                                <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; color: #c2410c; font-weight: 500;">
+                                                    <span>📈</span>
+                                                    <span>Résultats attendus</span>
+                                                    <span style="background: #fed7aa; padding: 0.125rem 0.5rem; border-radius: 12px; font-size: 0.75rem;">
+                                                        {{ specific.resultats?.length || 0 }}
+                                                    </span>
+                                                </div>
+                                                <button class="btn-add-resultat" (click)="addResultat(i, si)" type="button">
+                                                    + Ajouter résultat
+                                                </button>
+                                            </div>
+
+                                            <!-- Resultats List -->
+                                            <div *ngIf="specific.resultats && specific.resultats.length > 0"
+                                                 style="display: flex; flex-direction: column; gap: 0.75rem;">
+                                                <div *ngFor="let resultat of specific.resultats; let ri = index"
+                                                     style="padding: 0.75rem; background: white; border-radius: 6px; border: 1px solid #fed7aa;">
+                                                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                                                        <span style="font-weight: 600; color: #ea580c; font-size: 0.875rem;">
+                                                            Résultat {{ ri + 1 }}
+                                                        </span>
+                                                        <button class="btn-icon-small" (click)="removeResultat(i, si, ri)" title="Supprimer" type="button">
+                                                            🗑️
+                                                        </button>
+                                                    </div>
+
+                                                    <input
+                                                        type="text"
+                                                        [(ngModel)]="resultat.nom"
+                                                        (ngModelChange)="emitChanges()"
+                                                        placeholder="Nom du résultat"
+                                                        style="width: 100%; margin-bottom: 0.5rem; padding: 0.5rem; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 0.875rem;" />
+
+                                                    <textarea
+                                                        [(ngModel)]="resultat.description"
+                                                        (ngModelChange)="emitChanges()"
+                                                        placeholder="Description du résultat"
+                                                        rows="2"
+                                                        style="width: 100%; padding: 0.5rem; border: 1px solid #e5e7eb; border-radius: 4px; margin-bottom: 0.5rem; font-size: 0.8125rem;">
+                                                    </textarea>
+
+                                                    <!-- KPIs for this Result -->
+                                                    <div style="margin-top: 0.5rem;">
+                                                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                                                            <span style="font-size: 0.8125rem; color: #6b7280; font-weight: 500;">KPIs du résultat:</span>
+                                                            <button class="btn-select-kpis-small" (click)="toggleKpiSelection(i, si, 'resultat', ri)" type="button">
+                                                                Sélectionner
+                                                            </button>
+                                                        </div>
+
+                                                        <!-- KPI Selection for Result -->
+                                                        <div *ngIf="isKpiSelectionOpen(i, si, 'resultat', ri)" class="kpi-selection-dropdown-small">
+                                                            <div class="kpi-dropdown-header">
+                                                                <input type="text" [(ngModel)]="kpiSearchText" placeholder="Rechercher..." class="kpi-search-input-small" />
+                                                                <button class="btn-close-dropdown-small" (click)="closeKpiSelection(i, si, 'resultat', ri)" type="button">
+                                                                    ✕
+                                                                </button>
+                                                            </div>
+
+                                                            <div class="kpi-list-small">
+                                                                <div *ngFor="let kpi of getFilteredKpis()" class="kpi-item-small">
+                                                                    <label class="kpi-checkbox-label-small">
+                                                                        <input
+                                                                            type="checkbox"
+                                                                            [checked]="isKpiSelected(i, si, kpi.id, 'resultat', ri)"
+                                                                            (change)="toggleKpiForObjective(i, si, kpi.id, 'resultat', ri)" />
+                                                                        <div>
+                                                                            <div style="font-weight: 500; font-size: 0.8125rem;">{{ kpi.nom }}</div>
+                                                                            <div style="font-size: 0.75rem; color: #6b7280;">{{ kpi.uniteMesure }}</div>
+                                                                        </div>
+                                                                    </label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <!-- Selected KPIs for Result -->
+                                                        <div *ngIf="resultat.kpiIds && resultat.kpiIds.length > 0"
+                                                             style="display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.5rem;">
+                                                            <span *ngFor="let kpi of resultat.kpis" class="kpi-tag-small">
+                                                                {{ kpi.nom }}
+                                                                <button (click)="toggleKpiForObjective(i, si, kpi.id, 'resultat', ri)" type="button"
+                                                                        style="background: none; border: none; margin-left: 0.25rem; cursor: pointer; color: #dc2626;">
+                                                                    ✕
+                                                                </button>
+                                                            </span>
+                                                        </div>
+                                                        <div *ngIf="!resultat.kpiIds || resultat.kpiIds.length === 0"
+                                                             style="font-size: 0.75rem; color: #9ca3af; font-style: italic; margin-top: 0.25rem;">
+                                                            Aucun KPI pour ce résultat
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div *ngIf="!specific.resultats || specific.resultats.length === 0"
+                                                 style="font-size: 0.8125rem; color: #9ca3af; font-style: italic; text-align: center; padding: 0.5rem;">
+                                                Aucun résultat ajouté. Cliquez sur "+ Ajouter résultat" pour commencer.
+                                            </div>
+                                        </div>
+
+                                        <!-- Resultats Transversaux Section -->
+                                        <div style="margin-top: 1rem; padding: 0.75rem; background: #f0f9ff; border-radius: 6px; border: 1px solid #bae6fd;">
+                                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+                                                <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; color: #0369a1; font-weight: 500;">
+                                                    <span>🔄</span>
+                                                    <span>Résultats Transversaux</span>
+                                                    <span style="background: #bae6fd; padding: 0.125rem 0.5rem; border-radius: 12px; font-size: 0.75rem;">
+                                                        {{ specific.resultatsTransversaux?.length || 0 }}
+                                                    </span>
+                                                </div>
+                                                <button class="btn-add-resultat" (click)="addResultatTransversal(i, si)" type="button">
+                                                    + Ajouter résultat transversal
+                                                </button>
+                                            </div>
+
+                                            <!-- Similar structure to regular resultats -->
+                                            <div *ngIf="specific.resultatsTransversaux && specific.resultatsTransversaux.length > 0"
+                                                 style="display: flex; flex-direction: column; gap: 0.75rem;">
+                                                <div *ngFor="let resultat of specific.resultatsTransversaux; let rti = index"
+                                                     style="padding: 0.75rem; background: white; border-radius: 6px; border: 1px solid #bae6fd;">
+                                                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                                                        <span style="font-weight: 600; color: #0ea5e9; font-size: 0.875rem;">
+                                                            Résultat Transversal {{ rti + 1 }}
+                                                        </span>
+                                                        <button class="btn-icon-small" (click)="removeResultatTransversal(i, si, rti)" title="Supprimer" type="button">
+                                                            🗑️
+                                                        </button>
+                                                    </div>
+
+                                                    <input
+                                                        type="text"
+                                                        [(ngModel)]="resultat.nom"
+                                                        (ngModelChange)="emitChanges()"
+                                                        placeholder="Nom du résultat transversal"
+                                                        style="width: 100%; margin-bottom: 0.5rem; padding: 0.5rem; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 0.875rem;" />
+
+                                                    <textarea
+                                                        [(ngModel)]="resultat.description"
+                                                        (ngModelChange)="emitChanges()"
+                                                        placeholder="Description du résultat transversal"
+                                                        rows="2"
+                                                        style="width: 100%; padding: 0.5rem; border: 1px solid #e5e7eb; border-radius: 4px; margin-bottom: 0.5rem; font-size: 0.8125rem;">
+                                                    </textarea>
+
+                                                    <!-- KPIs similar to regular resultats -->
+                                                    <div style="margin-top: 0.5rem;">
+                                                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                                                            <span style="font-size: 0.8125rem; color: #6b7280; font-weight: 500;">KPIs du résultat:</span>
+                                                            <button class="btn-select-kpis-small" (click)="toggleKpiSelection(i, si, 'resultat-transversal', rti)" type="button">
+                                                                Sélectionner
+                                                            </button>
+                                                        </div>
+
+                                                        <div *ngIf="isKpiSelectionOpen(i, si, 'resultat-transversal', rti)" class="kpi-selection-dropdown-small">
+                                                            <div class="kpi-dropdown-header">
+                                                                <input type="text" [(ngModel)]="kpiSearchText" placeholder="Rechercher..." class="kpi-search-input-small" />
+                                                                <button class="btn-close-dropdown-small" (click)="closeKpiSelection(i, si, 'resultat-transversal', rti)" type="button">✕</button>
+                                                            </div>
+
+                                                            <div class="kpi-list-small">
+                                                                <div *ngFor="let kpi of getFilteredKpis()" class="kpi-item-small">
+                                                                    <label class="kpi-checkbox-label-small">
+                                                                        <input
+                                                                            type="checkbox"
+                                                                            [checked]="isKpiSelected(i, si, kpi.id, 'resultat-transversal', rti)"
+                                                                            (change)="toggleKpiForObjective(i, si, kpi.id, 'resultat-transversal', rti)" />
+                                                                        <div>
+                                                                            <div style="font-weight: 500; font-size: 0.8125rem;">{{ kpi.nom }}</div>
+                                                                            <div style="font-size: 0.75rem; color: #6b7280;">{{ kpi.uniteMesure }}</div>
+                                                                        </div>
+                                                                    </label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div *ngIf="resultat.kpiIds && resultat.kpiIds.length > 0"
+                                                             style="display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.5rem;">
+                                                            <span *ngFor="let kpi of resultat.kpis" class="kpi-tag-small">
+                                                                {{ kpi.nom }}
+                                                                <button (click)="toggleKpiForObjective(i, si, kpi.id, 'resultat-transversal', rti)" type="button"
+                                                                        style="background: none; border: none; margin-left: 0.25rem; cursor: pointer; color: #dc2626;">✕</button>
+                                                            </span>
+                                                        </div>
+                                                        <div *ngIf="!resultat.kpiIds || resultat.kpiIds.length === 0"
+                                                             style="font-size: 0.75rem; color: #9ca3af; font-style: italic; margin-top: 0.25rem;">
+                                                            Aucun KPI pour ce résultat
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div *ngIf="!specific.resultatsTransversaux || specific.resultatsTransversaux.length === 0"
+                                                 style="font-size: 0.8125rem; color: #9ca3af; font-style: italic; text-align: center; padding: 0.5rem;">
+                                                Aucun résultat transversal ajouté.
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <button class="btn-icon" (click)="removeSpecificObjective(i, si)" title="Supprimer">
+                                        <i class="icon-delete"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="objective-actions">
+                        <button class="btn-icon" (click)="removeGlobalObjective(i)" title="Supprimer l'objectif global">
+                            <i class="icon-delete"></i>
+                        </button>
+                        <button class="btn-icon" (click)="addSpecificObjective(i)" title="Ajouter un objectif spécifique">
+                            <i class="icon-plus"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div *ngIf="localObjectives.length === 0" class="empty-state">
+                    <p>Aucun objectif global ajouté. Cliquez sur "Ajouter un objectif global" pour commencer.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

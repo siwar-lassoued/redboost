@@ -1,0 +1,106 @@
+<div class="login-container">
+    <div class="login-wrapper">
+        <!-- Left Section: Login Form -->
+        <div class="login-card">
+            <div class="back-arrow">
+                <a routerLink="/landing">
+                    <span class="pi pi-arrow-left"></span>
+                </a>
+            </div>
+            <h2>Bienvenue</h2>
+            <p>Veuillez vous connecter à votre compte</p>
+
+            <form (ngSubmit)="onLogin()" class="login-form">
+                <div
+                    *ngIf="isSubmitted && errorMessage"
+                    class="error-message top-error"
+                >
+                    {{ errorMessage }}
+                </div>
+                <div
+                    *ngIf="isSubmitted && loginError === 'AUTH017'"
+                    class="error-message"
+                >
+                    Veuillez confirmer votre email avant de vous connecter.
+                    <a (click)="resendConfirmationEmail()" class="resend-link"
+                        >Renvoyer l'email</a
+                    >
+                </div>
+
+                <div class="input-group">
+                    <label for="email">Email</label>
+                    <input
+                        id="email"
+                        type="email"
+                        [(ngModel)]="email"
+                        name="email"
+                        placeholder="Entrez votre email"
+                        required
+                        #emailInput="ngModel"
+                        [ngClass]="{
+                            'invalid-input': isSubmitted && emailInput.invalid,
+                        }"
+                    />
+                    <div
+                        *ngIf="isSubmitted && emailInput.invalid"
+                        class="error-message"
+                    >
+                        {{
+                            emailInput.errors?.["required"]
+                                ? "Email requis"
+                                : "Format d’email invalide"
+                        }}
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="password">Mot de passe</label>
+                    <input
+                        id="password"
+                        type="password"
+                        [(ngModel)]="password"
+                        name="password"
+                        placeholder="Entrez votre mot de passe"
+                        required
+                        #passwordInput="ngModel"
+                        [ngClass]="{
+                            'invalid-input':
+                                isSubmitted && passwordInput.invalid,
+                        }"
+                    />
+                    <div
+                        *ngIf="isSubmitted && passwordInput.invalid"
+                        class="error-message"
+                    >
+                        Mot de passe requis
+                    </div>
+                </div>
+
+                <button type="submit" class="login-button">Se connecter</button>
+
+                <div class="divider">
+                    <span>OU</span>
+                </div>
+
+                <button
+                    type="button"
+                    class="social-button gmail-button"
+                    (click)="onGoogleLogin()"
+                >
+                    <img
+                        src="assets/images/google.webp"
+                        alt="Google Logo"
+                        class="google-logo"
+                    />
+                    Se connecter avec Google
+                </button>
+
+                <div class="forgot-password-link">
+                    <a routerLink="/forgot-password" class="p-link"
+                        >Mot de passe oublié ?</a
+                    >
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

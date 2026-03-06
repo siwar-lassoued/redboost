@@ -1,0 +1,74 @@
+name: Build & Deploy
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Build JAR
+        run: mvn clean package -DskipTests
+        working-directory: redboost_backend
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install & Build Angular
+        run: |
+          npm install
+          npm run build
+        working-directory: redboost_frontend
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Upload JAR
+        run: |
+          scp -i ~/.ssh/id_ed25519 \
+            redboost_backend/target/*.jar \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/redboost/
+
+      - name: Upload Angular dist
+        run: |
+          scp -i ~/.ssh/id_ed25519 -r \
+            redboost_frontend/dist/sakai-ng/* \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/html/
+
+      - name: Restart service
+        run: |
+          ssh -i ~/.ssh/id_ed25519 \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+            "sudo systemctl restart redboost-prod.service"
+      
+      - name: Upload AI Service
+        run: |
+          ssh -i ~/.ssh/id_ed25519 \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+            "mkdir -p /home/redboost/ai_service"
+          scp -i ~/.ssh/id_ed25519 -r \
+            ai_service/* \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/redboost/ai_service/
+
+      - name: Install AI dependencies & restart AI service
+        run: |
+          ssh -i ~/.ssh/id_ed25519 \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+            "/home/redboost/ai_venv/bin/pip install -r /home/redboost/ai_service/requirements.txt && sudo systemctl restart redboost-ai.service"

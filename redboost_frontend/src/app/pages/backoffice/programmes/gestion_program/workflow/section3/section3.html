@@ -1,0 +1,554 @@
+<div class="section-content">
+    <div class="section-card">
+        <h2 class="section-title">Méthodologie et résultats</h2>
+        <p class="section-description">
+            Sélectionnez les sprints à inclure dans le rapport. Les activités et tâches de ces sprints seront automatiquement incluses.
+        </p>
+
+        <div class="sprint-section">
+            <h3 class="sprint-section-title">Vue structurée par Sprint</h3>
+            <p class="sprint-description-text">
+                Visualisez la méthodologie détaillée en sélectionnant un sprint ci-dessous.
+            </p>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons-row">
+                <button class="btn-add-sprint" (click)="addSprint()">
+                    <span class="btn-icon">+</span>
+                    Ajouter un sprint
+                </button>
+                <button class="btn-sprint-count" *ngIf="selectedSprintsDetails.length > 0">
+                    {{ selectedSprintsDetails.length }} sprint ajouté{{ selectedSprintsDetails.length > 1 ? 's' : '' }}
+                </button>
+            </div>
+
+            <!-- Selected Sprints Display -->
+            <div class="sprints-list" *ngIf="selectedSprintsDetails.length > 0">
+                <div *ngFor="let sprint of selectedSprintsDetails" class="sprint-card">
+
+                    <!-- Sprint Header -->
+                    <div class="sprint-header">
+                        <div class="sprint-icon-box">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                                <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
+                            </svg>
+                        </div>
+                        <div class="sprint-info">
+                            <div class="sprint-title-line">
+                                <h4 class="sprint-name">{{ sprint.nom }}</h4>
+                                <span class="badge-status-planifie">Planifié</span>
+                            </div>
+                            <p class="sprint-description">{{ sprint.description }}</p>
+                            <div class="sprint-metadata">
+                                <span class="meta-item">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                                        <line x1="16" y1="2" x2="16" y2="6"/>
+                                        <line x1="8" y1="2" x2="8" y2="6"/>
+                                        <line x1="3" y1="10" x2="21" y2="10"/>
+                                    </svg>
+                                    Du {{ sprint.dateDebut | date: 'dd/MM/yyyy' }} au {{ sprint.dateFin | date: 'dd/MM/yyyy' }}
+                                </span>
+                                <span class="meta-item activity-count-meta">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                                    </svg>
+                                    {{ sprint.activites?.length || 0 }} activité{{ (sprint.activites?.length || 0) > 1 ? 's' : '' }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="sprint-actions">
+                            <button class="btn-expand-sprint" [class.expanded]="isSprintExpanded(sprint.id)" (click)="toggleSprintExpansion(sprint.id)">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="6 9 12 15 18 9"/>
+                                </svg>
+                            </button>
+                            <button class="btn-delete-sprint" (click)="removeSprint(sprint.id)">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="3 6 5 6 21 6"/>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Activities Section -->
+                    <div class="activities-section"
+                         *ngIf="sprint.activites && sprint.activites.length > 0 && isSprintExpanded(sprint.id)">
+                        <div class="activities-header">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                            </svg>
+                            <span class="activities-title">Activités et méthodologie</span>
+                            <span class="activities-badge">{{ sprint.activites.length }}</span>
+                        </div>
+
+                        <!-- Activity Cards -->
+                        <div *ngFor="let activity of sprint.activites; let i = index" class="activity-card">
+                            <div class="activity-header-row">
+                                <div class="activity-number-badge">{{ i + 1 }}</div>
+                                <div class="activity-main-content">
+                                    <div class="activity-title-row">
+                                        <h5 class="activity-name">{{ activity.nom }}</h5>
+                                        <span class="badge-planifie-small">Planifié</span>
+                                    </div>
+                                    <p class="activity-description">{{ activity.description }}</p>
+                                </div>
+                            </div>
+
+                            <!-- ── Methodology ── -->
+                            <div class="methodology-section">
+                                <div class="s3-row-header">
+                                    <!-- Left: icon + label -->
+                                    <div class="s3-row-left">
+                                        <div class="methodology-icon">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+                                                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                                            </svg>
+                                        </div>
+                                        <span class="methodology-title">Méthodologie de l'activité</span>
+                                    </div>
+                                    <!-- Right: AI btn always visible, pencil only when not editing -->
+                                    <div class="s3-row-right">
+                                        <button class="s3-ai-btn"
+                                                [disabled]="isGenerating(sprint.id, activity.id, 'methodologie')"
+                                                (click)="generateWithAI(sprint.id, activity, 'methodologie', 'methodologie')">
+                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                                            </svg>
+                                            <ng-container *ngIf="!isGenerating(sprint.id, activity.id, 'methodologie')">Générer avec l'IA</ng-container>
+                                            <ng-container *ngIf="isGenerating(sprint.id, activity.id, 'methodologie')">
+                                                <span class="s3-spinner"></span> Génération...
+                                            </ng-container>
+                                        </button>
+                                        <button class="s3-pencil-btn"
+                                                *ngIf="!isMethodologyEditing(sprint.id, activity.id)"
+                                                (click)="toggleMethodologyEdit(sprint.id, activity.id)" title="Modifier">
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <p class="methodology-text"
+                                   *ngIf="!isMethodologyEditing(sprint.id, activity.id) && activity.methodologie">
+                                    {{ activity.methodologie }}
+                                </p>
+                                <p class="methodology-text s3-placeholder"
+                                   *ngIf="!isMethodologyEditing(sprint.id, activity.id) && !activity.methodologie">
+                                    Cliquez sur l'icône crayon pour ajouter manuellement ou générer avec l'IA
+                                </p>
+                                <textarea *ngIf="isMethodologyEditing(sprint.id, activity.id)"
+                                          class="methodology-textarea"
+                                          [(ngModel)]="activity.methodologie"
+                                          (blur)="saveMethodology(sprint.id, activity.id)"
+                                          rows="4" placeholder="Saisissez la méthodologie de l'activité...">
+                                </textarea>
+                            </div>
+
+                            <!-- ── Objectif + Résultat grid ── -->
+                            <div class="objective-result-row">
+
+                                <!-- Objectif -->
+                                <div class="objective-card">
+                                    <div class="s3-row-header">
+                                        <div class="s3-row-left">
+                                            <div class="objective-icon">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+                                                    <circle cx="12" cy="12" r="10"/>
+                                                    <circle cx="12" cy="12" r="6"/>
+                                                    <circle cx="12" cy="12" r="2"/>
+                                                </svg>
+                                            </div>
+                                            <span class="objective-title">Objectif</span>
+                                        </div>
+                                        <div class="s3-row-right">
+                                            <button class="s3-ai-btn s3-ai-btn--sm"
+                                                    [disabled]="isGenerating(sprint.id, activity.id, 'objectif')"
+                                                    (click)="generateWithAI(sprint.id, activity, 'objectif', 'objectif')">
+                                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                                                </svg>
+                                                <ng-container *ngIf="!isGenerating(sprint.id, activity.id, 'objectif')">Générer avec l'IA</ng-container>
+                                                <span class="s3-spinner s3-spinner--sm" *ngIf="isGenerating(sprint.id, activity.id, 'objectif')"></span>
+                                            </button>
+                                            <button class="s3-pencil-btn"
+                                                    *ngIf="!isObjectifEditing(sprint.id, activity.id)"
+                                                    (click)="toggleObjectifEdit(sprint.id, activity.id)" title="Modifier">
+                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <p class="objective-content"
+                                       *ngIf="!isObjectifEditing(sprint.id, activity.id) && activity.objectif">
+                                        {{ activity.objectif }}
+                                    </p>
+                                    <p class="objective-content s3-placeholder"
+                                       *ngIf="!isObjectifEditing(sprint.id, activity.id) && !activity.objectif">
+                                        Cliquez sur le crayon pour ajouter
+                                    </p>
+                                    <textarea *ngIf="isObjectifEditing(sprint.id, activity.id)"
+                                              class="objective-textarea"
+                                              [(ngModel)]="activity.objectif"
+                                              (blur)="saveObjectif(sprint.id, activity.id)"
+                                              rows="2" placeholder="Saisissez l'objectif...">
+                                    </textarea>
+                                </div>
+
+                                <!-- Résultat -->
+                                <div class="result-card">
+                                    <div class="s3-row-header">
+                                        <div class="s3-row-left">
+                                            <div class="result-icon">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+                                                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                                                </svg>
+                                            </div>
+                                            <span class="result-title">Résultat</span>
+                                        </div>
+                                        <div class="s3-row-right">
+                                            <button class="s3-ai-btn s3-ai-btn--sm"
+                                                    [disabled]="isGenerating(sprint.id, activity.id, 'resultatAttendu')"
+                                                    (click)="generateWithAI(sprint.id, activity, 'resultatAttendu', 'resultat')">
+                                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                                                </svg>
+                                                <ng-container *ngIf="!isGenerating(sprint.id, activity.id, 'resultatAttendu')">Générer avec l'IA</ng-container>
+                                                <span class="s3-spinner s3-spinner--sm" *ngIf="isGenerating(sprint.id, activity.id, 'resultatAttendu')"></span>
+                                            </button>
+                                            <button class="s3-pencil-btn"
+                                                    *ngIf="!isResultatEditing(sprint.id, activity.id)"
+                                                    (click)="toggleResultatEdit(sprint.id, activity.id)" title="Modifier">
+                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <p class="result-content"
+                                       *ngIf="!isResultatEditing(sprint.id, activity.id) && activity.resultatAttendu">
+                                        {{ activity.resultatAttendu }}
+                                    </p>
+                                    <p class="result-content s3-placeholder"
+                                       *ngIf="!isResultatEditing(sprint.id, activity.id) && !activity.resultatAttendu">
+                                        Cliquez sur le crayon pour ajouter
+                                    </p>
+                                    <textarea *ngIf="isResultatEditing(sprint.id, activity.id)"
+                                              class="result-textarea"
+                                              [(ngModel)]="activity.resultatAttendu"
+                                              (blur)="saveResultat(sprint.id, activity.id)"
+                                              rows="2" placeholder="Saisissez le résultat attendu...">
+                                    </textarea>
+                                </div>
+                            </div>
+
+                            <!-- KPIs Liés Section -->
+                            <div class="kpis-lies-section">
+                                <div class="kpis-lies-header">
+                                    <div class="kpis-lies-icon">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+                                            <circle cx="12" cy="12" r="3"/>
+                                            <path d="M12 1v6m0 6v6m9.66-9.66l-5.196 3M7.536 14.66L2.34 17.66m17.32 0l-5.196-3M7.536 9.34L2.34 6.34"/>
+                                        </svg>
+                                    </div>
+                                    <span class="kpis-lies-title">KPIs liés</span>
+                                </div>
+                                <div class="kpis-list" *ngIf="activity.kpis && activity.kpis.length > 0">
+                                    <div *ngFor="let kpi of activity.kpis" class="kpi-item-display">
+                                        <div class="kpi-left">
+                                            <div class="kpi-info-content">
+                                                <div class="kpi-name-row">
+                                                    <span class="kpi-name">{{ kpi.nom }}</span>
+                                                    <span class="kpi-unit">{{ kpi.valeur || 0 }} {{ kpi.uniteMesure }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="kpis-empty-state" *ngIf="!activity.kpis || activity.kpis.length === 0">
+                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5">
+                                        <circle cx="12" cy="12" r="3"/>
+                                        <path d="M12 1v6m0 6v6m9.66-9.66l-5.196 3M7.536 14.66L2.34 17.66m17.32 0l-5.196-3M7.536 9.34L2.34 6.34"/>
+                                    </svg>
+                                    <p>Aucun KPI lié à cette activité</p>
+                                </div>
+                            </div>
+
+                        </div><!-- /activity-card -->
+                    </div><!-- /activities-section -->
+                </div><!-- /sprint-card -->
+            </div><!-- /sprints-list -->
+
+            <!-- Empty State -->
+            <div *ngIf="selectedSprintsDetails.length === 0" class="empty-state-sprint">
+                <div class="empty-icon">📅</div>
+                <h4>Aucun sprint ajouté</h4>
+                <p>Cliquez sur "Ajouter un sprint" pour commencer à visualiser les activités et leur méthodologie</p>
+                <button class="btn-add-sprint-large" (click)="addSprint()">
+                    <span class="btn-icon">+</span>
+                    Ajouter un sprint
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Sprint Selection Modal ── -->
+<div *ngIf="showSprintSelectionModal" class="modal-overlay" (click)="closeSprintSelectionModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h3>Sélectionner un sprint à ajouter</h3>
+            <button class="btn-close-modal" (click)="closeSprintSelectionModal()">✕</button>
+        </div>
+        <div class="modal-body">
+            <p style="color:#6b7280;margin-bottom:1rem;font-size:0.875rem">Choisir un sprint...</p>
+            <div class="sprint-list-modal">
+                <div *ngFor="let sprint of availableSprints" class="sprint-item-modal"
+                     [class.selected]="isSprintSelected(sprint.id)" (click)="toggleSprintInSelection(sprint.id)">
+                    <div style="display:flex;align-items:center;gap:0.75rem;flex:1">
+                        <input type="checkbox" [checked]="isSprintSelected(sprint.id)"
+                               (click)="$event.stopPropagation()" (change)="toggleSprintInSelection(sprint.id)"
+                               style="width:18px;height:18px;cursor:pointer"/>
+                        <span style="font-size:1.5rem">📅</span>
+                        <div style="flex:1">
+                            <div style="font-weight:600;color:#1f2937">{{ sprint.nom }}</div>
+                            <div style="font-size:0.8125rem;color:#6b7280">
+                                ({{ sprint.nombreActivites || 0 }} activité{{ (sprint.nombreActivites || 0) > 1 ? 's' : '' }})
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div *ngIf="availableSprints.length === 0" style="text-align:center;padding:2rem;color:#6b7280">
+                    Aucun sprint disponible pour ce programme
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" (click)="closeSprintSelectionModal()">Annuler</button>
+            <button class="btn-primary" (click)="confirmSprintSelection()">Ajouter</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── AI Suggestion Modal ── -->
+<div class="ai-modal-overlay" *ngIf="showAIModal" (click)="closeAIModal()">
+    <div class="ai-modal" (click)="$event.stopPropagation()">
+        <div class="ai-modal-header">
+            <div class="ai-modal-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
+                <span>Suggestion de l'IA</span>
+            </div>
+            <button class="ai-close-btn" (click)="closeAIModal()">✕</button>
+        </div>
+        <div class="ai-modal-body" *ngIf="aiResponse">
+            <div class="ai-score-row">
+                <span class="ai-score-label">Score qualité</span>
+                <span class="ai-score-badge"
+                      [class.high]="aiResponse.score >= 70"
+                      [class.mid]="aiResponse.score >= 40 && aiResponse.score < 70"
+                      [class.low]="aiResponse.score < 40">
+                    {{ aiResponse.score }} / 100
+                </span>
+            </div>
+            <div class="ai-comparison">
+                <div class="ai-version original">
+                    <h4>Version originale</h4>
+                    <p>{{ aiResponse.original_text }}</p>
+                </div>
+                <div class="ai-version improved">
+                    <h4>Version IA ✨</h4>
+                    <p>{{ aiResponse.improved_text }}</p>
+                </div>
+            </div>
+            <div class="ai-feedback" *ngIf="aiResponse.feedback && aiResponse.feedback.length">
+                <h4>Suggestions d'amélioration</h4>
+                <ul>
+                    <li *ngFor="let tip of aiResponse.feedback">{{ tip }}</li>
+                </ul>
+            </div>
+        </div>
+        <div class="ai-modal-footer">
+            <button class="ai-secondary-btn" (click)="closeAIModal()">Annuler</button>
+            <button class="ai-primary-btn" (click)="applyAIVersion()">✅ Appliquer la version de l'IA</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── Scoped styles ── -->
+<style>
+/* ════════════════════════════════════════════════
+   Row header: icon+label LEFT  |  buttons RIGHT
+════════════════════════════════════════════════ */
+.s3-row-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 8px;
+    flex-wrap: nowrap;
+}
+
+.s3-row-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+/* This div sits at the far right thanks to justify-content: space-between */
+.s3-row-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+/* ════════════════════════════════════════════════
+   AI button  (pill, outlined indigo)
+════════════════════════════════════════════════ */
+.s3-ai-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 13px;
+    border: 1.5px solid #a5b4fc;
+    border-radius: 20px;
+    background: #fff;
+    color: #4f46e5;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background .18s, box-shadow .18s;
+    line-height: 1.4;
+}
+.s3-ai-btn:hover:not(:disabled) {
+    background: #eef2ff;
+    box-shadow: 0 2px 8px rgba(99,102,241,.18);
+}
+.s3-ai-btn:disabled { opacity: .55; cursor: not-allowed; }
+
+.s3-ai-btn--sm {
+    padding: 4px 10px;
+    font-size: 12px;
+}
+
+/* ════════════════════════════════════════════════
+   Pencil button  (square icon button)
+════════════════════════════════════════════════ */
+.s3-pencil-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 8px;
+    background: #fff;
+    color: #6b7280;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: border-color .18s, color .18s, background .18s;
+}
+.s3-pencil-btn:hover {
+    border-color: #6366f1;
+    color: #6366f1;
+    background: #eef2ff;
+}
+
+/* ════════════════════════════════════════════════
+   Spinner
+════════════════════════════════════════════════ */
+.s3-spinner {
+    display: inline-block;
+    width: 12px; height: 12px;
+    border: 2px solid rgba(99,102,241,.25);
+    border-top-color: #6366f1;
+    border-radius: 50%;
+    animation: s3spin .7s linear infinite;
+    vertical-align: middle;
+}
+.s3-spinner--sm { width: 9px; height: 9px; }
+@keyframes s3spin { to { transform: rotate(360deg); } }
+
+/* ════════════════════════════════════════════════
+   Placeholder
+════════════════════════════════════════════════ */
+.s3-placeholder {
+    color: #9ca3af !important;
+    font-style: italic;
+}
+
+/* ════════════════════════════════════════════════
+   AI Modal
+════════════════════════════════════════════════ */
+.ai-modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.5);
+    z-index: 2000;
+    display: flex; align-items: center; justify-content: center;
+    animation: aiFade .15s ease;
+}
+@keyframes aiFade { from{opacity:0} to{opacity:1} }
+
+.ai-modal {
+    background: #fff;
+    border-radius: 12px;
+    width: min(700px, 95vw);
+    max-height: 85vh;
+    display: flex; flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0,0,0,.2);
+    overflow: hidden;
+}
+.ai-modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: #fff;
+}
+.ai-modal-title { display:flex; align-items:center; gap:8px; font-size:16px; font-weight:600; }
+.ai-close-btn { background:none; border:none; color:#fff; font-size:18px; cursor:pointer; opacity:.8; }
+.ai-close-btn:hover { opacity:1; }
+
+.ai-modal-body { padding:20px; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:16px; }
+
+.ai-score-row { display:flex; align-items:center; gap:10px; }
+.ai-score-label { font-size:13px; color:#6b7280; }
+.ai-score-badge { padding:3px 10px; border-radius:20px; font-size:13px; font-weight:700; }
+.ai-score-badge.high { background:#d1fae5; color:#065f46; }
+.ai-score-badge.mid  { background:#fef3c7; color:#92400e; }
+.ai-score-badge.low  { background:#fee2e2; color:#991b1b; }
+
+.ai-comparison { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+@media(max-width:540px){ .ai-comparison{ grid-template-columns:1fr; } }
+
+.ai-version { border-radius:8px; padding:12px 14px; font-size:13px; line-height:1.6; }
+.ai-version h4 { margin:0 0 8px; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; }
+.ai-version p  { margin:0; white-space:pre-wrap; }
+.ai-version.original { background:#f9fafb; border:1px solid #e5e7eb; }
+.ai-version.original h4 { color:#6b7280; }
+.ai-version.improved  { background:#f5f3ff; border:1px solid #c4b5fd; }
+.ai-version.improved h4 { color:#6d28d9; }
+
+.ai-feedback h4 { font-size:13px; font-weight:600; color:#374151; margin:0 0 8px; }
+.ai-feedback ul { margin:0; padding-left:18px; display:flex; flex-direction:column; gap:4px; }
+.ai-feedback li { font-size:13px; color:#4b5563; }
+
+.ai-modal-footer { padding:14px 20px; border-top:1px solid #e5e7eb; display:flex; justify-content:flex-end; gap:10px; }
+.ai-secondary-btn { padding:8px 18px; border:1px solid #d1d5db; border-radius:6px; background:#fff; color:#374151; font-size:14px; cursor:pointer; }
+.ai-secondary-btn:hover { background:#f9fafb; }
+.ai-primary-btn {
+    padding:8px 18px; border:none; border-radius:6px;
+    background:linear-gradient(135deg,#6366f1,#8b5cf6);
+    color:#fff; font-size:14px; font-weight:600; cursor:pointer;
+}
+.ai-primary-btn:hover { opacity:.9; }
+</style>

@@ -1,0 +1,810 @@
+<div class="candidature-container">
+    <div class="form-header">
+        <h1>DEVENEZ REDSTARTER EN REMPLISSANT CE FORMULAIRE !</h1>
+        <p class="header-description">
+            Contactez l'équipe de RedStart Tunisie pour bénéficier d'un
+            accompagnement opérationnel et personnalisé
+        </p>
+        <p class="header-note">
+            *Nos Redstarters sont sélectionnés en fonction de l'engagement de
+            l'entrepreneur et sa forte volonté à se faire accompagner, du
+            caractère innovant du projet, du potentiel de croissance de
+            l'entreprise et de son potentiel de création d'emplois
+        </p>
+        <p class="header-note">
+            *Les femmes et les entreprises implantées dans les régions sont
+            bonifiés
+        </p>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="progress-section">
+        <div class="progress-label">
+            Étape {{ currentStep }} sur {{ totalSteps }}
+        </div>
+        <div class="progress-bar">
+            <div
+                class="progress-fill"
+                [style.width.%]="(currentStep / totalSteps) * 100"
+            ></div>
+        </div>
+    </div>
+
+    <form [formGroup]="candidatureForm" (ngSubmit)="submitCandidature()">
+        <!-- Step 1: Personal Information -->
+        <div class="form-step" *ngIf="currentStep === 1">
+            <div class="form-group">
+                <label for="nomPrenom"
+                    >Nom et Prénom <span class="required">*</span></label
+                >
+                <input
+                    type="text"
+                    id="nomPrenom"
+                    formControlName="nomPrenom"
+                    class="form-control"
+                    [class.error]="isFieldInvalid('nomPrenom')"
+                />
+                <span class="error-message" *ngIf="isFieldInvalid('nomPrenom')"
+                    >Ce champ est nécessaire</span
+                >
+            </div>
+
+            <div class="form-group">
+                <label>Genre <span class="required">*</span></label>
+                <div class="radio-group">
+                    <label class="radio-label">
+                        <input
+                            type="radio"
+                            formControlName="genre"
+                            value="Homme"
+                        />
+                        Homme
+                    </label>
+                    <label class="radio-label">
+                        <input
+                            type="radio"
+                            formControlName="genre"
+                            value="Femme"
+                        />
+                        Femme
+                    </label>
+                </div>
+                <span class="error-message" *ngIf="isFieldInvalid('genre')"
+                    >Ce champ est nécessaire</span
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="age">Age <span class="required">*</span></label>
+                <input
+                    type="number"
+                    id="age"
+                    formControlName="age"
+                    class="form-control"
+                    [class.error]="isFieldInvalid('age')"
+                />
+                <span class="error-message" *ngIf="isFieldInvalid('age')"
+                    >Ce champ est nécessaire</span
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="numeroTelephone"
+                    >Numéro de téléphone <span class="required">*</span></label
+                >
+                <input
+                    type="tel"
+                    id="numeroTelephone"
+                    formControlName="numeroTelephone"
+                    class="form-control"
+                    [class.error]="isFieldInvalid('numeroTelephone')"
+                />
+                <span
+                    class="error-message"
+                    *ngIf="isFieldInvalid('numeroTelephone')"
+                    >Ce champ est nécessaire</span
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="email"
+                    >E-mail <span class="required">*</span></label
+                >
+                <input
+                    type="email"
+                    id="email"
+                    formControlName="email"
+                    class="form-control"
+                    [class.error]="isFieldInvalid('email')"
+                />
+                <span class="error-message" *ngIf="isFieldInvalid('email')"
+                    >Ce champ est nécessaire</span
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="roleEntreprise"
+                    >Quel est votre rôle au sein de l'entreprise
+                    <span class="required">*</span></label
+                >
+                <input
+                    type="text"
+                    id="roleEntreprise"
+                    formControlName="roleEntreprise"
+                    class="form-control"
+                    [class.error]="isFieldInvalid('roleEntreprise')"
+                />
+                <span
+                    class="error-message"
+                    *ngIf="isFieldInvalid('roleEntreprise')"
+                    >Ce champ est nécessaire</span
+                >
+            </div>
+
+            <button type="button" class="btn btn-next" (click)="nextStep()">
+                Suivant
+            </button>
+        </div>
+
+        <!-- Step 2: Company Information -->
+        <div class="form-step" *ngIf="currentStep === 2">
+            <div class="form-group">
+                <label for="nomEntreprise"
+                    >Nom de votre entreprise
+                    <span class="required">*</span></label
+                >
+                <input
+                    type="text"
+                    id="nomEntreprise"
+                    formControlName="nomEntreprise"
+                    class="form-control"
+                    [class.error]="isFieldInvalid('nomEntreprise')"
+                />
+            </div>
+
+            <div class="form-group">
+                <label for="entrepriseEst"
+                    >Votre entreprise est <span class="required">*</span></label
+                >
+                <select
+                    id="entrepriseEst"
+                    formControlName="entrepriseEst"
+                    class="form-control"
+                    [class.error]="isFieldInvalid('entrepriseEst')"
+                >
+                    <option value="">Sélectionner</option>
+                    <option value="Créée">Créée</option>
+                    <option value="En cours de création">
+                        En cours de création
+                    </option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="dateCreation">Date de création</label>
+                <input
+                    type="date"
+                    id="dateCreation"
+                    formControlName="dateCreation"
+                    class="form-control"
+                />
+            </div>
+
+            <div class="form-group">
+                <label for="regionBasee"
+                    >Dans quelle région est-elle basée ?
+                    <span class="required">*</span></label
+                >
+                <select
+                    id="regionBasee"
+                    formControlName="regionBasee"
+                    class="form-control"
+                    [class.error]="isFieldInvalid('regionBasee')"
+                >
+                    <option value="">Sélectionner</option>
+                    <option value="Tunis">Tunis</option>
+                    <option value="Ariana">Ariana</option>
+                    <option value="Ben Arous">Ben Arous</option>
+                    <option value="Manouba">Manouba</option>
+                    <option value="Nabeul">Nabeul</option>
+                    <option value="Zaghouan">Zaghouan</option>
+                    <option value="Bizerte">Bizerte</option>
+                    <option value="Béja">Béja</option>
+                    <option value="Jendouba">Jendouba</option>
+                    <option value="Le Kef">Le Kef</option>
+                    <option value="Siliana">Siliana</option>
+                    <option value="Sousse">Sousse</option>
+                    <option value="Monastir">Monastir</option>
+                    <option value="Mahdia">Mahdia</option>
+                    <option value="Sfax">Sfax</option>
+                    <option value="Kairouan">Kairouan</option>
+                    <option value="Kasserine">Kasserine</option>
+                    <option value="Sidi Bouzid">Sidi Bouzid</option>
+                    <option value="Gabès">Gabès</option>
+                    <option value="Medenine">Medenine</option>
+                    <option value="Tataouine">Tataouine</option>
+                    <option value="Gafsa">Gafsa</option>
+                    <option value="Tozeur">Tozeur</option>
+                    <option value="Kebili">Kebili</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="breveDescription"
+                    >Brève description de votre activité/Services/produits (en
+                    150 caractères au maximum)
+                    <span class="required">*</span></label
+                >
+                <textarea
+                    id="breveDescription"
+                    formControlName="breveDescription"
+                    class="form-control"
+                    rows="4"
+                    maxlength="150"
+                    [class.error]="isFieldInvalid('breveDescription')"
+                ></textarea>
+                <div class="char-count">
+                    {{ candidatureForm.get('breveDescription')?.value?.length ||
+                    0 }}/150
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="lienReseauxSociaux"
+                    >Lien de votre entreprise sur les réseaux sociaux (siteweb,
+                    Facebook, ou bien Linkedin...)</label
+                >
+                <input
+                    type="text"
+                    id="lienReseauxSociaux"
+                    formControlName="lienReseauxSociaux"
+                    class="form-control"
+                />
+            </div>
+
+            <div class="form-group">
+                <label
+                    >Avez-vous le label startupAct
+                    <span class="required">*</span></label
+                >
+                <div class="radio-group">
+                    <label class="radio-label">
+                        <input
+                            type="radio"
+                            formControlName="labelStartupAct"
+                            [value]="true"
+                        />
+                        Oui
+                    </label>
+                    <label class="radio-label">
+                        <input
+                            type="radio"
+                            formControlName="labelStartupAct"
+                            [value]="false"
+                        />
+                        Non
+                    </label>
+                </div>
+            </div>
+
+            <div
+                class="form-group"
+                *ngIf="candidatureForm.get('labelStartupAct')?.value === true"
+            >
+                <label for="dateObtentionLabel">Date obtention du Label</label>
+                <input
+                    type="date"
+                    id="dateObtentionLabel"
+                    formControlName="dateObtentionLabel"
+                    class="form-control"
+                />
+            </div>
+
+            <div class="button-group">
+                <button
+                    type="button"
+                    class="btn btn-previous"
+                    (click)="previousStep()"
+                >
+                    Précédent
+                </button>
+                <button type="button" class="btn btn-next" (click)="nextStep()">
+                    Suivant
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 3: Startup Details -->
+        <div class="form-step" *ngIf="currentStep === 3">
+            <div class="form-group">
+                <label
+                    >Phase de maturité de la Startup
+                    <span class="required">*</span></label
+                >
+                <div class="radio-group-vertical">
+                    <label class="radio-label">
+                        <input
+                            type="radio"
+                            formControlName="phaseMaturite"
+                            value="MVP"
+                        />
+                        MVP : Produit en développement, Une version beta avec
+                        quelques testeurs, Pas encore une mise sur le marché,
+                        pas encore de levés de fonds...
+                    </label>
+                    <label class="radio-label">
+                        <input
+                            type="radio"
+                            formControlName="phaseMaturite"
+                            value="Early Sales"
+                        />
+                        Early Sales : Produit sur le marché, Quelques clients
+                        payants, Seed funding...
+                    </label>
+                    <label class="radio-label">
+                        <input
+                            type="radio"
+                            formControlName="phaseMaturite"
+                            value="Growth"
+                        />
+                        Growth : Plusieurs clients payants, Ayant levé des
+                        fonds...
+                    </label>
+                    <label class="radio-label">
+                        <input
+                            type="radio"
+                            formControlName="phaseMaturite"
+                            value="Autre"
+                        />
+                        Autre
+                    </label>
+                </div>
+                <span
+                    class="error-message"
+                    *ngIf="isFieldInvalid('phaseMaturite')"
+                    >Ce champ est nécessaire</span
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="marchePersonnasCibles"
+                    >Quel est votre marché & Personnas ciblés
+                    <span class="required">*</span></label
+                >
+                <input
+                    type="text"
+                    id="marchePersonnasCibles"
+                    formControlName="marchePersonnasCibles"
+                    class="form-control"
+                    [class.error]="isFieldInvalid('marchePersonnasCibles')"
+                />
+            </div>
+
+            <div class="form-group">
+                <label for="composanteInnovation"
+                    >Quelle est la composante "Innovation" dans votre startup ?
+                    (en 250 caractères au maximum)
+                    <span class="required">*</span></label
+                >
+                <textarea
+                    id="composanteInnovation"
+                    formControlName="composanteInnovation"
+                    class="form-control"
+                    rows="6"
+                    maxlength="250"
+                    [class.error]="isFieldInvalid('composanteInnovation')"
+                ></textarea>
+                <div class="char-count">
+                    {{
+                    candidatureForm.get('composanteInnovation')?.value?.length
+                    || 0 }}/250
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="impactEnvironnemental"
+                    >Impact Environnemental du projet
+                    <span class="required">*</span></label
+                >
+                <textarea
+                    id="impactEnvironnemental"
+                    formControlName="impactEnvironnemental"
+                    class="form-control"
+                    rows="6"
+                    [class.error]="isFieldInvalid('impactEnvironnemental')"
+                ></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="impactSocial"
+                    >Impact Social du projet
+                    <span class="required">*</span></label
+                >
+                <textarea
+                    id="impactSocial"
+                    formControlName="impactSocial"
+                    class="form-control"
+                    rows="6"
+                    [class.error]="isFieldInvalid('impactSocial')"
+                ></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="viabiliteCommerciale"
+                    >Comment est assurée la Viabilité commerciale de votre
+                    entreprise? Votre Business Model (modèle d'affaires)
+                    <span class="required">*</span></label
+                >
+                <textarea
+                    id="viabiliteCommerciale"
+                    formControlName="viabiliteCommerciale"
+                    class="form-control"
+                    rows="6"
+                    [class.error]="isFieldInvalid('viabiliteCommerciale')"
+                ></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="valeurAjoutee"
+                    >Valeur ajoutée du projet
+                    <span class="required">*</span></label
+                >
+                <input
+                    type="number"
+                    id="valeurAjoutee"
+                    formControlName="valeurAjoutee"
+                    class="form-control"
+                    [class.error]="isFieldInvalid('valeurAjoutee')"
+                />
+            </div>
+
+            <div class="form-group">
+                <label
+                    >Veuillez télécharger tout document qui peut nous aider à en
+                    savoir plus sur votre startup (exemple : présentation, Pitch
+                    Deck, plan d'affaires, ect.)</label
+                >
+                <div class="file-upload-area" (click)="fileInput.click()">
+                    <div class="upload-icon">📁</div>
+                    <p>
+                        Cliquez ou déplacez des fichiers dans cette zone pour
+                        les téléverser.
+                    </p>
+                    <p class="file-limit">
+                        Vous pouvez téléverser jusqu'à 8 fichiers.
+                    </p>
+                </div>
+                <input
+                    #fileInput
+                    type="file"
+                    (change)="onFilesSelected($event)"
+                    multiple
+                    accept=".pdf,.doc,.docx,.ppt,.pptx"
+                    style="display: none"
+                />
+
+                <div class="uploaded-files" *ngIf="uploadedFiles.length > 0">
+                    <div
+                        class="file-item"
+                        *ngFor="let file of uploadedFiles; let i = index"
+                    >
+                        <span>{{ file.name }}</span>
+                        <button
+                            type="button"
+                            class="btn-remove"
+                            (click)="removeFile(i)"
+                        >
+                            ×
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button
+                    type="button"
+                    class="btn btn-previous"
+                    (click)="previousStep()"
+                >
+                    Précédent
+                </button>
+                <button type="button" class="btn btn-next" (click)="nextStep()">
+                    Suivant
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 4: Team Information -->
+        <div class="form-step" *ngIf="currentStep === 4">
+            <div class="form-group">
+                <label for="nombreCoFondateurs"
+                    >Combien y a-t-il de co-fondateurs / associés ?
+                    <span class="required">*</span></label
+                >
+                <input
+                    type="number"
+                    id="nombreCoFondateurs"
+                    formControlName="nombreCoFondateurs"
+                    class="form-control"
+                    [class.error]="isFieldInvalid('nombreCoFondateurs')"
+                />
+            </div>
+
+            <div class="form-group">
+                <label
+                    >Sont-ils impliqués dans la gestion du projet ?
+                    <span class="required">*</span></label
+                >
+                <div class="radio-group">
+                    <label class="radio-label">
+                        <input
+                            type="radio"
+                            formControlName="impliquesGestion"
+                            [value]="true"
+                        />
+                        Oui
+                    </label>
+                    <label class="radio-label">
+                        <input
+                            type="radio"
+                            formControlName="impliquesGestion"
+                            [value]="false"
+                        />
+                        Non
+                    </label>
+                </div>
+            </div>
+
+            <div
+                class="form-group"
+                *ngIf="candidatureForm.get('impliquesGestion')?.value === true"
+            >
+                <label for="nombreImpliquesGestion"
+                    >Si oui -combien d'entre eux</label
+                >
+                <input
+                    type="number"
+                    id="nombreImpliquesGestion"
+                    formControlName="nombreImpliquesGestion"
+                    class="form-control"
+                />
+            </div>
+
+            <div class="form-group">
+                <label for="experienceEquipeFondatrice"
+                    >L'expérience de l'équipe fondatrice du projet
+                    <span class="required">*</span></label
+                >
+                <textarea
+                    id="experienceEquipeFondatrice"
+                    formControlName="experienceEquipeFondatrice"
+                    class="form-control"
+                    rows="6"
+                    [class.error]="isFieldInvalid('experienceEquipeFondatrice')"
+                ></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="nombreEmploisCrees"
+                    >Nombre d'emplois créés
+                    <span class="required">*</span></label
+                >
+                <input
+                    type="number"
+                    id="nombreEmploisCrees"
+                    formControlName="nombreEmploisCrees"
+                    class="form-control"
+                    [class.error]="isFieldInvalid('nombreEmploisCrees')"
+                />
+            </div>
+
+            <div class="button-group">
+                <button
+                    type="button"
+                    class="btn btn-previous"
+                    (click)="previousStep()"
+                >
+                    Précédent
+                </button>
+                <button type="button" class="btn btn-next" (click)="nextStep()">
+                    Suivant
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 5: Support Needs -->
+        <div class="form-step" *ngIf="currentStep === 5">
+            <div class="form-group">
+                <label
+                    >Quels sont les besoins de votre structure en matière
+                    d'accompagnement? <span class="required">*</span></label
+                >
+                <div class="checkbox-group">
+                    <label class="checkbox-label">
+                        <input
+                            type="checkbox"
+                            (change)="onBesoinsAccompagnementChange('Développement de votre entreprise', $event)"
+                        />
+                        Développement de votre entreprise
+                    </label>
+                    <label class="checkbox-label">
+                        <input
+                            type="checkbox"
+                            (change)="onBesoinsAccompagnementChange('Accès au financement', $event)"
+                        />
+                        Accès au financement
+                    </label>
+                    <label class="checkbox-label">
+                        <input
+                            type="checkbox"
+                            (change)="onBesoinsAccompagnementChange('Lancement de votre projet', $event)"
+                        />
+                        Lancement de votre projet
+                    </label>
+                    <label class="checkbox-label">
+                        <input
+                            type="checkbox"
+                            (change)="onBesoinsAccompagnementChange('Accès à la technologie', $event)"
+                        />
+                        Accès à la technologie
+                    </label>
+                    <label class="checkbox-label">
+                        <input
+                            type="checkbox"
+                            (change)="onBesoinsAccompagnementChange('Accès aux marchés', $event)"
+                        />
+                        Accès aux marchés
+                    </label>
+                </div>
+                <span
+                    class="error-message"
+                    *ngIf="isFieldInvalid('besoinsAccompagnement')"
+                    >Ce champ est nécessaire</span
+                >
+            </div>
+
+            <div class="form-group">
+                <label
+                    >Avez-vous déjà bénéficié d'un accompagnement pour votre
+                    startup? (exemple : coaching, mentoring, incubation,
+                    accélération...) <span class="required">*</span></label
+                >
+                <div class="radio-group">
+                    <label class="radio-label">
+                        <input
+                            type="radio"
+                            formControlName="beneficieAccompagnement"
+                            [value]="true"
+                        />
+                        Oui
+                    </label>
+                    <label class="radio-label">
+                        <input
+                            type="radio"
+                            formControlName="beneficieAccompagnement"
+                            [value]="false"
+                        />
+                        Non
+                    </label>
+                </div>
+            </div>
+
+            <div
+                class="form-group"
+                *ngIf="candidatureForm.get('beneficieAccompagnement')?.value === true"
+            >
+                <label for="detailsAccompagnement"
+                    >Si oui, précisez lequel (nature, organisme et durée de cet
+                    accompagnement) .</label
+                >
+                <textarea
+                    id="detailsAccompagnement"
+                    formControlName="detailsAccompagnement"
+                    class="form-control"
+                    rows="4"
+                ></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Vos besoins en formation</label>
+                <div class="checkbox-group">
+                    <label class="checkbox-label">
+                        <input
+                            type="checkbox"
+                            (change)="onBesoinsFormationChange('Formation Commercial Marketing Vente', $event)"
+                        />
+                        Formation Commercial Marketing Vente
+                    </label>
+                    <label class="checkbox-label">
+                        <input
+                            type="checkbox"
+                            (change)="onBesoinsFormationChange('Formation Comptabilite Gestion Finance Paie', $event)"
+                        />
+                        Formation Comptabilite Gestion Finance Paie
+                    </label>
+                    <label class="checkbox-label">
+                        <input
+                            type="checkbox"
+                            (change)="onBesoinsFormationChange('Formation Developpement personnel Coaching', $event)"
+                        />
+                        Formation Developpement personnel Coaching
+                    </label>
+                    <label class="checkbox-label">
+                        <input
+                            type="checkbox"
+                            (change)="onBesoinsFormationChange('Formation Gestion de Projet', $event)"
+                        />
+                        Formation Gestion de Projet
+                    </label>
+                    <label class="checkbox-label">
+                        <input
+                            type="checkbox"
+                            (change)="onBesoinsFormationChange('Formation Grande Distribution Commerce', $event)"
+                        />
+                        Formation Grande Distribution Commerce
+                    </label>
+                    <label class="checkbox-label">
+                        <input
+                            type="checkbox"
+                            (change)="onBesoinsFormationChange('Formation Management Direction', $event)"
+                        />
+                        Formation Management Direction
+                    </label>
+                    <label class="checkbox-label">
+                        <input
+                            type="checkbox"
+                            (change)="onBesoinsFormationChange('Formation Qualite Organisation', $event)"
+                        />
+                        Formation Qualite Organisation
+                    </label>
+                    <label class="checkbox-label">
+                        <input
+                            type="checkbox"
+                            (change)="onBesoinsFormationChange('Formation Ressources humaines / Gestion du personnel', $event)"
+                        />
+                        Formation Ressources humaines / Gestion du personnel
+                    </label>
+                    <label class="checkbox-label">
+                        <input
+                            type="checkbox"
+                            (change)="onBesoinsFormationChange('Formation Achat Approvisionnement Logistique', $event)"
+                        />
+                        Formation Achat Approvisionnement Logistique
+                    </label>
+                    <label class="checkbox-label">
+                        <input
+                            type="checkbox"
+                            (change)="onBesoinsFormationChange('Formation Agro alimentaire Agriculture', $event)"
+                        />
+                        Formation Agro alimentaire Agriculture
+                    </label>
+                    <label class="checkbox-label">
+                        <input
+                            type="checkbox"
+                            (change)="onBesoinsFormationChange('Formation Environnement', $event)"
+                        />
+                        Formation Environnement
+                    </label>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button
+                    type="button"
+                    class="btn btn-previous"
+                    (click)="previousStep()"
+                >
+                    Précédent
+                </button>
+                <button
+                    type="submit"
+                    class="btn btn-submit"
+                    [disabled]="submitting"
+                >
+                    {{ submitting ? 'Envoi en cours...' : 'Envoyer ma
+                    candidature' }}
+                </button>
+            </div>
+        </div>
+    </form>
+</div>

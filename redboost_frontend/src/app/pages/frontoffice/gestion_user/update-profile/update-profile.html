@@ -1,0 +1,591 @@
+<p-dialog
+    header="Modifier le profil"
+    [(visible)]="visible"
+    (visibleChange)="visibleChange.emit($event)"
+    [modal]="true"
+    [style]="{ width: '95vw', maxWidth: '1000px', maxHeight: '95vh' }"
+    [draggable]="false"
+    [resizable]="false"
+    [closable]="true"
+    styleClass="profile-update-dialog"
+>
+    <div class="dialog-content">
+        <div class="filter-bar">
+            <button
+                class="filter-btn"
+                [ngClass]="{'active': activeFilter === 'all'}"
+                (click)="setFilter('all')"
+                type="button"
+            >
+                <i class="pi pi-th-large"></i>
+                Tous
+            </button>
+            <button
+                class="filter-btn"
+                [ngClass]="{'active': activeFilter === 'general'}"
+                (click)="setFilter('general')"
+                type="button"
+            >
+                <i class="pi pi-info-circle"></i>
+                Général
+            </button>
+            <button
+                *ngIf="userRole === 'coach'"
+                class="filter-btn"
+                [ngClass]="{'active': activeFilter === 'coach'}"
+                (click)="setFilter('coach')"
+                type="button"
+            >
+                <i class="pi pi-star"></i>
+                Coach
+            </button>
+            <button
+                *ngIf="userRole === 'entrepreneur'"
+                class="filter-btn"
+                [ngClass]="{'active': activeFilter === 'entrepreneur'}"
+                (click)="setFilter('entrepreneur')"
+                type="button"
+            >
+                <i class="pi pi-building"></i>
+                Entrepreneur
+            </button>
+        </div>
+
+        <form [formGroup]="profileForm" (ngSubmit)="updateProfile()">
+            <div class="form-sections">
+                <!-- General Section -->
+                <div
+                    class="form-card"
+                    *ngIf="activeFilter === 'all' || activeFilter === 'general'"
+                >
+                    <div class="card-header">
+                        <h3>
+                            <i class="pi pi-user-edit"></i> Informations
+                            générales
+                        </h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="firstName">Prénom *</label>
+                                <input
+                                    pInputText
+                                    id="firstName"
+                                    formControlName="firstName"
+                                    placeholder="Entrez votre prénom"
+                                />
+                                <small
+                                    class="error"
+                                    *ngIf="profileForm.get('firstName')?.hasError('required') && profileForm.get('firstName')?.touched"
+                                >
+                                    Le prénom est requis.
+                                </small>
+                            </div>
+                            <div class="form-group">
+                                <label for="lastName">Nom *</label>
+                                <input
+                                    pInputText
+                                    id="lastName"
+                                    formControlName="lastName"
+                                    placeholder="Entrez votre nom"
+                                />
+                                <small
+                                    class="error"
+                                    *ngIf="profileForm.get('lastName')?.hasError('required') && profileForm.get('lastName')?.touched"
+                                >
+                                    Le nom est requis.
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="email">Email *</label>
+                                <input
+                                    pInputText
+                                    id="email"
+                                    formControlName="email"
+                                    placeholder="Entrez votre email"
+                                    [readonly]="true"
+                                    class="readonly-field"
+                                />
+                                <small class="info-text">
+                                    L'email ne peut pas être modifié
+                                </small>
+                            </div>
+                            <div class="form-group">
+                                <label for="phone">Téléphone *</label>
+                                <input
+                                    pInputText
+                                    id="phone"
+                                    formControlName="phone"
+                                    placeholder="Ex: +216 12 345 678"
+                                />
+                                <small
+                                    class="error"
+                                    *ngIf="profileForm.get('phone')?.hasError('required') && profileForm.get('phone')?.touched"
+                                >
+                                    Le numéro de téléphone est requis.
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="form-group full-width" id="dateNaissance-container">
+                            <label for="dateNaissance">
+                                <i class="pi pi-calendar"></i>
+                                Date de naissance
+                            </label>
+                            <p-calendar
+                                id="dateNaissance"
+                                formControlName="dateNaissance"
+                                placeholder="Sélectionnez votre date de naissance"
+                                [showIcon]="true"
+                                dateFormat="dd/mm/yy"
+                                [yearNavigator]="true"
+                                [monthNavigator]="true"
+                                [yearRange]="'1940:2010'"
+                                [maxDate]="maxDate"
+                                [showButtonBar]="true"
+                                appendTo="body"
+                            ></p-calendar>
+                            <small class="helper-text">
+                                <i class="pi pi-info-circle"></i>
+                                Utilisez les navigateurs pour sélectionner rapidement l'année et le mois
+                            </small>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="secteur">Secteur</label>
+                                <input
+                                    pInputText
+                                    id="secteur"
+                                    formControlName="secteur"
+                                    placeholder="Votre secteur d'activité"
+                                />
+                            </div>
+                            <div class="form-group">
+                                <label for="region">Région</label>
+                                <input
+                                    pInputText
+                                    id="region"
+                                    formControlName="region"
+                                    placeholder="Votre région"
+                                />
+                            </div>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label for="entreprise">Entreprise</label>
+                            <input
+                                pInputText
+                                id="entreprise"
+                                formControlName="entreprise"
+                                placeholder="Nom de votre entreprise"
+                            />
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label for="bio">
+                                Biographie
+                                <span class="char-count">
+                                    {{ profileForm.get('bio')?.value?.length || 0 }}/500
+                                </span>
+                            </label>
+                            <textarea
+                                pTextarea
+                                id="bio"
+                                formControlName="bio"
+                                placeholder="Décrivez-vous en quelques mots"
+                                rows="4"
+                            ></textarea>
+                            <small
+                                class="error"
+                                *ngIf="profileForm.get('bio')?.hasError('maxlength') && profileForm.get('bio')?.touched"
+                            >
+                                La bio ne doit pas dépasser 500 caractères.
+                            </small>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label>Réseaux sociaux</label>
+                            <div class="social-inputs">
+                                <div class="social-input-group">
+                                    <i class="pi pi-linkedin social-icon"></i>
+                                    <input
+                                        pInputText
+                                        id="linkedin"
+                                        formControlName="linkedin"
+                                        placeholder="URL LinkedIn"
+                                    />
+                                </div>
+                                <div class="social-input-group">
+                                    <i class="pi pi-facebook social-icon"></i>
+                                    <input
+                                        pInputText
+                                        id="facebook"
+                                        formControlName="facebook"
+                                        placeholder="URL Facebook"
+                                    />
+                                </div>
+                                <div class="social-input-group">
+                                    <i class="pi pi-instagram social-icon"></i>
+                                    <input
+                                        pInputText
+                                        id="instagram"
+                                        formControlName="instagram"
+                                        placeholder="URL Instagram"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Coach Section -->
+                <div
+                    class="form-card"
+                    *ngIf="(activeFilter === 'all' || activeFilter === 'coach') && userRole === 'coach'"
+                >
+                    <div class="card-header">
+                        <h3>
+                            <i class="pi pi-star"></i> Informations de coach
+                        </h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="form-group full-width">
+                            <label for="yearsOfExperience">Années d'expérience</label>
+                            <input
+                                pInputText
+                                id="yearsOfExperience"
+                                formControlName="yearsOfExperience"
+                                type="number"
+                                placeholder="Nombre d'années"
+                            />
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label for="skills">Compétences</label>
+                            <div class="input-with-addon">
+                                <input
+                                    pInputText
+                                    id="skills"
+                                    [(ngModel)]="skillInput"
+                                    (keydown)="addSkill($event)"
+                                    [ngModelOptions]="{standalone: true}"
+                                    placeholder="Ajouter une compétence (Entrée)"
+                                />
+                                <button
+                                    pButton
+                                    type="button"
+                                    icon="pi pi-plus"
+                                    class="add-btn"
+                                    (click)="addSkill($event)"
+                                ></button>
+                            </div>
+                            <div class="chip-container" *ngIf="skills.length > 0">
+                                <p-chip
+                                    *ngFor="let skill of skills"
+                                    [label]="skill"
+                                    [removable]="true"
+                                    (onRemove)="removeSkill(skill)"
+                                ></p-chip>
+                            </div>
+                            <div class="default-skills">
+                                <small class="helper-text">Suggestions:</small>
+                                <p-chip
+                                    *ngFor="let skill of defaultSkills"
+                                    [label]="skill"
+                                    [styleClass]="skills.includes(skill) ? 'selected-skill' : ''"
+                                    (click)="toggleSkill(skill)"
+                                ></p-chip>
+                            </div>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label for="expertise">Domaines d'expertise</label>
+                            <div class="input-with-addon">
+                                <input
+                                    pInputText
+                                    id="expertise"
+                                    [(ngModel)]="expertiseInput"
+                                    (keydown)="addExpertise($event)"
+                                    [ngModelOptions]="{standalone: true}"
+                                    placeholder="Ajouter une expertise (Entrée)"
+                                />
+                                <button
+                                    pButton
+                                    type="button"
+                                    icon="pi pi-plus"
+                                    class="add-btn"
+                                    (click)="addExpertise($event)"
+                                ></button>
+                            </div>
+                            <div class="chip-container" *ngIf="expertise.length > 0">
+                                <p-chip
+                                    *ngFor="let exp of expertise"
+                                    [label]="exp"
+                                    [removable]="true"
+                                    (onRemove)="removeExpertise(exp)"
+                                ></p-chip>
+                            </div>
+                        </div>
+
+                        <div class="form-divider">
+                            <h4>Formation académique</h4>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label for="formationAcademNom">Nom de la formation</label>
+                            <input
+                                pInputText
+                                id="formationAcademNom"
+                                formControlName="formationAcademNom"
+                                placeholder="Ex: Master en Management"
+                            />
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="formationAcademDate">Date</label>
+                                <p-calendar
+                                    id="formationAcademDate"
+                                    formControlName="formationAcademDate"
+                                    placeholder="Date"
+                                    [showIcon]="true"
+                                    dateFormat="dd/mm/yy"
+                                ></p-calendar>
+                            </div>
+                            <div class="form-group">
+                                <label for="nbEntreCoaches">Entrepreneurs coachés</label>
+                                <input
+                                    pInputText
+                                    id="nbEntreCoaches"
+                                    formControlName="nbEntreCoaches"
+                                    type="number"
+                                    placeholder="Nombre"
+                                />
+                            </div>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label for="formationAcademRealisations">Réalisations</label>
+                            <textarea
+                                pTextarea
+                                id="formationAcademRealisations"
+                                formControlName="formationAcademRealisations"
+                                placeholder="Décrivez vos réalisations"
+                                rows="3"
+                            ></textarea>
+                        </div>
+
+                        <div class="form-divider">
+                            <h4>Compétences professionnelles</h4>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label for="competencesProNom">Nom</label>
+                            <input
+                                pInputText
+                                id="competencesProNom"
+                                formControlName="competencesProNom"
+                                placeholder="Nom de la compétence"
+                            />
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="competencesProDate">Date</label>
+                                <p-calendar
+                                    id="competencesProDate"
+                                    formControlName="competencesProDate"
+                                    placeholder="Date"
+                                    [showIcon]="true"
+                                    dateFormat="dd/mm/yy"
+                                ></p-calendar>
+                            </div>
+                            <div class="form-group">
+                                <label for="competencesProCertificat">Certificat</label>
+                                <input
+                                    pInputText
+                                    id="competencesProCertificat"
+                                    formControlName="competencesProCertificat"
+                                    placeholder="Nom du certificat"
+                                />
+                            </div>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label for="succesClient">Succès client</label>
+                            <textarea
+                                pTextarea
+                                id="succesClient"
+                                formControlName="succesClient"
+                                placeholder="Décrivez vos succès"
+                                rows="3"
+                            ></textarea>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label for="engagementCommunautaire">Engagement communautaire</label>
+                            <textarea
+                                pTextarea
+                                id="engagementCommunautaire"
+                                formControlName="engagementCommunautaire"
+                                placeholder="Décrivez votre engagement"
+                                rows="3"
+                            ></textarea>
+                        </div>
+
+                        <div class="form-group checkbox-group">
+                            <p-checkbox
+                                id="sessionEssai"
+                                formControlName="sessionEssai"
+                                [binary]="true"
+                                label="Proposer une session d'essai"
+                            ></p-checkbox>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Entrepreneur Section -->
+                <div
+                    class="form-card"
+                    *ngIf="(activeFilter === 'all' || activeFilter === 'entrepreneur') && userRole === 'entrepreneur'"
+                >
+                    <div class="card-header">
+                        <h3>
+                            <i class="pi pi-building"></i> Informations d'entrepreneur
+                        </h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="startupName">Nom de la startup</label>
+                                <input
+                                    pInputText
+                                    id="startupName"
+                                    formControlName="startupName"
+                                    placeholder="Nom de votre startup"
+                                />
+                            </div>
+                            <div class="form-group">
+                                <label for="industry">Secteur d'activité</label>
+                                <input
+                                    pInputText
+                                    id="industry"
+                                    formControlName="industry"
+                                    placeholder="Votre secteur"
+                                />
+                            </div>
+                        </div>
+
+                        <div class="form-divider">
+                            <h4>Formation académique</h4>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label for="formaAcademNom">Nom de la formation</label>
+                            <input
+                                pInputText
+                                id="formaAcademNom"
+                                formControlName="formaAcademNom"
+                                placeholder="Nom de la formation"
+                            />
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="formaAcademDate">Date</label>
+                                <p-calendar
+                                    id="formaAcademDate"
+                                    formControlName="formaAcademDate"
+                                    placeholder="Date"
+                                    [showIcon]="true"
+                                    dateFormat="dd/mm/yy"
+                                ></p-calendar>
+                            </div>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label for="formaAcademRealisations">Réalisations</label>
+                            <textarea
+                                pTextarea
+                                id="formaAcademRealisations"
+                                formControlName="formaAcademRealisations"
+                                placeholder="Décrivez vos réalisations"
+                                rows="3"
+                            ></textarea>
+                        </div>
+
+                        <div class="form-divider">
+                            <h4>Apprentissage informel</h4>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label for="apprentInformelNom">Nom</label>
+                            <input
+                                pInputText
+                                id="apprentInformelNom"
+                                formControlName="apprentInformelNom"
+                                placeholder="Nom de l'apprentissage"
+                            />
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="apprentInformelDate">Date</label>
+                                <p-calendar
+                                    id="apprentInformelDate"
+                                    formControlName="apprentInformelDate"
+                                    placeholder="Date"
+                                    [showIcon]="true"
+                                    dateFormat="dd/mm/yy"
+                                ></p-calendar>
+                            </div>
+                            <div class="form-group">
+                                <label for="apprentInformelCertificat">Certificat</label>
+                                <input
+                                    pInputText
+                                    id="apprentInformelCertificat"
+                                    formControlName="apprentInformelCertificat"
+                                    placeholder="Nom du certificat"
+                                />
+                            </div>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label for="obstaclePrincipal">Obstacle principal</label>
+                            <textarea
+                                pTextarea
+                                id="obstaclePrincipal"
+                                formControlName="obstaclePrincipal"
+                                placeholder="Décrivez votre obstacle principal"
+                                rows="3"
+                            ></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button
+                    pButton
+                    type="button"
+                    label="Annuler"
+                    class="p-button-secondary cancel-btn"
+                    (click)="close()"
+                    [disabled]="isSubmitting"
+                ></button>
+                <button
+                    pButton
+                    type="submit"
+                    label="Enregistrer"
+                    class="save-btn"
+                    [disabled]="isSubmitting"
+                    [loading]="isSubmitting"
+                ></button>
+            </div>
+        </form>
+    </div>
+</p-dialog>

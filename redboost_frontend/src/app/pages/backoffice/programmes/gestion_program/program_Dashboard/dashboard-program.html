@@ -1,0 +1,1175 @@
+<div class="dashboard-container">
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <div class="app-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                    <path
+                        d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"
+                    />
+                </svg>
+            </div>
+            <div>
+                <h1 class="header-title">Interface de suivi du programme</h1>
+                <p class="header-subtitle">
+                    Consultez la progression globale et modifiez le paramétrage
+                    si nécessaire
+                </p>
+            </div>
+        </div>
+        <button class="btn-settings">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                <path
+                    d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0z"
+                />
+                <path
+                    d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52l-.094-.319z"
+                />
+            </svg>
+            Modifier le paramétrage du programme
+        </button>
+    </header>
+
+    <!-- Progress Banner -->
+    <div class="progress-banner">
+        <div class="progress-banner-content">
+            <div class="progress-info">
+                <p class="progress-label">Progression globale du rapport</p>
+                <h2 class="progress-value">0%</h2>
+                <span class="progress-sections">0 / 0 sections</span>
+            </div>
+            <div class="progress-banner-right">
+                <span class="status-badge in-progress">
+                    <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 16 16"
+                        fill="currentColor"
+                    >
+                        <path
+                            d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"
+                        />
+                        <path
+                            d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"
+                        />
+                    </svg>
+                    En progression
+                </span>
+                <button class="btn-settings-white">
+                    <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 16 16"
+                        fill="currentColor"
+                    >
+                        <path
+                            d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0z"
+                        />
+                        <path
+                            d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52l-.094-.319z"
+                        />
+                    </svg>
+                    Modifier le paramétrage
+                </button>
+                <p class="update-date">
+                    Mis à jour: {{ currentDate | date: 'dd/MM/yyyy' }}
+                </p>
+            </div>
+        </div>
+        <div class="status-cards">
+            <div class="status-card">
+                <div class="status-icon todo"></div>
+                <div>
+                    <h3>0</h3>
+                    <p>À faire</p>
+                </div>
+            </div>
+            <div class="status-card">
+                <div class="status-icon in-progress"></div>
+                <div>
+                    <h3>0</h3>
+                    <p>En cours</p>
+                </div>
+            </div>
+            <div class="status-card">
+                <div class="status-icon completed"></div>
+                <div>
+                    <h3>0</h3>
+                    <p>Terminées</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="loading" class="loading-container">
+        <div class="spinner"></div>
+        <p>Chargement des données du tableau de bord...</p>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="error" class="error-container">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="#f44336">
+            <path
+                d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"
+            />
+        </svg>
+        <p>{{ error }}</p>
+        <button (click)="loadDashboardData()" class="btn-retry">
+            Réessayer
+        </button>
+    </div>
+
+    <!-- Dashboard Content -->
+    <ng-container *ngIf="!loading && !error">
+        <!-- KPI Cards -->
+        <div class="kpi-grid">
+            <!-- Global KPI Performance Average -->
+            <div class="kpi-card blue-card" *ngIf="globalKpiPerformance">
+                <div class="kpi-icon blue-icon">
+                    <svg
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="white"
+                    >
+                        <path
+                            d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"
+                        />
+                    </svg>
+                </div>
+                <span
+                    class="kpi-badge success"
+                    *ngIf="globalKpiPerformance.averageAchievementRate >= 100"
+                >
+                    +{{ (globalKpiPerformance.averageAchievementRate -
+                    100).toFixed(0) }}%
+                </span>
+                <span
+                    class="kpi-badge warning"
+                    *ngIf="globalKpiPerformance.averageAchievementRate < 100"
+                >
+                    {{ (globalKpiPerformance.averageAchievementRate -
+                    100).toFixed(0) }}%
+                </span>
+                <p class="kpi-label">
+                    {{ globalKpiPerformance.averageAchievementRate >= 100 ?
+                    'Objectifs dépassés !' : 'En cours' }}
+                </p>
+                <h2 class="kpi-value">
+                    {{ globalKpiPerformance.averageAchievementRate.toFixed(0)
+                    }}%
+                </h2>
+                <p class="kpi-subtitle">d'atteinte moyenne</p>
+                <div class="progress-bar">
+                    <div
+                        class="progress-fill"
+                        [style.width.%]="globalKpiPerformance.averageAchievementRate"
+                    ></div>
+                </div>
+            </div>
+
+            <!-- Task Realization -->
+            <div class="kpi-card" *ngIf="taskRealization">
+                <div class="kpi-icon teal-icon">
+                    <svg
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="white"
+                    >
+                        <path
+                            d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"
+                        />
+                    </svg>
+                </div>
+                <span class="kpi-badge neutral">
+                    {{ getOverallCompletionRate() }}%
+                </span>
+                <p class="kpi-label">Tâches réalisées</p>
+                <h2 class="kpi-value">
+                    {{ taskRealization.totalCompletedTasks }}<span
+                        class="kpi-total"
+                        >/{{ taskRealization.totalTasks }}</span
+                    >
+                </h2>
+                <div class="progress-bar">
+                    <div
+                        class="progress-fill teal"
+                        [style.width.%]="getOverallCompletionRate()"
+                    ></div>
+                </div>
+            </div>
+
+            <!-- Total KPI Count -->
+            <div class="kpi-card" *ngIf="kpiDistribution">
+                <div class="kpi-icon pink-icon">
+                    <svg
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="white"
+                    >
+                        <circle
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="white"
+                            stroke-width="2"
+                            fill="none"
+                        />
+                        <circle cx="12" cy="12" r="3" fill="white" />
+                    </svg>
+                </div>
+                <span class="kpi-badge success-outline"
+                    >{{ kpiDistribution.totalKpis }} KPI</span
+                >
+                <p class="kpi-label">Indicateurs suivis</p>
+                <h2 class="kpi-value">
+                    {{ kpiDistribution.categories.length }}
+                </h2>
+                <p class="kpi-subtitle">catégories</p>
+            </div>
+
+            <!-- Mock Cards (keeping for design consistency) -->
+            <div class="kpi-card">
+                <div class="kpi-icon burgundy-icon">
+                    <svg
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="white"
+                    >
+                        <path
+                            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"
+                        />
+                    </svg>
+                </div>
+                <span class="kpi-badge excellent">Excellent</span>
+                <p class="kpi-label">Qualité moyenne</p>
+                <h2 class="kpi-value">4.5<span class="kpi-total">/5</span></h2>
+                <div class="rating-bars">
+                    <div class="rating-bar filled"></div>
+                    <div class="rating-bar filled"></div>
+                    <div class="rating-bar filled"></div>
+                    <div class="rating-bar filled"></div>
+                    <div class="rating-bar half"></div>
+                </div>
+            </div>
+
+            <div class="kpi-card">
+                <div class="kpi-icon dark-teal-icon">
+                    <svg
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="white"
+                    >
+                        <path
+                            d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"
+                        />
+                    </svg>
+                </div>
+                <span class="kpi-badge warning">Retard</span>
+                <p class="kpi-label">Respect des délais</p>
+                <h2 class="kpi-value">42%</h2>
+                <div class="progress-bar">
+                    <div
+                        class="progress-fill orange"
+                        [style.width.%]="42"
+                    ></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="charts-grid">
+            <!-- Mock Evolution Chart -->
+            <!-- Replace the "Évolution des KPI" chart section with this -->
+            <div
+                class="chart-card"
+                [class.collapsed]="!expandedSections['evolution']"
+            >
+                <div class="chart-header" (click)="toggleSection('evolution')">
+                    <div class="chart-title-wrapper">
+                        <div class="chart-icon pink-icon">
+                            <svg
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill="white"
+                            >
+                                <path
+                                    d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z"
+                                />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3>Évolution des KPI</h3>
+                            <p *ngIf="hasEvolutionData()">
+                                Évolution du taux d'atteinte par catégorie
+                            </p>
+                            <p *ngIf="!hasEvolutionData()">
+                                Aucune donnée disponible
+                            </p>
+                        </div>
+                    </div>
+                    <svg
+                        class="chevron"
+                        [class.rotated]="!expandedSections['evolution']"
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                    >
+                        <path
+                            d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"
+                        />
+                    </svg>
+                </div>
+
+                <div
+                    class="chart-content"
+                    *ngIf="expandedSections['evolution']"
+                >
+                    <!-- Show message if no data -->
+                    <div *ngIf="!hasEvolutionData()" class="no-data-message">
+                        <svg
+                            width="48"
+                            height="48"
+                            viewBox="0 0 24 24"
+                            fill="#ccc"
+                        >
+                            <path
+                                d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z"
+                            />
+                        </svg>
+                        <p>
+                            Aucune donnée d'évolution disponible pour le moment
+                        </p>
+                    </div>
+
+                    <!-- Dynamic chart with real data -->
+                    <svg
+                        *ngIf="hasEvolutionData()"
+                        [attr.viewBox]="'0 0 ' + chartWidth + ' ' + chartHeight"
+                        class="line-chart"
+                        (mouseleave)="onLeaveChart()"
+                    >
+                        <defs>
+                            <!-- Gradients -->
+                            <linearGradient
+                                *ngFor="let category of getCategoriesWithData(); let i = index"
+                                [attr.id]="'grad-' + i"
+                                x1="0%"
+                                y1="0%"
+                                x2="0%"
+                                y2="100%"
+                            >
+                                <stop
+                                    offset="0%"
+                                    [attr.style]="'stop-color:' + category.categoryColor + ';stop-opacity:0.3'"
+                                />
+                                <stop
+                                    offset="100%"
+                                    [attr.style]="'stop-color:' + category.categoryColor + ';stop-opacity:0'"
+                                />
+                            </linearGradient>
+                        </defs>
+
+                        <!-- Y-axis labels -->
+                        <text
+                            *ngFor="let label of getEvolutionYAxisLabels(); let i = index"
+                            x="20"
+                            [attr.y]="chartPadding.top + i * ((chartHeight - chartPadding.top - chartPadding.bottom) / 4) + 5"
+                            fill="#666"
+                            font-size="12"
+                        >
+                            {{ label }}%
+                        </text>
+
+                        <!-- X-axis labels -->
+                        <text
+                            *ngFor="let label of getEvolutionXAxisLabels(); let i = index"
+                            [attr.x]="getXAxisPosition(i, getEvolutionXAxisLabels().length)"
+                            [attr.y]="chartHeight - 15"
+                            fill="#666"
+                            font-size="12"
+                            text-anchor="middle"
+                        >
+                            {{ label }}
+                        </text>
+
+                        <!-- Grid lines -->
+                        <line
+                            *ngFor="let label of getEvolutionYAxisLabels(); let i = index"
+                            [attr.x1]="chartPadding.left"
+                            [attr.y1]="chartPadding.top + i * ((chartHeight - chartPadding.top - chartPadding.bottom) / 4)"
+                            [attr.x2]="chartWidth - chartPadding.right"
+                            [attr.y2]="chartPadding.top + i * ((chartHeight - chartPadding.top - chartPadding.bottom) / 4)"
+                            stroke="#f0f0f0"
+                            stroke-width="1"
+                        />
+
+                        <!-- Invisible hover zones for each month -->
+                        <rect
+                            *ngFor="let label of getEvolutionXAxisLabels(); let i = index"
+                            [attr.x]="i === 0 ? chartPadding.left : getXAxisPosition(i, getEvolutionXAxisLabels().length) - 40"
+                            y="0"
+                            [attr.width]="i === getEvolutionXAxisLabels().length - 1 ? chartWidth - getXAxisPosition(i, getEvolutionXAxisLabels().length) + 40 : 80"
+                            [attr.height]="chartHeight"
+                            fill="transparent"
+                            (mouseenter)="onHoverDate(i, $event)"
+                            style="cursor: pointer"
+                        />
+
+                        <!-- Vertical line on hover -->
+                        <line
+                            *ngIf="hoveredDateIndex !== null"
+                            [attr.x1]="getXAxisPosition(hoveredDateIndex, getEvolutionXAxisLabels().length)"
+                            [attr.y1]="chartPadding.top"
+                            [attr.x2]="getXAxisPosition(hoveredDateIndex, getEvolutionXAxisLabels().length)"
+                            [attr.y2]="chartHeight - chartPadding.bottom"
+                            stroke="#999"
+                            stroke-width="1"
+                            stroke-dasharray="4,4"
+                        />
+
+                        <!-- Data rendering (areas, lines, points) -->
+                        <g
+                            *ngFor="let category of getCategoriesWithData(); let i = index"
+                        >
+                            <polyline
+                                [attr.fill]="'url(#grad-' + i + ')'"
+                                stroke="none"
+                                [attr.points]="getEvolutionAreaPoints(category)"
+                            />
+                            <polyline
+                                fill="none"
+                                [attr.stroke]="category.categoryColor"
+                                stroke-width="2"
+                                [attr.points]="getEvolutionPolylinePoints(category)"
+                            />
+                            <circle
+                                *ngFor="let point of getEvolutionChartPoints(category)"
+                                [attr.cx]="point.x"
+                                [attr.cy]="point.y"
+                                r="4"
+                                [attr.fill]="category.categoryColor"
+                                stroke="white"
+                                stroke-width="2"
+                            />
+                        </g>
+
+                        <!-- Tooltip (as foreignObject for HTML content) -->
+                        <foreignObject
+                            *ngIf="tooltipData"
+                            [attr.x]="tooltipPosition.x - chartWidth/2 + 50"
+                            [attr.y]="tooltipPosition.y - chartHeight/2 - 100"
+                            width="200"
+                            height="150"
+                        >
+                            <div
+                                xmlns="http://www.w3.org/1999/xhtml"
+                                style="
+                                    background: white;
+                                    padding: 12px;
+                                    border-radius: 8px;
+                                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                                    font-size: 13px;
+                                    pointer-events: none;
+                                "
+                            >
+                                <div
+                                    style="
+                                        font-weight: 600;
+                                        margin-bottom: 8px;
+                                        color: #333;
+                                    "
+                                >
+                                    {{ tooltipData.date }}
+                                </div>
+                                <div
+                                    *ngFor="let item of tooltipData.values"
+                                    style="
+                                        display: flex;
+                                        align-items: center;
+                                        gap: 8px;
+                                        margin: 4px 0;
+                                    "
+                                >
+                                    <span
+                                        [style.background-color]="item.color"
+                                        style="
+                                            display: inline-block;
+                                            width: 12px;
+                                            height: 12px;
+                                            border-radius: 50%;
+                                        "
+                                    ></span>
+                                    <span style="color: #666"
+                                        >{{ item.name }}:</span
+                                    >
+                                    <strong>{{ item.value.toFixed(0) }}</strong>
+                                </div>
+                            </div>
+                        </foreignObject>
+                    </svg>
+
+                    <!-- Legend -->
+                    <div class="chart-legend" *ngIf="hasEvolutionData()">
+                        <div
+                            class="legend-item"
+                            *ngFor="let category of getCategoriesWithData()"
+                        >
+                            <span
+                                class="legend-color"
+                                [style.background-color]="category.categoryColor"
+                            ></span>
+                            <span>{{ category.categoryName }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Task Realization by Category -->
+            <div
+                class="chart-card"
+                [class.collapsed]="!expandedSections['realisation']"
+                *ngIf="taskRealization"
+            >
+                <div
+                    class="chart-header"
+                    (click)="toggleSection('realisation')"
+                >
+                    <div class="chart-title-wrapper">
+                        <div class="chart-icon teal-icon">
+                            <svg
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill="white"
+                            >
+                                <path
+                                    d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"
+                                />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3>Réalisation des tâches</h3>
+                            <p>Par catégorie de KPI</p>
+                        </div>
+                    </div>
+                    <svg
+                        class="chevron"
+                        [class.rotated]="!expandedSections['realisation']"
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                    >
+                        <path
+                            d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"
+                        />
+                    </svg>
+                </div>
+                <div
+                    class="chart-content"
+                    *ngIf="expandedSections['realisation']"
+                >
+                    <svg
+                        [attr.viewBox]="'0 0 ' + (taskRealization.categories.length * 150 + 100) + ' 300'"
+                        class="bar-chart"
+                    >
+                        <text x="20" y="20" fill="#666" font-size="12">
+                            {{ getMaxTasks() }}
+                        </text>
+                        <text x="20" y="95" fill="#666" font-size="12">
+                            {{ (getMaxTasks() * 0.75).toFixed(0) }}
+                        </text>
+                        <text x="20" y="170" fill="#666" font-size="12">
+                            {{ (getMaxTasks() * 0.5).toFixed(0) }}
+                        </text>
+                        <text x="20" y="245" fill="#666" font-size="12">
+                            {{ (getMaxTasks() * 0.25).toFixed(0) }}
+                        </text>
+                        <text x="20" y="280" fill="#666" font-size="12">0</text>
+
+                        <g
+                            *ngFor="let category of taskRealization.categories; let i = index"
+                            [attr.transform]="'translate(' + (100 + i * 150) + ', 0)'"
+                        >
+                            <rect
+                                x="0"
+                                [attr.y]="280 - getBarHeight(category.totalTasks)"
+                                width="60"
+                                [attr.height]="getBarHeight(category.totalTasks)"
+                                fill="#e0e0e0"
+                                rx="4"
+                            />
+                            <rect
+                                x="0"
+                                [attr.y]="280 - getBarHeight(category.completedTasks)"
+                                width="60"
+                                [attr.height]="getBarHeight(category.completedTasks)"
+                                [attr.fill]="category.categoryColor"
+                                rx="4"
+                            />
+                            <text
+                                x="30"
+                                y="295"
+                                fill="#666"
+                                font-size="11"
+                                text-anchor="middle"
+                            >
+                                {{ truncateLabel(category.categoryName) }}
+                            </text>
+                            <text
+                                x="30"
+                                [attr.y]="270 - getBarHeight(category.completedTasks)"
+                                fill="#666"
+                                font-size="10"
+                                text-anchor="middle"
+                                font-weight="600"
+                            >
+                                {{ category.completedTasks }}/{{
+                                category.totalTasks }}
+                            </text>
+                        </g>
+                    </svg>
+                    <div class="chart-legend">
+                        <div class="legend-item">
+                            <span class="legend-color light-gray"></span>
+                            <span>Planifié</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color teal"></span>
+                            <span>Réalisé</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance & Distribution Grid -->
+        <div class="performance-distribution-grid">
+            <!-- Global KPI Performance -->
+            <div
+                class="performance-section"
+                [class.collapsed]="!expandedSections['performance']"
+                *ngIf="globalKpiPerformance"
+            >
+                <div
+                    class="section-header"
+                    (click)="toggleSection('performance')"
+                >
+                    <div class="section-title-wrapper">
+                        <div class="section-icon pink-icon">
+                            <svg
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill="white"
+                            >
+                                <circle
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="white"
+                                    stroke-width="2"
+                                    fill="none"
+                                />
+                                <circle cx="12" cy="12" r="3" fill="white" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3>Performance des KPI Globaux</h3>
+                            <p>
+                                Taux d'atteinte par indicateur (objectif = 100%)
+                            </p>
+                        </div>
+                    </div>
+                    <svg
+                        class="chevron"
+                        [class.rotated]="!expandedSections['performance']"
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                    >
+                        <path
+                            d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"
+                        />
+                    </svg>
+                </div>
+                <div
+                    class="performance-content"
+                    *ngIf="expandedSections['performance']"
+                >
+                    <div class="performance-grid">
+                        <div
+                            class="performance-item"
+                            *ngFor="let kpi of globalKpiPerformance.kpis"
+                        >
+                            <div class="performance-header">
+                                <span
+                                    class="performance-dot"
+                                    [style.background-color]="kpi.categoryColor"
+                                ></span>
+                                <span class="performance-name"
+                                    >{{ kpi.kpiName }}</span
+                                >
+                                <span
+                                    class="performance-badge"
+                                    [ngClass]="kpi.achievementRate >= 100 ? 'success' : 'warning'"
+                                    *ngIf="kpi.achievementRate !== null"
+                                >
+                                    {{ kpi.achievementRate >= 100 ? '↑' : '↓' }}
+                                    {{ kpi.achievementRate.toFixed(1) }}%
+                                </span>
+                                <span
+                                    class="performance-badge neutral"
+                                    *ngIf="kpi.achievementRate === null"
+                                >
+                                    N/A
+                                </span>
+                            </div>
+                            <div class="performance-bar-container">
+                                <div class="performance-bar-bg">
+                                    <div
+                                        class="performance-bar-fill"
+                                        [style.width.%]="kpi.achievementRate || 0"
+                                        [style.background-color]="kpi.categoryColor"
+                                    ></div>
+                                </div>
+                                <div class="performance-labels">
+                                    <span
+                                        >Actuel: {{ kpi.valeurActuelle || 'N/A'
+                                        }} {{ kpi.unit }}</span
+                                    >
+                                    <span
+                                        >Cible: {{ kpi.valeurCible || 'N/A' }}
+                                        {{ kpi.unit }}</span
+                                    >
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI Distribution -->
+            <div
+                class="distribution-section"
+                [class.collapsed]="!expandedSections['distribution']"
+                *ngIf="kpiDistribution"
+            >
+                <div
+                    class="section-header"
+                    (click)="toggleSection('distribution')"
+                >
+                    <div class="section-title-wrapper">
+                        <div class="section-icon burgundy-icon">
+                            <svg
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill="white"
+                            >
+                                <path
+                                    d="M11 2v20c-5.07-.5-9-4.79-9-10s3.93-9.5 9-10zm2.03 0v8.99H22c-.47-4.74-4.24-8.52-8.97-8.99zm0 11.01V22c4.74-.47 8.5-4.25 8.97-8.99h-8.97z"
+                                />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3>Distribution KPI</h3>
+                            <p>Par catégorie</p>
+                        </div>
+                    </div>
+                    <svg
+                        class="chevron"
+                        [class.rotated]="!expandedSections['distribution']"
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                    >
+                        <path
+                            d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"
+                        />
+                    </svg>
+                </div>
+                <div
+                    class="distribution-content"
+                    *ngIf="expandedSections['distribution']"
+                >
+                    <div class="distribution-grid">
+                        <div class="donut-container">
+                            <svg viewBox="0 0 200 200" class="donut-chart">
+                                <circle
+                                    *ngFor="let segment of getDonutSegments(); let i = index"
+                                    cx="100"
+                                    cy="100"
+                                    r="60"
+                                    fill="none"
+                                    [attr.stroke]="segment.color"
+                                    stroke-width="35"
+                                    [attr.stroke-dasharray]="segment.dashArray"
+                                    [attr.stroke-dashoffset]="segment.dashOffset"
+                                    transform="rotate(-90 100 100)"
+                                />
+                                <text
+                                    x="100"
+                                    y="95"
+                                    text-anchor="middle"
+                                    font-size="24"
+                                    font-weight="700"
+                                    fill="#1a1a1a"
+                                >
+                                    {{ kpiDistribution.totalKpis }}
+                                </text>
+                                <text
+                                    x="100"
+                                    y="115"
+                                    text-anchor="middle"
+                                    font-size="12"
+                                    fill="#666"
+                                >
+                                    KPI Total
+                                </text>
+                            </svg>
+                        </div>
+
+                        <div class="distribution-legend">
+                            <div
+                                class="distribution-item"
+                                *ngFor="let category of kpiDistribution.categories"
+                            >
+                                <div class="distribution-row">
+                                    <div class="distribution-label">
+                                        <span
+                                            class="legend-color"
+                                            [style.background-color]="category.categoryColor"
+                                        ></span>
+                                        <span>{{ category.categoryName }}</span>
+                                    </div>
+                                    <span class="distribution-count"
+                                        >{{ category.count }} KPI</span
+                                    >
+                                </div>
+                                <div class="distribution-breakdown">
+                                    <span class="breakdown-item"
+                                        >Global: {{ category.globalKpiCount
+                                        }}</span
+                                    >
+                                    <span class="breakdown-item"
+                                        >Optionnel: {{
+                                        category.optionnelKpiCount }}</span
+                                    >
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance & Distribution Grid -->
+        <div class="performance-distribution-grid">
+            <!-- ... existing content ... -->
+        </div>
+
+
+<!-- NEW: KPI Statistics by Sprint Section -->
+        <div 
+            class="sprint-kpi-section"
+            [class.collapsed]="!expandedSections['sprintKpi']"
+            *ngIf="sprintKpiStatistics && sprintKpiStatistics.length > 0"
+        >
+            <div class="section-header" (click)="toggleSection('sprintKpi')">
+                <div class="section-title-wrapper">
+                    <div class="section-icon blue-gradient-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+                            <path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3>Valeurs KPI par Sprint</h3>
+                        <p>
+                            {{ sprintKpiStatistics.length }} sprint{{ sprintKpiStatistics.length > 1 ? 's' : '' }} 
+                            · {{ getTotalKpiCount() }} KPI au total
+                        </p>
+                    </div>
+                </div>
+                <svg 
+                    class="chevron"
+                    [class.rotated]="!expandedSections['sprintKpi']"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                >
+                    <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
+                </svg>
+            </div>
+
+            <div class="sprint-content" *ngIf="expandedSections['sprintKpi']">
+                <div class="sprint-container">
+                    <div class="sprint-column" *ngFor="let sprint of sprintKpiStatistics; let sprintIndex = index">
+                        <div class="sprint-header">
+                            <div class="sprint-badge" [style.background]="getSprintGradient(sprintIndex)">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+                                    <path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/>
+                                </svg>
+                            </div>
+                            <div class="sprint-title-container">
+                                <h4 class="sprint-title">{{ sprint.sprintNom }}</h4>
+                                <span class="sprint-kpi-count">{{ sprint.kpiStatistics.length }} KPI</span>
+                            </div>
+                        </div>
+
+                        <div class="sprint-kpi-cards">
+                            <div 
+                                class="sprint-kpi-card" 
+                                *ngFor="let kpi of sprint.kpiStatistics; let kpiIndex = index"
+                                [style.animation-delay]="(kpiIndex * 0.05) + 's'"
+                            >
+                                <div class="kpi-card-header">
+                                    <div class="kpi-icon-wrapper" [style.background]="getSprintGradient(sprintIndex)">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="white">
+                                            <path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/>
+                                        </svg>
+                                    </div>
+                                    <div class="kpi-info">
+                                        <span class="kpi-name">{{ kpi.kpiNom }}</span>
+                                        <span class="kpi-id">KPI #{{ kpi.kpiId }}</span>
+                                    </div>
+                                </div>
+                                <div class="kpi-value-section">
+                                    <div class="kpi-value-container">
+                                        <h3 class="kpi-total-value">{{ formatNumber(kpi.totalValeur) }}</h3>
+                                        <span class="kpi-unit">{{ kpi.uniteMesure }}</span>
+                                    </div>
+                                    <div class="kpi-bar-indicator">
+                                        <div 
+                                            class="kpi-bar-fill"
+                                            [style.background]="getSprintGradient(sprintIndex)"
+                                            [style.width.%]="getKpiBarWidth(kpi, sprint)"
+                                        ></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Empty state if no KPIs -->
+                            <div class="empty-kpi-state" *ngIf="sprint.kpiStatistics.length === 0">
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="#cbd5e1">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                                </svg>
+                                <p>Aucun KPI pour ce sprint</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+        <!-- NEW: Activity Type Cards (before Insights Section) -->
+   <!-- Enhanced Activity Type Cards Section (Collapsible) -->
+        <div 
+            class="activity-section"
+            [class.collapsed]="!expandedSections['activityTypes']"
+            *ngIf="activityTypeCounts && getActivityTypeKeys().length > 0"
+        >
+            <div class="section-header" (click)="toggleSection('activityTypes')">
+                <div class="section-title-wrapper">
+                    <div class="section-icon purple-gradient-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+                            <path d="M10 20h4V4h-4v16zm-6 0h4v-8H4v8zM16 4v16h4V4h-4z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3>Nombre d'activités par type</h3>
+                        <p>{{ getActivityTypeKeys().length }} type{{ getActivityTypeKeys().length > 1 ? 's' : '' }} · {{ getTotalActivitiesCount() }} activités au total</p>
+                    </div>
+                </div>
+                <svg 
+                    class="chevron"
+                    [class.rotated]="!expandedSections['activityTypes']"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                >
+                    <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
+                </svg>
+            </div>
+
+            <div class="activity-content" *ngIf="expandedSections['activityTypes']">
+                <div class="activity-grid">
+                    <div 
+                        class="activity-card" 
+                        *ngFor="let key of getActivityTypeKeys(); let i = index"
+                        [style.animation-delay]="(i * 0.05) + 's'"
+                    >
+                        <div class="activity-card-header">
+                            <div class="activity-icon-wrapper" [style.background]="getActivityGradient(i)">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+                                    <path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/>
+                                </svg>
+                            </div>
+                            <div class="activity-info">
+                                <span class="activity-type-name">{{ key | titlecase }}</span>
+                                <span class="activity-label">Type d'activité</span>
+                            </div>
+                        </div>
+                        <div class="activity-value-section">
+                            <div class="activity-count-container">
+                                <h2 class="activity-count">{{ activityTypeCounts[key] }}</h2>
+                                <span class="activity-unit">activités</span>
+                            </div>
+                            <div class="activity-bar-indicator">
+                                <div 
+                                    class="activity-bar-fill"
+                                    [style.background]="getActivityGradient(i)"
+                                    [style.width.%]="getActivityBarWidth(key)"
+                                ></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Insights Section -->
+        <div class="insights-section">
+            <div class="insights-header">
+                <div class="insights-icon">
+                    <svg
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="white"
+                    >
+                        <path
+                            d="M13 2.05v3.03c3.39.49 6 3.39 6 6.92 0 .9-.18 1.75-.48 2.54l2.6 1.53c.56-1.24.88-2.62.88-4.07 0-5.18-3.95-9.45-9-9.95zM12 19c-3.87 0-7-3.13-7-7 0-3.53 2.61-6.43 6-6.92V2.05c-5.06.5-9 4.76-9 9.95 0 5.52 4.47 10 9.99 10 3.31 0 6.24-1.61 8.06-4.09l-2.6-1.53C16.17 17.98 14.21 19 12 19z"
+                        />
+                    </svg>
+                </div>
+                <div>
+                    <h3>Insights et Recommandations</h3>
+                    <p>Analyse intelligente de votre progression</p>
+                </div>
+            </div>
+
+            <div class="insights-grid">
+                <!-- Task completion insight -->
+                <div
+                    class="insight-card"
+                    [ngClass]="getOverallCompletionRate() >= 80 ? 'success' : 'warning'"
+                    *ngIf="taskRealization"
+                >
+                    <div class="insight-icon">
+                        <svg
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                            *ngIf="getOverallCompletionRate() >= 80"
+                        >
+                            <path
+                                d="M13 7h-2v4H7v2h4v4h2v-4h4v-2h-4V7zm-1-5C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"
+                            />
+                        </svg>
+                        <svg
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                            *ngIf="getOverallCompletionRate() < 80"
+                        >
+                            <path
+                                d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"
+                            />
+                        </svg>
+                    </div>
+                    <div class="insight-content">
+                        <h4>
+                            {{ getOverallCompletionRate() >= 80 ? 'Excellente
+                            progression !' : 'Attention au rythme' }}
+                        </h4>
+                        <p>
+                            {{ getOverallCompletionRate() >= 80 ? 'Vous avez
+                            complété ' + taskRealization.totalCompletedTasks + '
+                            tâches sur ' + taskRealization.totalTasks + '.
+                            Continuez sur cette lancée !' : 'Accélérez le rythme
+                            pour atteindre vos objectifs. ' +
+                            (taskRealization.totalTasks -
+                            taskRealization.totalCompletedTasks) + ' tâches
+                            restantes.' }}
+                        </p>
+                        <span class="insight-badge"
+                            >{{ getOverallCompletionRate().toFixed(0) }}%
+                            complété</span
+                        >
+                    </div>
+                </div>
+
+                <!-- KPI performance insight -->
+                <div
+                    class="insight-card"
+                    [ngClass]="globalKpiPerformance && globalKpiPerformance.averageAchievementRate >= 100 ? 'success' : 'warning'"
+                    *ngIf="globalKpiPerformance"
+                >
+                    <div class="insight-icon">
+                        <svg
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                            *ngIf="globalKpiPerformance.averageAchievementRate >= 100"
+                        >
+                            <path
+                                d="M13 7h-2v4H7v2h4v4h2v-4h4v-2h-4V7zm-1-5C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"
+                            />
+                        </svg>
+                        <svg
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                            *ngIf="globalKpiPerformance.averageAchievementRate < 100"
+                        >
+                            <path
+                                d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"
+                            />
+                        </svg>
+                    </div>
+                    <div class="insight-content">
+                        <h4>
+                            {{ globalKpiPerformance.averageAchievementRate >=
+                            100 ? 'Objectifs dépassés !' : 'Travaillez les KPI'
+                            }}
+                        </h4>
+                        <p>
+                            {{ globalKpiPerformance.averageAchievementRate >=
+                            100 ? 'Performance exceptionnelle avec ' +
+                            globalKpiPerformance.averageAchievementRate.toFixed(1)
+                            + '% d\'atteinte moyenne. Excellente gestion !' :
+                            'Taux d\'atteinte actuel: ' +
+                            globalKpiPerformance.averageAchievementRate.toFixed(1)
+                            + '%. Concentrez-vous sur les KPI critiques.' }}
+                        </p>
+                        <span class="insight-badge">
+                            {{ globalKpiPerformance.averageAchievementRate >=
+                            100 ? '+' : '' }}{{
+                            (globalKpiPerformance.averageAchievementRate -
+                            100).toFixed(0) }}%
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </ng-container>
+</div>

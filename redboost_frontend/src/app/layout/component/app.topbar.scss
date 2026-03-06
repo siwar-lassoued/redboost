@@ -1,0 +1,676 @@
+// app.topbar.scss - Enhanced Notification Design
+
+.layout-topbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 70px;
+    background-color: #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2rem;
+    z-index: 1000;
+
+    .layout-topbar-left {
+        .layout-topbar-logo {
+            display: flex;
+            align-items: center;
+
+            img {
+                height: 40px;
+                width: auto;
+                transition: transform 0.2s;
+                
+                &:hover {
+                    transform: scale(1.02);
+                }
+            }
+        }
+    }
+
+    .layout-topbar-right {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+
+        .topbar-icon-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s ease;
+            color: #6c757d;
+
+            &:hover {
+                background-color: #f8f9fa;
+                color: #495057;
+            }
+
+            i {
+                font-size: 1.25rem;
+            }
+
+            &.add-btn {
+                background: linear-gradient(135deg, #DB1E37 0%, #0A4955 100%);
+                color: white;
+                box-shadow: 0 2px 8px rgba(219, 30, 55, 0.3);
+                
+                &:hover {
+                    background: linear-gradient(135deg, #c2182e 0%, #083a44 100%);
+                    transform: scale(1.05);
+                    box-shadow: 0 3px 12px rgba(219, 30, 55, 0.4);
+                }
+            }
+
+            &.profile-btn {
+                padding: 0;
+                overflow: hidden;
+
+                .profile-avatar {
+                    width: 44px;
+                    height: 44px;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    background: linear-gradient(135deg, #DB1E37 0%, #0A4955 100%);
+                    color: white;
+
+                    .profile-picture {
+                        width: 100%;
+                        height: 100%;
+                        object-fit: cover;
+                        border-radius: 50%;
+                    }
+
+                    i {
+                        font-size: 1.5rem;
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ✅ ENHANCED NOTIFICATION PANEL
+.notification-bell-wrapper {
+    position: relative;
+
+    .topbar-icon-btn.notification-btn {
+        position: relative;
+
+        mat-icon {
+            color: #6c757d;
+            transition: all 0.2s;
+            font-size: 24px;
+        }
+
+        mat-icon.has-notifications {
+            color: #DB1E37;
+            animation: ring 2s ease-in-out infinite;
+        }
+
+        &:hover mat-icon {
+            color: #495057;
+        }
+
+        &:hover mat-icon.has-notifications {
+            color: #c2182e;
+        }
+
+        // ✅ Custom Badge for Notification Count
+        .custom-badge {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            min-width: 20px;
+            height: 20px;
+            background: linear-gradient(135deg, #DB1E37 0%, #c2182e 100%);
+            color: white;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 0 6px;
+            box-shadow: 0 2px 8px rgba(219, 30, 55, 0.4);
+            border: 2px solid white;
+            animation: bounceIn 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            z-index: 1;
+        }
+    }
+
+    // Connection Status Indicator
+    .connection-status {
+        position: absolute;
+        bottom: 2px;
+        right: 2px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid white;
+        pointer-events: none;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ef4444;
+            transition: background 0.3s;
+        }
+
+        &.connected .status-dot {
+            background: #22c55e;
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+    }
+
+    // Notification Panel
+    .notification-panel {
+        position: absolute;
+        top: 55px;
+        right: 0;
+        width: 420px;
+        max-height: 550px;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 0 1px rgba(0, 0, 0, 0.1);
+        z-index: 1100;
+        display: flex;
+        flex-direction: column;
+        animation: slideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        overflow: hidden;
+
+        // Panel Header
+        .panel-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            background: linear-gradient(to bottom, #ffffff, #fafafa);
+
+            .header-title {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+
+                h3 {
+                    font-size: 18px;
+                    font-weight: 700;
+                    color: #111827;
+                    margin: 0;
+                    letter-spacing: -0.025em;
+                }
+
+                // ✅ Unread Count Badge
+                .notification-count {
+                    display: inline-flex;
+                    align-items: center;
+                    padding: 4px 10px;
+                    background: linear-gradient(135deg, #DB1E37 0%, #c2182e 100%);
+                    color: white;
+                    font-size: 12px;
+                    font-weight: 600;
+                    border-radius: 12px;
+                    box-shadow: 0 2px 8px rgba(219, 30, 55, 0.3);
+                    animation: bounceIn 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+                }
+            }
+
+            .header-actions {
+                display: flex;
+                gap: 6px;
+
+                .action-btn {
+                    width: 36px;
+                    height: 36px;
+                    border-radius: 8px;
+                    background: transparent;
+                    border: none;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    color: #6b7280;
+
+                    &:hover {
+                        background: #f3f4f6;
+                        color: #374151;
+                        transform: scale(1.05);
+                    }
+
+                    &:active {
+                        transform: scale(0.95);
+                    }
+
+                    mat-icon {
+                        font-size: 20px;
+                        width: 20px;
+                        height: 20px;
+                    }
+                }
+            }
+        }
+
+        // Panel Body
+        .panel-body {
+            flex: 1;
+            overflow-y: auto;
+            max-height: 470px;
+
+            .notification-list {
+                padding: 8px;
+
+                // ✅ Enhanced Notification Item
+                .notification-item {
+                    display: flex;
+                    align-items: flex-start;
+                    gap: 12px;
+                    padding: 14px 16px;
+                    border-radius: 12px;
+                    margin-bottom: 8px;
+                    cursor: pointer;
+                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                    position: relative;
+                    background: #ffffff;
+                    border: 1px solid transparent;
+
+                    &:hover {
+                        background: #f9fafb;
+                        border-color: #e5e7eb;
+                        transform: translateY(-1px);
+                        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+
+                        .notification-actions {
+                            opacity: 1;
+                        }
+                    }
+
+                    // ✅ Unread State
+                    &.unread {
+                        background: linear-gradient(to right, #fef2f2, #ffffff);
+                        border-left: 4px solid #DB1E37;
+                        padding-left: 12px;
+
+                        &:hover {
+                            background: linear-gradient(to right, #fee2e2, #fef2f2);
+                        }
+
+                        .unread-indicator {
+                            position: absolute;
+                            left: 6px;
+                            top: 50%;
+                            transform: translateY(-50%);
+                            width: 8px;
+                            height: 8px;
+                            background: #DB1E37;
+                            border-radius: 50%;
+                            box-shadow: 0 0 0 3px rgba(219, 30, 55, 0.2);
+                            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+                        }
+                    }
+
+                    // Notification Icon
+                    .notification-icon {
+                        width: 42px;
+                        height: 42px;
+                        border-radius: 12px;
+                        background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        flex-shrink: 0;
+                        transition: all 0.3s;
+
+                        &.unread-icon {
+                            background: linear-gradient(135deg, #DB1E37 0%, #c2182e 100%);
+                            box-shadow: 0 4px 12px rgba(219, 30, 55, 0.3);
+                            
+                            mat-icon {
+                                color: white;
+                            }
+                        }
+
+                        mat-icon {
+                            font-size: 22px;
+                            width: 22px;
+                            height: 22px;
+                            color: #6b7280;
+                        }
+                    }
+
+                    // Notification Content
+                    .notification-content {
+                        flex: 1;
+                        min-width: 0;
+
+                        .notification-message {
+                            font-size: 14px;
+                            color: #374151;
+                            margin: 0 0 6px 0;
+                            line-height: 1.5;
+                            word-break: break-word;
+
+                            &.unread-text {
+                                font-weight: 600;
+                                color: #111827;
+                            }
+                        }
+
+                        .notification-time {
+                            display: inline-flex;
+                            align-items: center;
+                            gap: 4px;
+                            font-size: 12px;
+                            color: #9ca3af;
+
+                            .time-icon {
+                                font-size: 14px;
+                                width: 14px;
+                                height: 14px;
+                            }
+                        }
+                    }
+
+                    // ✅ Action Buttons (Eye Icon + Close)
+                    .notification-actions {
+                        display: flex;
+                        gap: 6px;
+                        opacity: 0;
+                        transition: opacity 0.2s;
+                        flex-shrink: 0;
+
+                        .action-icon-btn {
+                            width: 32px;
+                            height: 32px;
+                            border-radius: 8px;
+                            background: transparent;
+                            border: none;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            cursor: pointer;
+                            transition: all 0.2s;
+                            color: #9ca3af;
+
+                            &:hover {
+                                transform: scale(1.1);
+                            }
+
+                            &:active {
+                                transform: scale(0.9);
+                            }
+
+                            mat-icon {
+                                font-size: 18px;
+                                width: 18px;
+                                height: 18px;
+                            }
+
+                            // ✅ Eye Icon (Mark as Read)
+                            &.mark-read-btn {
+                                &:hover {
+                                    background: #dbeafe;
+                                    color: #2563eb;
+                                }
+                            }
+
+                            // Remove Button
+                            &.remove-btn {
+                                &:hover {
+                                    background: #fee2e2;
+                                    color: #ef4444;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Empty State
+            .empty-state {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                padding: 80px 20px;
+                color: #9ca3af;
+
+                .empty-icon-wrapper {
+                    width: 80px;
+                    height: 80px;
+                    border-radius: 50%;
+                    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    margin-bottom: 16px;
+
+                    mat-icon {
+                        font-size: 40px;
+                        width: 40px;
+                        height: 40px;
+                        color: #d1d5db;
+                    }
+                }
+
+                .empty-title {
+                    font-size: 16px;
+                    font-weight: 600;
+                    margin: 0 0 4px 0;
+                    color: #6b7280;
+                }
+
+                .empty-subtitle {
+                    font-size: 14px;
+                    margin: 0;
+                    color: #9ca3af;
+                }
+            }
+        }
+    }
+}
+
+// Profile Menu
+.profile-menu-container {
+    position: relative;
+
+    .profile-dropdown {
+        position: absolute;
+        right: 0;
+        top: 55px;
+        width: 240px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+        z-index: 1100;
+        overflow: hidden;
+        animation: slideDown 0.2s ease-out;
+
+        .dropdown-header {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid #f0f0f0;
+            background: linear-gradient(to bottom, #ffffff, #fafafa);
+
+            h3 {
+                margin: 0 0 8px 0;
+                font-size: 16px;
+                font-weight: 600;
+                color: #212529;
+            }
+
+            .profile-role {
+                display: inline-block;
+                padding: 6px 12px;
+                border-radius: 12px;
+                font-size: 12px;
+                font-weight: 600;
+                background: linear-gradient(135deg, #DB1E37 0%, #0A4955 100%);
+                color: white;
+                box-shadow: 0 2px 8px rgba(219, 30, 55, 0.3);
+            }
+        }
+
+        .dropdown-body {
+            padding: 8px 0;
+
+            .profile-item {
+                display: flex;
+                align-items: center;
+                padding: 12px 20px;
+                color: #495057;
+                text-decoration: none;
+                cursor: pointer;
+                transition: all 0.2s;
+
+                i {
+                    font-size: 18px;
+                    margin-right: 12px;
+                    color: #6c757d;
+                    width: 20px;
+                }
+
+                span {
+                    font-size: 14px;
+                }
+
+                &:hover {
+                    background-color: #f8f9fa;
+                    color: #212529;
+
+                    i {
+                        color: #DB1E37;
+                    }
+                }
+            }
+
+            .separator {
+                height: 1px;
+                background: #e5e7eb;
+                margin: 8px 0;
+            }
+        }
+    }
+}
+
+// ✅ Animations
+@keyframes ring {
+    0%, 100% { 
+        transform: rotate(0deg); 
+    }
+    10%, 30% { 
+        transform: rotate(-12deg); 
+    }
+    20%, 40% { 
+        transform: rotate(12deg); 
+    }
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+@keyframes bounceIn {
+    0% {
+        transform: scale(0.5);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+// Custom Scrollbar
+.custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db #f9fafb;
+
+    &::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: #f9fafb;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: #d1d5db;
+        border-radius: 3px;
+
+        &:hover {
+            background: #9ca3af;
+        }
+    }
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+    .layout-topbar {
+        padding: 0 1rem;
+        height: 60px;
+
+        .topbar-icon-btn {
+            width: 40px;
+            height: 40px;
+
+            i {
+                font-size: 1.1rem;
+            }
+        }
+    }
+
+    .notification-bell-wrapper .notification-panel,
+    .profile-menu-container .profile-dropdown {
+        width: 340px;
+        right: -10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .notification-bell-wrapper .notification-panel {
+        width: calc(100vw - 32px);
+        right: -16px;
+        left: 16px;
+        max-width: none;
+    }
+}

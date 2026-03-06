@@ -1,0 +1,136 @@
+<div class="content-wrapper !pb-0">
+  <div class="flex items-center gap-4">
+        <a [routerLink]="['/programme', programmeId(), 'program-dashboard']" routerLinkActive="active" class="btn-dashboard">
+            <mat-icon class="text-lg">dashboard</mat-icon>
+            Dashboard du Programme
+        </a>
+    </div>
+    <br>
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-xl font-bold text-slate-900 mb-1">Catégories & KPI</h1>
+      <p class="text-slate-500 text-sm">
+        Vue synthétique des indicateurs globaux et configuration des rapports
+      </p>
+    </div>
+    <span class="step-badge">Étape 2/4</span>
+  </div>
+
+  <!-- Programme Card -->
+  <div class="programme-card">
+    <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+
+      <div class="flex items-start gap-4 flex-1 w-full min-w-0">
+        <div class="program-icon-box">
+           <mat-icon class="text-white">track_changes</mat-icon>
+        </div>
+
+        <div class="flex-1 min-w-0 mt-2">
+          <div class="flex items-center flex-wrap gap-2 mb-3">
+            <h2 class="text-2xl text-gray-900 leading-none font-normal">
+              <span *ngIf="programmeLoading()">Chargement...</span>
+              <span *ngIf="!programmeLoading() && programme()">{{ programme()?.nom }}</span>
+            </h2>
+
+            <span class="badge-teal" style="transform: translateY(-8px);">
+              {{ programme()?.typeProgramme || 'Challenge' }}
+            </span>
+
+            <span class="badge-outline-green"
+                  style="transform: translateY(-8px);"
+                  [class.status-retard]="programme()?.statut === 'EN_RETARD'">
+              {{ programme()?.statut === 'EN_COURS' ? 'En cours' :
+                 programme()?.statut === 'EN_RETARD' ? 'En retard' :
+                 programme()?.statut || 'En cours' }}
+            </span>
+          </div>
+
+          <div class="flex items-center gap-4 text-sm text-gray-600">
+            <span class="flex items-center gap-1.5">
+              <mat-icon class="meta-icon">apartment</mat-icon>
+              <span>{{ programme()?.nombreBeneficiaires || 45 }} bénéficiaires</span>
+            </span>
+            <span class="text-gray-300 text-xs">•</span>
+            <span>{{ programme()?.annee || 2025 }}</span>
+            <span class="text-gray-300 text-xs">•</span>
+            <span class="truncate">Responsable: {{ getResponsableName(programme()?.responsableId) || 'Dough Ghanaï' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="kpi-box-container">
+        <div class="kpi-stats-column">
+          <div>
+            <p class="kpi-optional-label">KPI optionnels</p>
+            <div class="kpi-count-wrapper">
+              <span class="kpi-count-number">{{ selectedKpiCount() }}</span>
+              <span class="kpi-count-text">sélectionnés</span>
+            </div>
+          </div>
+          <div class="kpi-total-section">
+            <p class="kpi-total-label">Total</p>
+            <div class="kpi-total-wrapper">
+              <span class="kpi-total-number">{{ totalKpiCount() }}</span>
+              <span class="kpi-total-text">KPI</span>
+            </div>
+          </div>
+        </div>
+        <div class="pink-kpi-badge">
+           <mat-icon class="text-white">military_tech</mat-icon>
+           <span>KPI</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Tabs Section -->
+<div class="top-tabs">
+    <div class="tabs-container">
+        <div class="tab-btn" [class.active]="activeTab() === 'sprints'" (click)="activeTab.set('sprints')">
+            Gestion des Sprints
+        </div>
+        <div class="tab-btn" [class.active]="activeTab() === 'kpi'" (click)="activeTab.set('kpi')">
+            Gestion des KPI
+        </div>
+        <div class="tab-btn" [class.active]="activeTab() === 'rapport'" (click)="activeTab.set('rapport')">
+            Workflow Reporting
+        </div>
+    </div>
+</div>
+
+<!-- Content Wrapper -->
+<div class="content-wrapper">
+
+    <div *ngIf="activeTab() === 'kpi'">
+        <app-kpi-management
+            [programmeId]="programmeId()"
+            (kpiSelectionChanged)="onKpiSelectionChanged()"
+        ></app-kpi-management>
+    </div>
+
+    <div *ngIf="activeTab() === 'sprints'">
+        <!--
+            The three deepLink* inputs are only set when navigating here via
+            ?tab=sprints&sprintId=X&activiteId=Y&tacheId=Z  (from Mes Tâches).
+            SprintManagementComponent watches them via ngOnChanges and handles
+            auto-expand + scroll + highlight internally.
+            During normal use they remain null — no side effects.
+        -->
+        <app-sprint-management
+            [programmeId]="programmeId()"
+            [programmeStartDate]="programmeStartDate()"
+            [programmeEndDate]="programmeEndDate()"
+            [deepLinkSprintId]="deepLinkSprintId()"
+            [deepLinkActiviteId]="deepLinkActiviteId()"
+            [deepLinkTacheId]="deepLinkTacheId()"
+        >
+        </app-sprint-management>
+    </div>
+
+    <div *ngIf="activeTab() === 'rapport'">
+        <app-rapport-redaction [programmeId]="programmeId()"></app-rapport-redaction>
+    </div>
+
+</div>

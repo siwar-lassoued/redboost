@@ -1,0 +1,976 @@
+<!-- KPI Management Template -->
+<div>
+    <h1 class="kpi-section-title">KPI à intégrer dans le rapport</h1>
+    <p class="kpi-section-subtitle">
+        Les KPI globaux sont obligatoires. Sélectionnez les KPI optionnels selon
+        vos besoins.
+    </p>
+
+    <!-- Sous-onglets KPI -->
+    <div class="top-tabs mt-6 mb-6">
+        <div class="tabs-container !border-b !border-slate-200">
+            <div
+                class="tab-btn text-sm"
+                [class.active]="activeKpiSubTab() === 'selection'"
+                (click)="activeKpiSubTab.set('selection')"
+            >
+                Sélection des KPI
+            </div>
+            <div
+                class="tab-btn text-sm"
+                [class.active]="activeKpiSubTab() === 'saisie'"
+                (click)="
+                    activeKpiSubTab.set('saisie');
+                    loadProgrammeKpiValuesOnTabChange()
+                "
+            >
+                Saisie des valeurs KPI
+            </div>
+        </div>
+    </div>
+
+  <!-- ==================== SOUS-ONGLET : SÉLECTION DES KPI ==================== -->
+<div *ngIf="activeKpiSubTab() === 'selection'">
+    <div *ngIf="loading()" class="loading-container">
+        <mat-spinner diameter="40"></mat-spinner>
+    </div>
+
+    <ng-container *ngIf="!loading()">
+        <!-- KPI GLOBAUX (Obligatoires) — single merged section -->
+<div *ngIf="globalKpis.length > 0" class="group-section">
+    <div class="group-header-new">
+        <span class="group-title">KPI Globaux</span>
+        <span class="group-count-new">
+            {{ globalAttachedCount }}/{{ globalTotalCount }}
+        </span>
+    </div>
+
+    <div class="mb-4 px-4 py-3 bg-blue-50 border border-blue-200 rounded-lg">
+        <div class="flex items-start gap-2 text-sm text-blue-800">
+            <mat-icon class="text-blue-600 text-base">info</mat-icon>
+            <p>
+                Les KPIs globaux sont généralement attachés automatiquement lors de la création du programme.
+                Si un KPI global a été créé après ce programme, vous pouvez le sélectionner manuellement ci-dessous.
+            </p>
+        </div>
+    </div>
+
+    <div class="kpi-grid">
+        <div
+            *ngFor="let kpi of globalKpis"
+            class="kpi-item-new"
+            [class.selected]="kpi.isAttached"
+            [class.not-attached]="!kpi.isAttached"
+            (click)="toggleGlobalKpi(kpi)"
+        >
+            <div class="custom-checkbox-new">
+                <mat-icon class="check-icon-new">check</mat-icon>
+            </div>
+            <div class="flex items-center flex-wrap gap-2 ">
+                <span class="kpi-label-new">{{ kpi.nom }}</span>
+                <span
+                    class="badge-global-new"
+                    [class.badge-attached]="kpi.isAttached"
+                    [class.badge-not-attached]="!kpi.isAttached"
+                >Obligatoire</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+        <!-- KPI OPTIONNELS -->
+        <ng-container *ngFor="let group of kpiGroups()">
+            <div *ngIf="!group.isGlobal" class="group-section">
+                <div class="group-header-new">
+                    <span class="group-title">{{ group.title }}</span>
+                    <span class="group-count-new">
+                        {{ group.attachedCount }}/{{ group.totalCount }}
+                    </span>
+                </div>
+                <div class="kpi-grid">
+                    <div
+                        *ngFor="let kpi of group.kpis"
+                        class="kpi-item-new"
+                        [class.selected]="kpi.isAttached"
+                        (click)="toggleKpi(kpi)"
+                    >
+                        <div class="custom-checkbox-new">
+                            <mat-icon class="check-icon-new">check</mat-icon>
+                        </div>
+                        <div class="flex items-center flex-wrap gap-2 flex-1">
+                            <span class="kpi-label-new">{{ kpi.nom }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </ng-container>
+    </ng-container>
+</div>
+
+    <!-- ==================== SOUS-ONGLET : SAISIE DES VALEURS KPI ==================== -->
+    <div *ngIf="activeKpiSubTab() === 'saisie'">
+        <div class="mb-6">
+            <p class="text-sm text-slate-600">
+                Saisissez les valeurs précédentes, actuelles et cibles pour
+                chaque KPI rattaché au programme. Pour les KPI de type
+                Entrepreneur, vous pouvez également attribuer des valeurs
+                individuelles.
+            </p>
+        </div>
+
+        <!-- ==================== KPI FILTERS ==================== -->
+        <div class="kpi-filters-bar">
+            <!-- Typologie des KPI -->
+            <div class="kpi-filter-group">
+                <label class="kpi-filter-label">
+                    <mat-icon class="kpi-filter-label-icon">track_changes</mat-icon>
+                    Typologie des KPI
+                </label>
+                <div class="kpi-filter-select-wrapper">
+                    <mat-icon class="kpi-filter-select-icon">person</mat-icon>
+                    <select
+                        class="kpi-filter-select"
+                        [(ngModel)]="filterTypesuivi"
+                        (change)="onFilterTypeSuiviChange()"
+                    >
+                        <option value="">Tous les types</option>
+                        <option value="ENTREPRENEUR">Suivi entrepreneur</option>
+                        <option value="OPERATIONNEL">Suivi opérationnel</option>
+                    </select>
+                    <mat-icon class="kpi-filter-chevron">expand_more</mat-icon>
+                </div>
+                <span *ngIf="filterTypesuivi === 'ENTREPRENEUR'" class="kpi-filter-hint">
+                    Affiche uniquement les KPI saisis par entrepreneur
+                </span>
+            </div>
+
+            <!-- Entrepreneur Filter (visible only when ENTREPRENEUR type is selected) -->
+            <div class="kpi-filter-group" *ngIf="filterTypesuivi === 'ENTREPRENEUR'">
+                <label class="kpi-filter-label">
+                    <mat-icon class="kpi-filter-label-icon">person</mat-icon>
+                    Entrepreneur
+                </label>
+                <div class="kpi-filter-select-wrapper">
+                    <select
+                        class="kpi-filter-select"
+                        [(ngModel)]="filterEntrepreneurId"
+                        (change)="onFilterEntrepreneurChange()"
+                    >
+                        <option value="">Tous les entrepreneurs</option>
+                        <option
+                            *ngFor="let e of entrepreneurs()"
+                            [value]="e.id"
+                        >
+                            {{ e.fullName }}
+                        </option>
+                    </select>
+                    <mat-icon class="kpi-filter-chevron">expand_more</mat-icon>
+                </div>
+            </div>
+        </div>
+        <!-- ==================== END KPI FILTERS ==================== -->
+
+        <div *ngIf="kpiValuesLoading()" class="loading-container">
+            <mat-spinner diameter="40"></mat-spinner>
+        </div>
+
+        <div *ngIf="kpiValuesError()" class="text-red-600 text-center py-8">
+            {{ kpiValuesError() }}
+        </div>
+
+        <div
+            *ngIf="!kpiValuesLoading() && filteredProgrammeKpiValues().length === 0 && programmeKpiValues().length === 0"
+            class="text-center py-12 text-slate-500"
+        >
+            Aucun KPI rattaché pour le moment. Commencez par sélectionner des
+            KPI dans l'onglet « Sélection des KPI ».
+        </div>
+
+        <div
+            *ngIf="!kpiValuesLoading() && filteredProgrammeKpiValues().length === 0 && programmeKpiValues().length > 0"
+            class="text-center py-12 text-slate-400"
+        >
+            <mat-icon class="text-4xl mb-3 block">filter_list_off</mat-icon>
+            Aucun KPI ne correspond aux filtres sélectionnés.
+        </div>
+
+        <!-- KPI Cards -->
+        <div
+            *ngIf="!kpiValuesLoading() && filteredProgrammeKpiValues().length > 0"
+            class="space-y-4"
+        >
+            <div
+                *ngFor="let kpi of filteredProgrammeKpiValues(); trackBy: trackByKpiId"
+                class="kpi-value-card"
+            >
+                <!-- Card Header - Always Visible -->
+                <div class="kpi-value-header">
+                    <div class="flex items-center gap-3 flex-1">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2">
+                                <h4 class="kpi-value-title">
+                                    {{ kpi.kpiNom }}
+                                </h4>
+                                <span
+                                    class="type-badge-saisie"
+                                    [class.global]="kpi.kpitype === 'GLOBAL'"
+                                    [class.optionnel]="kpi.kpitype === 'OPTIONNEL'"
+                                >
+                                    {{ kpi.kpitype === "GLOBAL" ? "Obligatoire" : "Optionnel" }}
+                                </span>
+                                <!-- Typesuivi badge -->
+                                <span
+                                    class="typesuivi-badge"
+                                    [class.entrepreneur]="kpi.typesuivi === 'ENTREPRENEUR'"
+                                    [class.operationnel]="kpi.typesuivi === 'OPERATIONNEL'"
+                                >
+                                    <mat-icon class="typesuivi-badge-icon">
+                                        {{ kpi.typesuivi === 'ENTREPRENEUR' ? 'person' : 'settings' }}
+                                    </mat-icon>
+                                    {{ kpi.typesuivi === 'ENTREPRENEUR' ? 'Entrepreneur' : 'Opérationnel' }}
+                                </span>
+                            </div>
+                            <div *ngIf="kpi.kpiUnite" class="kpi-value-unit">
+                                Unité : {{ kpi.kpiUnite }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <!-- Objective Section — always shows the resolved objectif -->
+                        <div class="objective-section">
+                            <div class="objective-icon">
+                                <mat-icon>track_changes</mat-icon>
+                            </div>
+                            <span class="objective-label">Objectif :</span>
+                            <span class="objective-value">{{ getKpiObjectif(kpi) || '—' }}</span>
+                        </div>
+
+                        <!-- History Button -->
+                        <button
+                            class="kpi-history-button"
+                            (click)="openKpiHistoryDialog(kpi)"
+                            title="Voir l'historique"
+                        >
+                            <mat-icon>visibility</mat-icon>
+                        </button>
+
+                        <!-- Toggle Button -->
+                        <button
+                            class="kpi-toggle-button"
+                            (click)="toggleKpiCard(kpi.id)"
+                        >
+                            <mat-icon>{{ expandedKpiCards().includes(kpi.id) ? 'visibility_off' : 'visibility' }}</mat-icon>
+                            {{ expandedKpiCards().includes(kpi.id) ? "Masquer" : "Afficher les valeurs" }}
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Expandable Content -->
+                <div
+                    *ngIf="expandedKpiCards().includes(kpi.id)"
+                    class="kpi-value-body"
+                >
+
+                    <!-- ══════════════════════════════════════════════════════════════
+                         PROGRESS SECTION — 3 variants based on typesuivi + typedesaisie
+                         ══════════════════════════════════════════════════════════════ -->
+
+                    <!-- VARIANT A: ENTREPRENEUR + PROGRESSION
+                         Average of each entrepreneur's cumul (valeurPrecedente) vs their valeurCible -->
+                    <ng-container *ngIf="kpi.typesuivi === 'ENTREPRENEUR' && kpi.typedesaisie === 'progression'">
+                        <div class="progress-section">
+                            <div class="progress-header">
+                                <div class="flex flex-col gap-0.5">
+                                    <span class="progress-label">Progression moyenne — tous entrepreneurs</span>
+                                    <span class="progress-sublabel">
+                                        {{ getEntrepreneurProgressionCount(kpi) }} entrepreneur(s) avec des valeurs renseignées
+                                    </span>
+                                </div>
+                                <span
+                                    class="progress-percentage"
+                                    [class.has-progress]="getAverageEntrepreneurProgress(kpi) !== null && getAverageEntrepreneurProgress(kpi)! > 0"
+                                >
+                                    {{ getAverageEntrepreneurProgress(kpi) !== null ? (getAverageEntrepreneurProgress(kpi) + '%') : '0%' }}
+                                </span>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div
+                                    class="progress-bar-fill"
+                                    [style.width.%]="getAverageEntrepreneurProgress(kpi) || 0"
+                                    [class.high]="getAverageEntrepreneurProgress(kpi)! >= 80"
+                                    [class.medium]="getAverageEntrepreneurProgress(kpi)! >= 50 && getAverageEntrepreneurProgress(kpi)! < 80"
+                                    [class.low]="(getAverageEntrepreneurProgress(kpi) || 0) < 50"
+                                ></div>
+                            </div>
+                            <div class="progress-values">
+                                <span class="progress-value-item">
+                                    Cumulé moyen : {{ getAverageEntrepreneurCumul(kpi) ?? '—' }}
+                                    <span *ngIf="kpi.kpiUnite" class="text-slate-400"> {{ kpi.kpiUnite }}</span>
+                                </span>
+                                <span class="progress-value-item progress-value-objectif">
+                                    <mat-icon class="progress-objectif-icon">track_changes</mat-icon>
+                                    Objectif : {{ getKpiObjectif(kpi) || '—' }}
+                                    <span *ngIf="kpi.kpiUnite" class="text-slate-400"> {{ kpi.kpiUnite }}</span>
+                                </span>
+                            </div>
+                            <div class="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
+                                <mat-icon class="text-sm align-middle">info</mat-icon>
+                                La progression est la moyenne des totaux cumulés de chaque entrepreneur rapportés à leur objectif individuel.
+                            </div>
+                        </div>
+                    </ng-container>
+
+                    <!-- VARIANT B: ENTREPRENEUR + NORMAL
+                         Average of each entrepreneur's valeur vs their valeurCible -->
+                    <ng-container *ngIf="kpi.typesuivi === 'ENTREPRENEUR' && kpi.typedesaisie !== 'progression'">
+                        <div class="progress-section">
+                            <div class="progress-header">
+                                <div class="flex flex-col gap-0.5">
+                                    <span class="progress-label">Progression moyenne — tous entrepreneurs</span>
+                                    <span class="progress-sublabel">
+                                        {{ getEntrepreneurProgressionCount(kpi) }} entrepreneur(s) avec des valeurs renseignées
+                                    </span>
+                                </div>
+                                <span
+                                    class="progress-percentage"
+                                    [class.has-progress]="getAverageEntrepreneurProgress(kpi) !== null && getAverageEntrepreneurProgress(kpi)! > 0"
+                                >
+                                    {{ getAverageEntrepreneurProgress(kpi) !== null ? (getAverageEntrepreneurProgress(kpi) + '%') : '0%' }}
+                                </span>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div
+                                    class="progress-bar-fill"
+                                    [style.width.%]="getAverageEntrepreneurProgress(kpi) || 0"
+                                    [class.high]="getAverageEntrepreneurProgress(kpi)! >= 80"
+                                    [class.medium]="getAverageEntrepreneurProgress(kpi)! >= 50 && getAverageEntrepreneurProgress(kpi)! < 80"
+                                    [class.low]="(getAverageEntrepreneurProgress(kpi) || 0) < 50"
+                                ></div>
+                            </div>
+                            <div class="progress-values">
+                                <span class="progress-value-item">
+                                    Valeur moyenne : {{ getAverageEntrepreneurValeur(kpi) ?? '—' }}
+                                    <span *ngIf="kpi.kpiUnite" class="text-slate-400"> {{ kpi.kpiUnite }}</span>
+                                </span>
+                                <span class="progress-value-item progress-value-objectif">
+                                    <mat-icon class="progress-objectif-icon">track_changes</mat-icon>
+                                    Objectif : {{ getKpiObjectif(kpi) || '—' }}
+                                    <span *ngIf="kpi.kpiUnite" class="text-slate-400"> {{ kpi.kpiUnite }}</span>
+                                </span>
+                            </div>
+                        </div>
+                    </ng-container>
+
+                    <!-- VARIANT C: OPERATIONNEL — existing logic unchanged -->
+                    <ng-container *ngIf="kpi.typesuivi !== 'ENTREPRENEUR'">
+                        <div class="progress-section">
+                            <div class="progress-header">
+                                <span class="progress-label">Progression vers l'objectif</span>
+                                <span class="progress-percentage" [class.has-progress]="getProgress(kpi) !== null">
+                                    {{ getProgress(kpi) !== null ? getProgress(kpi) + '%' : '0%' }}
+                                </span>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div
+                                    class="progress-bar-fill"
+                                    [style.width.%]="getProgress(kpi) || 0"
+                                    [class.high]="getProgress(kpi)! >= 80"
+                                    [class.medium]="getProgress(kpi)! >= 50 && getProgress(kpi)! < 80"
+                                    [class.low]="getProgress(kpi)! < 50"
+                                ></div>
+                            </div>
+                            <div class="progress-values">
+                                <span *ngIf="kpi.typedesaisie !== 'progression'" class="progress-value-item">
+                                    Actuel : {{ kpi.valeurActuelle || '—' }}
+                                </span>
+                                <span *ngIf="kpi.typedesaisie === 'progression'" class="progress-value-item">
+                                    Total cumulé : {{ kpi.valeurPrecedente || '—' }}
+                                </span>
+                                <span class="progress-value-item progress-value-objectif">
+                                    <mat-icon class="progress-objectif-icon">track_changes</mat-icon>
+                                    Objectif : {{ kpi.valeurCible || '—' }}
+                                </span>
+                            </div>
+                            <div *ngIf="kpi.typedesaisie === 'progression' && kpi.valeurPrecedente"
+                                 class="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
+                                <mat-icon class="text-sm align-middle">info</mat-icon>
+                                Le total cumulé représente la somme de tous les progrès enregistrés jusqu'à présent.
+                            </div>
+                        </div>
+                    </ng-container>
+
+                    <!-- ==================== END PROGRESS SECTION ==================== -->
+
+                    <!-- Global Values Inputs -->
+                    <div class="values-input-section" *ngIf="kpi.typesuivi !== 'ENTREPRENEUR'">
+                        <!-- OPERATIONNEL + Normal Type: two values -->
+                        <ng-container *ngIf="kpi.typesuivi === 'OPERATIONNEL' && kpi.typedesaisie !== 'progression'">
+                            <div class="value-input-group">
+                                <label class="value-input-label">
+                                    Valeur
+                                    <span class="required-star">*</span>
+                                </label>
+                                <div class="value-input-wrapper">
+                                    <input
+                                        type="number"
+                                        class="value-input required-input"
+                                        [(ngModel)]="kpi.valeurActuelle"
+                                        placeholder="Ex: 150"
+                                    />
+                                    <span class="value-input-unit">{{ kpi.kpiUnite || "TND" }}</span>
+                                </div>
+                            </div>
+
+                            <div class="value-input-group">
+                                <label class="value-input-label">Objectif</label>
+                                <div class="value-input-wrapper">
+                                    <input
+                                        type="number"
+                                        class="value-input"
+                                        [(ngModel)]="kpi.valeurCible"
+                                        (focus)="onFocusCible(kpi, $event)"
+                                        (blur)="onBlurCible(kpi, $event)"
+                                        placeholder="Ex: 200"
+                                    />
+                                    <span class="value-input-unit">{{ kpi.kpiUnite || "TND" }}</span>
+                                </div>
+                            </div>
+                        </ng-container>
+
+                        <!-- OPERATIONNEL + Progression: three values -->
+                        <ng-container *ngIf="kpi.typesuivi !== 'OPERATIONNEL' || kpi.typedesaisie === 'progression'">
+                            <div class="value-input-group">
+                                <label class="value-input-label">Valeur initiale</label>
+                                <div class="value-input-wrapper">
+                                    <input
+                                        type="number"
+                                        class="value-input"
+                                        [(ngModel)]="kpi.valeurPrecedente"
+                                        (focus)="onFocusPrecedente(kpi, $event)"
+                                        (blur)="onBlurPrecedente(kpi, $event)"
+                                        placeholder="Ex: 100"
+                                    />
+                                    <span class="value-input-unit">{{ kpi.kpiUnite || "TND" }}</span>
+                                </div>
+                            </div>
+
+                            <div class="value-input-group">
+                                <label class="value-input-label">
+                                    Valeur actuelle
+                                    <span class="required-star">*</span>
+                                </label>
+                                <div class="value-input-wrapper">
+                                    <input
+                                        type="number"
+                                        class="value-input required-input"
+                                        [(ngModel)]="kpi.valeurActuelle"
+                                        placeholder="Ex: 150"
+                                    />
+                                    <span class="value-input-unit">{{ kpi.kpiUnite || "TND" }}</span>
+                                </div>
+                            </div>
+
+                            <div class="value-input-group">
+                                <label class="value-input-label">Objectif</label>
+                                <div class="value-input-wrapper">
+                                    <input
+                                        type="number"
+                                        class="value-input"
+                                        [(ngModel)]="kpi.valeurCible"
+                                        (focus)="onFocusCible(kpi, $event)"
+                                        (blur)="onBlurCible(kpi, $event)"
+                                        placeholder="Ex: 200"
+                                    />
+                                    <span class="value-input-unit">{{ kpi.kpiUnite || "TND" }}</span>
+                                </div>
+                            </div>
+                        </ng-container>
+                    </div>
+
+                    <!-- Entrepreneur Section -->
+                    <div
+                        *ngIf="kpi.typesuivi === 'ENTREPRENEUR'"
+                        class="entrepreneurs-section"
+                    >
+                        <h5 class="entrepreneurs-title">Entrepreneurs</h5>
+
+                        <!-- Entrepreneur List -->
+                        <div class="entrepreneurs-list">
+                            <ng-container *ngFor="let entrepreneur of kpi.entrepreneurValues; let i = index; trackBy: trackByUserId">
+
+                                <div
+                                    *ngIf="!filterEntrepreneurId || entrepreneur.userId == filterEntrepreneurId"
+                                    class="entrepreneur-item"
+                                    [class.entrepreneur-item-progression]="kpi.typedesaisie === 'progression'"
+                                >
+
+                                    <!-- ══ NORMAL TYPE ════════════════════════════════════════ -->
+                                    <ng-container *ngIf="kpi.typedesaisie !== 'progression'">
+                                        <div class="entrepreneur-normal-row">
+
+                                            <!-- Left: avatar + name -->
+                                            <div class="entrepreneur-info entrepreneur-info-fixed">
+                                                <mat-icon class="entrepreneur-avatar-icon">person</mat-icon>
+                                                <span class="entrepreneur-name">{{ entrepreneur.userName }}</span>
+                                            </div>
+
+                                            <!-- Centre: two inputs side-by-side -->
+                                            <div class="entrepreneur-normal-inputs">
+                                                <div class="entrepreneur-value-group">
+                                                    <label class="entrepreneur-value-label">
+                                                        Valeur actuelle
+                                                        <span class="required-star">*</span>
+                                                    </label>
+                                                    <div class="entrepreneur-value-wrapper">
+                                                        <input
+                                                            type="number"
+                                                            class="entrepreneur-value-input required-input"
+                                                            [(ngModel)]="entrepreneur.valeur"
+                                                            placeholder="Ex: 150"
+                                                        />
+                                                        <span class="entrepreneur-value-unit">{{ kpi.kpiUnite || "TND" }}</span>
+                                                    </div>
+                                                </div>
+
+                                                <div class="entrepreneur-value-group">
+                                                    <label class="entrepreneur-value-label">Objectif</label>
+                                                    <div class="entrepreneur-value-wrapper">
+                                                        <input
+                                                            type="number"
+                                                            class="entrepreneur-value-input"
+                                                            [(ngModel)]="entrepreneur.valeurCible"
+                                                            placeholder="Ex: 200"
+                                                        />
+                                                        <span class="entrepreneur-value-unit">{{ kpi.kpiUnite || "TND" }}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Right: status + save + delete -->
+                                            <div class="entrepreneur-normal-actions">
+                                                <div class="entrepreneur-save-status-inline">
+                                                    <div *ngIf="entrepreneur.saveStatus === 'saving'" class="status-inline saving">
+                                                        <mat-icon class="status-icon spinning">sync</mat-icon>
+                                                        <span>Enregistrement...</span>
+                                                    </div>
+                                                    <div *ngIf="entrepreneur.saveStatus === 'success'" class="status-inline success">
+                                                        <mat-icon class="status-icon">check_circle</mat-icon>
+                                                        <span>Enregistré</span>
+                                                    </div>
+                                                    <div *ngIf="entrepreneur.saveStatus === 'error'" class="status-inline error">
+                                                        <mat-icon class="status-icon">error</mat-icon>
+                                                        <span>Erreur</span>
+                                                    </div>
+                                                </div>
+
+                                                <button
+                                                    class="btn-save-entrepreneur"
+                                                    (click)="saveEntrepreneurRecord(kpi, entrepreneur)"
+                                                    [disabled]="entrepreneur.saveStatus === 'saving'"
+                                                >
+                                                    <mat-icon *ngIf="entrepreneur.saveStatus === 'saving'" class="animate-spin">sync</mat-icon>
+                                                    <mat-icon *ngIf="entrepreneur.saveStatus === 'success'">check_circle</mat-icon>
+                                                    <mat-icon *ngIf="entrepreneur.saveStatus === 'error'">error</mat-icon>
+                                                    <mat-icon *ngIf="entrepreneur.saveStatus === 'idle' || !entrepreneur.saveStatus">save</mat-icon>
+                                                    <span>{{ entrepreneur.saveStatus === 'saving' ? 'Enregistrement...' : 'Enregistrer' }}</span>
+                                                </button>
+
+                                                <button
+                                                    class="entrepreneur-remove-btn"
+                                                    (click)="removeEntrepreneurFromKpi(kpi, i)"
+                                                    title="Retirer"
+                                                >
+                                                    <mat-icon>delete_outline</mat-icon>
+                                                </button>
+                                            </div>
+
+                                        </div>
+                                    </ng-container>
+
+                                    <!-- ══ PROGRESSION TYPE ══════════════════════════════════ -->
+                                    <ng-container *ngIf="kpi.typedesaisie === 'progression'">
+
+                                        <!-- Top row: name | mini progress bar | delete -->
+                                        <div class="entrepreneur-item-top-row">
+                                            <div class="entrepreneur-info">
+                                                <mat-icon class="entrepreneur-avatar-icon">person</mat-icon>
+                                                <span class="entrepreneur-name">{{ entrepreneur.userName }}</span>
+                                            </div>
+
+                                            <!-- Per-entrepreneur mini progress bar (only when cible is set) -->
+                                            <div class="entrepreneur-mini-progress" *ngIf="entrepreneur.valeurCible">
+                                                <div class="entrepreneur-mini-bar-container">
+                                                    <div
+                                                        class="entrepreneur-mini-bar-fill"
+                                                        [style.width.%]="getEntrepreneurProgressPct(entrepreneur) || 0"
+                                                        [class.high]="getEntrepreneurProgressPct(entrepreneur)! >= 80"
+                                                        [class.medium]="getEntrepreneurProgressPct(entrepreneur)! >= 50 && getEntrepreneurProgressPct(entrepreneur)! < 80"
+                                                        [class.low]="(getEntrepreneurProgressPct(entrepreneur) || 0) < 50"
+                                                    ></div>
+                                                </div>
+                                                <span class="entrepreneur-mini-pct">
+                                                    {{ getEntrepreneurProgressPct(entrepreneur) ?? 0 }}%
+                                                </span>
+                                                <span class="entrepreneur-mini-objectif">
+                                                    / {{ entrepreneur.valeurCible }}
+                                                    <span *ngIf="kpi.kpiUnite"> {{ kpi.kpiUnite }}</span>
+                                                </span>
+                                            </div>
+
+                                            <button
+                                                class="entrepreneur-remove-btn"
+                                                (click)="removeEntrepreneurFromKpi(kpi, i)"
+                                                title="Retirer"
+                                            >
+                                                <mat-icon>delete_outline</mat-icon>
+                                            </button>
+                                        </div>
+
+                                        <div class="entrepreneur-values-grid">
+                                            <div class="entrepreneur-value-group">
+                                                <label class="entrepreneur-value-label">
+                                                    Valeur initiale
+                                                    <span *ngIf="!entrepreneur.originalValeurPrecedente" class="required-star">*</span>
+                                                </label>
+                                                <div class="entrepreneur-value-wrapper">
+                                                    <input
+                                                        type="number"
+                                                        class="entrepreneur-value-input"
+                                                        [class.required-input]="!entrepreneur.originalValeurPrecedente"
+                                                        [(ngModel)]="entrepreneur.valeurPrecedente"
+                                                        [readonly]="!!entrepreneur.originalValeurPrecedente"
+                                                        [class.bg-gray-100]="!!entrepreneur.originalValeurPrecedente"
+                                                        [class.cursor-not-allowed]="!!entrepreneur.originalValeurPrecedente"
+                                                        [class.opacity-70]="!!entrepreneur.originalValeurPrecedente"
+                                                        placeholder="Ex: 100"
+                                                    />
+                                                    <span class="entrepreneur-value-unit">{{ kpi.kpiUnite || "TND" }}</span>
+                                                </div>
+                                            </div>
+
+                                            <div class="entrepreneur-value-group">
+                                                <label class="entrepreneur-value-label">
+                                                    Valeur actuelle (Nouveau)
+                                                    <span class="required-star">*</span>
+                                                </label>
+                                                <div class="entrepreneur-value-wrapper">
+                                                    <input
+                                                        type="number"
+                                                        class="entrepreneur-value-input required-input"
+                                                        [(ngModel)]="entrepreneur.valeurActuelle"
+                                                        placeholder="Nouveau progrès"
+                                                    />
+                                                    <span class="entrepreneur-value-unit">{{ kpi.kpiUnite || "TND" }}</span>
+                                                </div>
+                                            </div>
+
+                                            <div class="entrepreneur-value-group">
+                                                <label class="entrepreneur-value-label">Objectif</label>
+                                                <div class="entrepreneur-value-wrapper">
+                                                    <input
+                                                        type="number"
+                                                        class="entrepreneur-value-input"
+                                                        [(ngModel)]="entrepreneur.valeurCible"
+                                                        placeholder="Ex: 200"
+                                                    />
+                                                    <span class="entrepreneur-value-unit">{{ kpi.kpiUnite || "TND" }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="entrepreneur-save-row">
+                                            <div class="entrepreneur-save-status-inline">
+                                                <div *ngIf="entrepreneur.saveStatus === 'saving'" class="status-inline saving">
+                                                    <mat-icon class="status-icon spinning">sync</mat-icon>
+                                                    <span>Enregistrement...</span>
+                                                </div>
+                                                <div *ngIf="entrepreneur.saveStatus === 'success'" class="status-inline success">
+                                                    <mat-icon class="status-icon">check_circle</mat-icon>
+                                                    <span>Enregistré</span>
+                                                </div>
+                                                <div *ngIf="entrepreneur.saveStatus === 'error'" class="status-inline error">
+                                                    <mat-icon class="status-icon">error</mat-icon>
+                                                    <span>Erreur</span>
+                                                </div>
+                                            </div>
+                                            <button
+                                                class="btn-save-entrepreneur"
+                                                (click)="saveEntrepreneurRecord(kpi, entrepreneur)"
+                                                [disabled]="entrepreneur.saveStatus === 'saving'"
+                                            >
+                                                <mat-icon *ngIf="entrepreneur.saveStatus === 'saving'" class="animate-spin">sync</mat-icon>
+                                                <mat-icon *ngIf="entrepreneur.saveStatus === 'success'">check_circle</mat-icon>
+                                                <mat-icon *ngIf="entrepreneur.saveStatus === 'error'">error</mat-icon>
+                                                <mat-icon *ngIf="entrepreneur.saveStatus === 'idle' || !entrepreneur.saveStatus">save</mat-icon>
+                                                <span>{{ entrepreneur.saveStatus === 'saving' ? 'Enregistrement...' : 'Enregistrer' }}</span>
+                                            </button>
+                                        </div>
+
+                                    </ng-container>
+
+                                </div>
+                            </ng-container>
+                        </div>
+
+                        <!-- Add Entrepreneur -->
+                        <div class="add-entrepreneur-wrapper">
+                            <mat-icon class="add-entrepreneur-icon">person_add</mat-icon>
+                            <select
+                                class="add-entrepreneur-select"
+                                [value]="''"
+                                (change)="onEntrepreneurSelected(kpi, $event)"
+                            >
+                                <option value="" disabled selected>
+                                    Ajouter un entrepreneur
+                                </option>
+                                <option
+                                    *ngFor="let entrepreneur of getAvailableEntrepreneurs(kpi)"
+                                    [value]="entrepreneur.id"
+                                >
+                                    {{ entrepreneur.fullName }}
+                                </option>
+                            </select>
+                            <button class="add-entrepreneur-plus-btn" disabled>
+                                <mat-icon>add</mat-icon>
+                            </button>
+                        </div>
+
+                        <!-- Empty State -->
+                        <div
+                            *ngIf="!kpi.entrepreneurValues || kpi.entrepreneurValues.length === 0"
+                            class="entrepreneurs-empty"
+                        >
+                            <mat-icon class="entrepreneurs-empty-icon">person_add_disabled</mat-icon>
+                            <p class="entrepreneurs-empty-text">Aucun entrepreneur assigné</p>
+                        </div>
+                    </div>
+
+                    <!-- Save Status (non-entrepreneur KPIs only) -->
+                    <div class="save-status-section" *ngIf="kpi.typesuivi !== 'ENTREPRENEUR' && kpi.saveStatus !== 'idle'">
+                        <div *ngIf="kpi.saveStatus === 'saving'" class="status-message saving">
+                            <mat-icon class="status-icon spinning">sync</mat-icon>
+                            <span>Enregistrement en cours...</span>
+                        </div>
+                        <div *ngIf="kpi.saveStatus === 'success'" class="status-message success">
+                            <mat-icon class="status-icon">check_circle</mat-icon>
+                            <span>Enregistré avec succès</span>
+                        </div>
+                        <div *ngIf="kpi.saveStatus === 'error'" class="status-message error">
+                            <mat-icon class="status-icon">error</mat-icon>
+                            <span>Erreur lors de l'enregistrement</span>
+                        </div>
+                    </div>
+
+                    <!-- Save Button (non-entrepreneur KPIs only) -->
+                    <div class="save-button-section" *ngIf="kpi.typesuivi !== 'ENTREPRENEUR'">
+                        <button
+                            class="btn-save-kpi"
+                            (click)="saveKpiCard(kpi)"
+                            [disabled]="kpi.saveStatus === 'saving'"
+                        >
+                            <mat-icon *ngIf="kpi.saveStatus === 'saving'" class="animate-spin">sync</mat-icon>
+                            <mat-icon *ngIf="kpi.saveStatus === 'success'">check_circle</mat-icon>
+                            <mat-icon *ngIf="kpi.saveStatus === 'error'">error</mat-icon>
+                            <span *ngIf="kpi.saveStatus === 'saving'">Enregistrement...</span>
+                            <span *ngIf="kpi.saveStatus !== 'saving'">Enregistrer les valeurs</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+<!-- ==================== ACTIVITÉS KPIs SECTION ==================== -->
+<div class="mt-12" *ngIf="!filterTypesuivi || filterTypesuivi === 'OPERATIONNEL'">
+    <h2 class="text-xl font-semibold text-slate-800 mb-4">KPIs des Activités</h2>
+    <p class="text-sm text-slate-600 mb-6">
+        Saisissez les valeurs pour les KPIs rattachés aux activités du programme.
+    </p>
+
+    <div *ngIf="activiteKpisLoading()" class="loading-container">
+        <mat-spinner diameter="40"></mat-spinner>
+    </div>
+
+    <div
+        *ngIf="!activiteKpisLoading() && activiteKpiValues().length === 0"
+        class="text-center py-12 text-slate-500"
+    >
+        Aucune activité avec des KPIs rattachés.
+    </div>
+
+    <div
+        *ngIf="!activiteKpisLoading() && activiteKpiValues().length > 0"
+        class="space-y-4"
+    >
+        <div
+            *ngFor="let activite of activiteKpiValues()"
+            class="kpi-value-card"
+        >
+            <div class="kpi-value-header">
+                <div class="flex items-center gap-3 flex-1">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2">
+                            <mat-icon class="text-purple-600">task</mat-icon>
+                            <h4 class="kpi-value-title">{{ activite.activiteNom }}</h4>
+                        </div>
+                        <div class="text-sm text-slate-500 mt-1">
+                            Sprint: {{ activite.sprintNom }} • {{ activite.kpis.length }} KPI(s)
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button class="kpi-toggle-button" (click)="toggleActiviteCard(activite.activiteId)">
+                        <mat-icon>{{ expandedActiviteCards().includes(activite.activiteId) ? 'visibility_off' : 'visibility' }}</mat-icon>
+                        {{ expandedActiviteCards().includes(activite.activiteId) ? "Masquer" : "Afficher les KPIs" }}
+                    </button>
+                </div>
+            </div>
+
+            <div *ngIf="expandedActiviteCards().includes(activite.activiteId)" class="kpi-value-body">
+                <div class="space-y-4">
+                    <div *ngFor="let kpi of activite.kpis" class="border border-slate-200 rounded-lg p-4 bg-slate-50">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <div class="w-3 h-3 rounded-full" [style.background-color]="kpi.categoryCouleur"></div>
+                                <span class="font-medium text-slate-700">{{ kpi.kpiNom }}</span>
+                                <span class="text-xs px-2 py-1 bg-white border border-slate-300 rounded">{{ kpi.categoryNom }}</span>
+                                <span class="text-xs px-2 py-1 bg-purple-50 border border-purple-200 text-purple-700 rounded font-medium">{{ activite.activiteNom }}</span>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="value-input-group">
+                                <label class="value-input-label">Valeur actuelle <span class="required-star">*</span></label>
+                                <div class="value-input-wrapper">
+                                    <input type="number" class="value-input required-input" [(ngModel)]="kpi.valeur" placeholder="Ex: 150" />
+                                    <span class="value-input-unit">{{ kpi.kpiUnite || "TND" }}</span>
+                                </div>
+                            </div>
+                            <div class="value-input-group">
+                                <label class="value-input-label">Objectif</label>
+                                <div class="value-input-wrapper">
+                                    <input type="number" class="value-input" [(ngModel)]="kpi.valeurCible" placeholder="Ex: 200" />
+                                    <span class="value-input-unit">{{ kpi.kpiUnite || "TND" }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="save-status-section" *ngIf="activite.saveStatus !== 'idle'">
+                    <div *ngIf="activite.saveStatus === 'saving'" class="status-message saving">
+                        <mat-icon class="status-icon spinning">sync</mat-icon><span>Enregistrement en cours...</span>
+                    </div>
+                    <div *ngIf="activite.saveStatus === 'success'" class="status-message success">
+                        <mat-icon class="status-icon">check_circle</mat-icon><span>Enregistré avec succès</span>
+                    </div>
+                    <div *ngIf="activite.saveStatus === 'error'" class="status-message error">
+                        <mat-icon class="status-icon">error</mat-icon><span>Erreur lors de l'enregistrement</span>
+                    </div>
+                </div>
+                <div class="save-button-section">
+                    <button class="btn-save-kpi" (click)="saveActiviteKpiCard(activite)" [disabled]="activite.saveStatus === 'saving'">
+                        <mat-icon *ngIf="activite.saveStatus === 'saving'" class="animate-spin">sync</mat-icon>
+                        <mat-icon *ngIf="activite.saveStatus === 'success'">check_circle</mat-icon>
+                        <mat-icon *ngIf="activite.saveStatus === 'error'">error</mat-icon>
+                        <span *ngIf="activite.saveStatus === 'saving'">Enregistrement...</span>
+                        <span *ngIf="activite.saveStatus !== 'saving'">Enregistrer les valeurs</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== TÂCHES KPIs SECTION ==================== -->
+<div class="mt-12" *ngIf="!filterTypesuivi || filterTypesuivi === 'OPERATIONNEL'">
+    <h2 class="text-xl font-semibold text-slate-800 mb-4">KPIs des Tâches</h2>
+    <p class="text-sm text-slate-600 mb-6">
+        Saisissez les valeurs pour les KPIs rattachés aux tâches du programme.
+    </p>
+
+    <div *ngIf="tacheKpisLoading()" class="loading-container">
+        <mat-spinner diameter="40"></mat-spinner>
+    </div>
+
+    <div *ngIf="!tacheKpisLoading() && tacheKpiValues().length === 0" class="text-center py-12 text-slate-500">
+        Aucune tâche avec des KPIs rattachés.
+    </div>
+
+    <div *ngIf="!tacheKpisLoading() && tacheKpiValues().length > 0" class="space-y-4">
+        <div *ngFor="let tache of tacheKpiValues()" class="kpi-value-card">
+            <div class="kpi-value-header">
+                <div class="flex items-center gap-3 flex-1">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2">
+                            <mat-icon class="text-blue-600">check_box</mat-icon>
+                            <h4 class="kpi-value-title">{{ tache.tacheTitre }}</h4>
+                        </div>
+                        <div class="text-sm text-slate-500 mt-1">
+                            Activité: {{ tache.activiteNom }} • Sprint: {{ tache.sprintNom }} • {{ tache.kpis.length }} KPI(s)
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button class="kpi-toggle-button" (click)="toggleTacheCard(tache.tacheId)">
+                        <mat-icon>{{ expandedTacheCards().includes(tache.tacheId) ? 'visibility_off' : 'visibility' }}</mat-icon>
+                        {{ expandedTacheCards().includes(tache.tacheId) ? "Masquer" : "Afficher les KPIs" }}
+                    </button>
+                </div>
+            </div>
+
+            <div *ngIf="expandedTacheCards().includes(tache.tacheId)" class="kpi-value-body">
+                <div class="space-y-4">
+                    <div *ngFor="let kpi of tache.kpis" class="border border-slate-200 rounded-lg p-4 bg-slate-50">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <div class="w-3 h-3 rounded-full" [style.background-color]="kpi.categoryCouleur"></div>
+                                <span class="font-medium text-slate-700">{{ kpi.kpiNom }}</span>
+                                <span class="text-xs px-2 py-1 bg-white border border-slate-300 rounded">{{ kpi.categoryNom }}</span>
+                                <span class="text-xs px-2 py-1 bg-blue-50 border border-blue-200 text-blue-700 rounded font-medium">{{ tache.activiteNom }}</span>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="value-input-group">
+                                <label class="value-input-label">Valeur actuelle <span class="required-star">*</span></label>
+                                <div class="value-input-wrapper">
+                                    <input type="number" class="value-input required-input" [(ngModel)]="kpi.valeur" placeholder="Ex: 150" />
+                                    <span class="value-input-unit">{{ kpi.kpiUnite || "TND" }}</span>
+                                </div>
+                            </div>
+                            <div class="value-input-group">
+                                <label class="value-input-label">Objectif</label>
+                                <div class="value-input-wrapper">
+                                    <input type="number" class="value-input" [(ngModel)]="kpi.valeurCible" placeholder="Ex: 200" />
+                                    <span class="value-input-unit">{{ kpi.kpiUnite || "TND" }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="save-status-section" *ngIf="tache.saveStatus !== 'idle'">
+                    <div *ngIf="tache.saveStatus === 'saving'" class="status-message saving">
+                        <mat-icon class="status-icon spinning">sync</mat-icon><span>Enregistrement en cours...</span>
+                    </div>
+                    <div *ngIf="tache.saveStatus === 'success'" class="status-message success">
+                        <mat-icon class="status-icon">check_circle</mat-icon><span>Enregistré avec succès</span>
+                    </div>
+                    <div *ngIf="tache.saveStatus === 'error'" class="status-message error">
+                        <mat-icon class="status-icon">error</mat-icon><span>Erreur lors de l'enregistrement</span>
+                    </div>
+                </div>
+                <div class="save-button-section">
+                    <button class="btn-save-kpi" (click)="saveTacheKpiCard(tache)" [disabled]="tache.saveStatus === 'saving'">
+                        <mat-icon *ngIf="tache.saveStatus === 'saving'" class="animate-spin">sync</mat-icon>
+                        <mat-icon *ngIf="tache.saveStatus === 'success'">check_circle</mat-icon>
+                        <mat-icon *ngIf="tache.saveStatus === 'error'">error</mat-icon>
+                        <span *ngIf="tache.saveStatus === 'saving'">Enregistrement...</span>
+                        <span *ngIf="tache.saveStatus !== 'saving'">Enregistrer les valeurs</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+    </div>
+</div>

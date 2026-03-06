@@ -1,0 +1,294 @@
+<!-- data-filter.component.html -->
+<div class="filter-container">
+    <!-- Header -->
+    <div class="filter-header">
+        <mat-icon class="header-icon">filter_alt</mat-icon>
+        <div class="header-text">
+            <h2 class="filter-title">Filtrer les Données</h2>
+            <p class="filter-subtitle">
+                Appliquez des filtres avancés pour trouver les données
+                recherchées
+            </p>
+        </div>
+    </div>
+
+    <!-- Base Selection Section -->
+    <div class="section-card">
+        <div class="section-header">
+            <mat-icon class="section-icon">table_chart</mat-icon>
+            <div class="section-info">
+                <h3 class="section-title">Base de données</h3>
+                <p class="section-description">
+                    Sélectionnez la base de données à filtrer
+                </p>
+            </div>
+        </div>
+
+        <div class="select-wrapper" [class.open]="isTemplateDropdownOpen">
+            <button
+                class="custom-select"
+                (click)="toggleTemplateDropdown()"
+                [class.has-selection]="selectedTemplate"
+            >
+                <div class="select-content">
+                    <mat-icon *ngIf="selectedTemplate" class="template-icon">
+                        {{ getTemplateIcon(selectedTemplate) }}
+                    </mat-icon>
+                    <span class="select-text">
+                        {{ selectedTemplate ? selectedTemplate.name : 'Choisir
+                        une base de données...' }}
+                    </span>
+                </div>
+                <mat-icon class="dropdown-icon"
+                    >{{ isTemplateDropdownOpen ? 'expand_less' : 'expand_more'
+                    }}</mat-icon
+                >
+            </button>
+
+            <div class="dropdown-menu" *ngIf="isTemplateDropdownOpen">
+                <div
+                    *ngFor="let template of templates"
+                    class="dropdown-item"
+                    [class.selected]="selectedTemplate?.id === template.id"
+                    (click)="selectTemplate(template)"
+                >
+                    <mat-icon class="item-icon"
+                        >{{ getTemplateIcon(template) }}</mat-icon
+                    >
+                    <span class="item-text">{{ template.name }}</span>
+                    <mat-icon
+                        *ngIf="selectedTemplate?.id === template.id"
+                        class="check-icon"
+                        >check</mat-icon
+                    >
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Global Search Section -->
+    <div class="section-card" *ngIf="selectedTemplate">
+        <div class="section-header">
+            <mat-icon class="section-icon">search</mat-icon>
+            <div class="section-info">
+                <h3 class="section-title">Recherche globale</h3>
+                <p class="section-description">
+                    Recherchez dans tous les champs de la base de données
+                </p>
+            </div>
+        </div>
+
+        <div class="search-wrapper">
+            <mat-icon class="search-icon">search</mat-icon>
+            <input
+                type="text"
+                class="search-input"
+                placeholder="Rechercher..."
+                [(ngModel)]="globalSearch"
+                (input)="onGlobalSearchChange()"
+            />
+        </div>
+    </div>
+
+    <!-- Advanced Filters Section -->
+    <div class="section-card advanced-filters" *ngIf="selectedTemplate">
+        <div class="section-header">
+            <div class="header-left">
+                <mat-icon class="section-icon">tune</mat-icon>
+                <div class="section-info">
+                    <h3 class="section-title">Filtres avancés</h3>
+                    <p class="section-description">
+                        Ajoutez des critères de filtrage spécifiques
+                    </p>
+                </div>
+            </div>
+            <button class="add-filter-button" (click)="addFilter()">
+                <mat-icon>add</mat-icon>
+                Ajouter un filtre
+            </button>
+        </div>
+
+        <!-- Filter Rows -->
+        <div class="filters-list" *ngIf="filters.length > 0">
+            <div
+                *ngFor="let filter of filters; let i = index"
+                class="filter-row"
+            >
+                <div class="filter-field">
+                    <label class="filter-label">Champ {{ i + 1 }}</label>
+                    <div
+                        class="select-wrapper mini"
+                        [class.open]="filter.isFieldOpen"
+                    >
+                        <button
+                            class="custom-select mini"
+                            (click)="toggleFieldDropdown(i)"
+                            [class.has-selection]="filter.field"
+                        >
+                            <span class="select-text"
+                                >{{ filter.field || 'Sélectionner...' }}</span
+                            >
+                            <mat-icon class="dropdown-icon"
+                                >{{ filter.isFieldOpen ? 'expand_less' :
+                                'expand_more' }}</mat-icon
+                            >
+                        </button>
+                        <div class="dropdown-menu" *ngIf="filter.isFieldOpen">
+                            <div
+                                *ngFor="let column of getTemplateColumns()"
+                                class="dropdown-item"
+                                [class.selected]="filter.field === column"
+                                (click)="selectField(i, column)"
+                            >
+                                <span class="item-text">{{ column }}</span>
+                                <mat-icon
+                                    *ngIf="filter.field === column"
+                                    class="check-icon"
+                                    >check</mat-icon
+                                >
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="filter-operator">
+                    <label class="filter-label">Opérateur</label>
+                    <div
+                        class="select-wrapper mini"
+                        [class.open]="filter.isOperatorOpen"
+                    >
+                        <button
+                            class="custom-select mini"
+                            (click)="toggleOperatorDropdown(i)"
+                            [class.has-selection]="filter.operator"
+                        >
+                            <span class="select-text"
+                                >{{ getOperatorLabel(filter.operator) }}</span
+                            >
+                            <mat-icon class="dropdown-icon"
+                                >{{ filter.isOperatorOpen ? 'expand_less' :
+                                'expand_more' }}</mat-icon
+                            >
+                        </button>
+                        <div
+                            class="dropdown-menu"
+                            *ngIf="filter.isOperatorOpen"
+                        >
+                            <div
+                                *ngFor="let op of operators"
+                                class="dropdown-item"
+                                [class.selected]="filter.operator === op.value"
+                                (click)="selectOperator(i, op.value)"
+                            >
+                                <span class="item-text">{{ op.label }}</span>
+                                <mat-icon
+                                    *ngIf="filter.operator === op.value"
+                                    class="check-icon"
+                                    >check</mat-icon
+                                >
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="filter-value">
+                    <label class="filter-label">Valeur</label>
+                    <input
+                        type="text"
+                        class="filter-input"
+                        placeholder="Entrez une valeur..."
+                        [(ngModel)]="filter.value"
+                        (input)="onFilterChange()"
+                    />
+                </div>
+
+                <button
+                    class="remove-filter-button"
+                    (click)="removeFilter(i)"
+                    matTooltip="Supprimer le filtre"
+                >
+                    <mat-icon>close</mat-icon>
+                </button>
+            </div>
+        </div>
+
+        <!-- Empty State for Filters -->
+        <div class="empty-filters" *ngIf="filters.length === 0">
+            <mat-icon>filter_alt_off</mat-icon>
+            <p>Aucun filtre appliqué</p>
+            <p class="hint">Cliquez sur "Ajouter un filtre" pour commencer</p>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="action-footer" *ngIf="selectedTemplate">
+        <button
+            class="reset-button"
+            (click)="resetFilters()"
+            [disabled]="filters.length === 0 && !globalSearch"
+        >
+            <mat-icon>refresh</mat-icon>
+            Réinitialiser
+        </button>
+        <button class="apply-button" (click)="applyFilters()">
+            <mat-icon>filter_alt</mat-icon>
+            Appliquer les filtres
+        </button>
+    </div>
+</div>
+
+<!-- Results Section - Add this after the action-footer div -->
+<div
+    class="results-section"
+    *ngIf="selectedTemplate && filteredData.length >= 0"
+>
+    <div class="results-header">
+        <div class="results-title-wrapper">
+            <mat-icon class="results-icon">table_chart</mat-icon>
+            <div class="results-info">
+                <h3 class="results-title">Résultats du filtrage</h3>
+                <p class="results-count">
+                    {{ filteredData.length }} résultat(s) trouvé(s)
+                </p>
+            </div>
+        </div>
+        <button
+            class="export-button"
+            *ngIf="filteredData.length > 0"
+            (click)="exportResults()"
+        >
+            <mat-icon>download</mat-icon>
+            Exporter les résultats
+        </button>
+    </div>
+
+    <!-- Results Table -->
+    <div class="results-table-container" *ngIf="filteredData.length > 0">
+        <table class="results-table">
+            <thead>
+                <tr>
+                    <th *ngFor="let column of getTemplateColumns()">
+                        {{ column }}
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let row of filteredData" class="table-row">
+                    <td
+                        *ngFor="let column of getTemplateColumns()"
+                        [attr.data-label]="column"
+                    >
+                        {{ row.data[column] || '-' }}
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-results" *ngIf="filteredData.length === 0">
+        <mat-icon>search_off</mat-icon>
+        <p>Aucun résultat trouvé</p>
+        <p class="hint">Essayez de modifier vos critères de recherche</p>
+    </div>
+</div>

@@ -1,0 +1,75 @@
+# ============================
+# General / IDE
+# ============================
+.idea/
+*.iml
+*.iws
+*.ipr
+*.log
+.DS_Store
+.vscode/
+node_modules/
+.env
+.env.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ============================
+# Spring Boot Backend (redboost_backend)
+# ============================
+redboost_backend/target/
+redboost_backend/bin/
+redboost_backend/.classpath
+redboost_backend/.project
+redboost_backend/.settings/
+redboost_backend/.mvn/wrapper/maven-wrapper.jar
+redboost_backend/src/main/generated/
+redboost_backend/*.log
+redboost_backend/uploads/
+redboost_backend/tokens/
+
+# Maven
+redboost_backend/**/*.war
+redboost_backend/**/*.jar
+
+# Gradle (if you ever switch)
+redboost_backend/build/
+redboost_backend/.gradle/
+redboost_backend/gradlew
+redboost_backend/gradlew.bat
+
+# ============================
+# Angular Frontend (redboost_frontend)
+# ============================
+redboost_frontend/node_modules/
+redboost_frontend/dist/
+redboost_frontend/.angular/
+redboost_frontend/.angular/cache/
+redboost_frontend/tmp/
+redboost_frontend/coverage/
+redboost_frontend/*.tgz
+redboost_frontend/angular-error.log
+redboost_frontend/src/environments/environment.prod.ts
+redboost_frontend/.env*
+
+# ============================
+# Secrets & credentials — NEVER commit these!
+# ============================
+redboost_backend/src/main/resources/application-prod.properties
+redboost_backend/src/main/resources/application-dev.properties
+redboost_backend/src/main/resources/credentials.json
+redboost_backend/src/main/resources/firebase-service-account.json
+redboost_backend/src/main/resources/google-oauth-credentials.json
+redboost_backend/src/main/resources/redboost-credentials.json
+redboost_backend/src/main/resources/tokens/
+
+
+
+# AI SERVICE files TO ignore
+
+ai_service/venv/
+ai_service/.env
+ai_service/__pycache__/
+ai_service/.idea/
+ai_service/**/__pycache__/

@@ -1,0 +1,484 @@
+<div class="section-content">
+    <div class="section-card">
+        <h2 class="section-title">Conclusion et Recommandations</h2>
+        <p class="section-description">Formulez vos recommandations et conclusions</p>
+
+        <div class="recommendations-header">
+            <p>Formulez vos conclusions et recommandations</p>
+            <div class="recommendations-actions">
+                <button class="btn-add" (click)="addRecommendation()">
+                    <i class="icon-plus"></i>
+                    Ajouter une recommandation
+                </button>
+
+                <button class="btn-rapport-per" (click)="openPeriodicReportDialog()">
+                    <i class="far fa-calendar-alt"></i> <span>Rapport périodique</span>
+                </button>
+
+                <!-- ── NEW: Compare button ── -->
+                <button class="btn-compare" (click)="openCompareDialog()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 20V10M12 20V4M6 20v-6"/>
+                    </svg>
+                    <span>Comparer</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="recommendations-list">
+            <div *ngFor="let rec of localRecommendations; let i = index" class="recommendation-card">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h4>Recommandation #{{ i + 1 }}</h4>
+                    <button *ngIf="localRecommendations.length > 1" class="btn-icon" (click)="removeRecommendation(i)"
+                            style="background: none; border: 1px solid #e5e7eb; padding: 0.25rem 0.5rem; cursor: pointer;">
+                        <i class="icon-delete"></i>
+                    </button>
+                </div>
+                <textarea [(ngModel)]="rec.content" (ngModelChange)="onRecommendationChange()"
+                          placeholder="Saisissez votre recommandation..." rows="3">
+                </textarea>
+            </div>
+        </div>
+
+        <div class="section-footer">
+            <button class="btn-primary-outline" (click)="exportToPdf()" [disabled]="isLoading || !rapportId"
+                    [title]="!rapportId ? 'Veuillez d\'abord enregistrer le rapport' : 'Télécharger le rapport en PDF'">
+                <i class="icon-export"></i>
+                {{ isLoading ? 'Export en cours...' : 'Exporter en PDF' }}
+            </button>
+            <button class="btn-secondary" (click)="lockWorkflow()">
+                <i class="icon-lock"></i>
+                Verrouiller le workflow
+            </button>
+            <button class="btn-primary" (click)="finishReport()">
+                Terminer
+                <i class="icon-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     COMPARE DIALOG
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div *ngIf="showCompareDialog" class="modal-overlay" (click)="closeCompareDialog()">
+    <div class="modal-content compare-modal" (click)="$event.stopPropagation()">
+
+        <!-- Header -->
+        <div class="modal-header">
+            <div class="modal-header-icon compare-header-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2">
+                    <path d="M18 20V10M12 20V4M6 20v-6"/>
+                </svg>
+            </div>
+            <div>
+                <h3 class="modal-title">Comparer les programmes</h3>
+                <p class="modal-subtitle">Analyse comparative par IA</p>
+            </div>
+            <button class="btn-close-modal" (click)="closeCompareDialog()">✕</button>
+        </div>
+
+        <!-- ── Upload phase ── -->
+        <div class="modal-body" *ngIf="!showCompareResult">
+
+            <!-- Recent program -->
+            <div class="compare-upload-section">
+                <div class="compare-upload-label">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                    </svg>
+                    <span>Programme récent <span class="required-star">*</span></span>
+                </div>
+                <p class="compare-upload-hint">Fichier du programme que vous souhaitez évaluer</p>
+
+                <div *ngIf="!recentProgramFile" class="dropzone" (click)="recentFileInput.click()"
+                     (dragover)="$event.preventDefault()" (drop)="$event.preventDefault(); onRecentFileChange($event)">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="1.5">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                    <p class="dropzone-text">Cliquez ou glissez un fichier ici</p>
+                    <p class="dropzone-hint">PDF, DOCX, TXT — max 20 Mo</p>
+                    <input #recentFileInput type="file" hidden accept=".pdf,.docx,.txt,.doc"
+                           (change)="onRecentFileChange($event)"/>
+                </div>
+
+                <div *ngIf="recentProgramFile" class="file-chip">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                    </svg>
+                    <span class="file-chip-name">{{ recentProgramFile.name }}</span>
+                    <span class="file-chip-size">{{ formatFileSize(recentProgramFile.size) }}</span>
+                    <button class="file-chip-remove" (click)="removeRecentFile()">✕</button>
+                </div>
+            </div>
+
+            <!-- Reference programs -->
+            <div class="compare-upload-section">
+                <div class="compare-upload-label">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0891B2" stroke-width="2">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    <span>Programmes de référence <span class="required-star">*</span></span>
+                </div>
+                <p class="compare-upload-hint">Un ou plusieurs fichiers servant de base de comparaison</p>
+
+                <div *ngIf="referenceProgramFiles.length === 0" class="dropzone" (click)="refFilesInput.click()"
+                     (dragover)="$event.preventDefault()" (drop)="$event.preventDefault(); onReferenceFilesChange($event)">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="1.5">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                    <p class="dropzone-text">Cliquez ou glissez des fichiers ici</p>
+                    <p class="dropzone-hint">Sélection multiple autorisée</p>
+                    <input #refFilesInput type="file" hidden accept=".pdf,.docx,.txt,.doc" multiple
+                           (change)="onReferenceFilesChange($event)"/>
+                </div>
+
+                <div *ngIf="referenceProgramFiles.length > 0" class="file-chips-list">
+                    <div *ngFor="let f of referenceProgramFiles; let i = index" class="file-chip file-chip--ref">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0891B2" stroke-width="2">
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                        </svg>
+                        <span class="file-chip-name">{{ f.name }}</span>
+                        <span class="file-chip-size">{{ formatFileSize(f.size) }}</span>
+                        <button class="file-chip-remove" (click)="removeReferenceFile(i)">✕</button>
+                    </div>
+                    <button class="btn-add-more" (click)="refFilesInput2.click()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                        Ajouter d'autres fichiers
+                        <input #refFilesInput2 type="file" hidden accept=".pdf,.docx,.txt,.doc" multiple
+                               (change)="onReferenceFilesChange($event)"/>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Error -->
+            <div *ngIf="compareError" class="compare-error">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                {{ compareError }}
+            </div>
+        </div>
+
+        <!-- ── Results phase ── -->
+        <div class="modal-body compare-results-body" *ngIf="showCompareResult && compareResult">
+
+            <!-- Back button -->
+            <button class="btn-back-compare" (click)="showCompareResult = false">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15 18 9 12 15 6"/>
+                </svg>
+                Nouvelle comparaison
+            </button>
+
+            <!-- Result tabs -->
+            <div class="result-tabs">
+                <button class="result-tab" [class.active]="activeResultTab === 'strengths'" (click)="setActiveResultTab('strengths')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                    Points forts
+                </button>
+                <button class="result-tab" [class.active]="activeResultTab === 'weaknesses'" (click)="setActiveResultTab('weaknesses')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    Points faibles
+                </button>
+                <button class="result-tab" [class.active]="activeResultTab === 'comparisons'" (click)="setActiveResultTab('comparisons')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+                    Comparaisons
+                </button>
+                <button class="result-tab" [class.active]="activeResultTab === 'recommendations'" (click)="setActiveResultTab('recommendations')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                    Recommandations
+                </button>
+                <button class="result-tab" [class.active]="activeResultTab === 'feedback'" (click)="setActiveResultTab('feedback')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    Synthèse
+                </button>
+            </div>
+
+            <!-- Tab: Strengths -->
+            <div *ngIf="activeResultTab === 'strengths'" class="result-panel">
+                <div *ngFor="let s of compareResult.strengths; let i = index" class="result-item result-item--strength">
+                    <div class="result-item-badge strength-badge">{{ i + 1 }}</div>
+                    <p>{{ s }}</p>
+                </div>
+                <p *ngIf="compareResult.strengths.length === 0" class="result-empty">Aucun point fort identifié.</p>
+            </div>
+
+            <!-- Tab: Weaknesses -->
+            <div *ngIf="activeResultTab === 'weaknesses'" class="result-panel">
+                <div *ngFor="let w of compareResult.weaknesses; let i = index" class="result-item result-item--weakness">
+                    <div class="result-item-badge weakness-badge">{{ i + 1 }}</div>
+                    <p>{{ w }}</p>
+                </div>
+                <p *ngIf="compareResult.weaknesses.length === 0" class="result-empty">Aucun point faible identifié.</p>
+            </div>
+
+            <!-- Tab: Comparisons -->
+            <div *ngIf="activeResultTab === 'comparisons'" class="result-panel">
+                <div *ngFor="let c of compareResult.comparisons" class="comparison-card">
+                    <div class="comparison-aspect">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2">
+                            <path d="M18 20V10M12 20V4M6 20v-6"/>
+                        </svg>
+                        {{ c.aspect }}
+                    </div>
+                    <div class="comparison-columns">
+                        <div class="comparison-col comparison-col--recent">
+                            <div class="col-label">Programme récent</div>
+                            <p>{{ c.recent }}</p>
+                        </div>
+                        <div class="comparison-divider"></div>
+                        <div class="comparison-col comparison-col--ref">
+                            <div class="col-label">Référence</div>
+                            <p>{{ c.reference }}</p>
+                        </div>
+                    </div>
+                    <div class="comparison-verdict" [ngClass]="getVerdictClass(c.verdict)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/>
+                            <line x1="12" y1="16" x2="12.01" y2="16"/>
+                        </svg>
+                        {{ c.verdict }}
+                    </div>
+                </div>
+                <p *ngIf="compareResult.comparisons.length === 0" class="result-empty">Aucune comparaison disponible.</p>
+            </div>
+
+            <!-- Tab: Recommendations -->
+            <div *ngIf="activeResultTab === 'recommendations'" class="result-panel">
+                <div *ngFor="let r of compareResult.recommendations; let i = index" class="result-item result-item--reco">
+                    <div class="result-item-badge reco-badge">{{ i + 1 }}</div>
+                    <p>{{ r }}</p>
+                </div>
+                <p *ngIf="compareResult.recommendations.length === 0" class="result-empty">Aucune recommandation disponible.</p>
+            </div>
+
+            <!-- Tab: Feedback -->
+            <div *ngIf="activeResultTab === 'feedback'" class="result-panel">
+                <div class="feedback-card">
+                    <div class="feedback-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                        </svg>
+                    </div>
+                    <p>{{ compareResult.custom_feedback }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="modal-footer">
+            <ng-container *ngIf="!showCompareResult">
+                <button class="btn-cancel" (click)="closeCompareDialog()">Annuler</button>
+                <button class="btn-generate btn-compare-submit" (click)="submitCompare()"
+                        [disabled]="!canCompare">
+                    <span *ngIf="!isComparing">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 20V10M12 20V4M6 20v-6"/>
+                        </svg>
+                        Lancer la comparaison
+                    </span>
+                    <span *ngIf="isComparing" class="compare-loading">
+                        <svg class="spin" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                        </svg>
+                        Analyse en cours…
+                    </span>
+                </button>
+            </ng-container>
+            <ng-container *ngIf="showCompareResult">
+                <button class="btn-cancel" (click)="closeCompareDialog()">Fermer</button>
+            </ng-container>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     PERIODIC REPORT DIALOG
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div *ngIf="showExportDialog" class="modal-overlay" (click)="closeExportDialog()">
+    <div class="modal-content periodic-report-modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <div class="modal-header-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="#EC4899">
+                    <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+            </div>
+            <div>
+                <h3 class="modal-title">Ajouter un template de rapport</h3>
+                <p class="modal-subtitle">IPDAYS</p>
+            </div>
+            <button class="btn-close-modal" (click)="closePeriodicReportDialog()">✕</button>
+        </div>
+
+        <div class="modal-body">
+            <p class="modal-description">
+                Sélectionnez un template de rapport pour générer votre rapport périodique
+            </p>
+
+            <div class="period-section" *ngIf="exportMode === 'periodic'">
+                <div class="period-header">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0891B2" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="16" y1="2" x2="16" y2="6"/>
+                        <line x1="8" y1="2" x2="8" y2="6"/>
+                        <line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                    <span>Période du rapport</span>
+                </div>
+                <div class="date-inputs">
+                    <div class="date-field">
+                        <label>Date de début</label>
+                        <input type="date" [(ngModel)]="periodicStartDate" class="date-input" placeholder="jj/mm/aaaa" />
+                    </div>
+                    <div class="date-field">
+                        <label>Date de fin</label>
+                        <input type="date" [(ngModel)]="periodicEndDate" class="date-input" placeholder="jj/mm/aaaa" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="template-section">
+                <h4 class="template-section-title">Choisissez votre template de rapport</h4>
+                <div class="template-options">
+                    <div class="template-card" [class.selected]="selectedTemplate === 'standard'" (click)="selectTemplate('standard')">
+                        <div class="template-icon standard">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                        </div>
+                        <div class="template-info">
+                            <h5>Template Standard</h5>
+                            <p>Rapport synthétique, structure simple, KPI + recommandations</p>
+                            <div class="template-features">
+                                <div class="feature-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg><span>Format synthétique et clair</span></div>
+                                <div class="feature-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg><span>Section KPI avec graphiques</span></div>
+                                <div class="feature-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg><span>Recommandations actionnables</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="template-card" [class.selected]="selectedTemplate === 'expertise'" (click)="selectTemplate('expertise')">
+                        <div class="template-icon expertise">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                        </div>
+                        <div class="template-info">
+                            <h5>Template Expertise France</h5>
+                            <p>Format institutionnel, structuré, conforme aux standards Expertise France</p>
+                            <div class="template-features">
+                                <div class="feature-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg><span>Format institutionnel normé</span></div>
+                                <div class="feature-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg><span>Structure détaillée et complète</span></div>
+                                <div class="feature-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg><span>Conformité standards internationaux</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn-cancel" (click)="closeExportDialog()">Annuler</button>
+            <button class="btn-generate" (click)="generateReport()"
+                    [disabled]="(exportMode === 'periodic' && (!periodicStartDate || !periodicEndDate)) || isLoading">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                {{ isLoading ? 'Génération...' : 'Générer le rapport' }}
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     GOOGLE DRIVE SHARE DIALOG
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div *ngIf="showDriveShareDialog" class="modal-overlay" (click)="closeDriveShareDialog()">
+    <div class="modal-content drive-share-modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <div class="drive-icon-container">
+                <svg width="40" height="40" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg">
+                    <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
+                    <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z" fill="#00ac47"/>
+                    <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335"/>
+                    <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/>
+                    <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/>
+                    <path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/>
+                </svg>
+            </div>
+            <div class="modal-header-content">
+                <h3 class="modal-title">Document partagé sur Google Drive</h3>
+                <p class="modal-subtitle">Le PDF a été téléchargé et le document est disponible sur Google Drive</p>
+            </div>
+            <button class="btn-close-modal" (click)="closeDriveShareDialog()">✕</button>
+        </div>
+
+        <div class="modal-body">
+            <div class="success-banner">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+                <div>
+                    <div class="success-title">Export réussi</div>
+                    <div class="success-message">Le PDF a été téléchargé et le document DOCX est disponible sur Google Drive</div>
+                </div>
+            </div>
+
+            <div class="link-section">
+                <div class="link-header">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2">
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                    </svg>
+                    <span>Lien de partage Google Docs</span>
+                </div>
+                <div class="link-display">
+                    <input type="text" [value]="driveShareLink" readonly class="link-input" id="driveLinkInput" />
+                    <button class="btn-copy-link" (click)="copyDriveLink()" [class.copied]="linkCopied">
+                        <svg *ngIf="!linkCopied" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                        <svg *ngIf="linkCopied" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                        <span>{{ linkCopied ? 'Copié !' : 'Copier' }}</span>
+                    </button>
+                </div>
+                <p class="link-description">Ce lien permet d'accéder au document au format DOCX sur Google Drive.</p>
+            </div>
+
+            <div class="drive-info">
+                <div class="info-item">
+                    <div class="info-label">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+                        <span>Type de fichier</span>
+                    </div>
+                    <div class="info-value">Google Docs (DOCX)</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        <span>Lien de téléchargement</span>
+                    </div>
+                    <a [href]="driveDownloadLink" target="_blank" class="info-value download-link">Télécharger depuis Drive</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn-secondary" (click)="closeDriveShareDialog()">Fermer</button>
+            <button class="btn-primary" (click)="openDriveLink()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                    <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                </svg>
+                Ouvrir dans Google Docs
+            </button>
+        </div>
+    </div>
+</div>

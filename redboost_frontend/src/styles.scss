@@ -1,0 +1,275 @@
+// Correct usage
+@use '@angular/material' as mat;
+/* You can add global styles to this file, and also import other style files */
+@use './tailwind.css';
+@use 'assets/layout/layout.scss';
+@use 'primeicons/primeicons.css';
+@use 'assets/demo/demo.scss';
+
+@use '@fortawesome/fontawesome-free/css/all.min.css';
+
+
+
+// Custom Theming for Angular Material
+// For more information: https://material.angular.io/guide/theming
+html {
+    @include mat.theme(
+        (
+            color: (
+                theme-type: light,
+                primary: mat.$azure-palette,
+                tertiary: mat.$blue-palette
+            ),
+            typography: Roboto,
+            density: 0
+        )
+    );
+}
+
+
+
+.layout-wrapper {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: #f8f9fa;
+
+    .layout-main-container {
+        margin-top: 20px; // Height of topbar
+        margin-left: 100px; // Width of sidebar
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        transition: margin-left 0.3s ease;
+
+        .layout-main {
+            flex: 1;
+            padding: 0.5rem;
+            background-color: #f8f9fa;
+        }
+    }
+
+    .layout-mask {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.4);
+        z-index: 998;
+    }
+
+    // When sidebar is hidden (mobile)
+    &.layout-sidebar-inactive {
+        .layout-sidebar {
+            transform: translateX(-280px);
+        }
+
+        .layout-main-container {
+            margin-left: 0;
+        }
+    }
+
+    // Mobile active state
+    &.layout-mobile-active {
+        .layout-sidebar {
+            transform: translateX(0);
+        }
+
+        .layout-mask {
+            display: block;
+            animation: fadeIn 0.2s;
+        }
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 991px) {
+    .layout-wrapper {
+        .layout-sidebar {
+            transform: translateX(-280px);
+            transition: transform 0.3s ease;
+        }
+
+        .layout-main-container {
+            margin-left: 0 !important;
+        }
+
+        &.layout-mobile-active {
+            .layout-sidebar {
+                transform: translateX(0);
+            }
+        }
+    }
+}
+
+@media (max-width: 768px) {
+    .layout-wrapper {
+        .layout-main-container {
+            .layout-main {
+                padding: 1.5rem;
+            }
+        }
+    }
+}
+
+@media (max-width: 480px) {
+    .layout-wrapper {
+        .layout-main-container {
+            .layout-main {
+                padding: 1rem;
+            }
+        }
+    }
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Footer positioning */
+.layout-footer {
+    margin-left: 250px;
+    transition: margin-left 0.3s ease;
+    background-color: #ffffff;
+    border-top: 1px solid #f0f0f0;
+    padding: 1.5rem 2rem;
+
+    @media (max-width: 991px) {
+        margin-left: 0 !important;
+    }
+}
+/* Global Styles */
+html,
+body {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    font-family: Roboto, 'Helvetica Neue', sans-serif;
+}
+
+body {
+    font-family: var(--font-family);
+}
+
+.p-component {
+    font-family: var(--font-family);
+}
+
+/* Styles for SpeedDial */
+.p-speeddial {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+}
+
+.p-speeddial-button.p-button.p-button-info {
+    width: 4rem;
+    height: 4rem;
+}
+
+.p-speeddial-action {
+    width: 3rem;
+    height: 3rem;
+}
+/* Add to your global styles.scss or styles.css */
+.styled-dialog .mat-mdc-dialog-container {
+    padding: 0;
+}
+
+.styled-dialog .mat-mdc-dialog-surface {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+/* For older versions of Angular Material */
+.styled-dialog .mat-dialog-container {
+    padding: 0;
+    border-radius: 8px;
+    overflow: hidden;
+}
+.rounded-dialog .mat-mdc-dialog-container {
+  border-radius: 20px !important;
+  overflow: hidden;
+}
+/* Add these styles to your global styles.scss or styles.css file */
+
+/* Reset body margins */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background-color: #f8f9fa;
+}
+
+/* Ensure router outlet content fits properly */
+router-outlet {
+    display: none;
+}
+
+/* Remove any default margins from main content */
+.layout-main > * {
+    margin: 0;
+}
+
+/* Ensure cards and content have proper spacing */
+.layout-main {
+    & > :first-child {
+        margin-top: 0 !important;
+    }
+}
+
+/* Fix for PrimeNG components spacing */
+.p-component {
+    box-sizing: border-box;
+}
+
+/* Optional: Add some breathing room for page content */
+.page-content,
+.content-wrapper {
+    max-width: 100%;
+    width: 100%;
+}
+
+/* Block body scroll when mobile menu is open */
+body.blocked-scroll {
+    overflow: hidden;
+}
+
+/* Ensure footer stays at bottom */
+.layout-footer {
+    margin-top: auto;
+    background-color: #ffffff;
+    border-top: 1px solid #f0f0f0;
+    padding: 1rem 2rem;
+    color: #6c757d;
+    font-size: 0.85rem;
+}
+
+
+/* Mobile adjustments */
+@media (max-width: 991px) {
+    .layout-main {
+        padding: 1rem !important;
+    }
+    
+    .layout-footer {
+        padding: 1rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .layout-main {
+        padding: 0.75rem !important;
+    }
+}
+

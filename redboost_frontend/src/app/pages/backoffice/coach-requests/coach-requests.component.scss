@@ -1,0 +1,51 @@
+.coach-requests-container {
+  padding: 20px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+}
+
+td button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  margin-right: 10px;
+}
+
+button i.fa-check-circle {
+  color: green;
+}
+
+button i.fa-times-circle {
+  color: red;
+}
+
+button:hover i {
+  opacity: 0.7;
+}
+
+p {
+  text-align: center;
+  color: #666;
+}
+
+.error-message {
+  color: red;
+  text-align: center;
+  margin-bottom: 10px;
+}

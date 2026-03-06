@@ -1,0 +1,443 @@
+.dialog-container {
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+  height: auto;
+  width: 100%;
+  max-width: 1000px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  position: relative;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 24px;
+  border-bottom: 1px solid #e5e7eb;
+  flex-shrink: 0;
+
+  h2 {
+    margin: 0 0 4px 0;
+    font-size: 20px;
+    font-weight: 400;
+    color: #1a1a1a;
+  }
+
+  p {
+    margin: 0;
+    color: #666;
+    font-size: 14px;
+    font-weight: 400;
+  }
+
+  .close-btn {
+    color: #666;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    
+    &:hover {
+      background: #f5f5f5;
+    }
+    
+    .mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+  }
+}
+
+.dialog-content {
+  padding: 24px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+  max-height: calc(90vh - 200px);
+  
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+    
+    &:hover {
+      background: #a8a8a8;
+    }
+  }
+}
+
+.form-field {
+  margin-bottom: 20px;
+
+  label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #1a1a1a;
+  }
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+  
+  .form-field {
+    margin-bottom: 0;
+  }
+}
+
+.input-field,
+.select-field,
+.textarea-field {
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  background: #f5f5f5;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  color: #1a1a1a;
+  transition: background 0.2s;
+  box-sizing: border-box;
+
+  &::placeholder {
+    color: #999;
+  }
+
+  &:hover {
+    background: #efefef;
+  }
+
+  &:focus {
+    outline: none;
+    background: #fff;
+    box-shadow: 0 0 0 2px #e91e63;
+  }
+}
+
+.select-field {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+  cursor: pointer;
+}
+
+.textarea-field {
+  resize: vertical;
+  min-height: 80px;
+  line-height: 1.5;
+}
+
+.required {
+  color: #e91e63;
+}
+
+.hint-text {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #666;
+  line-height: 1.4;
+}
+
+.error-message {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #e91e63;
+}
+
+// Custom type input styling
+.custom-type-input {
+  background: #fff3e0 !important;
+  border: 2px solid #ff9800 !important;
+  
+  &:hover {
+    background: #ffe0b2 !important;
+  }
+  
+  &:focus {
+    background: #fff !important;
+    box-shadow: 0 0 0 2px #ff9800 !important;
+  }
+}
+
+// Datepicker styling
+.date-field {
+  .input-wrapper {
+    position: relative;
+  }
+  
+  .datepicker-toggle {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    
+    ::ng-deep button {
+      width: 32px;
+      height: 32px;
+      padding: 0;
+    }
+  }
+  
+  input[matDatepicker] {
+    padding-right: 44px;
+  }
+}
+
+// Radio group styling
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.radio-option {
+  background: #f5f5f5;
+  border-radius: 8px;
+  padding: 16px;
+  transition: all 0.2s;
+  border: 2px solid transparent;
+
+  &:hover {
+    background: #efefef;
+  }
+
+  &.mat-mdc-radio-button.mat-accent.mat-mdc-radio-checked {
+    background: #fce4ec;
+    border-color: #e91e63;
+  }
+
+  ::ng-deep .mdc-radio {
+    padding: 0;
+    margin-right: 12px;
+  }
+
+  ::ng-deep .mdc-form-field {
+    width: 100%;
+  }
+
+  ::ng-deep .mdc-label {
+    width: 100%;
+  }
+}
+
+.radio-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+
+  .mode-icon {
+    color: #666;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+
+  div {
+    flex: 1;
+    
+    strong {
+      display: block;
+      font-size: 14px;
+      color: #1a1a1a;
+      margin-bottom: 4px;
+    }
+
+    .mode-description {
+      margin: 0;
+      font-size: 12px;
+      color: #666;
+      line-height: 1.4;
+    }
+  }
+}
+
+.mat-mdc-radio-button.mat-accent.mat-mdc-radio-checked {
+  .mode-icon {
+    color: #e91e63;
+  }
+  
+  .radio-label div strong {
+    color: #e91e63;
+  }
+}
+
+// Participants section
+.participants-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.participant-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+
+  .participant-input {
+    flex: 1;
+  }
+
+  .remove-btn {
+    flex-shrink: 0;
+    color: #666;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    
+    &:hover {
+      background: #f5f5f5;
+      color: #e91e63;
+    }
+    
+    .mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+  }
+}
+
+.add-participant-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  color: #666;
+  font-size: 14px;
+  font-weight: 400;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.2s;
+  margin-left: -12px;
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+
+  &:hover:not(:disabled) {
+    background: #f5f5f5;
+  }
+  
+  &:disabled {
+    color: #ccc;
+    cursor: not-allowed;
+  }
+}
+
+// Dialog actions
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid #e5e7eb;
+  background: white;
+  flex-shrink: 0;
+
+  button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .cancel-btn {
+    background: transparent;
+    color: #666;
+
+    &:hover {
+      background: #f5f5f5;
+    }
+  }
+
+  .submit-btn {
+    background: #e91e63;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    &:hover:not(:disabled) {
+      background: #c2185b;
+    }
+
+    &:disabled {
+      background: #e0e0e0;
+      color: #999;
+      cursor: not-allowed;
+    }
+    
+    .button-spinner {
+      margin-right: 4px;
+    }
+  }
+}
+
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.95);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  border-radius: 8px;
+  
+  p {
+    margin-top: 16px;
+    color: #e91e63;
+    font-weight: 500;
+  }
+}
+
+// Material overrides
+::ng-deep {
+  .dialog-container {
+    .mat-mdc-icon-button {
+      --mdc-icon-button-state-layer-size: 32px;
+      padding: 0;
+    }
+    
+    .mat-datepicker-toggle button {
+      width: 32px;
+      height: 32px;
+    }
+    
+    .mat-icon {
+      width: 20px;
+      height: 20px;
+      font-size: 20px;
+    }
+  }
+}

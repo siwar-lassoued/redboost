@@ -1,0 +1,476 @@
+<div class="sprint-view-wrapper">
+    <div class="flex justify-between items-start mb-8">
+        <div>
+            <h1 class="page-title">Gestion des Sprints</h1>
+            <p class="page-subtitle">Créez et gérez les sprints du programme</p>
+        </div>
+        <button
+            class="bg-[#ea5073] hover:bg-[#d63d5f] text-white px-6 py-2.5 rounded-lg font-semibold shadow-sm flex items-center gap-2 transition-colors cursor-pointer border-0"
+            (click)="openSprintModal()"
+        >
+            <span class="icon-plus"></span>
+            Nouveau Sprint
+        </button>
+    </div>
+
+    <!-- Enhanced Filter Bar -->
+  <div class="filter-bar-enhanced">
+    <div class="filter-grid-main">
+        <div class="search-input-wrapper">
+            <span class="search-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            </span>
+            <input
+                type="text"
+                placeholder="Rechercher un sprint..."
+                class="custom-input"
+                [(ngModel)]="searchQuery"
+                (ngModelChange)="searchQuery.set($event)"
+            />
+        </div>
+
+        <select class="custom-select" [(ngModel)]="selectedStatus" (ngModelChange)="selectedStatus.set($event)">
+            <option value="all">Tous les statuts</option>
+            <option value="en_cours">En cours</option>
+            <option value="en_retard">En retard</option>
+            <option value="termine">Terminé</option>
+            <option value="non_demarre">Non démarrée</option>
+        </select>
+
+        <select class="custom-select" [(ngModel)]="selectedPeriod" (ngModelChange)="selectedPeriod.set($event)">
+            <option value="all">Toutes les périodes</option>
+            <option value="cette_semaine">Cette semaine</option>
+            <option value="ce_mois">Ce mois</option>
+            <option value="ce_trimestre">Ce trimestre</option>
+        </select>
+
+        <select class="custom-select" [(ngModel)]="selectedProgramme" (ngModelChange)="selectedProgramme.set($event)">
+            <option value="all">Tous les programmes</option>
+            <option *ngFor="let prog of programmes()" [value]="prog.id">{{ prog.nom }}</option>
+        </select>
+    </div>
+
+    <div class="filter-row-full">
+        <div class="search-input-wrapper">
+            <span class="search-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            </span>
+            <select 
+                class="custom-select" 
+                style="padding-left: 2.25rem;"
+                [(ngModel)]="selectedMember" 
+                (ngModelChange)="selectedMember.set($event)"
+            >
+                <option value="all">Tous les membres de l'équipe</option>
+                <option *ngFor="let member of getTeamMembers()" [value]="member.id">{{ member.name }}</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<div *ngIf="!loading() && filteredSprints().length === 0 && sprints().length === 0" class="empty-state">
+        <span style="font-size: 4rem;">📋</span>
+        <p class="text-slate-500 mt-4">Aucun sprint créé pour ce programme.</p>
+        <button
+            class="mt-4 px-6 py-2.5 bg-[#ea5073] text-white rounded-lg font-semibold hover:bg-[#d63d5f] transition-colors border-0 cursor-pointer"
+            (click)="openSprintModal()"
+        >
+            Créer le premier sprint
+        </button>
+    </div>
+
+<div *ngIf="!loading() && filteredSprints().length === 0 && sprints().length > 0" class="empty-state">
+        <span style="font-size: 4rem;">🔍</span>
+        <p class="text-slate-500 mt-4">Aucun sprint ne correspond à vos filtres.</p>
+        <button
+            class="mt-4 px-6 py-2.5 bg-slate-200 text-slate-700 rounded-lg font-semibold hover:bg-slate-300 transition-colors border-0 cursor-pointer"
+            (click)="searchQuery.set(''); selectedStatus.set('all'); selectedPeriod.set('all'); selectedProgramme.set('all'); selectedMember.set('all')"
+        >
+            Réinitialiser les filtres
+        </button>
+    </div>
+
+    <div *ngIf="!loading() && filteredSprints().length > 0" class="space-y-4">
+        <div *ngFor="let sprint of filteredSprints()" class="card-container">
+            <div class="overflow-hidden border-2 border-[#ea5073]/30 shadow-lg rounded-xl bg-white">
+                <div class="p-6 bg-gradient-to-r from-[#ea5073]/5 to-transparent">
+
+                    <!-- ── Sprint header: text left, actions right, never overflow ── -->
+                    <div class="flex items-start gap-3 mb-4" style="min-width:0;">
+
+                        <!-- Text content: takes all available space, truncates -->
+                        <div class="content-area">
+                            <!-- Name row + badges -->
+                            <div class="flex items-center gap-2 mb-1 flex-wrap" style="min-width:0;">
+                                <h3 class="text-xl font-bold text-[#ea5073] m-0 sprint-name" [title]="sprint.nom">
+                                    {{ sprint.nom }}
+                                </h3>
+                                <span class="badge rounded-full" [ngClass]="getSprintStatusBadge(sprint)">
+                                    {{ getStatusLabel(sprint) }}
+                                </span>
+                                <span class="badge rounded-full font-bold text-white bg-[#E44D62] text-xs">
+                                    {{ sprint.programmeNom }}
+                                </span>
+                                <span *ngIf="isLate(sprint)" class="badge text-red-600 border-red-300 bg-red-50 rounded-full">
+                                    <span class="icon-clock mr-1"></span> +{{ getDelayDays(sprint) }} jours de retard
+                                </span>
+                            </div>
+                            <!-- Description: clamp to 2 lines -->
+                            <p class="text-sm text-gray-600 m-0 description-clamp" [title]="sprint.description">
+                                {{ sprint.description }}
+                            </p>
+                            <div class="flex items-center gap-4 mt-3 text-sm text-gray-600 flex-wrap">
+                                <span class="flex items-center gap-1">
+                                    <span class="icon-calendar"></span>
+                                    {{ sprint.dateDebut | date:'dd/MM/yyyy' }} - {{ (sprint.dateFin || sprint.dateLimite) | date:'dd/MM/yyyy' }}
+                                </span>
+                                <span class="flex items-center gap-1">
+                                    <span class="icon-activity"></span>
+                                    {{ sprint.nombreActivites || sprint.activites?.length || 0 }} activité(s)
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Action buttons: fixed width, never shrink -->
+                        <div class="actions-group">
+                            <button class="btn btn-outline btn-sm rounded-lg" (click)="toggleSprint(sprint.id)">
+                                <span *ngIf="expandedSprints().includes(sprint.id)" class="icon-chevron-up"></span>
+                                <span *ngIf="!expandedSprints().includes(sprint.id)" class="icon-chevron-down"></span>
+                                <span *ngIf="expandedSprints().includes(sprint.id)">Réduire</span>
+                                <span *ngIf="!expandedSprints().includes(sprint.id)">Développer</span>
+                            </button>
+                            <button class="action-icon-btn edit" (click)="$event.stopPropagation(); openSprintModal(sprint)" title="Modifier">
+                                <mat-icon>edit</mat-icon>
+                            </button>
+                            <button class="action-icon-btn delete" (click)="$event.stopPropagation(); deleteSprint(sprint.id)" title="Supprimer">
+                                <mat-icon>delete</mat-icon>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-gray-600">Progression</span>
+                            <span class="text-gray-900 font-semibold">{{ getSprintProgress(sprint) }}%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-[#ea5073] h-2 rounded-full transition-all duration-300" [style.width.%]="getSprintProgress(sprint)"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div *ngIf="expandedSprints().includes(sprint.id)" class="border-t bg-gray-50 p-6 space-y-8">
+                    
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <h4 class="text-sm font-semibold text-gray-700 m-0">Documents Justificatifs du Sprint</h4>
+                            <button class="btn btn-sm btn-outline rounded-lg" (click)="openDocumentUploadDialog(sprint.id)">
+                                <span class="icon-paperclip"></span> Ajouter un document
+                            </button>
+                        </div>
+                        
+                        <div *ngIf="sprint.documents && sprint.documents.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+                            <div *ngFor="let doc of sprint.documents" class="flex items-center gap-3 p-3 bg-white rounded-lg border border-slate-200 hover:border-slate-300 transition-all">
+                                <div class="w-10 h-10 bg-slate-50 rounded-lg flex items-center justify-center border border-slate-200" style="flex-shrink:0;">
+                                    <span style="font-size: 1.25rem;">📄</span>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <a [href]="'https://redboost.tn' + doc.cheminFichier" target="_blank" class="text-sm font-medium text-slate-900 hover:text-[#ea5073] truncate block transition-colors no-underline">
+                                        {{ doc.nom }}
+                                    </a>
+                                    <div class="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5">
+                                        <span>{{ formatFileSize(doc.tailleFichier) }}</span>
+                                        <span>•</span>
+                                        <span>{{ formatDate(doc.dateUpload) }}</span>
+                                    </div>
+                                </div>
+                                <a [href]="'https://redboost.tn' + doc.cheminFichier" download class="action-icon-btn-small download" title="Télécharger">
+                                    <mat-icon>download</mat-icon>
+                                </a>
+                                <button class="action-icon-btn-small delete" (click)="deleteDocument(doc.id)" title="Supprimer">
+                                    <mat-icon>delete</mat-icon>
+                                </button>
+                            </div>
+                        </div>
+                        <div *ngIf="!sprint.documents || sprint.documents.length === 0" class="text-center py-4 text-gray-400 text-sm italic border border-dashed rounded-lg mt-2">
+                            Aucun document
+                        </div>
+                    </div>
+
+                    <div class="border-l-4 border-[#ea5073]/30 pl-8 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h4 class="text-lg font-semibold text-[#2a7b8c] m-0">Activités du sprint</h4>
+                            <button class="btn btn-sm bg-[#2a7b8c] hover:bg-[#2a5f6f] text-white rounded-lg border-0" (click)="openActivityModal(sprint.id)">
+                                <span class="icon-plus"></span> Ajouter une activité
+                            </button>
+                        </div>
+
+                        <div class="space-y-3">
+                            <div *ngFor="let act of sprint.activites" class="activity-container">
+                                <div class="overflow-hidden border-l-4 border-l-[#2a7b8c]/60 shadow-md bg-gradient-to-r from-[#2a7b8c]/5 to-transparent rounded-xl bg-white">
+                                    <div class="p-4">
+
+                                        <!-- ── Activity header: text left, actions right ── -->
+                                        <div class="flex items-start gap-2 mb-3" style="min-width:0;">
+
+                                            <!-- Activity text content -->
+                                            <div class="content-area">
+                                                <div class="flex items-center gap-2 mb-1 flex-wrap" style="min-width:0;">
+                                                    <h5 class="text-base font-semibold text-[#2a7b8c] m-0 activity-name" [title]="act.nom">
+                                                        {{ act.nom }}
+                                                    </h5>
+                                                    <span class="badge rounded-full" [ngClass]="getActivityStatusBadge(act)">
+                                                        {{ act.status === 'TERMINEE' ? 'Terminée' : isActivityLate(act) ? 'Retard' : 'En cours' }}
+                                                    </span>
+                                                    <span *ngIf="act.responsableId" class="badge bg-[#2a7b8c]/10 text-[#2a7b8c] border-[#2a7b8c]/30 text-xs rounded-full">
+                                                        <span class="icon-users mr-1"></span> {{ getResponsableName(act.responsableId) }}
+                                                    </span>
+                                                </div>
+                                                <!-- Activity description: clamp to 2 lines -->
+                                                <p class="text-xs text-gray-600 mb-2 m-0 description-clamp" [title]="act.description">
+                                                    {{ act.description }}
+                                                </p>
+
+                                                <div *ngIf="act.kpis && act.kpis.length > 0" class="space-y-1.5 mb-2">
+                                                    <div *ngFor="let category of groupKpisByCategory(act.kpis)">
+                                                        <span class="badge border border-[#2a7b8c] text-[#2a7b8c] text-[10px] px-1.5 py-0.5 rounded-full" style="border-width: 1px;">
+                                                            {{ category.name }}
+                                                        </span>
+                                                        <div class="flex flex-wrap gap-1 ml-4 mt-0.5">
+                                                            <div *ngFor="let kpi of category.kpis">
+                                                                <span class="badge bg-[#ea5073]/10 text-[#ea5073] border-[#ea5073]/30 text-xs rounded-full">
+                                                                    {{ kpi.nom }}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="flex items-center gap-3 text-xs text-gray-600 flex-wrap">
+                                                    <span class="flex items-center gap-1">
+                                                        <span class="icon-calendar"></span>
+                                                        {{ act.dateDebut | date:'dd/MM/yyyy' }} - {{ (act.dateFin || act.dateLimite) | date:'dd/MM/yyyy' }}
+                                                    </span>
+                                                    <span class="flex items-center gap-1">
+                                                        <span class="icon-check-square"></span>
+                                                        {{ act.taches?.length || 0 }} tâche(s)
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            <!-- Activity action buttons -->
+                                            <div class="actions-group">
+                                                <button class="btn btn-ghost btn-sm rounded-lg" (click)="toggleActivite(act.id)">
+                                                    <span *ngIf="expandedActivites().includes(act.id)" class="icon-chevron-up"></span>
+                                                    <span *ngIf="!expandedActivites().includes(act.id)" class="icon-chevron-down"></span>
+                                                </button>
+                                                <button class="action-icon-btn-small edit" (click)="$event.stopPropagation(); openActivityModal(sprint.id, act)" title="Modifier">
+                                                    <mat-icon>edit</mat-icon>
+                                                </button>
+                                                <button class="action-icon-btn-small delete" (click)="$event.stopPropagation(); deleteActivity(act.id)" title="Supprimer">
+                                                    <mat-icon>delete</mat-icon>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div class="space-y-1">
+                                            <div class="flex items-center justify-between text-xs">
+                                                <span class="text-gray-600">Progression</span>
+                                                <span class="text-gray-900 font-semibold">{{ getActivityProgress(act) }}%</span>
+                                            </div>
+                                            <div class="w-full bg-gray-200 rounded-full h-1.5">
+                                                <div class="bg-[#ea5073] h-1.5 rounded-full transition-all duration-300" [style.width.%]="getActivityProgress(act)"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div *ngIf="expandedActivites().includes(act.id)" class="border-t bg-gray-50 p-4 space-y-4">
+                                        
+                                        <div>
+                                            <div class="flex items-center justify-between mb-2">
+                                                <h4 class="text-sm font-semibold text-gray-700 m-0">Documents Justificatifs de l'Activité</h4>
+                                                <button class="btn btn-sm btn-outline rounded-lg" (click)="openActivityDocumentUploadDialog(act.id)">
+                                                    <span class="icon-paperclip"></span> Ajouter un document
+                                                </button>
+                                            </div>
+                                            
+                                            <div *ngIf="act.documents && act.documents.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+                                                <div *ngFor="let doc of act.documents" class="flex items-center gap-3 p-3 bg-white rounded-lg border border-slate-200 hover:border-slate-300 transition-all">
+                                                    <div class="w-10 h-10 bg-slate-50 rounded-lg flex items-center justify-center border border-slate-200" style="flex-shrink:0;">
+                                                        <span style="font-size: 1.25rem;">📄</span>
+                                                    </div>
+                                                    <div class="flex-1 min-w-0">
+                                                        <a [href]="'https://redboost.tn' + doc.cheminFichier" target="_blank" class="text-sm font-medium text-slate-900 hover:text-[#ea5073] truncate block transition-colors no-underline">
+                                                            {{ doc.nom }}
+                                                        </a>
+                                                        <div class="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5">
+                                                            <span>{{ formatFileSize(doc.tailleFichier) }}</span>
+                                                            <span>•</span>
+                                                            <span>{{ formatDate(doc.dateUpload) }}</span>
+                                                        </div>
+                                                    </div>
+                                                    <a [href]="'https://redboost.tn' + doc.cheminFichier" download class="action-icon-btn-small download" title="Télécharger">
+                                                        <mat-icon>download</mat-icon>
+                                                    </a>
+                                                    <button class="action-icon-btn-small delete" (click)="deleteActivityDocument(doc.id, act.id)" title="Supprimer">
+                                                        <mat-icon>delete</mat-icon>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div *ngIf="!act.documents || act.documents.length === 0" class="text-center py-2 text-gray-400 text-xs italic">
+                                                Aucun document
+                                            </div>
+                                        </div>
+
+                                        <div class="flex items-center justify-between ml-6">
+                                            <h6 class="text-sm font-medium text-[#6d3345] m-0">Tâches de l'activité</h6>
+                                            <button class="btn btn-sm btn-outline text-xs h-8 border-[#6d3345] text-[#6d3345] hover:bg-[#6d3345]/10 rounded-lg" (click)="openTacheModal(act.id)">
+                                                <span class="icon-plus"></span> Ajouter une tâche
+                                            </button>
+                                        </div>
+
+                                        <div class="ml-6 border-l-4 border-[#2a7b8c]/30 pl-6 space-y-2">
+                                            <div *ngFor="let tache of act.taches" class="task-container">
+                                                <div class="flex flex-col gap-2 p-3 bg-white border rounded-xl hover:border-[#ea5073]/30 transition-all">
+                                                    
+                                                    <!-- ── Task header row: checkbox + text + actions ── -->
+                                                    <div class="flex items-start gap-3 w-full" style="min-width:0;">
+                                                        <input 
+                                                            type="checkbox" 
+                                                            [checked]="tache.status === 'TERMINEE'" 
+                                                            (click)="toggleTacheStatus(tache)" 
+                                                            class="mt-1 rounded border-gray-300 text-[#ea5073] focus:ring-[#ea5073] accent-[#ea5073] cursor-pointer w-4 h-4" 
+                                                            style="flex-shrink:0;"
+                                                        />
+
+                                                        <!-- Task text content -->
+                                                        <div class="content-area">
+                                                            <div class="flex items-center gap-2 mb-1 flex-wrap" style="min-width:0;">
+                                                                <span 
+                                                                    class="text-sm font-medium task-title" 
+                                                                    [class.line-through]="tache.status === 'TERMINEE'" 
+                                                                    [class.text-gray-500]="tache.status === 'TERMINEE'"
+                                                                    [title]="tache.titre"
+                                                                >
+                                                                    {{ tache.titre }}
+                                                                </span>
+                                                                <span class="badge rounded-full" [ngClass]="getTaskStatusBadge(tache)">
+                                                                    {{ isTaskLate(tache) && tache.status !== 'TERMINEE' ? 'En retard' : formatStatus(tache.status) }}
+                                                                </span>
+                                                                <span class="badge border rounded-full" [ngClass]="getPriorityBadge(tache.priorite)">
+                                                                    {{ tache.priorite }}
+                                                                </span>
+                                                                <span *ngIf="tache.responsableId" class="badge bg-[#6d3345]/10 text-[#6d3345] border-[#6d3345]/30 text-xs rounded-full">
+                                                                    <span class="icon-user mr-1"></span> {{ getResponsableName(tache.responsableId) }}
+                                                                </span>
+                                                                <span *ngIf="isTaskLate(tache) && tache.status !== 'TERMINEE'" class="badge flex items-center gap-1.5 bg-white border border-red-600 text-red-600 rounded-full px-2 py-0.5 shadow-sm">
+                                                                    <mat-icon class="!w-4 !h-4 text-[14px] flex items-center justify-center leading-none">schedule</mat-icon>
+                                                                    <span class="font-medium text-[10px]">+{{ getTaskDelayDays(tache) }}j</span>
+                                                                </span>
+                                                            </div>
+
+                                                            <!-- Task description: clamp to 2 lines -->
+                                                            <p *ngIf="tache.description" class="text-xs text-gray-600 mb-2 m-0 description-clamp" [title]="tache.description">
+                                                                {{ tache.description }}
+                                                            </p>
+
+                                                            <div *ngIf="tache.kpis && tache.kpis.length > 0" class="space-y-1.5 mb-2">
+                                                                <div *ngFor="let category of groupKpisByCategory(tache.kpis)">
+                                                                    <span class="badge border border-[#2a7b8c] text-[#2a7b8c] text-[10px] px-1.5 py-0.5 rounded-full">
+                                                                        {{ category.name }}
+                                                                    </span>
+                                                                    <div class="flex flex-wrap gap-1 ml-4 mt-0.5">
+                                                                        <div *ngFor="let kpi of category.kpis">
+                                                                            <span class="badge bg-[#ea5073]/10 text-[#ea5073] border-[#ea5073]/30 text-xs rounded-full">
+                                                                                {{ kpi.nom }}
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div *ngIf="tache.difficulte" class="flex items-start gap-2 p-2 bg-yellow-50 border border-yellow-200 rounded-lg mb-2">
+                                                                <mat-icon class="text-yellow-700 !w-4 !h-4 !text-[14px] min-w-[14px] mt-[2px]">error_outline</mat-icon>
+                                                                <p class="text-xs text-yellow-800 leading-5 m-0 description-clamp"><strong>Difficultés:</strong> {{ tache.difficulte }}</p>
+                                                            </div>
+
+                                                            <div class="flex items-center gap-3 text-xs text-gray-600 flex-wrap">
+                                                                <span class="flex items-center gap-1">
+                                                                    <span class="icon-calendar"></span>
+                                                                    {{ tache.dateDebut | date:'dd/MM/yyyy' }} - {{ tache.dateLimite | date:'dd/MM/yyyy' }}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+
+                                                        <!-- Task action buttons -->
+                                                        <div class="actions-group" style="align-self:flex-start;">
+                                                            <button class="action-icon-btn-tiny edit" (click)="openTacheModal(act.id, tache)" title="Modifier">
+                                                                <mat-icon>edit</mat-icon>
+                                                            </button>
+                                                            <button class="action-icon-btn-tiny delete" (click)="deleteTache(tache.id)" title="Supprimer">
+                                                                <mat-icon>delete</mat-icon>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div *ngIf="act.taches?.length === 0" class="text-center py-4 text-xs text-gray-500 bg-gray-50 rounded-lg border-2 border-dashed">
+                                                Aucune tâche dans cette activité
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div *ngIf="sprint.activites?.length === 0" class="text-center py-8 text-gray-500 bg-gray-50 rounded-xl border-2 border-dashed">
+                                Aucune activité dans ce sprint
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <app-global-sprint-modal
+        [show]="showGlobalSprintModal()"
+        [sprint]="currentSprint()"
+        [programmes]="programmes()"
+        [error]="sprintValidationError()"
+        (close)="closeGlobalSprintModal()"
+        (save)="onSaveGlobalSprint($event)">
+    </app-global-sprint-modal>
+
+    <app-global-activity-modal
+        [show]="showGlobalActivityModal()"
+        [activity]="currentActivity()"
+        [responsables]="service.responsables()"
+        [availableKpis]="optionnelKpis()"
+        [sprintDates]="getSprintDates(currentSprintId()!)"
+        [error]="activityValidationError()"
+        (close)="closeGlobalActivityModal()"
+        (save)="onSaveGlobalActivity($event)">
+    </app-global-activity-modal>
+
+    <app-task-modal
+        [show]="showTacheModal()"
+        [task]="currentTask()"
+        [responsables]="service.responsables()"
+        [activityKpis]="currentActivityKpis()"
+        [error]="tacheValidationError()"
+        (close)="closeTacheModal()"
+        (save)="onSaveTask($event)"
+        (deleteDoc)="onDeleteTacheDocument($event)">
+    </app-task-modal>
+
+    <app-document-upload-dialog
+        [show]="showDocumentUploadDialog()"
+        (close)="closeDocumentUploadDialog()"
+        (upload)="onUploadDocuments($event)">
+    </app-document-upload-dialog>
+
+    <app-activity-document-upload-dialog
+        [show]="showActivityDocumentUploadDialog()"
+        (close)="closeActivityDocumentUploadDialog()"
+        (upload)="onUploadActivityDocuments($event)">
+    </app-activity-document-upload-dialog>
+</div>

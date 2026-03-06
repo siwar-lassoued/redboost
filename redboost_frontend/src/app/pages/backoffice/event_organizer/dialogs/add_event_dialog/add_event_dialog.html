@@ -1,0 +1,231 @@
+<!-- add_event_dialog.html -->
+<div class="dialog-container">
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" *ngIf="isLoading">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>Création de l'événement et envoi des invitations...</p>
+  </div>
+
+  <div class="dialog-header">
+    <div>
+      <h2>{{ dialogTitle }}</h2>
+      <p>{{ dialogSubtitle }}</p>
+    </div>
+    <button mat-icon-button (click)="onCancel()" class="close-btn" [disabled]="isLoading">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <form [formGroup]="eventForm" (ngSubmit)="onSubmit()">
+    <div class="dialog-content">
+      
+      <!-- Title -->
+      <div class="form-field">
+        <label>Titre de l'événement <span class="required">*</span></label>
+        <input 
+          type="text" 
+          formControlName="title" 
+          placeholder="Ex: Formation Business Model Canvas"
+          class="input-field">
+        <div class="error-message" *ngIf="eventForm.get('title')?.touched && eventForm.get('title')?.hasError('required')">
+          Le titre est obligatoire
+        </div>
+      </div>
+
+      <!-- Date Row -->
+      <div class="form-field date-field">
+        <label>Date <span class="required">*</span></label>
+        <div class="input-wrapper">
+          <input 
+            type="text" 
+            [matDatepicker]="picker" 
+            formControlName="date" 
+            placeholder="jj/mm/aaaa"
+            class="input-field">
+          <mat-datepicker-toggle [for]="picker" class="datepicker-toggle"></mat-datepicker-toggle>
+          <mat-datepicker #picker></mat-datepicker>
+        </div>
+        <div class="error-message" *ngIf="eventForm.get('date')?.touched && eventForm.get('date')?.hasError('required')">
+          La date est obligatoire
+        </div>
+      </div>
+
+      <!-- Time Row -->
+      <div class="form-row">
+        <div class="form-field">
+          <label>Heure de début <span class="required">*</span></label>
+          <input 
+            type="time" 
+            formControlName="startTime" 
+            placeholder="09:00"
+            class="input-field">
+          <div class="error-message" *ngIf="eventForm.get('startTime')?.touched && eventForm.get('startTime')?.hasError('required')">
+            L'heure de début est obligatoire
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label>Heure de fin <span class="required">*</span></label>
+          <input 
+            type="time" 
+            formControlName="endTime" 
+            placeholder="12:00"
+            class="input-field">
+          <div class="error-message" *ngIf="eventForm.get('endTime')?.touched && eventForm.get('endTime')?.hasError('required')">
+            L'heure de fin est obligatoire
+          </div>
+        </div>
+      </div>
+
+      <!-- Type and Location -->
+      <div class="form-row">
+        <div class="form-field">
+          <label>Type d'événement <span class="required">*</span></label>
+          <select formControlName="type" class="select-field">
+            <option value="">Sélectionnez un type</option>
+            <option *ngFor="let type of eventTypes" [value]="type.name">
+              {{ type.name }}
+            </option>
+            <option value="AUTRE">Autre (créer un nouveau type)</option>
+          </select>
+          <div class="error-message" *ngIf="eventForm.get('type')?.touched && eventForm.get('type')?.hasError('required')">
+            Le type est obligatoire
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label>Lieu <span class="required" *ngIf="eventForm.get('mode')?.value === 'EN_PERSONNE' || eventForm.get('mode')?.value === 'HYBRID'">*</span></label>
+          <input 
+            type="text" 
+            formControlName="location" 
+            placeholder="Ex: Salle de conférence A"
+            class="input-field"
+            [required]="eventForm.get('mode')?.value === 'EN_PERSONNE' || eventForm.get('mode')?.value === 'HYBRID'">
+          <div class="error-message" *ngIf="eventForm.get('location')?.touched && eventForm.get('location')?.hasError('required')">
+            Le lieu est obligatoire pour ce mode
+          </div>
+        </div>
+      </div>
+
+      <!-- Custom Type Input (shown when "Autre" is selected) -->
+      <div class="form-field" *ngIf="showCustomTypeInput">
+        <label>Nouveau type d'événement <span class="required">*</span></label>
+        <input 
+          type="text" 
+          formControlName="customType" 
+          placeholder="Ex: Coaching individuel"
+          class="input-field custom-type-input">
+        <div class="hint-text">Ce type sera ajouté à la liste pour les événements futurs</div>
+        <div class="error-message" *ngIf="eventForm.get('customType')?.touched && eventForm.get('customType')?.hasError('required')">
+          Le nom du nouveau type est obligatoire
+        </div>
+      </div>
+
+      <!-- Participation Mode -->
+      <div class="form-field">
+        <label>Mode de participation <span class="required">*</span></label>
+        <mat-radio-group formControlName="mode" class="radio-group">
+          <mat-radio-button value="EN_PERSONNE" class="radio-option">
+            <span class="radio-label">
+              <mat-icon class="mode-icon">group</mat-icon>
+              <div>
+                <strong>En personne</strong>
+                <p class="mode-description">Les participants assisteront au lieu indiqué</p>
+              </div>
+            </span>
+          </mat-radio-button>
+          
+          <mat-radio-button value="VIRTUEL" class="radio-option">
+            <span class="radio-label">
+              <mat-icon class="mode-icon">videocam</mat-icon>
+              <div>
+                <strong>Virtuel</strong>
+                <p class="mode-description">Un lien Google Meet sera créé automatiquement</p>
+              </div>
+            </span>
+          </mat-radio-button>
+          
+          <mat-radio-button value="HYBRID" class="radio-option">
+            <span class="radio-label">
+              <mat-icon class="mode-icon">people_outline</mat-icon>
+              <div>
+                <strong>Hybride</strong>
+                <p class="mode-description">Présence physique + Google Meet disponible</p>
+              </div>
+            </span>
+          </mat-radio-button>
+        </mat-radio-group>
+      </div>
+
+      <!-- Program -->
+      <div class="form-field">
+        <label>Programme associé</label>
+        <select formControlName="program" class="select-field">
+          <option *ngFor="let program of programs" [value]="program">
+            {{ program }}
+          </option>
+        </select>
+        <div class="hint-text">Si non spécifique à un programme, laisser "RedStart" par défaut</div>
+      </div>
+
+      <!-- Description -->
+      <div class="form-field">
+        <label>Description</label>
+        <textarea 
+          formControlName="description" 
+          placeholder="Décrivez l'événement..."
+          class="textarea-field"
+          rows="3"></textarea>
+      </div>
+
+      <!-- Participants -->
+      <div class="form-field">
+        <label>Emails des participants</label>
+        
+        <div formArrayName="participants" class="participants-list">
+          <div *ngFor="let participant of participants.controls; let i = index" class="participant-row">
+            <input 
+              type="email" 
+              [formControlName]="i" 
+              placeholder="example@email.com"
+              class="input-field participant-input">
+            <button 
+              type="button" 
+              mat-icon-button 
+              (click)="removeParticipant(i)"
+              class="remove-btn"
+              *ngIf="participants.length > 1">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+        </div>
+
+        <button 
+          type="button" 
+          (click)="addParticipant()"
+          class="add-participant-btn"
+          [disabled]="participants.length >= 50">
+          <mat-icon>add</mat-icon>
+          <span>Ajouter un participant</span>
+        </button>
+
+        <div class="hint-text">Appuyez sur Entrée ou cliquez sur + pour ajouter un email</div>
+      </div>
+
+    </div>
+
+    <div class="dialog-actions">
+      <button type="button" (click)="onCancel()" class="cancel-btn" [disabled]="isLoading">
+        Annuler
+      </button>
+      <button 
+        type="submit" 
+        [disabled]="!eventForm.valid || isLoading"
+        class="submit-btn">
+        <mat-spinner *ngIf="isLoading" diameter="20" class="button-spinner"></mat-spinner>
+        <span *ngIf="!isLoading">{{ submitButtonText }}</span>
+        <span *ngIf="isLoading">{{ loadingText }}</span>
+      </button>
+    </div>
+  </form>
+</div>

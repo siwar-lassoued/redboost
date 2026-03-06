@@ -1,0 +1,505 @@
+// create-template-dialog.component.scss
+.dialog-container {
+  display: flex;
+  flex-direction: column;
+  height: auto;
+  max-height: 90vh;
+  width: 100%;
+  background: white;
+  overflow: hidden;
+  position: relative;
+
+  // Header
+  .dialog-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 24px 32px;
+    border-bottom: 1px solid #e5e7eb;
+    background: white;
+
+    .header-content {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      flex: 1;
+
+      .header-icon {
+        width: 24px;
+        height: 24px;
+        font-size: 24px;
+        color: #ec4899;
+        margin-top: 2px;
+      }
+
+      .header-text {
+        flex: 1;
+      }
+
+      .dialog-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin: 0 0 4px 0;
+        color: #111827;
+      }
+
+      .dialog-subtitle {
+        font-size: 14px;
+        color: #6b7280;
+        margin: 0;
+        font-weight: 400;
+      }
+    }
+
+    .close-button {
+      color: #6b7280;
+      width: 32px;
+      height: 32px;
+
+      mat-icon {
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+      }
+
+      &:hover {
+        background: #f3f4f6;
+        color: #111827;
+      }
+    }
+  }
+
+  // Content
+  .dialog-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 32px;
+    background: #fafafa;
+    min-height: 0; // Important for flex scrolling
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    // Form Fields
+    .form-field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+
+      .field-label {
+        font-size: 14px;
+        font-weight: 500;
+        color: #374151;
+      }
+
+      .field-input {
+        width: 100%;
+        padding: 12px 16px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        font-size: 14px;
+        background: white;
+        outline: none;
+        transition: all 0.2s;
+        font-family: inherit;
+
+        &::placeholder {
+          color: #9ca3af;
+        }
+
+        &:focus {
+          border-color: #245C67;
+          box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.1);
+        }
+
+        &.error {
+          border-color: #E44D62;
+
+          &:focus {
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+          }
+        }
+      }
+
+      .field-textarea {
+        resize: vertical;
+        min-height: 60px;
+        font-family: inherit;
+      }
+
+      .field-select {
+        width: 100%;
+        padding: 12px 16px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        font-size: 14px;
+        background: white;
+        outline: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-family: inherit;
+
+        &:focus {
+          border-color: #245C67;
+          box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.1);
+        }
+
+        option {
+          padding: 8px;
+        }
+      }
+
+      .field-error {
+        font-size: 13px;
+        color: #ef4444;
+        margin-top: -4px;
+      }
+    }
+
+    // Add First Column Section
+    .add-first-column {
+      margin-top: 16px;
+    }
+
+    // Columns Section
+    .columns-section {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+
+      &.cdk-drop-list-dragging .column-item:not(.cdk-drag-placeholder) {
+        transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+      }
+
+      .cdk-drag-placeholder {
+        opacity: 0.4;
+        border: 2px dashed #0891b2;
+        background: #e0f2fe;
+        min-height: 100px;
+      }
+
+      .column-item {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 24px;
+        transition: all 0.2s;
+        position: relative;
+
+        &:hover {
+          border-color: #0891b2;
+          box-shadow: 0 2px 12px rgba(8, 145, 178, 0.1);
+        }
+
+        &.cdk-drag-preview {
+          box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+          opacity: 0.9;
+          cursor: grabbing;
+        }
+
+        &.cdk-drag-animating {
+          transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+        }
+
+        .column-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 16px;
+
+          .drag-handle {
+            cursor: grab;
+            display: flex;
+            align-items: center;
+            padding: 4px;
+            border-radius: 4px;
+            transition: all 0.2s;
+
+            &:hover {
+              background: #f3f4f6;
+            }
+
+            &:active {
+              cursor: grabbing;
+            }
+
+            mat-icon {
+              font-size: 24px;
+              width: 24px;
+              height: 24px;
+              color: #9ca3af;
+            }
+          }
+
+          .remove-column-button {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+
+            mat-icon {
+              font-size: 20px;
+              width: 20px;
+              height: 20px;
+              color: #ef4444;
+            }
+
+            &:hover {
+              background: #fee2e2;
+              transform: scale(1.1);
+            }
+
+            &:active {
+              transform: scale(0.95);
+            }
+          }
+        }
+
+        .column-fields {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+
+          .field-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+
+            @media (max-width: 600px) {
+              grid-template-columns: 1fr;
+            }
+          }
+
+          .checkbox-row {
+            display: flex;
+            gap: 24px;
+            padding-top: 4px;
+
+            .checkbox-label {
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              cursor: pointer;
+              user-select: none;
+
+              .checkbox-input {
+                width: 18px;
+                height: 18px;
+                cursor: pointer;
+                accent-color: #0891b2;
+              }
+
+              .checkbox-text {
+                font-size: 14px;
+                color: #374151;
+              }
+
+              &:hover .checkbox-text {
+                color: #111827;
+              }
+            }
+          }
+        }
+
+        .add-column-inline-button {
+          width: 100%;
+          padding: 10px 20px;
+          border: none;
+          border-radius: 8px;
+          background: #E44D62;
+          color: white;
+          font-size: 14px;
+          font-weight: 500;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          transition: all 0.2s;
+          margin-top: 16px;
+
+          mat-icon {
+            font-size: 18px;
+            width: 18px;
+            height: 18px;
+          }
+
+          &:hover {
+            background: #DB1E37;
+          }
+        }
+      }
+
+      .empty-columns {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 48px 20px;
+        text-align: center;
+        background: white;
+        border: 2px dashed #d1d5db;
+        border-radius: 12px;
+
+        mat-icon {
+          font-size: 64px;
+          width: 64px;
+          height: 64px;
+          color: #d1d5db;
+          margin-bottom: 12px;
+        }
+
+        p {
+          margin: 0;
+          color: #6b7280;
+          font-size: 14px;
+
+          &.hint {
+            font-size: 13px;
+            color: #9ca3af;
+            margin-top: 4px;
+          }
+        }
+      }
+    }
+  }
+
+  // Footer
+  .dialog-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 12px;
+    padding: 20px 32px;
+    border-top: 1px solid #e5e7eb;
+    background: white;
+
+    button {
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: 500;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+      border: none;
+
+      mat-icon {
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+
+    .cancel-button {
+      background: transparent;
+      color: #6b7280;
+      border: 1px solid #d1d5db;
+
+      &:hover:not([disabled]) {
+        background: #f9fafb;
+        border-color: #9ca3af;
+        color: #374151;
+      }
+    }
+
+    .submit-button {
+      background: #ec4899;
+      color: white;
+      position: relative;
+
+      .button-spinner {
+        ::ng-deep circle {
+          stroke: white;
+        }
+      }
+
+      &:hover:not([disabled]) {
+        background: #db2777;
+        box-shadow: 0 2px 8px rgba(236, 72, 153, 0.3);
+      }
+
+      &:disabled {
+        background: #fbb6ce;
+      }
+    }
+  }
+}
+
+// Custom Scrollbar
+.dialog-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.dialog-content::-webkit-scrollbar-track {
+  background: #f3f4f6;
+  border-radius: 4px;
+}
+
+.dialog-content::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 4px;
+
+  &:hover {
+    background: #9ca3af;
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .dialog-container {
+    width: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+
+    .dialog-header {
+      padding: 20px;
+
+      .header-content {
+        gap: 12px;
+
+        .dialog-title {
+          font-size: 16px;
+        }
+
+        .dialog-subtitle {
+          font-size: 13px;
+        }
+      }
+    }
+
+    .dialog-content {
+      padding: 20px;
+
+      .columns-section .column-item {
+        padding: 20px;
+      }
+    }
+
+    .dialog-footer {
+      padding: 16px 20px;
+      flex-direction: column-reverse;
+
+      button {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  }
+}

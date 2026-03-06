@@ -1,0 +1,230 @@
+<!-- import-dialog.component.html -->
+<div class="import-dialog">
+    <div class="dialog-header">
+        <h2 mat-dialog-title>
+            <mat-icon>upload_file</mat-icon>
+            Importer des données
+        </h2>
+        <button mat-icon-button (click)="close()">
+            <mat-icon>close</mat-icon>
+        </button>
+    </div>
+
+    <mat-dialog-content>
+        <div class="template-info">
+            <mat-icon>storage</mat-icon>
+            <div class="info">
+                <h3>{{ data.template.name }}</h3>
+                <p>{{ data.template.columns.length }} colonnes définies</p>
+            </div>
+        </div>
+
+        <!-- File Upload Area -->
+        <div
+            class="upload-area"
+            [class.has-file]="selectedFile"
+            (dragover)="onDragOver($event)"
+            (drop)="onDrop($event)"
+            *ngIf="!uploadComplete"
+        >
+            <div class="upload-content" *ngIf="!selectedFile">
+                <mat-icon class="upload-icon">cloud_upload</mat-icon>
+                <h3>Glissez-déposez votre fichier ici</h3>
+                <p>ou</p>
+                <button mat-raised-button color="primary" (click)="fileInput.click()">
+                    <mat-icon>folder_open</mat-icon>
+                    Parcourir les fichiers
+                </button>
+                <input
+                    #fileInput
+                    id="file-input"
+                    type="file"
+                    accept=".xlsx,.xls,.csv"
+                    (change)="onFileSelected($event)"
+                    style="display: none"
+                />
+                <p class="file-types">
+                    Formats supportés: Excel (.xlsx, .xls) ou CSV (.csv)
+                </p>
+            </div>
+
+            <div class="file-preview" *ngIf="selectedFile && !uploading">
+                <div class="file-info">
+                    <mat-icon class="file-icon">{{ getFileIcon() }}</mat-icon>
+                    <div class="file-details">
+                        <h4>{{ selectedFile.name }}</h4>
+                        <p>{{ formatFileSize(selectedFile.size) }}</p>
+                    </div>
+                    <button
+                        mat-icon-button
+                        (click)="removeFile()"
+                        class="remove-button"
+                        matTooltip="Supprimer le fichier"
+                    >
+                        <mat-icon>close</mat-icon>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload Progress -->
+        <div class="upload-progress" *ngIf="uploading">
+            <mat-icon class="progress-icon">hourglass_empty</mat-icon>
+            <h3>Import en cours...</h3>
+            <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+            <p>Veuillez patienter pendant le traitement de vos données</p>
+        </div>
+
+        <!-- Upload Results -->
+        <div class="upload-results" *ngIf="uploadComplete && importResult">
+            <div
+                class="result-header"
+                [class.success]="importResult.failedRows === 0"
+                [class.warning]="importResult.failedRows > 0"
+                [class.error]="importResult.successfulRows === 0"
+            >
+                <mat-icon>
+                    {{ importResult.failedRows === 0 ? 'check_circle' : 
+                       importResult.successfulRows === 0 ? 'error' : 'warning' }}
+                </mat-icon>
+                <div>
+                    <h3>
+                        {{ importResult.failedRows === 0 ? 'Import réussi !' :
+                           importResult.successfulRows === 0 ? 'Import échoué' : 
+                           'Import terminé avec des erreurs' }}
+                    </h3>
+                    <p *ngIf="importResult.successfulRows > 0">
+                        {{ importResult.successfulRows }} ligne(s) importée(s) avec succès
+                    </p>
+                </div>
+            </div>
+
+            <div class="result-stats">
+                <div class="stat-item">
+                    <mat-icon>list_alt</mat-icon>
+                    <div>
+                        <span class="stat-label">Lignes totales</span>
+                        <span class="stat-value">{{ importResult.totalRows }}</span>
+                    </div>
+                </div>
+                <div class="stat-item success" *ngIf="importResult.successfulRows > 0">
+                    <mat-icon>check_circle</mat-icon>
+                    <div>
+                        <span class="stat-label">Réussies</span>
+                        <span class="stat-value">{{ importResult.successfulRows }}</span>
+                    </div>
+                </div>
+                <div class="stat-item error" *ngIf="importResult.failedRows > 0">
+                    <mat-icon>error</mat-icon>
+                    <div>
+                        <span class="stat-label">Échouées</span>
+                        <span class="stat-value">{{ importResult.failedRows }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Error Section -->
+            <div class="error-section" *ngIf="importResult.errors && importResult.errors.length > 0">
+                <mat-expansion-panel [(expanded)]="errorsPanelOpen" class="error-expansion">
+                    <mat-expansion-panel-header>
+                        <mat-panel-title>
+                            <mat-icon>error_outline</mat-icon>
+                            <span>Détails des erreurs ({{ importResult.errors.length }})</span>
+                        </mat-panel-title>
+                        <mat-panel-description>
+                            {{ errorsPanelOpen ? 'Masquer' : 'Afficher' }} les erreurs
+                        </mat-panel-description>
+                    </mat-expansion-panel-header>
+
+                    <div class="error-content">
+                        <div class="error-actions" *ngIf="hasDetailedErrors()">
+                            <button mat-stroked-button (click)="downloadErrorReport()">
+                                <mat-icon>download</mat-icon>
+                                Télécharger le rapport d'erreurs
+                            </button>
+                        </div>
+
+                        <div class="error-list">
+                            <div
+                                *ngFor="let error of importResult.errors; let i = index"
+                                class="error-item"
+                                [class]="getErrorTypeClass(error)"
+                            >
+                                <div class="error-header">
+                                    <mat-icon [class.validation]="error.columnName">
+                                        {{ getErrorTypeIcon(error) }}
+                                    </mat-icon>
+                                    <span class="error-row">Ligne {{ error.rowNumber }}</span>
+                                    <span class="error-column" *ngIf="error.columnName">
+                                        • Colonne: <strong>{{ error.columnName }}</strong>
+                                    </span>
+                                </div>
+
+                                <div class="error-body">
+                                    <div class="error-message">
+                                        <mat-icon>info</mat-icon>
+                                        <span>{{ error.message }}</span>
+                                    </div>
+
+                                    <div class="error-details" *ngIf="error.expectedType || error.actualValue">
+                                        <div class="detail-item" *ngIf="error.expectedType">
+                                            <span class="detail-label">Type attendu:</span>
+                                            <span class="detail-value expected">{{ error.expectedType }}</span>
+                                        </div>
+                                        <div class="detail-item" *ngIf="error.actualValue">
+                                            <span class="detail-label">Valeur fournie:</span>
+                                            <span class="detail-value actual">{{ error.actualValue }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="error-help" *ngIf="hasDetailedErrors()">
+                            <mat-icon>lightbulb</mat-icon>
+                            <div>
+                                <strong>Conseils pour corriger les erreurs:</strong>
+                                <ul>
+                                    <li>Vérifiez que les types de données correspondent aux colonnes définies</li>
+                                    <li>Les dates doivent être au format: yyyy-MM-dd (ex: 2024-12-30)</li>
+                                    <li>Les nombres ne doivent contenir que des chiffres et éventuellement un point décimal</li>
+                                    <li>Les valeurs booléennes doivent être: true/false, yes/no, ou 1/0</li>
+                                    <li>Les colonnes requises ne peuvent pas être vides</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </mat-expansion-panel>
+            </div>
+        </div>
+    </mat-dialog-content>
+
+    <mat-dialog-actions>
+        <button
+            mat-button
+            (click)="close()"
+            *ngIf="!uploading && !uploadComplete"
+        >
+            Annuler
+        </button>
+        <button
+            mat-raised-button
+            color="primary"
+            (click)="uploadFile()"
+            [disabled]="!selectedFile || uploading"
+            *ngIf="!uploadComplete"
+        >
+            <mat-icon>upload</mat-icon>
+            Importer
+        </button>
+        <button
+            mat-raised-button
+            color="primary"
+            (click)="close()"
+            *ngIf="uploadComplete"
+        >
+            <mat-icon>{{ importResult && importResult.successfulRows > 0 ? 'check' : 'close' }}</mat-icon>
+            {{ importResult && importResult.successfulRows > 0 ? 'Terminer' : 'Fermer' }}
+        </button>
+    </mat-dialog-actions>
+</div>

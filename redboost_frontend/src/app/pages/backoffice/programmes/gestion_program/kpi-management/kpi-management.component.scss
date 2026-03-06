@@ -1,0 +1,935 @@
+// src/app/pages/backoffice/programmes/Gestion_sprint/kpi-management/kpi-management.component.scss
+
+/* ==================== LOADING ==================== */
+.loading-container {
+  @apply flex flex-col items-center justify-center py-20;
+}
+
+/* ==================== KPI SECTION HEADER ==================== */
+.kpi-section-title {
+  @apply text-lg font-bold text-slate-900 mb-2;
+}
+
+.kpi-section-subtitle {
+  @apply text-sm text-slate-500 mb-6;
+}
+
+/* ==================== TABS ==================== */
+.top-tabs {
+  @apply w-full mb-10;
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.tabs-container {
+  @apply bg-slate-100 rounded-full p-1 flex w-full;
+}
+
+.tab-btn {
+  @apply flex-1 px-6 py-2 rounded-full text-sm font-medium text-slate-500 transition-all cursor-pointer hover:text-slate-700 text-center;
+
+  &.active {
+    @apply bg-white text-slate-900 shadow-sm font-bold;
+  }
+}
+
+/* ==================== KPI SELECTION TAB ==================== */
+
+.group-section {
+  @apply mb-8;
+}
+
+.group-header-new {
+  @apply flex justify-between items-center mb-4 pb-2;
+}
+
+.group-title {
+  @apply text-sm font-semibold text-slate-700;
+}
+
+.group-count-new {
+  @apply text-sm font-bold text-slate-700;
+}
+
+/* KPI Grid */
+.kpi-grid {
+  @apply grid grid-cols-1 md:grid-cols-2 gap-4;
+}
+
+.kpi-item-new {
+  @apply flex items-center gap-3 p-4 rounded-lg border border-slate-200 bg-blue-50/30 transition-all cursor-pointer hover:border-slate-300;
+
+  &.selected {
+    @apply bg-blue-50/50 border-blue-200;
+  }
+
+  &.global-item {
+    @apply bg-blue-50/50 border-blue-200 cursor-default;
+  }
+}
+
+.custom-checkbox-new {
+  @apply w-5 h-5 rounded border-2 transition-colors flex-shrink-0;
+  border-color: #E91E63;
+  background-color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.kpi-item-new.global-item .custom-checkbox-new {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.kpi-item-new.selected .custom-checkbox-new,
+.kpi-item-new.global-item .custom-checkbox-new {
+  @apply bg-[#E91E63] border-[#E91E63];
+}
+
+.check-icon-new {
+  @apply text-white opacity-0;
+  font-size: 16px !important;
+  width: 16px !important;
+  height: 16px !important;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.kpi-item-new.selected .check-icon-new,
+.kpi-item-new.global-item .check-icon-new {
+  @apply opacity-100;
+}
+
+.kpi-label-new {
+  @apply text-sm font-medium text-slate-800 flex-1;
+}
+
+.badge-obligatoire-new {
+  @apply px-2.5 py-1 text-xs font-semibold rounded border flex-shrink-0;
+  color: #1e40af;
+  background-color: #dbeafe;
+  border-color: #93c5fd;
+}
+
+.badge-global-new {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border: 1.5px solid #93c5fd;
+  color: #1e40af;
+  background-color: #dbeafe;
+  flex-shrink: 0;
+}
+
+/* ==================== KPI VALUE CARDS ==================== */
+.kpi-value-card {
+  @apply bg-white rounded-xl border border-slate-200 overflow-hidden transition-all;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    @apply border-slate-300;
+  }
+}
+
+/* Card Header */
+.kpi-value-header {
+  @apply flex items-center justify-between p-5 bg-slate-50;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.kpi-value-title {
+  @apply text-base font-bold text-slate-900;
+}
+
+.kpi-value-unit {
+  @apply text-xs text-slate-500 mt-1;
+  font-weight: 400;
+}
+
+/* Type Badge */
+.type-badge-saisie {
+  @apply inline-flex items-center justify-center 
+         px-3 py-1 text-[11px] font-bold tracking-wide
+         rounded-full text-white shadow-sm;
+  
+  &.global {
+    background-color: #E91E63;
+  }
+
+  &.optionnel {
+    background-color: #64748b;
+  }
+}
+
+/* Objective Section */
+.objective-section {
+  @apply flex items-center gap-2 px-4 py-2 bg-pink-50 rounded-lg border border-pink-200;
+}
+
+.objective-icon {
+  @apply flex items-center justify-center w-6 h-6;
+  
+  mat-icon {
+    @apply text-pink-600;
+    font-size: 18px !important;
+    width: 18px !important;
+    height: 18px !important;
+  }
+}
+
+.objective-label {
+  @apply text-sm font-medium text-slate-700;
+}
+
+.objective-value {
+  @apply text-sm font-bold text-pink-700;
+}
+
+.objective-dash {
+  @apply text-sm font-bold text-slate-400;
+}
+
+/* History Button */
+.kpi-history-button {
+  @apply flex items-center justify-center w-9 h-9 rounded-lg
+         bg-slate-100 text-slate-600 hover:bg-slate-200 
+         hover:text-slate-900 transition-all;
+  
+  mat-icon {
+    font-size: 18px !important;
+    width: 18px !important;
+    height: 18px !important;
+  }
+}
+
+/* Toggle Button */
+.kpi-toggle-button {
+  @apply flex items-center gap-2 px-4 py-2 bg-white border-2 rounded-lg 
+         text-sm font-medium transition-all;
+  border-color: #245C67;
+  color: #245C67;
+  
+  &:hover {
+    background-color: #245C67;
+    color: white;
+    
+    mat-icon {
+      color: white;
+    }
+  }
+  
+  mat-icon {
+    font-size: 18px !important;
+    width: 18px !important;
+    height: 18px !important;
+    color: #245C67;
+    transition: color 0.2s;
+  }
+}
+
+/* Expandable Body */
+.kpi-value-body {
+  @apply bg-white p-6 space-y-6;
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ==================== PROGRESS SECTION ==================== */
+.progress-section {
+  @apply bg-gradient-to-r from-cyan-50 to-blue-50 rounded-xl p-5 border border-cyan-100;
+}
+
+.progress-header {
+  @apply flex items-center justify-between mb-3;
+}
+
+.progress-label {
+  @apply text-sm font-semibold text-slate-700;
+}
+
+/* Sub-label under the main progress label (used for entrepreneur count) */
+.progress-sublabel {
+  @apply text-xs text-slate-500 font-normal;
+}
+
+.progress-percentage {
+  @apply text-2xl font-bold text-slate-400;
+  
+  &.has-progress {
+    @apply text-teal-600;
+  }
+}
+
+.progress-bar-container {
+  @apply w-full h-3 bg-pink-100 rounded-full overflow-hidden mb-3;
+}
+
+.progress-bar-fill {
+  @apply h-full rounded-full transition-all duration-500;
+  
+  &.high {
+    @apply bg-gradient-to-r from-green-400 to-green-500;
+  }
+  
+  &.medium {
+    @apply bg-gradient-to-r from-orange-400 to-orange-500;
+  }
+  
+  &.low {
+    @apply bg-gradient-to-r from-red-400 to-red-500;
+  }
+}
+
+.progress-values {
+  @apply flex items-center justify-between text-xs text-slate-600;
+}
+
+.progress-value-item {
+  @apply font-medium flex items-center gap-1;
+}
+
+/* Objectif shown inline at the right of the progress-values row */
+.progress-value-objectif {
+  @apply text-pink-700 font-semibold;
+}
+
+.progress-objectif-icon {
+  font-size: 13px !important;
+  width: 13px !important;
+  height: 13px !important;
+  color: #E91E63;
+}
+
+/* ==================== GLOBAL VALUES INPUT ==================== */
+.values-input-section {
+  @apply grid grid-cols-1 md:grid-cols-3 gap-4;
+}
+
+.value-input-group {
+  @apply space-y-2;
+}
+
+.value-input-label {
+  @apply text-sm font-semibold text-slate-700 block;
+}
+
+.required-star {
+  @apply text-red-500 ml-0.5;
+}
+
+.value-input-wrapper {
+  @apply relative flex items-center;
+}
+
+.value-input {
+  @apply w-full px-4 py-3 bg-white border-2 border-slate-200 rounded-lg 
+         text-sm text-slate-900 font-medium transition-all;
+  
+  &::placeholder {
+    @apply text-slate-400 font-normal;
+  }
+  
+  &:focus {
+    @apply outline-none border-teal-500 ring-4 ring-teal-100;
+  }
+  
+  &.required-input {
+    @apply border-pink-200;
+    
+    &:focus {
+      @apply border-pink-500 ring-pink-100;
+    }
+  }
+  
+  &::-webkit-inner-spin-button,
+  &::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  
+  &[type=number] {
+    -moz-appearance: textfield;
+  }
+}
+
+.value-input-unit {
+  @apply absolute right-4 text-sm font-bold text-slate-500 pointer-events-none;
+}
+
+/* ==================== ENTREPRENEURS SECTION ==================== */
+.entrepreneurs-section {
+  @apply border-t border-slate-200 pt-6 space-y-4;
+}
+
+.entrepreneurs-title {
+  @apply text-sm font-bold text-slate-700 mb-4;
+}
+
+.entrepreneurs-list {
+  @apply space-y-3;
+}
+
+/* Entrepreneur Item base */
+.entrepreneur-item {
+  @apply p-4 bg-slate-50 rounded-lg border border-slate-200;
+
+  &.entrepreneur-item-progression {
+    @apply flex flex-col gap-3;
+  }
+}
+
+.entrepreneur-info {
+  @apply flex items-center gap-2 flex-shrink-0;
+}
+
+.entrepreneur-avatar-icon {
+  @apply text-slate-500;
+  font-size: 24px !important;
+  width: 24px !important;
+  height: 24px !important;
+}
+
+.entrepreneur-name {
+  @apply text-sm font-semibold text-slate-800;
+}
+
+/* ── NORMAL TYPE: single horizontal row ─────────────────────── */
+
+.entrepreneur-normal-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.entrepreneur-info-fixed {
+  min-width: 150px;
+  max-width: 200px;
+  flex-shrink: 0;
+}
+
+.entrepreneur-normal-inputs {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex: 1;
+  min-width: 240px;
+
+  .entrepreneur-value-group {
+    flex: 1;
+    @apply space-y-2;
+  }
+}
+
+.entrepreneur-normal-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* ── PROGRESSION TYPE ────────────────────────────────────────── */
+
+.entrepreneur-value-group {
+  @apply space-y-2;
+}
+
+.entrepreneur-values-grid {
+  @apply w-full grid grid-cols-1 md:grid-cols-3 gap-4;
+}
+
+.entrepreneur-value-label {
+  @apply text-xs font-semibold text-slate-600 block;
+}
+
+.entrepreneur-value-wrapper {
+  @apply relative flex items-center;
+}
+
+.entrepreneur-value-input {
+  @apply w-full px-4 py-2.5 bg-white border-2 border-slate-200 rounded-lg 
+         text-sm text-slate-900 font-medium transition-all;
+  
+  &::placeholder {
+    @apply text-slate-400 font-normal;
+  }
+  
+  &:focus {
+    @apply outline-none border-pink-500 ring-4 ring-pink-100;
+  }
+  
+  &.required-input {
+    @apply border-pink-200;
+    
+    &:focus {
+      @apply border-pink-500 ring-pink-100;
+    }
+  }
+  
+  &::-webkit-inner-spin-button,
+  &::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  
+  &[type=number] {
+    -moz-appearance: textfield;
+  }
+}
+
+.entrepreneur-value-unit {
+  @apply absolute right-3 text-xs font-bold text-slate-500 pointer-events-none;
+}
+
+.entrepreneur-remove-btn {
+  @apply w-9 h-9 flex-shrink-0 rounded-lg flex items-center justify-center
+         text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all;
+  
+  mat-icon {
+    font-size: 20px !important;
+    width: 20px !important;
+    height: 20px !important;
+  }
+}
+
+/* ── PROGRESSION TYPE: mini progress bar inside each entrepreneur row ── */
+
+.entrepreneur-mini-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.entrepreneur-mini-bar-container {
+  flex: 1;
+  height: 6px;
+  background-color: #fce7f3; /* pink-100 */
+  border-radius: 99px;
+  overflow: hidden;
+  min-width: 60px;
+}
+
+.entrepreneur-mini-bar-fill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.4s ease;
+  max-width: 100%;
+
+  &.high   { background: linear-gradient(90deg, #4ade80, #22c55e); }
+  &.medium { background: linear-gradient(90deg, #fb923c, #f97316); }
+  &.low    { background: linear-gradient(90deg, #f87171, #ef4444); }
+}
+
+.entrepreneur-mini-pct {
+  font-size: 12px;
+  font-weight: 700;
+  color: #0f766e; /* teal-700 */
+  flex-shrink: 0;
+  min-width: 34px;
+  text-align: right;
+}
+
+.entrepreneur-mini-objectif {
+  font-size: 11px;
+  color: #94a3b8; /* slate-400 */
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* ==================== ADD ENTREPRENEUR ==================== */
+.add-entrepreneur-wrapper {
+  @apply flex items-center gap-3 p-4 bg-white rounded-lg border-2 border-dashed border-slate-300;
+}
+
+.add-entrepreneur-icon {
+  @apply text-slate-500 flex-shrink-0;
+  font-size: 20px !important;
+  width: 20px !important;
+  height: 20px !important;
+}
+
+.add-entrepreneur-select {
+  @apply flex-1 px-4 py-2.5 bg-white border-2 border-slate-200 rounded-lg
+         text-sm font-medium text-slate-900 cursor-pointer transition-all;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%230f172a'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1.25rem;
+  
+  &:hover {
+    @apply border-slate-300 bg-slate-50;
+  }
+  
+  &:focus {
+    @apply outline-none border-teal-500 ring-4 ring-teal-100;
+  }
+}
+
+.add-entrepreneur-plus-btn {
+  @apply w-9 h-9 flex-shrink-0 rounded-lg bg-slate-100 flex items-center justify-center
+         text-slate-400 cursor-not-allowed;
+  
+  mat-icon {
+    font-size: 18px !important;
+    width: 18px !important;
+    height: 18px !important;
+  }
+}
+
+/* Empty State */
+.entrepreneurs-empty {
+  @apply flex flex-col items-center justify-center py-8 text-center;
+}
+
+.entrepreneurs-empty-icon {
+  @apply text-slate-300 mb-2;
+  font-size: 48px !important;
+  width: 48px !important;
+  height: 48px !important;
+}
+
+.entrepreneurs-empty-text {
+  @apply text-sm text-slate-500;
+}
+
+/* ==================== STATUS MESSAGES ==================== */
+.status-inline {
+  @apply inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium;
+  
+  &.saving {
+    @apply bg-blue-50 text-blue-700 border border-blue-200;
+  }
+  
+  &.success {
+    @apply bg-green-50 text-green-700 border border-green-200;
+  }
+  
+  &.error {
+    @apply bg-red-50 text-red-700 border border-red-200;
+  }
+}
+
+.status-icon {
+  font-size: 14px !important;
+  width: 14px !important;
+  height: 14px !important;
+  
+  &.spinning {
+    animation: spin 1s linear infinite;
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.save-status-section {
+  @apply mt-4;
+}
+
+.status-message {
+  @apply flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium;
+  
+  &.saving {
+    @apply bg-blue-50 text-blue-700 border border-blue-200;
+  }
+  
+  &.success {
+    @apply bg-green-50 text-green-700 border border-green-200;
+  }
+  
+  &.error {
+    @apply bg-red-50 text-red-700 border border-red-200;
+  }
+}
+
+/* ==================== SAVE BUTTON ==================== */
+.save-button-section {
+  @apply flex justify-end mt-6;
+}
+
+.btn-save-kpi {
+  @apply px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-lg 
+         font-semibold flex items-center gap-2 transition-all shadow-sm
+         disabled:opacity-70 disabled:cursor-not-allowed;
+  
+  &:hover:not(:disabled) {
+    @apply shadow-md transform scale-105;
+  }
+  
+  mat-icon {
+    font-size: 18px !important;
+    width: 18px !important;
+    height: 18px !important;
+  }
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 768px) {
+  .values-input-section {
+    @apply grid-cols-1;
+  }
+  
+  .entrepreneur-values-grid {
+    @apply grid-cols-1;
+  }
+
+  .entrepreneur-normal-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .entrepreneur-info-fixed {
+    max-width: 100%;
+  }
+
+  .entrepreneur-normal-inputs {
+    flex-direction: column;
+    min-width: unset;
+  }
+
+  .entrepreneur-normal-actions {
+    justify-content: flex-end;
+  }
+
+  .entrepreneur-item {
+    @apply flex-col items-stretch;
+  }
+
+  .entrepreneur-value-group {
+    @apply w-full;
+  }
+
+  .kpi-value-header {
+    @apply flex-col items-start gap-3;
+  }
+
+  .objective-section {
+    @apply w-full;
+  }
+
+  .entrepreneur-mini-progress {
+    flex-wrap: wrap;
+  }
+}
+
+/* ==================== KPI FILTERS BAR ==================== */
+.kpi-filters-bar {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  padding: 20px 24px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+
+.kpi-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 220px;
+}
+
+.kpi-filter-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.kpi-filter-label-icon {
+  font-size: 15px !important;
+  width: 15px !important;
+  height: 15px !important;
+  color: #94a3b8;
+}
+
+.kpi-filter-select-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.kpi-filter-select-icon {
+  position: absolute;
+  left: 12px;
+  font-size: 18px !important;
+  width: 18px !important;
+  height: 18px !important;
+  color: #E91E63;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.kpi-filter-select {
+  width: 100%;
+  padding: 10px 40px 10px 38px;
+  background: #ffffff;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1e293b;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+
+  &:hover { border-color: #cbd5e1; }
+
+  &:focus {
+    outline: none;
+    border-color: #E91E63;
+    box-shadow: 0 0 0 3px rgba(233, 30, 99, 0.1);
+  }
+}
+
+.kpi-filter-chevron {
+  position: absolute;
+  right: 12px;
+  font-size: 18px !important;
+  width: 18px !important;
+  height: 18px !important;
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.kpi-filter-hint {
+  font-size: 11px;
+  color: #94a3b8;
+  font-style: italic;
+  margin-top: 2px;
+}
+
+/* ==================== TYPESUIVI BADGE ==================== */
+.typesuivi-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px 2px 6px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border: 1.5px solid transparent;
+
+  &.entrepreneur {
+    color: #be185d;
+    background-color: #fdf2f8;
+    border-color: #fbcfe8;
+  }
+
+  &.operationnel {
+    color: #0f766e;
+    background-color: #f0fdfa;
+    border-color: #99f6e4;
+  }
+}
+
+.typesuivi-badge-icon {
+  font-size: 13px !important;
+  width: 13px !important;
+  height: 13px !important;
+}
+
+/* ==================== RESPONSIVE FILTERS ==================== */
+@media (max-width: 768px) {
+  .kpi-filters-bar {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .kpi-filter-group {
+    min-width: 100%;
+  }
+}
+
+/* ==================== ENTREPRENEUR SAVE ROW (progression type) ==================== */
+
+.entrepreneur-item-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+
+.entrepreneur-save-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  width: 100%;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed #e2e8f0;
+}
+
+.entrepreneur-save-status-inline {
+  display: flex;
+  align-items: center;
+}
+
+/* Individual per-entrepreneur save button */
+.btn-save-entrepreneur {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  background-color: #0f766e;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.15s, box-shadow 0.2s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+
+  &:hover:not(:disabled) {
+    background-color: #115e59;
+    transform: scale(1.03);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  &:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
+
+  mat-icon {
+    font-size: 16px !important;
+    width: 16px !important;
+    height: 16px !important;
+  }
+}

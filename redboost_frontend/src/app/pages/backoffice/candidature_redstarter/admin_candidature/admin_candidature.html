@@ -1,0 +1,453 @@
+<div class="admin-container">
+    <h1 class="admin-title">Gestion des Candidatures RedStarter</h1>
+
+    <!-- Statistics Dashboard -->
+    <div class="statistics-dashboard">
+        <div class="stat-card">
+            <div class="stat-number">{{ statistics['total'] || 0 }}</div>
+            <div class="stat-label">Total</div>
+        </div>
+        <div class="stat-card stat-warning">
+            <div class="stat-number">{{ statistics['en_attente'] || 0 }}</div>
+            <div class="stat-label">En Attente</div>
+        </div>
+        <div class="stat-card stat-info">
+            <div class="stat-number">
+                {{ statistics['en_cours_evaluation'] || 0 }}
+            </div>
+            <div class="stat-label">En Évaluation</div>
+        </div>
+        <div class="stat-card stat-success">
+            <div class="stat-number">{{ statistics['accepte'] || 0 }}</div>
+            <div class="stat-label">Accepté</div>
+        </div>
+        <div class="stat-card stat-danger">
+            <div class="stat-number">{{ statistics['refuse'] || 0 }}</div>
+            <div class="stat-label">Refusé</div>
+        </div>
+    </div>
+
+    <!-- Filters and Search -->
+    <div class="filters-section">
+        <div class="filter-group">
+            <label for="statusFilter">Filtrer par statut:</label>
+            <select
+                id="statusFilter"
+                [(ngModel)]="selectedStatus"
+                (change)="onStatusFilterChange(selectedStatus)"
+                class="filter-select"
+            >
+                <option value="">Tous les statuts</option>
+                <option value="EN_ATTENTE">En Attente</option>
+                <option value="EN_COURS_EVALUATION">
+                    En Cours d'Évaluation
+                </option>
+                <option value="ACCEPTE">Accepté</option>
+                <option value="REFUSE">Refusé</option>
+            </select>
+        </div>
+
+        <div class="search-group">
+            <input
+                type="text"
+                [(ngModel)]="searchQuery"
+                (input)="onSearchQueryChange(searchQuery)"
+                placeholder="Rechercher par nom d'entreprise..."
+                class="search-input"
+            />
+            <button
+                class="btn btn-clear"
+                (click)="clearFilters()"
+                *ngIf="selectedStatus || searchQuery"
+            >
+                Effacer les filtres
+            </button>
+        </div>
+    </div>
+
+    <!-- Loading Indicator -->
+    <div class="loading" *ngIf="loading">
+        <div class="spinner"></div>
+        <p>Chargement des candidatures...</p>
+    </div>
+
+    <!-- Candidatures Table -->
+    <div class="table-container" *ngIf="!loading">
+        <table class="candidatures-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nom & Prénom</th>
+                    <th>Entreprise</th>
+                    <th>Email</th>
+                    <th>Région</th>
+                    <th>Date de soumission</th>
+                    <th>Statut</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let candidature of candidatures">
+                    <td>{{ candidature.id }}</td>
+                    <td>{{ candidature.nomPrenom }}</td>
+                    <td>{{ candidature.nomEntreprise }}</td>
+                    <td>{{ candidature.email }}</td>
+                    <td>{{ candidature.regionBasee }}</td>
+                    <td>
+                        {{ candidature.dateCreationCandidature |
+                        date:'dd/MM/yyyy HH:mm' }}
+                    </td>
+                    <td>
+                        <span
+                            [class]="'badge ' + getStatusBadgeClass(candidature.statut || '')"
+                        >
+                            {{ getStatusLabel(candidature.statut || '') }}
+                        </span>
+                    </td>
+                    <td>
+                        <button
+                            class="btn-action btn-view"
+                            (click)="viewCandidature(candidature.id!)"
+                            title="Voir détails"
+                        >
+                            👁️
+                        </button>
+                        <button
+                            class="btn-action btn-delete"
+                            (click)="deleteCandidature(candidature.id!)"
+                            title="Supprimer"
+                        >
+                            🗑️
+                        </button>
+                    </td>
+                </tr>
+                <tr *ngIf="candidatures.length === 0">
+                    <td colspan="8" class="no-data">
+                        Aucune candidature trouvée
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="!loading && totalPages > 1">
+        <button
+            class="btn-pagination"
+            (click)="previousPage()"
+            [disabled]="currentPage === 0"
+        >
+            ← Précédent
+        </button>
+
+        <div class="page-numbers">
+            <button
+                *ngFor="let page of [].constructor(totalPages); let i = index"
+                class="btn-page"
+                [class.active]="i === currentPage"
+                (click)="goToPage(i)"
+            >
+                {{ i + 1 }}
+            </button>
+        </div>
+
+        <button
+            class="btn-pagination"
+            (click)="nextPage()"
+            [disabled]="currentPage === totalPages - 1"
+        >
+            Suivant →
+        </button>
+    </div>
+
+    <div class="pagination-info" *ngIf="!loading">
+        Affichage de {{ (currentPage * pageSize) + 1 }} à {{
+        Math.min((currentPage + 1) * pageSize, totalElements) }} sur {{
+        totalElements }} candidatures
+    </div>
+</div>
+
+<!-- Modal for Candidature Details -->
+<div
+    class="modal-overlay"
+    *ngIf="selectedCandidature"
+    (click)="selectedCandidature = null"
+>
+    <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h2>Détails de la Candidature</h2>
+            <button class="btn-close" (click)="selectedCandidature = null">
+                ×
+            </button>
+        </div>
+
+        <div class="modal-body">
+            <!-- Personal Information -->
+            <div class="details-section">
+                <h3>Informations Personnelles</h3>
+                <div class="details-grid">
+                    <div class="detail-item">
+                        <strong>Nom & Prénom:</strong>
+                        <span>{{ selectedCandidature.nomPrenom }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <strong>Genre:</strong>
+                        <span>{{ selectedCandidature.genre }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <strong>Age:</strong>
+                        <span>{{ selectedCandidature.age }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <strong>Téléphone:</strong>
+                        <span>{{ selectedCandidature.numeroTelephone }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <strong>Email:</strong>
+                        <span>{{ selectedCandidature.email }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <strong>Rôle:</strong>
+                        <span>{{ selectedCandidature.roleEntreprise }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Company Information -->
+            <div class="details-section">
+                <h3>Informations sur l'Entreprise</h3>
+                <div class="details-grid">
+                    <div class="detail-item">
+                        <strong>Nom de l'entreprise:</strong>
+                        <span>{{ selectedCandidature.nomEntreprise }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <strong>Statut:</strong>
+                        <span>{{ selectedCandidature.entrepriseEst }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <strong>Date de création:</strong>
+                        <span
+                            >{{ selectedCandidature.dateCreation |
+                            date:'dd/MM/yyyy' }}</span
+                        >
+                    </div>
+                    <div class="detail-item">
+                        <strong>Région:</strong>
+                        <span>{{ selectedCandidature.regionBasee }}</span>
+                    </div>
+                    <div class="detail-item full-width">
+                        <strong>Description:</strong>
+                        <span>{{ selectedCandidature.breveDescription }}</span>
+                    </div>
+                    <div
+                        class="detail-item full-width"
+                        *ngIf="selectedCandidature.lienReseauxSociaux"
+                    >
+                        <strong>Réseaux sociaux:</strong>
+                        <span
+                            ><a
+                                [href]="selectedCandidature.lienReseauxSociaux"
+                                target="_blank"
+                                >{{ selectedCandidature.lienReseauxSociaux }}</a
+                            ></span
+                        >
+                    </div>
+                    <div class="detail-item">
+                        <strong>Label StartupAct:</strong>
+                        <span
+                            >{{ selectedCandidature.labelStartupAct ? 'Oui' :
+                            'Non' }}</span
+                        >
+                    </div>
+                    <div
+                        class="detail-item"
+                        *ngIf="selectedCandidature.labelStartupAct && selectedCandidature.dateObtentionLabel"
+                    >
+                        <strong>Date obtention:</strong>
+                        <span
+                            >{{ selectedCandidature.dateObtentionLabel |
+                            date:'dd/MM/yyyy' }}</span
+                        >
+                    </div>
+                </div>
+            </div>
+
+            <!-- Startup Details -->
+            <div class="details-section">
+                <h3>Détails de la Startup</h3>
+                <div class="details-grid">
+                    <div class="detail-item">
+                        <strong>Phase de maturité:</strong>
+                        <span>{{ selectedCandidature.phaseMaturite }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <strong>Marché cible:</strong>
+                        <span
+                            >{{ selectedCandidature.marchePersonnasCibles
+                            }}</span
+                        >
+                    </div>
+                    <div class="detail-item full-width">
+                        <strong>Innovation:</strong>
+                        <span
+                            >{{ selectedCandidature.composanteInnovation
+                            }}</span
+                        >
+                    </div>
+                    <div class="detail-item full-width">
+                        <strong>Impact environnemental:</strong>
+                        <span
+                            >{{ selectedCandidature.impactEnvironnemental
+                            }}</span
+                        >
+                    </div>
+                    <div class="detail-item full-width">
+                        <strong>Impact social:</strong>
+                        <span>{{ selectedCandidature.impactSocial }}</span>
+                    </div>
+                    <div class="detail-item full-width">
+                        <strong>Viabilité commerciale:</strong>
+                        <span
+                            >{{ selectedCandidature.viabiliteCommerciale
+                            }}</span
+                        >
+                    </div>
+                    <div class="detail-item">
+                        <strong>Valeur ajoutée:</strong>
+                        <span>{{ selectedCandidature.valeurAjoutee }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Team Information -->
+            <div class="details-section">
+                <h3>Informations sur l'Équipe</h3>
+                <div class="details-grid">
+                    <div class="detail-item">
+                        <strong>Nombre de co-fondateurs:</strong>
+                        <span
+                            >{{ selectedCandidature.nombreCoFondateurs }}</span
+                        >
+                    </div>
+                    <div class="detail-item">
+                        <strong>Impliqués dans la gestion:</strong>
+                        <span
+                            >{{ selectedCandidature.impliquesGestion ? 'Oui' :
+                            'Non' }}</span
+                        >
+                    </div>
+                    <div
+                        class="detail-item"
+                        *ngIf="selectedCandidature.impliquesGestion"
+                    >
+                        <strong>Nombre impliqués:</strong>
+                        <span
+                            >{{ selectedCandidature.nombreImpliquesGestion
+                            }}</span
+                        >
+                    </div>
+                    <div class="detail-item">
+                        <strong>Emplois créés:</strong>
+                        <span
+                            >{{ selectedCandidature.nombreEmploisCrees }}</span
+                        >
+                    </div>
+                    <div class="detail-item full-width">
+                        <strong>Expérience de l'équipe:</strong>
+                        <span
+                            >{{ selectedCandidature.experienceEquipeFondatrice
+                            }}</span
+                        >
+                    </div>
+                </div>
+            </div>
+
+            <!-- Support Needs -->
+            <div class="details-section">
+                <h3>Besoins d'Accompagnement</h3>
+                <div class="details-grid">
+                    <div class="detail-item full-width">
+                        <strong>Besoins:</strong>
+                        <ul>
+                            <li
+                                *ngFor="let besoin of selectedCandidature.besoinsAccompagnement"
+                            >
+                                {{ besoin }}
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="detail-item">
+                        <strong>A déjà bénéficié d'accompagnement:</strong>
+                        <span
+                            >{{ selectedCandidature.beneficieAccompagnement ?
+                            'Oui' : 'Non' }}</span
+                        >
+                    </div>
+                    <div
+                        class="detail-item full-width"
+                        *ngIf="selectedCandidature.beneficieAccompagnement && selectedCandidature.detailsAccompagnement"
+                    >
+                        <strong>Détails:</strong>
+                        <span
+                            >{{ selectedCandidature.detailsAccompagnement
+                            }}</span
+                        >
+                    </div>
+                    <div
+                        class="detail-item full-width"
+                        *ngIf="selectedCandidature.besoinsFormation && selectedCandidature.besoinsFormation.length > 0"
+                    >
+                        <strong>Besoins en formation:</strong>
+                        <ul>
+                            <li
+                                *ngFor="let formation of selectedCandidature.besoinsFormation"
+                            >
+                                {{ formation }}
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status Update -->
+            <div class="details-section">
+                <h3>Mise à Jour du Statut</h3>
+                <div class="status-update-form">
+                    <div class="form-group">
+                        <label for="newStatus">Nouveau statut:</label>
+                        <select
+                            id="newStatus"
+                            [(ngModel)]="newStatus"
+                            class="form-control"
+                        >
+                            <option value="EN_ATTENTE">En Attente</option>
+                            <option value="EN_COURS_EVALUATION">
+                                En Cours d'Évaluation
+                            </option>
+                            <option value="ACCEPTE">Accepté</option>
+                            <option value="REFUSE">Refusé</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="commentaires">Commentaires:</label>
+                        <textarea
+                            id="commentaires"
+                            [(ngModel)]="adminComments"
+                            ²
+                            class="form-control"
+                            rows="3"
+                            placeholder="Ajouter des commentaires..."
+                        ></textarea>
+                    </div>
+                    <button
+                        class="btn btn-update"
+                        (click)="updateStatus(selectedCandidature.id!, newStatus, adminComments)"
+                    >
+                        Mettre à jour le statut
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

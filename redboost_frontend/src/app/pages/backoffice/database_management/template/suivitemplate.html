@@ -1,0 +1,253 @@
+<!-- template-list.component.html -->
+<div class="template-management">
+    <!-- Header -->
+    <div class="header">
+        <div class="header-content">
+            <div class="header-left">
+                <mat-icon class="header-icon">storage</mat-icon>
+                <div>
+                    <h1 class="title">Gestion des Bases de Données</h1>
+                    <p class="subtitle">
+                        Consultez, filtrez et exportez vos bases de données
+                        RedBoost
+                    </p>
+                </div>
+            </div>
+            <button
+                mat-raised-button
+                class="add-button"
+                (click)="openCreateDialog()"
+            >
+                <mat-icon>add</mat-icon>
+                Ajouter un Template
+            </button>
+        </div>
+    </div>
+
+    <!-- Search and Filter Bar -->
+    <div class="search-filter-bar">
+        <div class="search-box">
+            <mat-icon class="search-icon">search</mat-icon>
+            <input
+                type="text"
+                placeholder="Rechercher une base (nom, description)..."
+                [(ngModel)]="searchText"
+                (input)="onSearch()"
+                class="search-input"
+            />
+        </div>
+
+        <div class="filter-select">
+            <mat-icon class="filter-icon">storage</mat-icon>
+            <select [(ngModel)]="selectedFilter" class="filter-dropdown">
+                <option value="all">Toutes les bases</option>
+                <option value="principal">Bases principales</option>
+                <option value="recent">Récentes</option>
+            </select>
+            <mat-icon class="dropdown-arrow">arrow_drop_down</mat-icon>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-content">
+                <div class="stat-info">
+                    <div class="stat-label">Total Bases</div>
+                    <div class="stat-value">{{ stats.totalBases }}</div>
+                </div>
+                <div class="stat-icon pink">
+                    <mat-icon>storage</mat-icon>
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-content">
+                <div class="stat-info">
+                    <div class="stat-label">Total Enregistrements</div>
+                    <div class="stat-value">
+                        {{ stats.totalEnregistrements }}
+                    </div>
+                </div>
+                <div class="stat-icon blue">
+                    <mat-icon>people</mat-icon>
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-content">
+                <div class="stat-info">
+                    <div class="stat-label">Bases Principales</div>
+                    <div class="stat-value">{{ stats.basesPrincipales }}</div>
+                </div>
+                <div class="stat-icon purple">
+                    <mat-icon>star</mat-icon>
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-content">
+                <div class="stat-info">
+                    <div class="stat-label">Dernière MAJ</div>
+                    <div class="stat-value date">Aujourd'hui</div>
+                </div>
+                <div class="stat-icon gray">
+                    <mat-icon>event</mat-icon>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Templates Section -->
+    <div class="templates-section">
+        <div class="section-header">
+            <h2 class="section-title">Bases de données disponibles</h2>
+            <span class="template-count"
+                >{{ filteredTemplates.length }} bases</span
+            >
+        </div>
+
+        <!-- Loading State -->
+        <div *ngIf="loading" class="loading-container">
+            <mat-spinner diameter="50"></mat-spinner>
+            <p>Chargement des bases de données...</p>
+        </div>
+
+        <!-- Templates Grid -->
+        <div
+            *ngIf="!loading && filteredTemplates.length > 0"
+            class="templates-grid"
+        >
+            <div
+                *ngFor="let template of filteredTemplates"
+                class="template-card"
+            >
+                <div class="template-card-header">
+                    <div
+                        class="template-icon"
+                        [style.background]="getTemplateColor(template)"
+                    >
+                        <mat-icon>{{ getTemplateIcon(template) }}</mat-icon>
+                    </div>
+                    <button
+                        mat-icon-button
+                        class="more-button"
+                        [matMenuTriggerFor]="menu"
+                        (click)="$event.stopPropagation()"
+                    >
+                        <mat-icon>more_vert</mat-icon>
+                    </button>
+                    <mat-menu #menu="matMenu">
+                        <button mat-menu-item (click)="viewTemplate(template)">
+                            <mat-icon>visibility</mat-icon>
+                            <span>Consulter</span>
+                        </button>
+                        <button
+                            mat-menu-item
+                            (click)="exportTemplate(template, 'excel', $event)"
+                        >
+                            <mat-icon>download</mat-icon>
+                            <span>Exporter Excel</span>
+                        </button>
+                        <button
+                            mat-menu-item
+                            (click)="openImportDialog(template, $event)"
+                        >
+                            <mat-icon>upload</mat-icon>
+                            <span>Importer données</span>
+                        </button>
+                        <button
+                            mat-menu-item
+                            (click)="openFilterDialog(template, $event)"
+                        >
+                            <mat-icon>filter_list</mat-icon>
+                            <span>Filtrer</span>
+                        </button>
+                        <button
+                            mat-menu-item
+                            (click)="openEditDialog(template, $event)"
+                        >
+                            <mat-icon>edit</mat-icon>
+                            <span>Modifier</span>
+                        </button>
+                        <button
+                            mat-menu-item
+                            (click)="deleteTemplate(template, $event)"
+                            class="delete-action"
+                        >
+                            <mat-icon>delete</mat-icon>
+                            <span>Supprimer</span>
+                        </button>
+                    </mat-menu>
+                </div>
+
+                <div class="template-card-content">
+                    <h3 class="template-name">{{ template.name }}</h3>
+                    <div *ngIf="template.type" class="template-type">
+                        {{ template.type }}
+                    </div>
+                    <p class="template-entries">
+                        {{ getTemplateEntries(template) }} entrées
+                    </p>
+                    <p class="template-description">
+                        {{ template.description }}
+                    </p>
+
+                    <div class="template-footer">
+                        <div class="template-date">
+                            <span class="date-label">Dernière mise à jour</span>
+                            <span class="date-value"
+                                >{{ formatDate(template.updatedAt) }}</span
+                            >
+                        </div>
+
+                        <div class="template-actions">
+                            <button
+                                mat-flat-button
+                                class="consult-button"
+                                (click)="viewTemplate(template)"
+                            >
+                                <mat-icon>visibility</mat-icon>
+                                Consulter
+                            </button>
+                            <button
+                                mat-icon-button
+                                class="download-button"
+                                (click)="$event.stopPropagation(); exportTemplate(template, 'excel')"
+                            >
+                                <mat-icon>download</mat-icon>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Empty State -->
+        <div
+            *ngIf="!loading && filteredTemplates.length === 0"
+            class="empty-state"
+        >
+            <mat-icon>inbox</mat-icon>
+            <h3>Aucune base de données trouvée</h3>
+            <p *ngIf="searchText">
+                Essayez de modifier vos critères de recherche
+            </p>
+            <p *ngIf="!searchText">
+                Créez votre première base de données pour commencer
+            </p>
+            <button
+                mat-raised-button
+                class="add-button"
+                (click)="openCreateDialog()"
+                *ngIf="!searchText"
+            >
+                <mat-icon>add</mat-icon>
+                Créer une base
+            </button>
+        </div>
+    </div>
+</div>

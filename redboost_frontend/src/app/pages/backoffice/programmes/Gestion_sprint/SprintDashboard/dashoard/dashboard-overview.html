@@ -1,0 +1,174 @@
+<div class="dashboard-container">
+    <div class="header">
+        <div class="nav-tabs">
+            <button class="tab-btn" [class.active]="activeTab() === 'dashboard'" (click)="activeTab.set('dashboard')">
+                <mat-icon>dashboard</mat-icon> Dashboard
+            </button>
+            <button class="tab-btn" [class.active]="activeTab() === 'sprints'" (click)="activeTab.set('sprints')">
+                <mat-icon>calendar_today</mat-icon> Gestion des Sprints
+            </button>
+        </div>
+    </div>
+
+    <div *ngIf="activeTab() === 'dashboard'" class="main-content">
+        <div class="title-section">
+            <div>
+                <h1>Dashboard Sprints</h1>
+                <p class="subtitle">Vue d'ensemble et suivi des performances</p>
+            </div>
+            <button class="btn-new-sprint" (click)="triggerNewSprint()">
+                <mat-icon>add</mat-icon> Nouveau Sprint
+            </button>
+        </div>
+
+        <!-- metrics() is now a computed signal → call it with () -->
+        <div class="metrics-grid">
+            <div *ngFor="let m of metrics()"
+                 class="metric-card"
+                 [style.background]="m.color === 'white' ? 'white' : m.color"
+                 [class.blue-card]="m.title.includes('Objectifs')"
+                 [class.pink-card]="m.title.includes('KPI')"
+                 [class.teal-card]="m.title.includes('alis')"
+                 [class.burgundy-card]="m.title.includes('Qualit')"
+                 [class.orange-card]="m.title.includes('Respect')">
+                <div class="metric-header">
+                    <div class="metric-icon">
+                        <mat-icon>{{ m.iconName }}</mat-icon>
+                    </div>
+                    <span class="metric-badge" [ngClass]="m.badgeClass">{{ m.badge }}</span>
+                </div>
+                <div class="metric-content">
+                    <h3>{{ m.title }}</h3>
+                    <div class="metric-value">{{ m.value }}</div>
+                    <div class="metric-subtitle">{{ m.subtitle }}</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" [style.width.%]="m.percentage"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="alerts-section">
+            <div class="alerts-header">
+                <mat-icon>warning</mat-icon> Alertes urgentes ({{ alerts().length }})
+            </div>
+            <div class="alerts-list">
+                <div *ngFor="let alert of alerts()" class="alert-item">
+                    <div class="alert-icon"><mat-icon>error_outline</mat-icon></div>
+                    <div class="alert-content">
+                        <div class="alert-title"       [title]="alert.title">{{ alert.title }}</div>
+                        <div class="alert-description" [title]="alert.description">{{ alert.description }}</div>
+                    </div>
+                    <span class="alert-days">{{ alert.days }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="sprints-section">
+            <div class="section-header">
+                <div>
+                    <h2>Sprints en cours</h2>
+                    <p class="section-subtitle">Vue d'ensemble des sprints actifs</p>
+                </div>
+                <button class="btn-view-all" (click)="activeTab.set('sprints')">
+                    Voir tout <mat-icon>arrow_forward</mat-icon>
+                </button>
+            </div>
+
+            <div *ngIf="sprintsLoading()" class="loading-container">
+                <mat-spinner diameter="40"></mat-spinner>
+            </div>
+
+            <div *ngIf="!sprintsLoading() && activeInProgressSprints().length === 0" class="empty-sprints-state">
+                <mat-icon>calendar_today</mat-icon>
+                <p>Aucun sprint en cours actuellement</p>
+                <button class="btn-new-sprint-small" (click)="triggerNewSprint()">
+                    <mat-icon>add</mat-icon> Créer un sprint
+                </button>
+            </div>
+
+            <div *ngIf="!sprintsLoading() && activeInProgressSprints().length > 0" class="sprints-list">
+                <div *ngFor="let sprint of activeInProgressSprints().slice(0, 3)" class="sprint-card-overview">
+                    <div class="sprint-header">
+                        <div class="sprint-title-row" style="min-width:0;">
+                            <h3 class="sprint-name" [title]="sprint.nom">{{ sprint.nom }}</h3>
+                            <div class="sprint-badges-group">
+                                <span class="sprint-status" [ngClass]="getSprintStatusClass(sprint)">
+                                    {{ getStatusLabel(sprint) }}
+                                </span>
+                                <span class="sprint-program-badge" [title]="sprint.programmeNom">
+                                    {{ sprint.programmeNom }}
+                                </span>
+                                <span *ngIf="isLate(sprint) && !isDone(sprint)" class="sprint-days">
+                                    <mat-icon>schedule</mat-icon> +{{ getDelayDays(sprint) }} jours
+                                </span>
+                            </div>
+                        </div>
+                        <div class="sprint-meta">
+                            <span class="sprint-dates">
+                                <mat-icon>calendar_today</mat-icon>
+                                {{ sprint.dateDebut | date:'dd/MM/yyyy' }} - {{ (sprint.dateFin || sprint.dateLimite) | date:'dd/MM/yyyy' }}
+                            </span>
+                            <span class="sprint-activities">
+                                <mat-icon>flash_on</mat-icon>
+                                {{ sprint.nombreActivites || sprint.activites?.length || 0 }} activité(s)
+                            </span>
+                        </div>
+                    </div>
+                    <div class="sprint-progress">
+                        <div class="progress-header">
+                            <span>Progression</span>
+                            <span class="progress-value">{{ getSprintProgress(sprint) }}%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" [style.width.%]="getSprintProgress(sprint)"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Total Activités</h3>
+                <div class="stat-content">
+                    <div class="stat-main">{{ stats().totalActivities }}</div>
+                    <div class="stat-details">
+                        <div class="stat-detail completed">{{ stats().completedActivities }} terminées</div>
+                        <div class="stat-detail in-progress">{{ stats().inProgressActivities }} en cours</div>
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <h3>Total Tâches</h3>
+                <div class="stat-content">
+                    <div class="stat-main">{{ stats().totalTasks }}</div>
+                    <div class="stat-details">
+                        <div class="stat-detail completed">{{ stats().completedTasks }} terminées</div>
+                        <div class="stat-detail remaining">{{ stats().remainingTasks }} restantes</div>
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <h3>Équipe</h3>
+                <div class="stat-content">
+                    <div class="team-icon"><mat-icon>group</mat-icon></div>
+                    <div class="stat-team-info">
+                        <div class="stat-team-number">{{ stats().teamMembers }}</div>
+                        <div class="stat-subtitle">membres actifs</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div [hidden]="activeTab() !== 'sprints'" class="main-content">
+        <app-sprint-manager
+            #sprintManager
+            [sprints]="sprints()"
+            [programmes]="programmes()"
+            [loading]="sprintsLoading()"
+            (refresh)="loadSprints()">
+        </app-sprint-manager>
+    </div>
+</div>

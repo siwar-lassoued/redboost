@@ -1,0 +1,309 @@
+<div class="data-management-container">
+    <!-- Header with Back Button -->
+    <div class="page-header">
+        <button mat-button class="back-button" (click)="goBack()">
+            <mat-icon>arrow_back</mat-icon>
+            Retour
+        </button>
+
+        <div class="template-info">
+            <div class="template-icon" [style.background]="getTemplateColor()">
+                <mat-icon>{{ getTemplateIcon() }}</mat-icon>
+            </div>
+            <div class="template-details">
+                <h1 class="template-name">{{ template?.name }}</h1>
+                <p class="template-description">{{ template?.description }}</p>
+            </div>
+        </div>
+
+        <div class="entry-count">{{ dataRows.length }} enregistrements</div>
+    </div>
+
+    <!-- Action Bar -->
+    <div class="action-bar">
+        <div class="search-box">
+            <mat-icon class="search-icon">search</mat-icon>
+            <input
+                type="text"
+                placeholder="Rechercher dans toutes les colonnes..."
+                [(ngModel)]="searchText"
+                (input)="onSearch()"
+                class="search-input"
+            />
+        </div>
+
+        <div class="action-buttons">
+            <button
+                mat-stroked-button
+                class="filter-button"
+                [class.active]="showFilters"
+                (click)="toggleFilters()"
+            >
+                <mat-icon>filter_list</mat-icon>
+                Filtres
+            </button>
+            <button
+                mat-flat-button
+                class="import-button"
+                (click)="openImportDialog()"
+            >
+                <mat-icon>upload</mat-icon>
+                Importer
+            </button>
+            <button
+                mat-stroked-button
+                class="export-button"
+                (click)="exportExcel()"
+            >
+                <mat-icon>download</mat-icon>
+                Exporter
+            </button>
+            <button
+                mat-raised-button
+                class="add-button"
+                (click)="startAddRow()"
+            >
+                <mat-icon>add</mat-icon>
+                Nouveau
+            </button>
+        </div>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="loading" class="loading-container">
+        <mat-spinner diameter="50"></mat-spinner>
+        <p>Chargement des données...</p>
+    </div>
+
+    <!-- Filters Section (Above Table) -->
+    <div
+        *ngIf="showFilters && !loading && dataRows.length > 0"
+        class="filters-panel"
+    >
+        <div class="filters-grid">
+            <!-- ID Unique Filter -->
+            <div class="filter-item">
+                <label class="filter-label">ID Unique</label>
+                <input
+                    type="text"
+                    placeholder="Filtrer id unique..."
+                    [(ngModel)]="filters['ID_UNIQUE']"
+                    (input)="applyFilters()"
+                    class="filter-input"
+                />
+            </div>
+
+            <!-- Dynamic Column Filters -->
+            <div class="filter-item" *ngFor="let column of displayedColumns">
+                <label class="filter-label">{{ column }}</label>
+                <input
+                    type="text"
+                    [placeholder]="'Filtrer ' + column.toLowerCase() + '...'"
+                    [(ngModel)]="filters[column]"
+                    (input)="applyFilters()"
+                    class="filter-input"
+                />
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Table -->
+    <div *ngIf="!loading && dataRows.length > 0" class="table-container">
+        <table mat-table [dataSource]="filteredDataRows" class="data-table">
+            <!-- Checkbox Column -->
+            <ng-container matColumnDef="select">
+                <th mat-header-cell *matHeaderCellDef class="checkbox-cell">
+                    <mat-checkbox
+                        (change)="$event ? masterToggle() : null"
+                        [checked]="selection.hasValue() && isAllSelected()"
+                        [indeterminate]="selection.hasValue() && !isAllSelected()"
+                    >
+                    </mat-checkbox>
+                </th>
+                <td mat-cell *matCellDef="let row" class="checkbox-cell">
+                    <mat-checkbox
+                        (click)="$event.stopPropagation()"
+                        (change)="$event ? selection.toggle(row) : null"
+                        [checked]="selection.isSelected(row)"
+                    >
+                    </mat-checkbox>
+                </td>
+            </ng-container>
+
+            <!-- ID Unique Column -->
+            <ng-container matColumnDef="ID_UNIQUE">
+                <th mat-header-cell *matHeaderCellDef>
+                    <div class="header-cell">
+                        <span class="header-text">ID Unique</span>
+                        <mat-icon class="sort-icon">unfold_more</mat-icon>
+                    </div>
+                </th>
+                <td mat-cell *matCellDef="let row">
+                    <div class="cell-content cell-text">
+                        <span *ngIf="!isRowEditing(row)">{{ row.rowId }}</span>
+                        <span *ngIf="isRowEditing(row)" class="text-muted"
+                            >Auto-généré</span
+                        >
+                    </div>
+                </td>
+            </ng-container>
+
+            <!-- Dynamic Columns -->
+            <ng-container
+                *ngFor="let column of displayedColumns"
+                [matColumnDef]="column"
+            >
+                <th mat-header-cell *matHeaderCellDef>
+                    <div class="header-cell">
+                        <span class="header-text">{{ column }}</span>
+                        <mat-icon
+                            class="required-icon"
+                            *ngIf="isRequiredColumn(column)"
+                            >fiber_manual_record</mat-icon
+                        >
+                        <mat-icon class="sort-icon">unfold_more</mat-icon>
+                    </div>
+                </th>
+                <td mat-cell *matCellDef="let row">
+                    <div
+                        class="cell-content"
+                        [ngClass]="'cell-' + getColumnType(column).toLowerCase()"
+                    >
+                        <ng-container *ngIf="!isRowEditing(row); else editCell">
+                            <span
+                                *ngIf="column === 'STATUT' && getCellValue(row, column)"
+                                class="status-badge"
+                                [ngClass]="'status-' + (getCellValue(row, column) | lowercase)"
+                            >
+                                {{ getCellValue(row, column) }}
+                            </span>
+                            <span
+                                *ngIf="column === 'TYPE' && getCellValue(row, column)"
+                                class="type-badge"
+                                [ngClass]="'type-' + getCellValue(row, column).toString().toLowerCase().replace(' ','-')"
+                            >
+                                {{ getCellValue(row, column) }}
+                            </span>
+                            <span
+                                *ngIf="column !== 'STATUT' && column !== 'TYPE'"
+                            >
+                                {{ getCellValue(row, column) || '-' }}
+                            </span>
+                        </ng-container>
+
+                        <ng-template #editCell>
+                            <!-- Boolean/Checkbox input -->
+                            <ng-container *ngIf="getColumnType(column) === 'BOOLEAN'">
+                                <mat-checkbox
+                                    [(ngModel)]="editingRowData[column]"
+                                    (ngModelChange)="onCellInput(column, $event)"
+                                    class="edit-checkbox"
+                                >
+                                </mat-checkbox>
+                            </ng-container>
+
+                            <!-- Other input types -->
+                            <input
+                                *ngIf="getColumnType(column) !== 'BOOLEAN'"
+                                [type]="getInputType(column)"
+                                [(ngModel)]="editingRowData[column]"
+                                (ngModelChange)="onCellInput(column, $event)"
+                                (keydown)="onKeyDown($event)"
+                                class="edit-input"
+                                [placeholder]="column"
+                            />
+                        </ng-template>
+                    </div>
+                </td>
+            </ng-container>
+
+            <!-- Actions Column -->
+            <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef class="actions-header">
+                    Actions
+                </th>
+                <td mat-cell *matCellDef="let row" class="actions-cell">
+                    <ng-container
+                        *ngIf="!isRowEditing(row); else editingActions"
+                    >
+                        <button
+                            mat-icon-button
+                            [matMenuTriggerFor]="actionMenu"
+                            (click)="$event.stopPropagation()"
+                        >
+                            <mat-icon>more_vert</mat-icon>
+                        </button>
+                        <mat-menu #actionMenu="matMenu">
+                            <button mat-menu-item (click)="startEditRow(row)">
+                                <mat-icon>edit</mat-icon>
+                                <span>Modifier</span>
+                            </button>
+                            <button mat-menu-item (click)="deleteRow(row)">
+                                <mat-icon class="delete-icon">delete</mat-icon>
+                                <span>Supprimer</span>
+                            </button>
+                        </mat-menu>
+                    </ng-container>
+
+                    <ng-template #editingActions>
+                        <button
+                            mat-icon-button
+                            color="primary"
+                            (click)="saveRow()"
+                            matTooltip="Sauvegarder"
+                        >
+                            <mat-icon>check</mat-icon>
+                        </button>
+                        <button
+                            mat-icon-button
+                            color="warn"
+                            (click)="cancelEditing()"
+                            matTooltip="Annuler"
+                        >
+                            <mat-icon>close</mat-icon>
+                        </button>
+                    </ng-template>
+                </td>
+            </ng-container>
+
+            <!-- Header Row -->
+            <tr
+                mat-header-row
+                *matHeaderRowDef="tableColumns; sticky: true"
+            ></tr>
+
+            <!-- Data Rows -->
+            <tr
+                mat-row
+                *matRowDef="let row; columns: tableColumns;"
+                (click)="selectRow(row)"
+                [class.selected-row]="selection.isSelected(row)"
+                [class.editing-row]="isRowEditing(row)"
+            ></tr>
+        </table>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!loading && dataRows.length === 0" class="empty-state">
+        <mat-icon>inbox</mat-icon>
+        <h3>Aucune donnée disponible</h3>
+        <p>
+            Commencez par importer des données ou ajoutez un nouvel
+            enregistrement
+        </p>
+        <div class="empty-actions">
+            <button
+                mat-raised-button
+                class="add-button"
+                (click)="startAddRow()"
+            >
+                <mat-icon>add</mat-icon>
+                Ajouter un enregistrement
+            </button>
+            <button mat-stroked-button (click)="openImportDialog()">
+                <mat-icon>upload</mat-icon>
+                Importer des données
+            </button>
+        </div>
+    </div>
+</div>
