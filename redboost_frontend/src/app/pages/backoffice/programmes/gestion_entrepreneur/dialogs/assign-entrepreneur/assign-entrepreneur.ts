@@ -1,5 +1,5 @@
 // dialogs/assign-entrepreneur.ts
-import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Programme, EntrepreneurDetail, ProgrammeDetail } from '../../../../../../models/entrepreneur.models';
@@ -10,26 +10,122 @@ import { Programme, EntrepreneurDetail, ProgrammeDetail } from '../../../../../.
     imports: [CommonModule, FormsModule],
     templateUrl: './assign-entrepreneur.html'
 })
-export class AssignEntrepreneurModalComponent implements OnInit {
+export class AssignEntrepreneurModalComponent implements OnInit, OnChanges {
     @Input() programmes: Programme[] = [];
     @Input() entrepreneursDetails: EntrepreneurDetail[] = [];
     @Input() showAssignModal = false;
+    @Input() preSelectedEntrepreneurIds: number[] = [];
 
     @Output() onClose = new EventEmitter<void>();
-    @Output() onAssignEntrepreneurs = new EventEmitter<{ programmeId: number; entrepreneurIds: number[] }>();
+    /** Now emits programmeIds (array) instead of a single programmeId */
+    @Output() onAssignEntrepreneurs = new EventEmitter<{ programmeIds: number[]; entrepreneurIds: number[] }>();
 
-    selectedProgrammeId: number | null = null;
+    selectedProgrammeIds: number[] = [];
     selectedEntrepreneurIds: number[] = [];
     isAssigning = false;
 
     ngOnInit() {}
 
-    onProgrammeSelect() {
-        this.selectedEntrepreneurIds = [];
+    ngOnChanges(changes: SimpleChanges) {
+        if (changes['showAssignModal']?.currentValue === true ||
+            changes['preSelectedEntrepreneurIds']) {
+            if (this.preSelectedEntrepreneurIds?.length > 0) {
+                const existing = new Set(this.selectedEntrepreneurIds);
+                this.preSelectedEntrepreneurIds.forEach(id => existing.add(id));
+                this.selectedEntrepreneurIds = Array.from(existing);
+            }
+        }
+        if (changes['showAssignModal']?.currentValue === false) {
+            this.selectedProgrammeIds = [];
+            this.selectedEntrepreneurIds = [];
+            this.isAssigning = false;
+        }
+    }
+
+    // ─── Programme selection ──────────────────────────────────────────────────
+
+    isProgrammeSelected(programmeId: number): boolean {
+        return this.selectedProgrammeIds.includes(programmeId);
+    }
+
+    toggleProgrammeSelection(programmeId: number) {
+        const index = this.selectedProgrammeIds.indexOf(programmeId);
+        if (index === -1) {
+            this.selectedProgrammeIds.push(programmeId);
+        } else {
+            this.selectedProgrammeIds.splice(index, 1);
+        }
+        // Re-filter entrepreneur selection after programme change
+        this.selectedEntrepreneurIds = this.selectedEntrepreneurIds.filter(
+            id => !this.isEntrepreneurAlreadyAssignedToAll(id)
+        );
+    }
+
+    get isAllProgrammesSelected(): boolean {
+        return this.programmes.length > 0 &&
+            this.programmes.every(p => this.isProgrammeSelected(p.id));
+    }
+
+    get isPartialProgrammesSelected(): boolean {
+        return !this.isAllProgrammesSelected &&
+            this.programmes.some(p => this.isProgrammeSelected(p.id));
+    }
+
+    toggleSelectAllProgrammes() {
+        if (this.isAllProgrammesSelected) {
+            this.selectedProgrammeIds = [];
+        } else {
+            this.selectedProgrammeIds = this.programmes.map(p => p.id);
+        }
+        this.selectedEntrepreneurIds = this.selectedEntrepreneurIds.filter(
+            id => !this.isEntrepreneurAlreadyAssignedToAll(id)
+        );
+    }
+
+    // ─── Entrepreneur selection ───────────────────────────────────────────────
+
+    /**
+     * An entrepreneur is "already assigned to all" only when they are already
+     * in EVERY currently selected programme. If no programmes are selected yet,
+     * no one is considered already assigned.
+     */
+    isEntrepreneurAlreadyAssignedToAll(entrepreneurId: number): boolean {
+        if (this.selectedProgrammeIds.length === 0) return false;
+        const entrepreneur = this.entrepreneursDetails.find(e => e.id === entrepreneurId);
+        if (!entrepreneur?.programs) return false;
+        const userProgramIds = new Set(entrepreneur.programs.map((p: ProgrammeDetail) => p.id));
+        return this.selectedProgrammeIds.every(pid => userProgramIds.has(pid));
+    }
+
+    /**
+     * Shows which programmes this entrepreneur is already in, among the selected ones.
+     */
+    getAlreadyAssignedProgramNames(entrepreneurId: number): string[] {
+        if (this.selectedProgrammeIds.length === 0) return [];
+        const entrepreneur = this.entrepreneursDetails.find(e => e.id === entrepreneurId);
+        if (!entrepreneur?.programs) return [];
+        const userProgramIds = new Set(entrepreneur.programs.map((p: ProgrammeDetail) => p.id));
+        return this.programmes
+            .filter(p => this.selectedProgrammeIds.includes(p.id) && userProgramIds.has(p.id))
+            .map(p => p.name);
+    }
+
+    get assignableEntrepreneurs(): EntrepreneurDetail[] {
+        return this.entrepreneursDetails.filter(e => !this.isEntrepreneurAlreadyAssignedToAll(e.id));
+    }
+
+    get isAllEntrepreneursSelected(): boolean {
+        const assignable = this.assignableEntrepreneurs;
+        return assignable.length > 0 && assignable.every(e => this.isEntrepreneurSelected(e.id));
+    }
+
+    get isPartialEntrepreneursSelected(): boolean {
+        return !this.isAllEntrepreneursSelected &&
+            this.assignableEntrepreneurs.some(e => this.isEntrepreneurSelected(e.id));
     }
 
     toggleEntrepreneurSelection(entrepreneurId: number) {
-        if (this.isEntrepreneurAlreadyAssigned(entrepreneurId)) return;
+        if (this.isEntrepreneurAlreadyAssignedToAll(entrepreneurId)) return;
         const index = this.selectedEntrepreneurIds.indexOf(entrepreneurId);
         if (index === -1) {
             this.selectedEntrepreneurIds.push(entrepreneurId);
@@ -42,34 +138,11 @@ export class AssignEntrepreneurModalComponent implements OnInit {
         return this.selectedEntrepreneurIds.includes(entrepreneurId);
     }
 
-    isEntrepreneurAlreadyAssigned(entrepreneurId: number): boolean {
-        if (!this.selectedProgrammeId) return false;
-        const entrepreneur = this.entrepreneursDetails.find(e => e.id === entrepreneurId);
-        if (!entrepreneur?.programs) return false;
-        return entrepreneur.programs.some((p: ProgrammeDetail) => p.id === this.selectedProgrammeId);
-    }
-
-    // Returns only entrepreneurs that can still be assigned (not yet in the programme)
-    get assignableEntrepreneurs(): EntrepreneurDetail[] {
-        return this.entrepreneursDetails.filter(e => !this.isEntrepreneurAlreadyAssigned(e.id));
-    }
-
-    get isAllSelected(): boolean {
-        const assignable = this.assignableEntrepreneurs;
-        return assignable.length > 0 && assignable.every(e => this.isEntrepreneurSelected(e.id));
-    }
-
-    get isPartiallySelected(): boolean {
-        return !this.isAllSelected && this.assignableEntrepreneurs.some(e => this.isEntrepreneurSelected(e.id));
-    }
-
-    toggleSelectAll() {
-        if (this.isAllSelected) {
-            // Deselect all assignable entrepreneurs
+    toggleSelectAllEntrepreneurs() {
+        if (this.isAllEntrepreneursSelected) {
             const assignableIds = new Set(this.assignableEntrepreneurs.map(e => e.id));
             this.selectedEntrepreneurIds = this.selectedEntrepreneurIds.filter(id => !assignableIds.has(id));
         } else {
-            // Select all assignable entrepreneurs (merge, avoid duplicates)
             const existing = new Set(this.selectedEntrepreneurIds);
             this.assignableEntrepreneurs.forEach(e => existing.add(e.id));
             this.selectedEntrepreneurIds = Array.from(existing);
@@ -77,24 +150,24 @@ export class AssignEntrepreneurModalComponent implements OnInit {
     }
 
     getValidSelections(): number[] {
-        return this.selectedEntrepreneurIds.filter(id => !this.isEntrepreneurAlreadyAssigned(id));
+        return this.selectedEntrepreneurIds.filter(id => !this.isEntrepreneurAlreadyAssignedToAll(id));
     }
 
     canAssign(): boolean {
         return !this.isAssigning &&
-            this.selectedProgrammeId !== null &&
+            this.selectedProgrammeIds.length > 0 &&
             this.getValidSelections().length > 0;
     }
 
     assignEntrepreneurs() {
         const validSelections = this.getValidSelections();
-        if (!this.selectedProgrammeId || validSelections.length === 0) {
-            alert('Veuillez sélectionner un programme et au moins un entrepreneur non déjà assigné');
+        if (this.selectedProgrammeIds.length === 0 || validSelections.length === 0) {
+            alert('Veuillez sélectionner au moins un programme et un entrepreneur');
             return;
         }
         this.isAssigning = true;
         this.onAssignEntrepreneurs.emit({
-            programmeId: this.selectedProgrammeId,
+            programmeIds: this.selectedProgrammeIds,
             entrepreneurIds: validSelections
         });
     }

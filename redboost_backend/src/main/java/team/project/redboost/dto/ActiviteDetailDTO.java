@@ -32,4 +32,7 @@ public class ActiviteDetailDTO {
     private List<DocumentDTO> documents;
     private String sprintNom;
     private String programmeNom;
+    private Long sprintId;
+    private Long programmeId;
+
 }

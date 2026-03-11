@@ -487,6 +487,8 @@ code { font-family: var(--mono); background: rgba(10,73,85,0.08); color: var(--n
     <a href="#structure"     class="nav-link"><span class="icon">📁</span> Structure du Projet</a>
     <div class="nav-section-title">Référence</div>
     <a href="#datamodel"     class="nav-link"><span class="icon">🗂️</span> Modèle de Données</a>
+    <div class="nav-section-title">Guide Utilisateur</div>
+<a href="#guide" class="nav-link"><span class="icon">📸</span> Guide Fonctionnalités</a>
     <a href="#api"           class="nav-link"><span class="icon">📡</span> Référence API</a>
     <a href="#security"      class="nav-link"><span class="icon">🔐</span> Sécurité & Rôles</a>
     <a href="#config"        class="nav-link"><span class="icon">⚙️</span> Configuration</a>
@@ -590,8 +592,8 @@ code { font-family: var(--mono); background: rgba(10,73,85,0.08); color: var(--n
         <div class="step">
           <div class="step-num">1</div>
           <div class="step-body"><h4>Cloner le Dépôt</h4>
-          <div class="code-block"><span class="code-label">bash</span><pre>git clone https://github.com/MarwaMessaoudi/redboost_frontoffice.git
-cd redboost_frontoffice</pre></div></div>
+          <div class="code-block"><span class="code-label">bash</span><pre>git clone https://github.com/redstart-redboost/Redboost.git
+cd Redboost</pre></div></div>
         </div>
         <div class="step">
           <div class="step-num">2</div>
@@ -1150,6 +1152,926 @@ logging.level.org.hibernate.SQL=DEBUG</pre></div>
       <li><code>/ws/**</code> — Endpoint WebSocket STOMP pour les notifications temps réel</li>
     </ul>
   </section>
+
+<!-- ══════════════════════════════════════════
+     SECTION GUIDE VISUEL — À INSÉRER DANS LA DOC
+     Ajouter dans le sidebar nav + dans le content div
+     ══════════════════════════════════════════ -->
+
+<!-- ─────────────────────────────────────────
+  ÉTAPE 1 : Ajouter ce lien dans le sidebar nav
+  (après la section "Référence", avant "Opérations")
+────────────────────────────────────────── -->
+<!--
+<div class="nav-section-title">Guide Utilisateur</div>
+<a href="#guide" class="nav-link"><span class="icon">📸</span> Guide Fonctionnalités</a>
+-->
+
+<!-- ─────────────────────────────────────────
+  ÉTAPE 2 : Insérer cette section dans .content
+  (ex: après section #security, avant #config)
+────────────────────────────────────────── -->
+
+<style>
+/* ══ GUIDE SECTION STYLES ══ */
+.guide-feature {
+  margin-bottom: 56px;
+}
+.guide-feature-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+  padding: 16px 20px;
+  background: white;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--blue);
+  border-radius: 0 10px 10px 0;
+}
+.guide-feature-icon {
+  font-size: 28px;
+  flex-shrink: 0;
+}
+.guide-feature-header h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--navy);
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+.guide-feature-header h3::before { display: none; }
+.guide-feature-num {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--blue);
+  background: rgba(219,30,55,0.07);
+  border: 1px solid rgba(219,30,55,0.2);
+  padding: 3px 9px;
+  border-radius: 4px;
+  margin-left: auto;
+  white-space: nowrap;
+}
+.guide-steps-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  margin-bottom: 16px;
+}
+.guide-screenshot-slot {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+.guide-screenshot-slot:hover {
+  box-shadow: 0 8px 24px rgba(10,73,85,0.1);
+  transform: translateY(-2px);
+}
+.guide-screenshot-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: var(--navy);
+  color: white;
+}
+.guide-screenshot-label span {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+.guide-screenshot-label .step-badge {
+  font-family: var(--mono);
+  font-size: 10px;
+  background: rgba(255,255,255,0.12);
+  padding: 2px 8px;
+  border-radius: 3px;
+  color: rgba(255,255,255,0.6);
+}
+.guide-img-zone {
+  position: relative;
+  background: var(--surface2);
+  min-height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+}
+.guide-img-zone img {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+}
+.guide-img-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 40px 20px;
+  text-align: center;
+}
+.guide-img-placeholder-icon {
+  font-size: 36px;
+  opacity: 0.35;
+}
+.guide-img-placeholder p {
+  font-size: 13px;
+  color: var(--muted);
+  font-family: var(--mono);
+  margin: 0;
+}
+.guide-img-caption {
+  padding: 10px 16px;
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.5;
+  background: white;
+}
+.guide-img-caption strong {
+  color: var(--navy);
+}
+
+/* Full-width screenshot slot */
+.guide-screenshot-slot.full {
+  margin-bottom: 16px;
+}
+.guide-screenshot-slot.full .guide-img-zone {
+  min-height: 280px;
+}
+
+/* Guide nav pills */
+.guide-toc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 32px;
+  padding: 16px 20px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.guide-toc-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--navy2);
+  text-decoration: none;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.guide-toc-item:hover {
+  background: var(--navy);
+  color: white;
+  border-color: var(--navy);
+}
+.guide-toc-item .toc-num {
+  font-family: var(--mono);
+  font-size: 10px;
+  background: rgba(10,73,85,0.1);
+  color: var(--navy);
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+.guide-toc-item:hover .toc-num {
+  background: rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.8);
+}
+
+/* Divider between features */
+.guide-divider {
+  border: none;
+  border-top: 1px dashed var(--border);
+  margin: 48px 0;
+}
+</style>
+
+<!-- ══════════════════════════════════════════
+     SECTION 10 — GUIDE VISUEL DES FONCTIONNALITÉS
+     ══════════════════════════════════════════ -->
+<section class="section" id="guide">
+  <div class="section-header">
+    <div class="section-num">10</div>
+    <h2>Guide Visuel des Fonctionnalités</h2>
+  </div>
+
+  <p>Captures d'écran annotées de toutes les fonctionnalités principales de la plateforme RedBoost. Ce guide pas-à-pas est destiné aux utilisateurs finaux et aux équipes de formation.</p>
+
+  <div class="alert alert-info">
+    <span class="alert-icon">📸</span>
+    <div><strong>Comment utiliser ce guide</strong> Chaque fonctionnalité est découpée en étapes numérotées avec une capture d'écran illustrant l'action à réaliser. Remplacez les zones <code>[ capture d'écran ]</code> par vos images en remplaçant les balises <code>&lt;img&gt;</code>.</div>
+  </div>
+
+  <!-- TABLE OF CONTENTS -->
+  <div class="guide-toc">
+    <a href="#guide-categories" class="guide-toc-item"><span class="toc-num">01</span>📊 Catégories & KPIs</a>
+    <a href="#guide-programme" class="guide-toc-item"><span class="toc-num">02</span>📁 Création Programme</a>
+    <a href="#guide-affecter-kpi" class="guide-toc-item"><span class="toc-num">03</span>🔗 Affecter KPIs</a>
+    <a href="#guide-sprint" class="guide-toc-item"><span class="toc-num">04</span>🏃 Sprint / Activité / Tâche</a>
+    <a href="#guide-saisie-kpi" class="guide-toc-item"><span class="toc-num">05</span>📈 Saisie Valeurs KPI</a>
+    <a href="#guide-rapport" class="guide-toc-item"><span class="toc-num">06</span>📝 Saisie Rapport</a>
+    <a href="#guide-entrepreneur" class="guide-toc-item"><span class="toc-num">07</span>👤 Entrepreneurs</a>
+    <a href="#guide-template" class="guide-toc-item"><span class="toc-num">08</span>📋 Templates</a>
+    <a href="#guide-evenement" class="guide-toc-item"><span class="toc-num">09</span>📅 Événements</a>
+  </div>
+
+  <!-- ════════════════════════════════════
+       01 — CRÉATION CATÉGORIES & KPIs
+       ════════════════════════════════════ -->
+  <div class="guide-feature" id="guide-categories">
+    <div class="guide-feature-header">
+      <span class="guide-feature-icon">📊</span>
+      <div>
+        <h3>Création des Catégories & KPIs</h3>
+        <p style="font-size:13px;color:var(--muted);margin:4px 0 0;font-weight:400">Définir les catégories de suivi et les indicateurs clés de performance dans le backoffice</p>
+      </div>
+      <span class="guide-feature-num">FONCTIONNALITÉ 01</span>
+    </div>
+
+    <div class="guide-steps-row">
+      <div class="guide-screenshot-slot">
+        <div class="guide-screenshot-label">
+          <span>Accéder à la gestion des catégories</span>
+          <span class="step-badge">Étape 1</span>
+        </div>
+        <div class="guide-img-zone">
+          <!-- REMPLACER PAR : <img src="screenshots/categories-liste.png" alt="Liste des catégories"> -->
+          <div class="guide-img-placeholder">
+            <div class="guide-img-placeholder-icon">🖼️</div>
+            <p>screenshots/categories-liste.png</p>
+          </div>
+        </div>
+        <div class="guide-img-caption">Depuis le menu <strong>Backoffice → Catégories</strong>, visualisez toutes les catégories existantes avec leurs couleurs et le nombre de KPIs associés.</div>
+      </div>
+
+      <div class="guide-screenshot-slot">
+        <div class="guide-screenshot-label">
+          <span>Créer une nouvelle catégorie</span>
+          <span class="step-badge">Étape 2</span>
+        </div>
+        <div class="guide-img-zone">
+          <!-- REMPLACER PAR : <img src="screenshots/categories-creation.png" alt="Formulaire création catégorie"> -->
+          <div class="guide-img-placeholder">
+            <div class="guide-img-placeholder-icon">🖼️</div>
+            <p>screenshots/categories-creation.png</p>
+          </div>
+        </div>
+        <div class="guide-img-caption">Cliquez sur <strong>+ Nouvelle Catégorie</strong>, renseignez le nom, la description et choisissez une couleur d'identification (ex: <code>#3B82F6</code>).</div>
+      </div>
+    </div>
+
+    <div class="guide-steps-row">
+      <div class="guide-screenshot-slot">
+        <div class="guide-screenshot-label">
+          <span>Ajouter un KPI à la catégorie</span>
+          <span class="step-badge">Étape 3</span>
+        </div>
+        <div class="guide-img-zone">
+          <!-- REMPLACER PAR : <img src="screenshots/kpi-creation.png" alt="Formulaire création KPI"> -->
+          <div class="guide-img-placeholder">
+            <div class="guide-img-placeholder-icon">🖼️</div>
+            <p>screenshots/kpi-creation.png</p>
+          </div>
+        </div>
+        <div class="guide-img-caption">Dans la catégorie, cliquez <strong>+ Nouveau KPI</strong>. Renseignez : nom, unité de mesure (<code>TND / % / heures</code>), type (<code>GLOBAL / OPTIONNEL</code>) et type de saisie (<code>normal / progression</code>).</div>
+      </div>
+
+      <div class="guide-screenshot-slot">
+        <div class="guide-screenshot-label">
+          <span>KPI créé — résultat</span>
+          <span class="step-badge">Étape 4</span>
+        </div>
+        <div class="guide-img-zone">
+          <!-- REMPLACER PAR : <img src="screenshots/kpi-liste.png" alt="KPIs listés dans la catégorie"> -->
+          <div class="guide-img-placeholder">
+            <div class="guide-img-placeholder-icon">🖼️</div>
+            <p>screenshots/kpi-liste.png</p>
+          </div>
+        </div>
+        <div class="guide-img-caption">Le KPI apparaît maintenant dans la liste de la catégorie. Il est disponible pour être affecté à des programmes.</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="guide-divider">
+
+  <!-- ════════════════════════════════════
+       02 — CRÉATION PROGRAMME
+       ════════════════════════════════════ -->
+  <div class="guide-feature" id="guide-programme">
+    <div class="guide-feature-header">
+      <span class="guide-feature-icon">📁</span>
+      <div>
+        <h3>Création d'un Programme</h3>
+        <p style="font-size:13px;color:var(--muted);margin:4px 0 0;font-weight:400">Créer et configurer un nouveau programme d'incubation ou d'accompagnement</p>
+      </div>
+      <span class="guide-feature-num">FONCTIONNALITÉ 02</span>
+    </div>
+
+    <div class="guide-screenshot-slot full">
+      <div class="guide-screenshot-label">
+        <span>Formulaire de création de programme</span>
+        <span class="step-badge">Vue principale</span>
+      </div>
+      <div class="guide-img-zone">
+        <!-- REMPLACER PAR : <img src="screenshots/programme-creation.png" alt="Création programme"> -->
+        <div class="guide-img-placeholder">
+          <div class="guide-img-placeholder-icon">🖼️</div>
+          <p>screenshots/programme-creation.png</p>
+        </div>
+      </div>
+      <div class="guide-img-caption">Allez dans <strong>Programmes → + Nouveau Programme</strong>. Renseignez le nom, l'année, le type, le nombre de bénéficiaires, les dates de début/fin, le responsable, les secteurs et le statut.</div>
+    </div>
+
+    <div class="guide-steps-row">
+      <div class="guide-screenshot-slot">
+        <div class="guide-screenshot-label">
+          <span>Configurer les détails</span>
+          <span class="step-badge">Étape 2</span>
+        </div>
+        <div class="guide-img-zone">
+          <!-- REMPLACER PAR : <img src="screenshots/programme-details.png" alt="Détails programme"> -->
+          <div class="guide-img-placeholder">
+            <div class="guide-img-placeholder-icon">🖼️</div>
+            <p>screenshots/programme-details.png</p>
+          </div>
+        </div>
+        <div class="guide-img-caption">Ajoutez une description, un logo et une couleur thème. Sélectionnez les <strong>secteurs d'activité</strong> couverts par le programme.</div>
+      </div>
+
+      <div class="guide-screenshot-slot">
+        <div class="guide-screenshot-label">
+          <span>Programme créé — tableau de bord</span>
+          <span class="step-badge">Étape 3</span>
+        </div>
+        <div class="guide-img-zone">
+          <!-- REMPLACER PAR : <img src="screenshots/programme-dashboard.png" alt="Dashboard programme"> -->
+          <div class="guide-img-placeholder">
+            <div class="guide-img-placeholder-icon">🖼️</div>
+            <p>screenshots/programme-dashboard.png</p>
+          </div>
+        </div>
+        <div class="guide-img-caption">Le programme est créé et accessible depuis la liste. Cliquez dessus pour accéder à son tableau de bord avec sprints, KPIs et participants.</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="guide-divider">
+
+  <!-- ════════════════════════════════════
+       03 — AFFECTER DES KPIs À UN PROGRAMME
+       ════════════════════════════════════ -->
+  <div class="guide-feature" id="guide-affecter-kpi">
+    <div class="guide-feature-header">
+      <span class="guide-feature-icon">🔗</span>
+      <div>
+        <h3>Affecter des KPIs à un Programme</h3>
+        <p style="font-size:13px;color:var(--muted);margin:4px 0 0;font-weight:400">Sélectionner les indicateurs de suivi applicables au programme et définir les valeurs cibles</p>
+      </div>
+      <span class="guide-feature-num">FONCTIONNALITÉ 03</span>
+    </div>
+
+    <div class="guide-steps-row">
+      <div class="guide-screenshot-slot">
+        <div class="guide-screenshot-label">
+          <span>Ouvrir la gestion des KPIs du programme</span>
+          <span class="step-badge">Étape 1</span>
+        </div>
+        <div class="guide-img-zone">
+          <!-- REMPLACER PAR : <img src="screenshots/affecter-kpi-menu.png" alt="Menu KPIs programme"> -->
+          <div class="guide-img-placeholder">
+            <div class="guide-img-placeholder-icon">🖼️</div>
+            <p>screenshots/affecter-kpi-menu.png</p>
+          </div>
+        </div>
+        <div class="guide-img-caption">Depuis la fiche programme, cliquez sur l'onglet <strong>KPIs</strong> puis sur <strong>Affecter des KPIs</strong>.</div>
+      </div>
+
+      <div class="guide-screenshot-slot">
+        <div class="guide-screenshot-label">
+          <span>Sélectionner les KPIs à affecter</span>
+          <span class="step-badge">Étape 2</span>
+        </div>
+        <div class="guide-img-zone">
+          <!-- REMPLACER PAR : <img src="screenshots/affecter-kpi-selection.png" alt="Sélection KPIs"> -->
+          <div class="guide-img-placeholder">
+            <div class="guide-img-placeholder-icon">🖼️</div>
+            <p>screenshots/affecter-kpi-selection.png</p>
+          </div>
+        </div>
+        <div class="guide-img-caption">Parcourez les catégories et cochez les KPIs pertinents pour ce programme. Les KPIs <code>GLOBAL</code> sont pré-sélectionnés automatiquement.</div>
+      </div>
+    </div>
+
+    <div class="guide-steps-row">
+      <div class="guide-screenshot-slot">
+        <div class="guide-screenshot-label">
+          <span>Définir les valeurs cibles</span>
+          <span class="step-badge">Étape 3</span>
+        </div>
+        <div class="guide-img-zone">
+          <!-- REMPLACER PAR : <img src="screenshots/affecter-kpi-valeurs.png" alt="Valeurs cibles KPI"> -->
+          <div class="guide-img-placeholder">
+            <div class="guide-img-placeholder-icon">🖼️</div>
+            <p>screenshots/affecter-kpi-valeurs.png</p>
+          </div>
+        </div>
+        <div class="guide-img-caption">Pour chaque KPI sélectionné, renseignez la <strong>valeur précédente</strong>, la <strong>valeur actuelle</strong> et la <strong>valeur cible</strong> du programme.</div>
+      </div>
+
+      <div class="guide-screenshot-slot">
+        <div class="guide-screenshot-label">
+          <span>KPIs affectés — résultat</span>
+          <span class="step-badge">Étape 4</span>
+        </div>
+        <div class="guide-img-zone">
+          <!-- REMPLACER PAR : <img src="screenshots/affecter-kpi-resultat.png" alt="Résultat affectation KPIs"> -->
+          <div class="guide-img-placeholder">
+            <div class="guide-img-placeholder-icon">🖼️</div>
+            <p>screenshots/affecter-kpi-resultat.png</p>
+          </div>
+        </div>
+        <div class="guide-img-caption">Les KPIs apparaissent dans le tableau de bord du programme avec leurs valeurs et l'historique des modifications.</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="guide-divider">
+
+  <!-- ════════════════════════════════════
+       04 — CRÉATION SPRINT / ACTIVITÉ / TÂCHE
+       ════════════════════════════════════ -->
+  <div class="guide-feature" id="guide-sprint">
+    <div class="guide-feature-header">
+      <span class="guide-feature-icon">🏃</span>
+      <div>
+        <h3>Création Sprint / Activité / Tâche</h3>
+        <p style="font-size:13px;color:var(--muted);margin:4px 0 0;font-weight:400">Structurer le programme en sprints, activités et tâches assignables</p>
+      </div>
+      <span class="guide-feature-num">FONCTIONNALITÉ 04</span>
+    </div>
+
+    <div class="guide-steps-row">
+      <div class="guide-screenshot-slot">
+        <div class="guide-screenshot-label">
+          <span>Créer un sprint</span>
+          <span class="step-badge">Sprint — Étape 1</span>
+        </div>
+        <div class="guide-img-zone">
+          <!-- REMPLACER PAR : <img src="screenshots/sprint-creation.png" alt="Création sprint"> -->
+          <div class="guide-img-placeholder">
+            <div class="guide-img-placeholder-icon">🖼️</div>
+            <p>screenshots/sprint-creation.png</p>
+          </div>
+        </div>
+        <div class="guide-img-caption">Dans le programme, cliquez <strong>+ Nouveau Sprint</strong>. Renseignez le nom, la description, le statut et les dates de début/limite.</div>
+      </div>
+
+      <div class="guide-screenshot-slot">
+        <div class="guide-screenshot-label">
+          <span>Ajouter une activité au sprint</span>
+          <span class="step-badge">Activité — Étape 2</span>
+        </div>
+        <div class="guide-img-zone">
+          <!-- REMPLACER PAR : <img src="screenshots/activite-creation.png" alt="Création activité"> -->
+          <div class="guide-img-placeholder">
+            <div class="guide-img-placeholder-icon">🖼️</div>
+            <p>screenshots/activite-creation.png</p>
+          </div>
+        </div>
+        <div class="guide-img-caption">Ouvrez le sprint et cliquez <strong>+ Nouvelle Activité</strong>. Renseignez le nom, objectif, méthodologie, résultat attendu, responsable et type.</div>
+      </div>
+    </div>
+
+    <div class="guide-steps-row">
+      <div class="guide-screenshot-slot">
+        <div class="guide-screenshot-label">
+          <span>Créer une tâche dans l'activité</span>
+          <span class="step-badge">Tâche — Étape 3</span>
+        </div>
+        <div class="guide-img-zone">
+          <!-- REMPLACER PAR : <img src="screenshots/tache-creation.png" alt="Création tâche"> -->
+          <div class="guide-img-placeholder">
+            <div class="guide-img-placeholder-icon">🖼️</div>
+            <p>screenshots/tache-creation.png</p>
+          </div>
+        </div>
+        <div class="guide-img-caption">Dans l'activité, cliquez <strong>+ Nouvelle Tâche</strong>. Définissez le titre, la priorité (<code>Haute / Moyenne / Basse</code>), le responsable et les dates.</div>
+      </div>
+
+      <div class="guide-screenshot-slot">
+        <div class="guide-screenshot-label">
+          <span>Vue hiérarchique Programme → Sprint → Tâche</span>
+          <span class="step-badge">Vue globale</span>
+        </div>
+        <div class="guide-img-zone">
+          <!-- REMPLACER PAR : <img src="screenshots/hierachie-vue.png" alt="Vue hiérarchique"> -->
+          <div class="guide-img-placeholder">
+            <div class="guide-img-placeholder-icon">🖼️</div>
+            <p>screenshots/hierarchie-vue.png</p>
+          </div>
+        </div>
+        <div class="guide-img-caption">Vue d'ensemble de la hiérarchie : Programme → Sprint → Activité → Tâche avec statuts, responsables et avancement.</div>
+      </div>
+    </div>
+
+    <div class="alert alert-tip">
+      <span class="alert-icon">💡</span>
+      <div><strong>Statuts disponibles</strong> Sprint & Activité : <code>NON_DEMARREE · EN_COURS · EN_RETARD · TERMINEE</code> — Tâche : <code>NON_DEMARREE · EN_COURS · BLOQUE · EN_RETARD · TERMINEE</code></div>
+    </div>
+  </div>
+
+  <hr class="guide-divider">
+
+  <!-- ════════════════════════════════════
+       05 — SAISIE DES VALEURS KPI
+       ════════════════════════════════════ -->
+  <div class="guide-feature" id="guide-saisie-kpi">
+    <div class="guide-feature-header">
+      <span class="guide-feature-icon">📈</span>
+      <div>
+        <h3>Saisie des Valeurs KPI</h3>
+        <p style="font-size:13px;color:var(--muted);margin:4px 0 0;font-weight:400">Mettre à jour les indicateurs de performance par programme et par entrepreneur</p>
+      </div>
+      <span class="guide-feature-num">FONCTIONNALITÉ 05</span>
+    </div>
+
+    <div class="guide-steps-row">
+      <div class="guide-screenshot-slot">
+        <div class="guide-screenshot-label">
+          <span>Accéder aux KPIs du programme</span>
+          <span class="step-badge">Étape 1</span>
+        </div>
+        <div class="guide-img-zone">
+          <!-- REMPLACER PAR : <img src="screenshots/kpi-saisie-menu.png" alt="Menu saisie KPI"> -->
+          <div class="guide-img-placeholder">
+            <div class="guide-img-placeholder-icon">🖼️</div>
+            <p>screenshots/kpi-saisie-menu.png</p>
+          </div>
+        </div>
+        <div class="guide-img-caption">Depuis la fiche programme, onglet <strong>KPIs → Saisie des valeurs</strong>. Deux modes : saisie globale (programme) ou par entrepreneur.</div>
+      </div>
+
+      <div class="guide-screenshot-slot">
+        <div class="guide-screenshot-label">
+          <span>Mettre à jour la valeur actuelle</span>
+          <span class="step-badge">Étape 2</span>
+        </div>
+        <div class="guide-img-zone">
+          <!-- REMPLACER PAR : <img src="screenshots/kpi-saisie-form.png" alt="Formulaire saisie KPI"> -->
+          <div class="guide-img-placeholder">
+            <div class="guide-img-placeholder-icon">🖼️</div>
+            <p>screenshots/kpi-saisie-form.png</p>
+          </div>
+        </div>
+        <div class="guide-img-caption">Saisissez la <strong>valeur actuelle</strong> pour chaque KPI. Le système conserve automatiquement l'historique des modifications avec l'horodatage.</div>
+      </div>
+    </div>
+
+    <div class="guide-screenshot-slot full">
+      <div class="guide-screenshot-label">
+        <span>Saisie par entrepreneur — valeurs individuelles</span>
+        <span class="step-badge">Mode entrepreneur</span>
+      </div>
+      <div class="guide-img-zone">
+        <!-- REMPLACER PAR : <img src="screenshots/kpi-saisie-entrepreneur.png" alt="Saisie KPI par entrepreneur"> -->
+        <div class="guide-img-placeholder">
+          <div class="guide-img-placeholder-icon">🖼️</div>
+          <p>screenshots/kpi-saisie-entrepreneur.png</p>
+        </div>
+      </div>
+      <div class="guide-img-caption">Sélectionnez un entrepreneur dans la liste et saisissez ses valeurs KPI individuelles. Chaque modification est tracée dans <code>programme_kpi_entrepreneur_valeurs_history</code>.</div>
+    </div>
+  </div>
+
+  <hr class="guide-divider">
+
+  <!-- ════════════════════════════════════
+       06 — SAISIE RAPPORT
+       ════════════════════════════════════ -->
+  <div class="guide-feature" id="guide-rapport">
+    <div class="guide-feature-header">
+      <span class="guide-feature-icon">📝</span>
+      <div>
+        <h3>Saisie & Génération de Rapport</h3>
+        <p style="font-size:13px;color:var(--muted);margin:4px 0 0;font-weight:400">Rédiger, exporter et partager les rapports de suivi de programme</p>
+      </div>
+      <span class="guide-feature-num">FONCTIONNALITÉ 06</span>
+    </div>
+
+    <div class="guide-steps-row">
+      <div class="guide-screenshot-slot">
+        <div class="guide-screenshot-label">
+          <span>Créer un nouveau rapport</span>
+          <span class="step-badge">Étape 1</span>
+        </div>
+        <div class="guide-img-zone">
+          <!-- REMPLACER PAR : <img src="screenshots/rapport-creation.png" alt="Création rapport"> -->
+          <div class="guide-img-placeholder">
+            <div class="guide-img-placeholder-icon">🖼️</div>
+            <p>screenshots/rapport-creation.png</p>
+          </div>
+        </div>
+        <div class="guide-img-caption">Depuis <strong>Rapports → + Nouveau Rapport</strong>, sélectionnez le programme, la période et le type de rapport à générer.</div>
+      </div>
+
+      <div class="guide-screenshot-slot">
+        <div class="guide-screenshot-label">
+          <span>Rédaction assistée par l'IA</span>
+          <span class="step-badge">Étape 2</span>
+        </div>
+        <div class="guide-img-zone">
+          <!-- REMPLACER PAR : <img src="screenshots/rapport-ia.png" alt="Rédaction IA rapport"> -->
+          <div class="guide-img-placeholder">
+            <div class="guide-img-placeholder-icon">🖼️</div>
+            <p>screenshots/rapport-ia.png</p>
+          </div>
+        </div>
+        <div class="guide-img-caption">Utilisez l'assistant IA pour générer automatiquement des synthèses, corrections grammaticales ou reformulations de contenu dans le rapport.</div>
+      </div>
+    </div>
+
+    <div class="guide-steps-row">
+      <div class="guide-screenshot-slot">
+        <div class="guide-screenshot-label">
+          <span>Exporter en PDF / DOCX</span>
+          <span class="step-badge">Étape 3</span>
+        </div>
+        <div class="guide-img-zone">
+          <!-- REMPLACER PAR : <img src="screenshots/rapport-export.png" alt="Export rapport PDF"> -->
+          <div class="guide-img-placeholder">
+            <div class="guide-img-placeholder-icon">🖼️</div>
+            <p>screenshots/rapport-export.png</p>
+          </div>
+        </div>
+        <div class="guide-img-caption">Cliquez <strong>Exporter → PDF</strong> ou <strong>DOCX</strong>. Le fichier est généré et uploadé automatiquement sur Google Drive du programme.</div>
+      </div>
+
+      <div class="guide-screenshot-slot">
+        <div class="guide-screenshot-label">
+          <span>Rapport dans Google Drive</span>
+          <span class="step-badge">Étape 4</span>
+        </div>
+        <div class="guide-img-zone">
+          <!-- REMPLACER PAR : <img src="screenshots/rapport-drive.png" alt="Rapport Google Drive"> -->
+          <div class="guide-img-placeholder">
+            <div class="guide-img-placeholder-icon">🖼️</div>
+            <p>screenshots/rapport-drive.png</p>
+          </div>
+        </div>
+        <div class="guide-img-caption">Le rapport exporté est visible dans le dossier Google Drive configuré, accessible à toute l'équipe du programme.</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="guide-divider">
+
+  <!-- ════════════════════════════════════
+       07 — AJOUT / IMPORT ENTREPRENEUR
+       ════════════════════════════════════ -->
+  <div class="guide-feature" id="guide-entrepreneur">
+    <div class="guide-feature-header">
+      <span class="guide-feature-icon">👤</span>
+      <div>
+        <h3>Ajout & Import d'Entrepreneurs</h3>
+        <p style="font-size:13px;color:var(--muted);margin:4px 0 0;font-weight:400">Ajouter des entrepreneurs manuellement ou importer une liste depuis un fichier Excel</p>
+      </div>
+      <span class="guide-feature-num">FONCTIONNALITÉ 07</span>
+    </div>
+
+    <div class="guide-steps-row">
+      <div class="guide-screenshot-slot">
+        <div class="guide-screenshot-label">
+          <span>Ajouter un entrepreneur manuellement</span>
+          <span class="step-badge">Ajout manuel</span>
+        </div>
+        <div class="guide-img-zone">
+          <!-- REMPLACER PAR : <img src="screenshots/entrepreneur-ajout.png" alt="Ajout entrepreneur"> -->
+          <div class="guide-img-placeholder">
+            <div class="guide-img-placeholder-icon">🖼️</div>
+            <p>screenshots/entrepreneur-ajout.png</p>
+          </div>
+        </div>
+        <div class="guide-img-caption">Via <strong>Utilisateurs → + Nouvel Entrepreneur</strong> : renseignez prénom, nom, email, startup, secteur, région et les informations de parcours.</div>
+      </div>
+
+      <div class="guide-screenshot-slot">
+        <div class="guide-screenshot-label">
+          <span>Importer une liste Excel</span>
+          <span class="step-badge">Import Excel</span>
+        </div>
+        <div class="guide-img-zone">
+          <!-- REMPLACER PAR : <img src="screenshots/entrepreneur-import.png" alt="Import liste entrepreneurs"> -->
+          <div class="guide-img-placeholder">
+            <div class="guide-img-placeholder-icon">🖼️</div>
+            <p>screenshots/entrepreneur-import.png</p>
+          </div>
+        </div>
+        <div class="guide-img-caption">Cliquez <strong>Importer → Télécharger le modèle Excel</strong>, remplissez le fichier avec la liste, puis uploadez-le. Le système valide et crée tous les comptes automatiquement.</div>
+      </div>
+    </div>
+
+    <div class="guide-steps-row">
+      <div class="guide-screenshot-slot">
+        <div class="guide-screenshot-label">
+          <span>Affecter l'entrepreneur à un programme</span>
+          <span class="step-badge">Étape suivante</span>
+        </div>
+        <div class="guide-img-zone">
+          <!-- REMPLACER PAR : <img src="screenshots/entrepreneur-programme.png" alt="Affecter programme"> -->
+          <div class="guide-img-placeholder">
+            <div class="guide-img-placeholder-icon">🖼️</div>
+            <p>screenshots/entrepreneur-programme.png</p>
+          </div>
+        </div>
+        <div class="guide-img-caption">Une fois l'entrepreneur créé, affectez-le à un ou plusieurs programmes via le panneau <strong>Participants</strong> de la fiche programme.</div>
+      </div>
+
+      <div class="guide-screenshot-slot">
+        <div class="guide-screenshot-label">
+          <span>Profil entrepreneur — vue complète</span>
+          <span class="step-badge">Profil</span>
+        </div>
+        <div class="guide-img-zone">
+          <!-- REMPLACER PAR : <img src="screenshots/entrepreneur-profil.png" alt="Profil entrepreneur"> -->
+          <div class="guide-img-placeholder">
+            <div class="guide-img-placeholder-icon">🖼️</div>
+            <p>screenshots/entrepreneur-profil.png</p>
+          </div>
+        </div>
+        <div class="guide-img-caption">Le profil complet de l'entrepreneur affiche ses informations, son parcours, ses KPIs personnels et ses programmes d'appartenance.</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="guide-divider">
+
+  <!-- ════════════════════════════════════
+       08 — AJOUT TEMPLATE
+       ════════════════════════════════════ -->
+  <div class="guide-feature" id="guide-template">
+    <div class="guide-feature-header">
+      <span class="guide-feature-icon">📋</span>
+      <div>
+        <h3>Ajout de Template</h3>
+        <p style="font-size:13px;color:var(--muted);margin:4px 0 0;font-weight:400">Créer des modèles réutilisables pour les programmes, sprints ou rapports</p>
+      </div>
+      <span class="guide-feature-num">FONCTIONNALITÉ 08</span>
+    </div>
+
+    <div class="guide-steps-row">
+      <div class="guide-screenshot-slot">
+        <div class="guide-screenshot-label">
+          <span>Accéder à la bibliothèque de templates</span>
+          <span class="step-badge">Étape 1</span>
+        </div>
+        <div class="guide-img-zone">
+          <!-- REMPLACER PAR : <img src="screenshots/template-liste.png" alt="Liste templates"> -->
+          <div class="guide-img-placeholder">
+            <div class="guide-img-placeholder-icon">🖼️</div>
+            <p>screenshots/template-liste.png</p>
+          </div>
+        </div>
+        <div class="guide-img-caption">Depuis le menu <strong>Templates</strong>, visualisez tous les modèles disponibles classés par type et catégorie.</div>
+      </div>
+
+      <div class="guide-screenshot-slot">
+        <div class="guide-screenshot-label">
+          <span>Créer un nouveau template</span>
+          <span class="step-badge">Étape 2</span>
+        </div>
+        <div class="guide-img-zone">
+          <!-- REMPLACER PAR : <img src="screenshots/template-creation.png" alt="Création template"> -->
+          <div class="guide-img-placeholder">
+            <div class="guide-img-placeholder-icon">🖼️</div>
+            <p>screenshots/template-creation.png</p>
+          </div>
+        </div>
+        <div class="guide-img-caption">Cliquez <strong>+ Nouveau Template</strong>, définissez le nom, la description, le type et les champs/sections du modèle.</div>
+      </div>
+    </div>
+
+    <div class="guide-screenshot-slot full">
+      <div class="guide-screenshot-label">
+        <span>Utiliser un template lors de la création d'un programme</span>
+        <span class="step-badge">Utilisation</span>
+      </div>
+      <div class="guide-img-zone">
+        <!-- REMPLACER PAR : <img src="screenshots/template-utilisation.png" alt="Utilisation template"> -->
+        <div class="guide-img-placeholder">
+          <div class="guide-img-placeholder-icon">🖼️</div>
+          <p>screenshots/template-utilisation.png</p>
+        </div>
+      </div>
+      <div class="guide-img-caption">Lors de la création d'un programme ou d'un sprint, sélectionnez un template existant pour pré-remplir automatiquement la structure avec les activités et tâches types.</div>
+    </div>
+  </div>
+
+  <hr class="guide-divider">
+
+  <!-- ════════════════════════════════════
+       09 — AJOUT ÉVÉNEMENT
+       ════════════════════════════════════ -->
+  <div class="guide-feature" id="guide-evenement">
+    <div class="guide-feature-header">
+      <span class="guide-feature-icon">📅</span>
+      <div>
+        <h3>Ajout d'Événement</h3>
+        <p style="font-size:13px;color:var(--muted);margin:4px 0 0;font-weight:400">Planifier et gérer les événements, ateliers et réunions du programme avec synchronisation Google Calendar</p>
+      </div>
+      <span class="guide-feature-num">FONCTIONNALITÉ 09</span>
+    </div>
+
+    <div class="guide-steps-row">
+      <div class="guide-screenshot-slot">
+        <div class="guide-screenshot-label">
+          <span>Accéder au calendrier</span>
+          <span class="step-badge">Étape 1</span>
+        </div>
+        <div class="guide-img-zone">
+          <!-- REMPLACER PAR : <img src="screenshots/evenement-calendrier.png" alt="Calendrier événements"> -->
+          <div class="guide-img-placeholder">
+            <div class="guide-img-placeholder-icon">🖼️</div>
+            <p>screenshots/evenement-calendrier.png</p>
+          </div>
+        </div>
+        <div class="guide-img-caption">Depuis le menu <strong>Événements</strong>, accédez à la vue calendrier avec tous les événements planifiés par programme.</div>
+      </div>
+
+      <div class="guide-screenshot-slot">
+        <div class="guide-screenshot-label">
+          <span>Créer un nouvel événement</span>
+          <span class="step-badge">Étape 2</span>
+        </div>
+        <div class="guide-img-zone">
+          <!-- REMPLACER PAR : <img src="screenshots/evenement-creation.png" alt="Formulaire création événement"> -->
+          <div class="guide-img-placeholder">
+            <div class="guide-img-placeholder-icon">🖼️</div>
+            <p>screenshots/evenement-creation.png</p>
+          </div>
+        </div>
+        <div class="guide-img-caption">Cliquez <strong>+ Nouvel Événement</strong> ou directement sur une date. Renseignez le titre, la description, la date/heure, le lieu et les participants invités.</div>
+      </div>
+    </div>
+
+    <div class="guide-steps-row">
+      <div class="guide-screenshot-slot">
+        <div class="guide-screenshot-label">
+          <span>Synchronisation avec Google Calendar</span>
+          <span class="step-badge">Étape 3</span>
+        </div>
+        <div class="guide-img-zone">
+          <!-- REMPLACER PAR : <img src="screenshots/evenement-gcal.png" alt="Sync Google Calendar"> -->
+          <div class="guide-img-placeholder">
+            <div class="guide-img-placeholder-icon">🖼️</div>
+            <p>screenshots/evenement-gcal.png</p>
+          </div>
+        </div>
+        <div class="guide-img-caption">L'événement est synchronisé automatiquement avec Google Calendar via l'API. Les participants reçoivent une invitation email.</div>
+      </div>
+
+      <div class="guide-screenshot-slot">
+        <div class="guide-screenshot-label">
+          <span>Notifications push Firebase</span>
+          <span class="step-badge">Étape 4</span>
+        </div>
+        <div class="guide-img-zone">
+          <!-- REMPLACER PAR : <img src="screenshots/evenement-notif.png" alt="Notifications événement"> -->
+          <div class="guide-img-placeholder">
+            <div class="guide-img-placeholder-icon">🖼️</div>
+            <p>screenshots/evenement-notif.png</p>
+          </div>
+        </div>
+        <div class="guide-img-caption">Les participants inscrits reçoivent une notification push Firebase en temps réel et un rappel automatique avant le début de l'événement.</div>
+      </div>
+    </div>
+
+    <div class="alert alert-tip">
+      <span class="alert-icon">💡</span>
+      <div><strong>Gestion des événements</strong> Pour annuler un événement, ouvrez sa fiche et cliquez <strong>Annuler l'événement</strong>. Les participants seront notifiés automatiquement par email et notification push.</div>
+    </div>
+  </div>
+
+  <!-- FINAL SUMMARY ALERT -->
+  <div class="alert alert-info" style="margin-top:40px">
+    <span class="alert-icon">✅</span>
+    <div>
+      <strong>Guide complet</strong> Ce guide couvre les 9 fonctionnalités principales de la plateforme RedBoost. Pour ajouter vos captures d'écran, remplacez les balises commentées <code>&lt;!-- REMPLACER PAR : &lt;img src="..."&gt; --&gt;</code> par vos vrais fichiers images. Nommez vos fichiers selon la convention <code>screenshots/nom-fonctionnalite.png</code>.
+    </div>
+  </div>
+
+</section>
+
 
     <!-- ── 08 CONFIG ── -->
     <section class="section" id="config">

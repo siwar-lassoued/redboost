@@ -53,6 +53,7 @@ export class RapportSection4Component implements OnInit, OnChanges {
     periodicStartDate: string = '';
     periodicEndDate: string = '';
     selectedTemplate: 'standard' | 'expertise' = 'standard';
+    selectedFileType: 'pdf' | 'docx' = 'pdf';   // ← NEW
 
     // Google Drive Share Dialog
     showDriveShareDialog: boolean = false;
@@ -142,6 +143,7 @@ export class RapportSection4Component implements OnInit, OnChanges {
         this.periodicStartDate = '';
         this.periodicEndDate = '';
         this.selectedTemplate = 'standard';
+        this.selectedFileType = 'pdf';             // ← reset to default
         this.showExportDialog = true;
     }
 
@@ -151,6 +153,7 @@ export class RapportSection4Component implements OnInit, OnChanges {
         this.periodicStartDate = '';
         this.periodicEndDate = '';
         this.selectedTemplate = 'standard';
+        this.selectedFileType = 'pdf';             // ← reset to default
         this.showExportDialog = true;
     }
 
@@ -167,6 +170,10 @@ export class RapportSection4Component implements OnInit, OnChanges {
         this.selectedTemplate = template;
     }
 
+    selectFileType(fileType: 'pdf' | 'docx'): void {   // ← NEW
+        this.selectedFileType = fileType;
+    }
+
     generateReport(): void {
         if (!this.rapportId) { alert("Veuillez d'abord enregistrer le rapport"); return; }
         if (this.exportMode === 'periodic') {
@@ -179,17 +186,33 @@ export class RapportSection4Component implements OnInit, OnChanges {
         const startDate = this.exportMode === 'periodic' ? this.periodicStartDate : undefined;
         const endDate   = this.exportMode === 'periodic' ? this.periodicEndDate   : undefined;
 
-        const request$ = this.selectedTemplate === 'expertise'
-            ? this.rapportDataService.exportExpertiseFrancePdf(this.rapportId, startDate, endDate)
-            : this.rapportDataService.exportToPdf(this.rapportId, startDate, endDate);
+        // ─── Route to the correct endpoint based on template + file type ───
+        let request$;
+        let filenamePrefix: string;
 
-        const filenamePrefix = this.selectedTemplate === 'expertise'
-            ? (startDate ? `Rapport_Expertise_France_Periodique_` : `Rapport_Expertise_France_`)
-            : (startDate ? `Rapport_Periodique_` : `Rapport_Narratif_`);
+        if (this.selectedFileType === 'docx') {
+            if (this.selectedTemplate === 'expertise') {
+                request$ = this.rapportDataService.exportExpertiseFranceDocx(this.rapportId, startDate, endDate);
+                filenamePrefix = startDate ? 'Rapport_Expertise_France_Periodique_' : 'Rapport_Expertise_France_';
+            } else {
+                request$ = this.rapportDataService.exportToDocx(this.rapportId, startDate, endDate);
+                filenamePrefix = startDate ? 'Rapport_Periodique_' : 'Rapport_Narratif_';
+            }
+        } else {
+            if (this.selectedTemplate === 'expertise') {
+                request$ = this.rapportDataService.exportExpertiseFrancePdf(this.rapportId, startDate, endDate);
+                filenamePrefix = startDate ? 'Rapport_Expertise_France_Periodique_' : 'Rapport_Expertise_France_';
+            } else {
+                request$ = this.rapportDataService.exportToPdf(this.rapportId, startDate, endDate);
+                filenamePrefix = startDate ? 'Rapport_Periodique_' : 'Rapport_Narratif_';
+            }
+        }
+
+        const extension = this.selectedFileType === 'docx' ? '.docx' : '.pdf';
 
         request$.subscribe({
             next: (blob) => {
-                const filename = `${filenamePrefix}${this.rapportId}.pdf`;
+                const filename = `${filenamePrefix}${this.rapportId}${extension}`;
                 const url = window.URL.createObjectURL(blob);
                 const link = document.createElement('a');
                 link.href = url;
@@ -200,7 +223,8 @@ export class RapportSection4Component implements OnInit, OnChanges {
                 setTimeout(() => window.URL.revokeObjectURL(url), 100);
                 this.isLoading = false;
                 this.closeExportDialog();
-                if (this.selectedTemplate === 'standard' || this.selectedTemplate === 'expertise') {
+                // Only trigger Drive share for PDF exports
+                if (this.selectedFileType === 'pdf') {
                     this.generateDriveShareLink();
                 }
             },

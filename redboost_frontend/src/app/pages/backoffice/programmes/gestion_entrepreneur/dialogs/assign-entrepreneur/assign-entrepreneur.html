@@ -17,8 +17,8 @@
                     </svg>
                 </div>
                 <div>
-                    <h2 class="text-lg font-bold text-gray-900">Sélectionner depuis la base existante</h2>
-                    <p class="text-sm text-gray-600">Choisissez un programme et sélectionnez les entrepreneurs à y associer</p>
+                    <h2 class="text-lg font-bold text-gray-900">Assigner des entrepreneurs</h2>
+                    <p class="text-sm text-gray-600">Sélectionnez un ou plusieurs programmes puis les entrepreneurs à associer</p>
                 </div>
             </div>
             <button (click)="closeAssignModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
@@ -29,34 +29,74 @@
         </div>
 
         <!-- Modal Body -->
-        <div class="p-6 max-h-[calc(90vh-180px)] overflow-y-auto">
+        <div class="p-6 max-h-[calc(90vh-180px)] overflow-y-auto space-y-6">
 
-            <!-- Programme Selection -->
-            <div class="mb-6">
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Programme cible <span class="text-red-500">*</span>
-                </label>
-                <div class="flex items-center gap-3 border-2 border-pink-200 bg-pink-50 rounded-lg px-4 py-3">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-cyan-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-                    </svg>
-                    <select
-                        [(ngModel)]="selectedProgrammeId"
-                        (change)="onProgrammeSelect()"
-                        class="flex-1 bg-transparent focus:outline-none text-gray-900 font-medium appearance-none cursor-pointer"
-                    >
-                        <option [value]="null" disabled selected>Sélectionnez un programme</option>
-                        <option *ngFor="let prog of programmes" [value]="prog.id">{{ prog.name }}</option>
-                    </select>
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                    </svg>
+            <!-- ── Programme multi-select ─────────────────────────────── -->
+            <div>
+                <div class="flex items-center justify-between mb-3">
+                    <label class="text-sm font-medium text-gray-700">
+                        Programmes cibles
+                        <span class="text-red-500">*</span>
+                        <span *ngIf="selectedProgrammeIds.length > 0"
+                            class="ml-2 text-gray-400 font-normal">
+                            ({{ selectedProgrammeIds.length }} sélectionné{{ selectedProgrammeIds.length > 1 ? 's' : '' }})
+                        </span>
+                    </label>
+
+                    <!-- Select-all programmes -->
+                    <button
+                        type="button"
+                        (click)="toggleSelectAllProgrammes()"
+                        class="flex items-center gap-2 text-sm font-medium px-3 py-1.5 rounded-lg border transition-colors"
+                        [ngClass]="isAllProgrammesSelected
+                            ? 'border-cyan-300 bg-cyan-50 text-cyan-700 hover:bg-cyan-100'
+                            : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'">
+                        <span class="w-4 h-4 flex items-center justify-center rounded border-2 flex-shrink-0 transition-colors"
+                            [ngClass]="isAllProgrammesSelected
+                                ? 'bg-cyan-600 border-cyan-600'
+                                : isPartialProgrammesSelected
+                                    ? 'bg-white border-gray-400'
+                                    : 'bg-white border-gray-300'">
+                            <svg *ngIf="isAllProgrammesSelected" xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-white" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 00-1.414 0L8 12.586 4.707 9.293a1 1 0 00-1.414 1.414l4 4a1 1 0 001.414 0l8-8a1 1 0 000-1.414z" clip-rule="evenodd" />
+                            </svg>
+                            <span *ngIf="isPartialProgrammesSelected && !isAllProgrammesSelected" class="w-2 h-0.5 bg-gray-500 block"></span>
+                        </span>
+                        {{ isAllProgrammesSelected ? 'Tout désélectionner' : 'Tout sélectionner' }}
+                    </button>
                 </div>
+
+                <!-- Programme chips grid -->
+                <div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    <button
+                        *ngFor="let prog of programmes"
+                        type="button"
+                        (click)="toggleProgrammeSelection(prog.id)"
+                        class="flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 text-sm font-medium transition-all text-left"
+                        [ngClass]="isProgrammeSelected(prog.id)
+                            ? 'border-cyan-500 bg-cyan-50 text-cyan-800'
+                            : 'border-gray-200 bg-white text-gray-700 hover:border-cyan-300 hover:bg-cyan-50/50'">
+                        <!-- Checkbox dot -->
+                        <span class="w-4 h-4 flex items-center justify-center rounded border-2 flex-shrink-0 transition-colors"
+                            [ngClass]="isProgrammeSelected(prog.id)
+                                ? 'bg-cyan-600 border-cyan-600'
+                                : 'bg-white border-gray-300'">
+                            <svg *ngIf="isProgrammeSelected(prog.id)" xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-white" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 00-1.414 0L8 12.586 4.707 9.293a1 1 0 00-1.414 1.414l4 4a1 1 0 001.414 0l8-8a1 1 0 000-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </span>
+                        <span class="truncate">{{ prog.name }}</span>
+                    </button>
+                </div>
+
+                <!-- No programmes -->
+                <p *ngIf="programmes.length === 0" class="text-sm text-gray-400 italic text-center py-4">
+                    Aucun programme disponible
+                </p>
             </div>
 
-            <!-- Entrepreneurs disponibles -->
+            <!-- ── Entrepreneurs list ──────────────────────────────────── -->
             <div>
-                <!-- Section label + select-all control -->
                 <div class="flex items-center justify-between mb-3">
                     <label class="text-sm font-medium text-gray-700">
                         Entrepreneurs disponibles
@@ -65,122 +105,139 @@
                         </span>
                     </label>
 
-                    <!-- Select-all button — only visible when a programme is chosen and there are assignable entries -->
+                    <!-- Select-all entrepreneurs -->
                     <button
-                        *ngIf="selectedProgrammeId && assignableEntrepreneurs.length > 0"
+                        *ngIf="selectedProgrammeIds.length > 0 && assignableEntrepreneurs.length > 0"
                         type="button"
-                        (click)="toggleSelectAll()"
+                        (click)="toggleSelectAllEntrepreneurs()"
                         class="flex items-center gap-2 text-sm font-medium px-3 py-1.5 rounded-lg border transition-colors"
-                        [ngClass]="isAllSelected
+                        [ngClass]="isAllEntrepreneursSelected
                             ? 'border-pink-300 bg-pink-50 text-pink-700 hover:bg-pink-100'
-                            : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'"
-                    >
-                        <!-- Tri-state checkbox icon -->
+                            : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'">
                         <span class="w-4 h-4 flex items-center justify-center rounded border-2 flex-shrink-0 transition-colors"
-                            [ngClass]="isAllSelected
+                            [ngClass]="isAllEntrepreneursSelected
                                 ? 'bg-pink-600 border-pink-600'
-                                : isPartiallySelected
+                                : isPartialEntrepreneursSelected
                                     ? 'bg-white border-gray-400'
                                     : 'bg-white border-gray-300'">
-                            <!-- Checkmark -->
-                            <svg *ngIf="isAllSelected" xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-white" viewBox="0 0 20 20" fill="currentColor">
+                            <svg *ngIf="isAllEntrepreneursSelected" xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-white" viewBox="0 0 20 20" fill="currentColor">
                                 <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 00-1.414 0L8 12.586 4.707 9.293a1 1 0 00-1.414 1.414l4 4a1 1 0 001.414 0l8-8a1 1 0 000-1.414z" clip-rule="evenodd" />
                             </svg>
-                            <!-- Dash (partial) -->
-                            <span *ngIf="isPartiallySelected && !isAllSelected" class="w-2 h-0.5 bg-gray-500 block"></span>
+                            <span *ngIf="isPartialEntrepreneursSelected && !isAllEntrepreneursSelected" class="w-2 h-0.5 bg-gray-500 block"></span>
                         </span>
-                        {{ isAllSelected ? 'Tout désélectionner' : 'Tout sélectionner' }}
+                        {{ isAllEntrepreneursSelected ? 'Tout désélectionner' : 'Tout sélectionner' }}
                         <span class="text-xs text-gray-400">({{ assignableEntrepreneurs.length }})</span>
                     </button>
                 </div>
 
-                <div class="border border-gray-200 rounded-xl overflow-hidden max-h-96 overflow-y-auto">
+                <div class="border border-gray-200 rounded-xl overflow-hidden max-h-80 overflow-y-auto">
+
+                    <!-- Prompt to select a programme first -->
+                    <div *ngIf="selectedProgrammeIds.length === 0" class="text-center py-10">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mx-auto mb-2 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                        <p class="text-sm text-gray-400">Sélectionnez d'abord un ou plusieurs programmes</p>
+                    </div>
 
                     <!-- Empty state -->
-                    <div *ngIf="entrepreneursDetails.length === 0" class="text-center py-12">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto mb-3 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                        </svg>
+                    <div *ngIf="selectedProgrammeIds.length > 0 && entrepreneursDetails.length === 0" class="text-center py-12">
                         <p class="text-sm text-gray-500">Aucun entrepreneur disponible</p>
                     </div>
 
                     <!-- Entrepreneur rows -->
-                    <div
-                        *ngFor="let entr of entrepreneursDetails"
-                        class="flex items-center gap-4 px-5 py-4 border-b border-gray-100 last:border-b-0 transition-colors"
-                        [ngClass]="isEntrepreneurAlreadyAssigned(entr.id)
-                            ? 'opacity-50 cursor-not-allowed bg-gray-50'
-                            : 'hover:bg-gray-50 cursor-pointer'"
-                        (click)="toggleEntrepreneurSelection(entr.id)"
-                    >
-                        <!-- Checkbox -->
-                        <input
-                            type="checkbox"
-                            [checked]="isEntrepreneurSelected(entr.id)"
-                            [disabled]="isEntrepreneurAlreadyAssigned(entr.id)"
-                            (click)="$event.stopPropagation()"
-                            (change)="toggleEntrepreneurSelection(entr.id)"
-                            class="w-5 h-5 text-pink-600 border-gray-300 rounded focus:ring-pink-500 disabled:cursor-not-allowed"
-                        />
+                    <ng-container *ngIf="selectedProgrammeIds.length > 0">
+                        <div
+                            *ngFor="let entr of entrepreneursDetails"
+                            class="flex items-center gap-4 px-5 py-4 border-b border-gray-100 last:border-b-0 transition-colors"
+                            [ngClass]="isEntrepreneurAlreadyAssignedToAll(entr.id)
+                                ? 'opacity-50 cursor-not-allowed bg-gray-50'
+                                : 'hover:bg-gray-50 cursor-pointer'"
+                            (click)="toggleEntrepreneurSelection(entr.id)"
+                        >
+                            <!-- Checkbox -->
+                            <input
+                                type="checkbox"
+                                [checked]="isEntrepreneurSelected(entr.id)"
+                                [disabled]="isEntrepreneurAlreadyAssignedToAll(entr.id)"
+                                (click)="$event.stopPropagation()"
+                                (change)="toggleEntrepreneurSelection(entr.id)"
+                                class="w-5 h-5 text-pink-600 border-gray-300 rounded focus:ring-pink-500 disabled:cursor-not-allowed"
+                            />
 
-                        <!-- Avatar -->
-                        <div class="w-10 h-10 bg-pink-500 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
-                            {{ getInitials(entr.firstName, entr.lastName) }}
-                        </div>
-
-                        <!-- Info -->
-                        <div class="flex-1 min-w-0">
-                            <div class="font-medium text-gray-900">{{ entr.firstName }} {{ entr.lastName }}</div>
-                            <div class="text-sm text-gray-600 truncate">
-                                {{ entr.entreprise || 'Aucune entreprise' }} • {{ entr.email }}
+                            <!-- Avatar -->
+                            <div class="w-10 h-10 bg-pink-500 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+                                {{ getInitials(entr.firstName, entr.lastName) }}
                             </div>
-                            <div *ngIf="isEntrepreneurAlreadyAssigned(entr.id)" class="text-red-500 text-xs font-semibold mt-0.5">
-                                Déjà assigné à ce programme
+
+                            <!-- Info -->
+                            <div class="flex-1 min-w-0">
+                                <div class="font-medium text-gray-900">{{ entr.firstName }} {{ entr.lastName }}</div>
+                                <div class="text-sm text-gray-600 truncate">
+                                    {{ entr.entreprise || 'Aucune entreprise' }} • {{ entr.email }}
+                                </div>
+                                <!-- Already assigned notice with programme names -->
+                                <div *ngIf="getAlreadyAssignedProgramNames(entr.id).length > 0"
+                                    class="flex flex-wrap gap-1 mt-1">
+                                    <span *ngFor="let name of getAlreadyAssignedProgramNames(entr.id)"
+                                        class="inline-flex items-center gap-1 text-amber-700 bg-amber-50 border border-amber-200 text-[10px] font-medium px-1.5 py-0.5 rounded">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-2.5 w-2.5" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                        </svg>
+                                        Déjà dans {{ name }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Current programme tags -->
+                            <div class="flex flex-wrap gap-1.5 items-center shrink-0">
+                                <span
+                                    *ngFor="let program of entr.programs?.slice(0, 2)"
+                                    class="inline-flex items-center px-2 py-0.5 bg-cyan-100 text-cyan-700 rounded-md text-xs font-medium border border-cyan-200">
+                                    {{ program.nom }}
+                                </span>
+                                <span
+                                    *ngIf="entr.programs && entr.programs.length > 2"
+                                    class="inline-flex items-center px-2 py-0.5 bg-gray-100 text-gray-600 rounded-md text-xs font-medium">
+                                    +{{ entr.programs.length - 2 }}
+                                </span>
                             </div>
                         </div>
-
-                        <!-- Programme tags -->
-                        <div class="flex flex-wrap gap-2 items-center">
-                            <span
-                                *ngFor="let program of entr.programs?.slice(0, 2)"
-                                class="inline-flex items-center px-2.5 py-1 bg-cyan-100 text-cyan-700 rounded-md text-xs font-medium border border-cyan-200"
-                            >
-                                {{ program.nom }}
-                            </span>
-                            <span
-                                *ngIf="entr.programs && entr.programs.length > 2"
-                                class="inline-flex items-center px-2.5 py-1 bg-gray-100 text-gray-600 rounded-md text-xs font-medium"
-                            >
-                                +{{ entr.programs.length - 2 }}
-                            </span>
-                        </div>
-                    </div>
-
+                    </ng-container>
                 </div>
             </div>
         </div>
 
         <!-- Modal Footer -->
-        <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 rounded-b-2xl border-t border-gray-200">
-            <button
-                type="button"
-                (click)="closeAssignModal()"
-                class="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-medium text-sm"
-            >
-                Annuler
-            </button>
-            <button
-                type="button"
-                (click)="assignEntrepreneurs()"
-                [disabled]="!canAssign()"
-                class="px-5 py-2.5 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-            >
-                <svg *ngIf="isAssigning" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <span>{{ isAssigning ? 'Assignation...' : 'Assigner' }}</span>
-            </button>
+        <div class="bg-gray-50 px-6 py-4 flex items-center justify-between rounded-b-2xl border-t border-gray-200">
+            <!-- Summary -->
+            <p *ngIf="canAssign()" class="text-sm text-gray-600">
+                <span class="font-semibold text-cyan-700">{{ getValidSelections().length }}</span> entrepreneur{{ getValidSelections().length > 1 ? 's' : '' }}
+                → <span class="font-semibold text-cyan-700">{{ selectedProgrammeIds.length }}</span> programme{{ selectedProgrammeIds.length > 1 ? 's' : '' }}
+            </p>
+            <p *ngIf="!canAssign()" class="text-sm text-gray-400 italic">
+                Sélectionnez au moins 1 programme et 1 entrepreneur
+            </p>
+
+            <div class="flex gap-3">
+                <button
+                    type="button"
+                    (click)="closeAssignModal()"
+                    class="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-medium text-sm">
+                    Annuler
+                </button>
+                <button
+                    type="button"
+                    (click)="assignEntrepreneurs()"
+                    [disabled]="!canAssign()"
+                    class="px-5 py-2.5 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                    <svg *ngIf="isAssigning" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>{{ isAssigning ? 'Assignation...' : 'Assigner' }}</span>
+                </button>
+            </div>
         </div>
     </div>
 </div>

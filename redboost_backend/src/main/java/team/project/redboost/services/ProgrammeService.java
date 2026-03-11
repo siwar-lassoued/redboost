@@ -689,10 +689,8 @@ public class ProgrammeService {
     }
 
     @Transactional
-    public void assignEntrepreneursToProgram(Long programmeId, List<Long> entrepreneurIds) {
-        Programme programme = programmeRepo.findById(programmeId)
-                .orElseThrow(() -> new RuntimeException("Programme non trouvé"));
-
+    public void assignEntrepreneursToProgram(List<Long> programmeIds, List<Long> entrepreneurIds) {
+        List<Programme> programmes = programmeRepo.findAllById(programmeIds);
         List<User> entrepreneurs = userRepository.findAllById(entrepreneurIds);
 
         for (User entrepreneur : entrepreneurs) {
@@ -704,7 +702,7 @@ public class ProgrammeService {
             if (entrepreneur.getProgrammes() == null) {
                 entrepreneur.setProgrammes(new HashSet<>());
             }
-            entrepreneur.getProgrammes().add(programme);
+            entrepreneur.getProgrammes().addAll(programmes);
 
             userRepository.save(entrepreneur);
         }

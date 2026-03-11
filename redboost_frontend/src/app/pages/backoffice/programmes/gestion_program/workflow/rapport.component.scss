@@ -4310,3 +4310,91 @@ $bg-white: #FFFFFF;
     align-items: center;
     justify-content: center;
 }
+
+
+/* ─── File type selector (PDF / DOCX) ─────────────────────────────────────── */
+
+.file-type-options {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+.file-type-card {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+    border: 2px solid #E5E7EB;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+    position: relative;
+    background: #fff;
+
+    &:hover {
+        border-color: #C4B5FD;
+        background: #FAFAFF;
+    }
+
+    &.selected {
+        border-color: #7C3AED;
+        background: #F5F3FF;
+        box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.08);
+    }
+}
+
+.file-type-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    &--pdf {
+        background: #FEE2E2;
+        color: #DC2626;
+    }
+
+    &--docx {
+        background: #DBEAFE;
+        color: #2563EB;
+    }
+}
+
+.file-type-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.file-type-label {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #111827;
+}
+
+.file-type-desc {
+    font-size: 0.75rem;
+    color: #6B7280;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.file-type-check {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #7C3AED;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}

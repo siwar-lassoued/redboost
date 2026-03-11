@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+/* import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { forkJoin } from 'rxjs';
@@ -220,3 +220,4 @@ export class StatComponent implements OnInit {
         }, intervalTime);
     }
 }
+ */

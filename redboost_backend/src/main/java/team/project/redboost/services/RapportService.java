@@ -17,14 +17,17 @@ import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.xwpf.usermodel.*;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import team.project.redboost.dto.*;
 import team.project.redboost.entities.*;
 import team.project.redboost.repositories.*;
+import org.apache.poi.xwpf.usermodel.BreakType;
 
 import java.awt.*;
+import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -571,307 +574,6 @@ public class RapportService {
     }
 
 
-
-//    public byte[] generateRapportPdf(Long rapportId, LocalDate startDate, LocalDate endDate) {
-//        // 1. Fetch Data
-//        Rapport rapport = rapportRepository.findById(rapportId)
-//                .orElseThrow(() -> new RuntimeException("Rapport not found"));
-//        Programme programme = rapport.getProgramme();
-//
-//        // Fetch KPIs specific to this programme
-//        List<ProgrammeKpi> programmeKpis = programmeKpiRepository.findByProgrammeId(programme.getId());
-//
-//        // 2. Create Document
-//        ByteArrayOutputStream out = new ByteArrayOutputStream();
-//        Document document = new Document(PageSize.A4, 36, 36, 50, 50);
-//
-//        try {
-//            PdfWriter.getInstance(document, out);
-//            document.open();
-//
-//            // --- ADD LOGO TO TOP RIGHT ---
-//            String logoUrl = programme.getLogoUrl();
-//            System.out.println("DEBUG: Logo URL from Programme: " + logoUrl);
-//            System.out.println("DEBUG: Configured Upload Dir: " + uploadDir);
-//
-//            if (logoUrl != null && !logoUrl.isEmpty()) {
-//                try {
-//                    // Extract filename from the URL (e.g., "/uploads/logo-123.png" -> "logo-123.png")
-//                    String filename = logoUrl.substring(logoUrl.lastIndexOf("/") + 1);
-//                    Path imagePath = Paths.get(uploadDir, filename);
-//
-//                    System.out.println("DEBUG: Full Image Path: " + imagePath.toAbsolutePath().toString());
-//
-//                    if (Files.exists(imagePath)) {
-//                        System.out.println("DEBUG: Image file found!");
-//                        Image logo = Image.getInstance(imagePath.toAbsolutePath().toString());
-//
-//                        // Scale image to fit (e.g., 50 pixels height)
-//                        float desiredHeight = 50f;
-//                        float scaler = desiredHeight / logo.getHeight();
-//                        logo.scalePercent(scaler * 100);
-//
-//                        // Position top right of the page, with a small margin from the page edge
-//                        float pageEdgeMargin = 20f;
-//                        float x = document.getPageSize().getWidth() - logo.getScaledWidth() - pageEdgeMargin;
-//                        float y = document.getPageSize().getHeight() - logo.getScaledHeight() - pageEdgeMargin;
-//                        logo.setAbsolutePosition(x, y);
-//
-//                        document.add(logo);
-//                        System.out.println("DEBUG: Logo added to PDF.");
-//                    } else {
-//                        System.err.println("ERROR: Logo file NOT FOUND at: " + imagePath.toAbsolutePath().toString());
-//                    }
-//
-//                } catch (Exception e) {
-//                    System.err.println("ERROR: Exception adding logo: " + e.getMessage());
-//                    e.printStackTrace();
-//                }
-//            } else {
-//                System.out.println("DEBUG: No logo URL in programme.");
-//            }
-//
-//            // --- COLORS ---
-//            Color primaryColor = new Color(36, 92, 103); // #245C67
-//            Color accentColor = new Color(228, 77, 98); // #E44D62
-//            Color lightGray = new Color(245, 245, 245);
-//            Color mediumGray = new Color(120, 120, 120);
-//
-//            // --- FONTS ---
-//            Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 20, primaryColor);
-//            Font h1Font = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, primaryColor);
-//            Font h2Font = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11, accentColor);
-//            Font normalFont = FontFactory.getFont(FontFactory.HELVETICA, 10, Color.BLACK);
-//            Font boldFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10, Color.BLACK);
-//            Font subtitleFont = FontFactory.getFont(FontFactory.HELVETICA, 10, mediumGray);
-//
-//            // --- HEADER / TITLE ---
-//            String titleText = (startDate != null && endDate != null) ? "RAPPORT PÉRIODIQUE DE PROGRAMME" : "RAPPORT NARRATIF DE PROGRAMME";
-//            Paragraph title = new Paragraph(titleText, titleFont);
-//            title.setAlignment(Element.ALIGN_CENTER);
-//            title.setSpacingAfter(5);
-//            document.add(title);
-//
-//            String subtitleText = (startDate != null && endDate != null)
-//                ? "Période du " + startDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + " au " + endDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-//                : "Généré par RedBoost Platform";
-//            Paragraph subtitle = new Paragraph(subtitleText, subtitleFont);
-//            subtitle.setAlignment(Element.ALIGN_CENTER);
-//            subtitle.setSpacingAfter(30);
-//            document.add(subtitle);
-//
-//            // --- 1. FICHE D'IDENTITÉ ---
-//            Paragraph section1 = new Paragraph("1. FICHE D'IDENTITÉ DU PROGRAMME", h1Font);
-//            section1.setSpacingBefore(10);
-//            section1.setSpacingAfter(15);
-//            document.add(section1);
-//
-//            PdfPTable infoTable = new PdfPTable(2);
-//            infoTable.setWidthPercentage(100);
-//            infoTable.setWidths(new float[]{3, 7});
-//
-//            addTableRow(infoTable, "Nom du Projet", programme.getNom(), boldFont, normalFont);
-//            addTableRow(infoTable, "Type", programme.getTypeProgramme(), boldFont, normalFont);
-//            addTableRow(infoTable, "Période", programme.getDateDebut() + " au " + programme.getDateFin(), boldFont, normalFont);
-//            addTableRow(infoTable, "Statut", programme.getStatut().toString(), boldFont, normalFont);
-//            addTableRow(infoTable, "Bénéficiaires", String.valueOf(programme.getNombreBeneficiaires()), boldFont, normalFont);
-//
-//            String secteursList = programme.getSecteurs().stream()
-//                    .map(Secteur::getNom)
-//                    .collect(Collectors.joining(", "));
-//            addTableRow(infoTable, "Secteurs", secteursList, boldFont, normalFont);
-//
-//            document.add(infoTable);
-//            document.add(Chunk.NEWLINE);
-//
-//            // --- 2. SYNTHÈSE STRATÉGIQUE ---
-//            Paragraph section2 = new Paragraph("2. Résumé Exécutif", h1Font);
-//            section2.setSpacingBefore(20);
-//            section2.setSpacingAfter(15);
-//            document.add(section2);
-//
-//            document.add(new Paragraph("Objectifs du Programme", h2Font));
-//            Paragraph objPara = new Paragraph(rapport.getObjectifsProgramme() != null ? rapport.getObjectifsProgramme() : "N/A", normalFont);
-//            objPara.setSpacingAfter(10);
-//            document.add(objPara);
-//
-//            document.add(new Paragraph("Résultats Clés", h2Font));
-//            Paragraph resPara = new Paragraph(rapport.getResultatsCles() != null ? rapport.getResultatsCles() : "N/A", normalFont);
-//            resPara.setSpacingAfter(10);
-//            document.add(resPara);
-//
-//            document.add(new Paragraph("Impact Global", h2Font));
-//            Paragraph impPara = new Paragraph(rapport.getImpactGlobal() != null ? rapport.getImpactGlobal() : "N/A", normalFont);
-//            impPara.setSpacingAfter(10);
-//            document.add(impPara);
-//
-//            // --- 3. CADRE LOGIQUE (Objectifs & Résultats) ---
-//            Paragraph section3 = new Paragraph("3. Contexte et Objectifs", h1Font);
-//            section3.setSpacingBefore(20);
-//            section3.setSpacingAfter(15);
-//            document.add(section3);
-//
-//            for (ObjectifGlobal og : rapport.getObjectifsGlobaux()) {
-//                Paragraph ogTitle = new Paragraph("Objectif Global : " + og.getNom(), h2Font);
-//                ogTitle.setSpacingBefore(10);
-//                document.add(ogTitle);
-//
-//                Paragraph ogDesc = new Paragraph(og.getDescription(), normalFont);
-//                ogDesc.setSpacingAfter(8);
-//                document.add(ogDesc);
-//
-//                com.lowagie.text.List specList = new com.lowagie.text.List(com.lowagie.text.List.UNORDERED);
-//                specList.setListSymbol("\u2022");
-//
-//                for (ObjectifSpecifique os : og.getObjectifsSpecifiques()) {
-//                    specList.add(new ListItem("Objectif Spécifique : " + os.getNom(), boldFont));
-//
-//                    for (Resultat res : os.getResultats()) {
-//                        specList.add(new ListItem("    Résultat : " + res.getNom(), normalFont));
-//                    }
-//                    for (ResultatTransversal resTrans : os.getResultatsTransversaux()) {
-//                        specList.add(new ListItem("    Résultat Transversal : " + resTrans.getNom(), normalFont));
-//                    }
-//                }
-//                document.add(specList);
-//            }
-//            document.add(Chunk.NEWLINE);
-//
-//            // --- 4. ACTIVITÉS ET SPRINTS ---
-//            Paragraph section4 = new Paragraph("4. Méthodologie et Résultats", h1Font);
-//            section4.setSpacingBefore(20);
-//            section4.setSpacingAfter(15);
-//            document.add(section4);
-//
-//            List<Sprint> sprintsToReport;
-//            if (startDate != null && endDate != null) {
-//                sprintsToReport = programme.getSprints().stream()
-//                    .filter(s -> {
-//                        LocalDate sStart = s.getDateDebut();
-//                        LocalDate sEnd = s.getDateLimite();
-//                        if (sStart == null || sEnd == null) return false;
-//                        return !sStart.isAfter(endDate) && !sEnd.isBefore(startDate);
-//                    })
-//                    .collect(Collectors.toList());
-//                if (sprintsToReport.isEmpty()) {
-//                    document.add(new Paragraph("Aucun sprint trouvé dans cette période.", normalFont));
-//                }
-//            } else {
-//                sprintsToReport = programme.getSprints();
-//            }
-//
-//            for (Sprint sprint : sprintsToReport) {
-//                PdfPTable sprintTable = new PdfPTable(1);
-//                sprintTable.setWidthPercentage(100);
-//                sprintTable.setSpacingBefore(10);
-//
-//                PdfPCell headerCell = new PdfPCell(new Phrase("Sprint: " + sprint.getNom() , h2Font));
-//                headerCell.setBackgroundColor(lightGray);
-//                headerCell.setPadding(8);
-//                headerCell.setBorder(Rectangle.NO_BORDER);
-//                sprintTable.addCell(headerCell);
-//
-//                PdfPCell contentCell = new PdfPCell();
-//                contentCell.setPadding(8);
-//                contentCell.setBorder(Rectangle.NO_BORDER);
-//                contentCell.addElement(new Paragraph("Description: " + sprint.getDescription(), normalFont));
-//
-//                List<Activite> activites = sprint.getActivites();
-//                if (startDate != null && endDate != null && activites != null) {
-//                    activites = activites.stream()
-//                        .filter(a -> {
-//                            LocalDate aStart = a.getDateDebut();
-//                            LocalDate aEnd = a.getDateLimite();
-//                            if (aStart == null || aEnd == null) return false;
-//                            return !aStart.isAfter(endDate) && !aEnd.isBefore(startDate);
-//                        })
-//                        .collect(Collectors.toList());
-//                }
-//
-//                if (activites != null && !activites.isEmpty()) {
-//                    contentCell.addElement(new Paragraph("\nActivités Réalisées :", boldFont));
-//                    for (Activite act : activites) {
-//                        contentCell.addElement(new Paragraph("- " + act.getNom() , normalFont));
-//                        contentCell.addElement(new Paragraph("  Objectif: " + (act.getObjectif() != null ? act.getObjectif() : "-"), FontFactory.getFont(FontFactory.HELVETICA_OBLIQUE, 9)));
-//                        contentCell.addElement(new Paragraph("  Type: " + (act.getType() != null ? act.getType() : "-"), FontFactory.getFont(FontFactory.HELVETICA_OBLIQUE, 9)));
-//
-//                        // Activite KPIs
-//                        if (act.getKpis() != null && !act.getKpis().isEmpty()) {
-//                            Paragraph kpiTitle = new Paragraph("  Indicateurs de l'activité:", boldFont);
-//                            kpiTitle.setIndentationLeft(10);
-//                            contentCell.addElement(kpiTitle);
-//
-//                            com.lowagie.text.List kpiList = new com.lowagie.text.List(false, 10);
-//                            kpiList.setListSymbol("  - ");
-//                            kpiList.setIndentationLeft(20);
-//                            for (ActiviteKpi kpi : act.getKpis()) {
-//                                if (kpi.getKpi() != null) {
-//                                    kpiList.add(new ListItem(kpi.getKpi().getNom() + ": " + (kpi.getValeurActuelle() != null ? kpi.getValeurActuelle() : "N/A"), normalFont));
-//                                }
-//                            }
-//                            contentCell.addElement(kpiList);
-//                        }
-//
-//                        // Taches
-//                        if (act.getTaches() != null && !act.getTaches().isEmpty()) {
-//                            Paragraph tacheTitle = new Paragraph("  Tâches:", boldFont);
-//                            tacheTitle.setIndentationLeft(10);
-//                            contentCell.addElement(tacheTitle);
-//
-//                            com.lowagie.text.List tacheList = new com.lowagie.text.List(false, 10);
-//                            tacheList.setListSymbol("  • ");
-//                            tacheList.setIndentationLeft(20);
-//                            for (Tache tache : act.getTaches()) {
-//                                tacheList.add(new ListItem(tache.getTitre(), normalFont));
-//
-//                                // Tache KPIs
-//                                if (tache.getTachesKpis() != null && !tache.getTachesKpis().isEmpty()) {
-//                                    com.lowagie.text.List tacheKpiList = new com.lowagie.text.List(false, 20);
-//                                    tacheKpiList.setListSymbol("    - ");
-//                                    tacheKpiList.setIndentationLeft(30);
-//                                    for (TacheKpi tacheKpi : tache.getTachesKpis()) {
-//                                        if (tacheKpi.getKpi() != null) {
-//                                            tacheKpiList.add(new ListItem(tacheKpi.getKpi().getNom() + ": " + (tacheKpi.getValeurActuelle() != null ? tacheKpi.getValeurActuelle() : "N/A"), normalFont));
-//                                        }
-//                                    }
-//                                    tacheList.add(tacheKpiList);
-//                                }
-//                            }
-//                            contentCell.addElement(tacheList);
-//                        }
-//                        contentCell.addElement(Chunk.NEWLINE);
-//                    }
-//                } else {
-//                    contentCell.addElement(new Paragraph("Aucune activité enregistrée" + ((startDate != null) ? " dans cette période." : "."), normalFont));
-//                }
-//
-//                sprintTable.addCell(contentCell);
-//                document.add(sprintTable);
-//            }
-//            document.add(Chunk.NEWLINE);
-//
-//            // --- 5. CONCLUSION ---
-//            Paragraph section5 = new Paragraph("5. CONCLUSION & RECOMMANDATIONS", h1Font);
-//            section5.setSpacingBefore(20);
-//            section5.setSpacingAfter(15);
-//            document.add(section5);
-//
-//            document.add(new Paragraph(rapport.getConclusionRecommandations() != null ? rapport.getConclusionRecommandations() : "Aucune conclusion enregistrée.", normalFont));
-//
-//            // Footer / Timestamp
-//            document.add(Chunk.NEWLINE);
-//            document.add(Chunk.NEWLINE);
-//            Paragraph footer = new Paragraph("Rapport généré le " + java.time.LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")), FontFactory.getFont(FontFactory.HELVETICA_OBLIQUE, 8, Color.GRAY));
-//            footer.setAlignment(Element.ALIGN_RIGHT);
-//            document.add(footer);
-//
-//            document.close();
-//        } catch (DocumentException e) {
-//            throw new RuntimeException("Erreur lors de la génération du PDF", e);
-//        }
-//
-//        return out.toByteArray();
-//    }
 
     public byte[] generateRapportExpertiseFrancePdf(Long rapportId, LocalDate startDate, LocalDate endDate) {
         // 1. Fetch Data
@@ -1622,8 +1324,41 @@ public class RapportService {
     }
 
 
+    public byte[] generateRapportDocx(Long rapportId, LocalDate startDate, LocalDate endDate) {
+        Rapport rapport = rapportRepository.findById(rapportId)
+                .orElseThrow(() -> new RuntimeException("Rapport not found"));
+        Programme programme = rapport.getProgramme();
+
+        try (XWPFDocument document = new XWPFDocument();
+             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+
+            generateStandardDocxContent(document, rapport, programme, startDate, endDate);
+
+            document.write(out);
+            return out.toByteArray();
+        } catch (IOException e) {
+            throw new RuntimeException("Error generating Word document", e);
+        }
+    }
+
+    public byte[] generateRapportExpertiseFranceDocx(Long rapportId, LocalDate startDate, LocalDate endDate) {
+        Rapport rapport = rapportRepository.findById(rapportId)
+                .orElseThrow(() -> new RuntimeException("Rapport not found"));
+        Programme programme = rapport.getProgramme();
+
+        try (XWPFDocument document = new XWPFDocument();
+             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+
+            generateExpertiseFranceDocxContent(document, rapport, programme, startDate, endDate);
+
+            document.write(out);
+            return out.toByteArray();
+        } catch (IOException e) {
+            throw new RuntimeException("Error generating Word document", e);
+        }
+    }
+
     public GoogleDriveService.DriveUploadResult generateAndUploadRapportDocx(Long rapportId, LocalDate startDate, LocalDate endDate, String templateType) {
-        // 1. Fetch Data
         Rapport rapport = rapportRepository.findById(rapportId)
                 .orElseThrow(() -> new RuntimeException("Rapport not found"));
         Programme programme = rapport.getProgramme();
@@ -1640,11 +1375,9 @@ public class RapportService {
                 titleText = "Rapport_";
             }
 
-            // Write to byte array
             document.write(out);
             byte[] docxBytes = out.toByteArray();
 
-            // 3. Upload to Google Drive
             String periodSuffix = (startDate != null && endDate != null) ? "_Periodique" : "";
             String fileName = titleText + programme.getNom().replaceAll("\\s+", "_") + periodSuffix + ".docx";
             return googleDriveService.uploadDocxAndGetShareableLink(docxBytes, fileName);
@@ -1654,370 +1387,401 @@ public class RapportService {
         }
     }
 
-    private void generateStandardDocxContent(XWPFDocument document, Rapport rapport, Programme programme, LocalDate startDate, LocalDate endDate) {
-        // Title
-        XWPFParagraph title = document.createParagraph();
-        title.setAlignment(ParagraphAlignment.CENTER);
-        XWPFRun titleRun = title.createRun();
-        titleRun.setText((startDate != null && endDate != null) ? "RAPPORT PÉRIODIQUE DE PROGRAMME" : "RAPPORT NARRATIF DE PROGRAMME");
-        titleRun.setBold(true);
-        titleRun.setFontSize(20);
-        titleRun.setColor("245C67"); // Primary Color
+//    private void generateStandardDocxContent(XWPFDocument document, Rapport rapport, Programme programme, LocalDate startDate, LocalDate endDate) {
+//        // Title
+//        XWPFParagraph title = document.createParagraph();
+//        title.setAlignment(ParagraphAlignment.CENTER);
+//        XWPFRun titleRun = title.createRun();
+//        titleRun.setText((startDate != null && endDate != null) ? "RAPPORT PÉRIODIQUE DE PROGRAMME" : "RAPPORT NARRATIF DE PROGRAMME");
+//        titleRun.setBold(true);
+//        titleRun.setFontSize(20);
+//        titleRun.setColor("245C67"); // PRIMARY
+//
+//        // Subtitle
+//        XWPFParagraph subtitle = document.createParagraph();
+//        subtitle.setAlignment(ParagraphAlignment.CENTER);
+//        XWPFRun subtitleRun = subtitle.createRun();
+//        String subText = (startDate != null && endDate != null)
+//                ? "Période du " + startDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + " au " + endDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+//                : "Généré par RedBoost Platform";
+//        subtitleRun.setText(subText);
+//        subtitleRun.setFontSize(10);
+//        subtitleRun.setColor("787878");
+//        subtitleRun.addBreak();
+//
+//        // 1. FICHE D'IDENTITÉ
+//        createSectionTitle(document, "1. FICHE D'IDENTITÉ DU PROGRAMME", "245C67");
+//
+//        XWPFTable infoTable = document.createTable();
+//        infoTable.setWidth("100%");
+//        if (infoTable.getNumberOfRows() > 0) infoTable.removeRow(0);
+//
+//        String secteursList = programme.getSecteurs().stream()
+//                .map(Secteur::getNom)
+//                .collect(Collectors.joining(", "));
+//
+//        addStyledTableRow(infoTable, "Nom du Projet", programme.getNom(), false, "DCE9EF", "FFFFFF");
+//        addStyledTableRow(infoTable, "Type", programme.getTypeProgramme(), true, "DCE9EF", "FAFAFA");
+//        addStyledTableRow(infoTable, "Période", programme.getDateDebut() + " au " + programme.getDateFin(), false, "DCE9EF", "FFFFFF");
+//        addStyledTableRow(infoTable, "Statut", programme.getStatut().toString(), true, "DCE9EF", "FAFAFA");
+//        addStyledTableRow(infoTable, "Bénéficiaires", String.valueOf(programme.getNombreBeneficiaires()), false, "DCE9EF", "FFFFFF");
+//        addStyledTableRow(infoTable, "Secteurs", secteursList, true, "DCE9EF", "FAFAFA");
+//
+//        document.createParagraph(); // Spacer
+//
+//        // 2. RÉSUMÉ EXÉCUTIF
+//        createSectionTitle(document, "2. RÉSUMÉ EXÉCUTIF", "245C67");
+//        createSubTitle(document, "Objectifs du Programme", "245C67");
+//        createParagraph(document, rapport.getObjectifsProgramme());
+//
+//        createSubTitle(document, "Résultats Clés", "245C67");
+//        createParagraph(document, rapport.getResultatsCles());
+//
+//        createSubTitle(document, "Impact Global", "245C67");
+//        createParagraph(document, rapport.getImpactGlobal());
+//
+//        // 3. CONTEXTE ET OBJECTIFS
+//        createSectionTitle(document, "3. CONTEXTE ET OBJECTIFS", "245C67");
+//
+//        for (ObjectifGlobal og : rapport.getObjectifsGlobaux()) {
+//            XWPFParagraph ogP = document.createParagraph();
+//            setParagraphLeftBorder(ogP, "245C67", STBorder.SINGLE, "12");
+//            XWPFRun ogR = ogP.createRun();
+//            ogR.setText("Objectif Global : " + og.getNom());
+//            ogR.setBold(true);
+//            ogR.setColor("245C67");
+//            ogR.setFontSize(12);
+//
+//            if (og.getDescription() != null) {
+//                XWPFParagraph descP = document.createParagraph();
+//                descP.setIndentationLeft(360);
+//                descP.createRun().setText(og.getDescription());
+//            }
+//
+//            for (ObjectifSpecifique os : og.getObjectifsSpecifiques()) {
+//                XWPFParagraph osP = document.createParagraph();
+//                osP.setIndentationLeft(360);
+//                osP.setSpacingBefore(100);
+//                XWPFRun osR = osP.createRun();
+//                osR.setText("▸ Objectif Spécifique : " + os.getNom());
+//                osR.setBold(true);
+//
+//                for (Resultat res : os.getResultats()) {
+//                    XWPFParagraph resP = document.createParagraph();
+//                    resP.setIndentationLeft(720);
+//                    resP.createRun().setText("• Résultat : " + res.getNom());
+//                }
+//                for (ResultatTransversal rt : os.getResultatsTransversaux()) {
+//                    XWPFParagraph rtP = document.createParagraph();
+//                    rtP.setIndentationLeft(720);
+//                    XWPFRun rtR = rtP.createRun();
+//                    rtR.setText("◦ Résultat Transversal : " + rt.getNom());
+//                    rtR.setItalic(true);
+//                }
+//            }
+//            document.createParagraph();
+//        }
+//
+//        // 4. MÉTHODOLOGIE ET RÉSULTATS
+//        createSectionTitle(document, "4. MÉTHODOLOGIE ET RÉSULTATS", "245C67");
+//
+//        List<Sprint> sprints = filterSprints(programme, startDate, endDate);
+//        if (sprints.isEmpty()) {
+//            createParagraph(document, "Aucun sprint trouvé dans cette période.");
+//        } else {
+//            for (Sprint sprint : sprints) {
+//                XWPFParagraph sprintP = document.createParagraph();
+//                setParagraphLeftBorder(sprintP, "245C67", STBorder.SINGLE, "12");
+//                setParagraphShading(sprintP, "DCE9EF");
+//                XWPFRun sprintR = sprintP.createRun();
+//                sprintR.setText("  SPRINT : " + sprint.getNom().toUpperCase());
+//                sprintR.setBold(true);
+//                sprintR.setColor("245C67");
+//
+//                if (sprint.getDescription() != null) {
+//                    XWPFParagraph descP = document.createParagraph();
+//                    descP.setIndentationLeft(360);
+//                    descP.createRun().setText(sprint.getDescription());
+//                }
+//
+//                List<Activite> activites = filterActivites(sprint, startDate, endDate);
+//                if (activites == null || activites.isEmpty()) {
+//                    XWPFParagraph noActP = document.createParagraph();
+//                    noActP.setIndentationLeft(360);
+//                    noActP.createRun().setText("Aucune activité enregistrée.");
+//                } else {
+//                    XWPFParagraph actHeader = document.createParagraph();
+//                    actHeader.setIndentationLeft(360);
+//                    actHeader.setSpacingBefore(100);
+//                    XWPFRun actHeaderR = actHeader.createRun();
+//                    actHeaderR.setText("Activités Réalisées");
+//                    actHeaderR.setBold(true);
+//
+//                    for (Activite act : activites) {
+//                        XWPFTable actTable = document.createTable();
+//                        actTable.setWidth("95%");
+//                        actTable.setTableAlignment(TableRowAlign.RIGHT);
+//                        if (actTable.getNumberOfRows() > 0) actTable.removeRow(0);
+//
+//                        XWPFTableRow row = actTable.createRow();
+//                        XWPFTableCell cell = row.getCell(0);
+//                        if (cell == null) cell = row.createCell();
+//
+//                        XWPFParagraph nameP = cell.addParagraph();
+//                        nameP.createRun().setText("▸ " + act.getNom());
+//
+//                        if (act.getObjectif() != null || act.getType() != null) {
+//                            XWPFParagraph metaP = cell.addParagraph();
+//                            XWPFRun metaR = metaP.createRun();
+//                            String metaText = (act.getObjectif() != null ? "Objectif : " + act.getObjectif() : "") +
+//                                    (act.getObjectif() != null && act.getType() != null ? "   |   " : "") +
+//                                    (act.getType() != null ? "Type : " + act.getType() : "");
+//                            metaR.setText(metaText);
+//                            metaR.setItalic(true);
+//                            metaR.setFontSize(9);
+//                        }
+//
+//                        if (act.getKpis() != null && !act.getKpis().isEmpty()) {
+//                            XWPFParagraph kpiHeader = cell.addParagraph();
+//                            kpiHeader.createRun().setText("Indicateurs :");
+//
+//                            for (ActiviteKpi kpi : act.getKpis()) {
+//                                if (kpi.getKpi() != null) {
+//                                    XWPFParagraph kpiP = cell.addParagraph();
+//                                    kpiP.setIndentationLeft(360);
+//                                    kpiP.createRun().setText("- " + kpi.getKpi().getNom() + ": " + (kpi.getValeurActuelle() != null ? kpi.getValeurActuelle() : "N/A"));
+//                                }
+//                            }
+//                        }
+//
+//                        document.createParagraph();
+//                    }
+//                }
+//            }
+//        }
+//
+//        // 5. CONCLUSION
+//        createSectionTitle(document, "5. CONCLUSION & RECOMMANDATIONS", "245C67");
+//        createParagraph(document, rapport.getConclusionRecommandations());
+//    }
 
-        // Subtitle
-        XWPFParagraph subtitle = document.createParagraph();
-        subtitle.setAlignment(ParagraphAlignment.CENTER);
-        XWPFRun subtitleRun = subtitle.createRun();
-        String subText = (startDate != null && endDate != null) 
-                ? "Période du " + startDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + " au " + endDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-                : "Généré par RedBoost Platform";
-        subtitleRun.setText(subText);
-        subtitleRun.setFontSize(10);
-        subtitleRun.setColor("787878"); // Medium Gray
-        subtitleRun.addBreak();
-
-        // --- 1. FICHE D'IDENTITÉ ---
-        createSectionTitle(document, "1. FICHE D'IDENTITÉ DU PROGRAMME");
-
-        XWPFTable infoTable = document.createTable();
-        infoTable.setWidth("100%");
-        addTableRow(infoTable, "Nom du Projet", programme.getNom());
-        addTableRow(infoTable, "Type", programme.getTypeProgramme());
-        addTableRow(infoTable, "Période", programme.getDateDebut() + " au " + programme.getDateFin());
-        addTableRow(infoTable, "Statut", programme.getStatut().toString());
-        addTableRow(infoTable, "Bénéficiaires", String.valueOf(programme.getNombreBeneficiaires()));
-        String secteursList = programme.getSecteurs().stream()
-                .map(Secteur::getNom)
-                .collect(Collectors.joining(", "));
-        addTableRow(infoTable, "Secteurs", secteursList);
-
-        // --- 2. SYNTHÈSE STRATÉGIQUE ---
-        createSectionTitle(document, "2. Résumé Exécutif");
-
-        createSubTitle(document, "Objectifs du Programme");
-        createParagraph(document, rapport.getObjectifsProgramme());
-
-        createSubTitle(document, "Résultats Clés");
-        createParagraph(document, rapport.getResultatsCles());
-
-        createSubTitle(document, "Impact Global");
-        createParagraph(document, rapport.getImpactGlobal());
-
-        // --- 3. CADRE LOGIQUE ---
-        createSectionTitle(document, "3. Contexte et Objectifs");
-
-        for (ObjectifGlobal og : rapport.getObjectifsGlobaux()) {
-            createSubTitle(document, "Objectif Global : " + og.getNom());
-            createParagraph(document, og.getDescription());
-
-            for (ObjectifSpecifique os : og.getObjectifsSpecifiques()) {
-                XWPFParagraph p = document.createParagraph();
-                XWPFRun r = p.createRun();
-                r.setText("• Objectif Spécifique : " + os.getNom());
-                r.setBold(true);
-
-                for (Resultat res : os.getResultats()) {
-                    XWPFParagraph p2 = document.createParagraph();
-                    p2.setIndentationLeft(720); // Indent
-                    XWPFRun r2 = p2.createRun();
-                    r2.setText("- Résultat : " + res.getNom());
-                }
-            }
-        }
-
-        // --- 4. ACTIVITÉS ET SPRINTS ---
-        createSectionTitle(document, "4. Méthodologie et Résultats");
-
-        List<Sprint> sprintsToReport = programme.getSprints();
-        if (startDate != null && endDate != null) {
-             sprintsToReport = sprintsToReport.stream()
-                    .filter(s -> {
-                        LocalDate sStart = s.getDateDebut();
-                        LocalDate sEnd = s.getDateLimite();
-                        if (sStart == null || sEnd == null) return false;
-                        return !sStart.isAfter(endDate) && !sEnd.isBefore(startDate);
-                    })
-                    .collect(Collectors.toList());
-             if (sprintsToReport.isEmpty()) {
-                 createParagraph(document, "Aucun sprint trouvé dans cette période.");
-             }
-        }
-
-        for (Sprint sprint : sprintsToReport) {
-            // Sprint Header (Table with gray background)
-            XWPFTable sprintTable = document.createTable();
-            sprintTable.setWidth("100%");
-            XWPFTableRow header = sprintTable.getRow(0);
-            header.getCell(0).setText("Sprint: " + sprint.getNom());
-            header.getCell(0).setColor("F5F5F5"); // Light Gray
-            
-            XWPFTableRow contentRow = sprintTable.createRow();
-            XWPFTableCell contentCell = contentRow.getCell(0);
-            
-            // Description
-            XWPFParagraph descP = contentCell.addParagraph();
-            descP.createRun().setText("Description: " + sprint.getDescription());
-
-            // Activities
-            List<Activite> activites = sprint.getActivites();
-            if (startDate != null && endDate != null && activites != null) {
-                activites = activites.stream()
-                        .filter(a -> {
-                            LocalDate aStart = a.getDateDebut();
-                            LocalDate aEnd = a.getDateLimite();
-                            if (aStart == null || aEnd == null) return false;
-                            return !aStart.isAfter(endDate) && !aEnd.isBefore(startDate);
-                        })
-                        .collect(Collectors.toList());
-            }
-
-            if (activites != null && !activites.isEmpty()) {
-                XWPFParagraph actHeaderP = contentCell.addParagraph();
-                actHeaderP.setSpacingBefore(100);
-                XWPFRun actHeaderR = actHeaderP.createRun();
-                actHeaderR.setText("Activités Réalisées :");
-                actHeaderR.setBold(true);
-
-                for (Activite act : activites) {
-                    XWPFParagraph actP = contentCell.addParagraph();
-                    XWPFRun actR = actP.createRun();
-                    actR.setText("- " + act.getNom());
-                    
-                    XWPFParagraph actDetailsP = contentCell.addParagraph();
-                    actDetailsP.setIndentationLeft(360);
-                    XWPFRun actDetailsR = actDetailsP.createRun();
-                    actDetailsR.setText("Objectif: " + (act.getObjectif() != null ? act.getObjectif() : "-"));
-                    actDetailsR.addBreak();
-                    actDetailsR.setText("Type: " + (act.getType() != null ? act.getType() : "-"));
-
-                    // Activity KPIs
-                    if (act.getKpis() != null && !act.getKpis().isEmpty()) {
-                        XWPFParagraph kpiHeaderP = contentCell.addParagraph();
-                        kpiHeaderP.setIndentationLeft(360);
-                        XWPFRun kpiHeaderR = kpiHeaderP.createRun();
-                        kpiHeaderR.setText("Indicateurs de l'activité:");
-                        kpiHeaderR.setBold(true);
-
-                        for (ActiviteKpi kpi : act.getKpis()) {
-                            if (kpi.getKpi() != null) {
-                                XWPFParagraph kpiP = contentCell.addParagraph();
-                                kpiP.setIndentationLeft(720);
-                                kpiP.createRun().setText("- " + kpi.getKpi().getNom() + ": " + (kpi.getValeurActuelle() != null ? kpi.getValeurActuelle() : "N/A"));
-                            }
-                        }
-                    }
-
-                    // Tasks
-                    if (act.getTaches() != null && !act.getTaches().isEmpty()) {
-                        XWPFParagraph tacheHeaderP = contentCell.addParagraph();
-                        tacheHeaderP.setIndentationLeft(360);
-                        XWPFRun tacheHeaderR = tacheHeaderP.createRun();
-                        tacheHeaderR.setText("Tâches:");
-                        tacheHeaderR.setBold(true);
-
-                        for (Tache tache : act.getTaches()) {
-                            XWPFParagraph tacheP = contentCell.addParagraph();
-                            tacheP.setIndentationLeft(720);
-                            tacheP.createRun().setText("• " + tache.getTitre());
-
-                            // Task KPIs
-                            if (tache.getTachesKpis() != null && !tache.getTachesKpis().isEmpty()) {
-                                for (TacheKpi tk : tache.getTachesKpis()) {
-                                    if (tk.getKpi() != null) {
-                                        XWPFParagraph tkP = contentCell.addParagraph();
-                                        tkP.setIndentationLeft(1080);
-                                        tkP.createRun().setText("- " + tk.getKpi().getNom() + ": " + (tk.getValeurActuelle() != null ? tk.getValeurActuelle() : "N/A"));
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    
-                    contentCell.addParagraph(); // Spacer
-                }
-            } else {
-                XWPFParagraph noActP = contentCell.addParagraph();
-                noActP.createRun().setText("Aucune activité enregistrée" + ((startDate != null) ? " dans cette période." : "."));
-            }
-            
-            document.createParagraph(); // Spacer between sprints
-        }
-
-        // 5. CONCLUSION (was 6)
-        createSectionTitle(document, "5. CONCLUSION & RECOMMANDATIONS");
-        createParagraph(document, rapport.getConclusionRecommandations());
-    }
-
-    private void generateExpertiseFranceDocxContent(XWPFDocument document, Rapport rapport, Programme programme, LocalDate startDate, LocalDate endDate) {
-        // Title
-        XWPFParagraph title = document.createParagraph();
-        title.setAlignment(ParagraphAlignment.CENTER);
-        XWPFRun titleRun = title.createRun();
-        titleRun.setText("RAPPORT EXPERTISE FRANCE");
-        titleRun.setBold(true);
-        titleRun.setFontSize(20);
-        titleRun.setColor("245C67");
-
-        // Subtitle
-        XWPFParagraph subtitle = document.createParagraph();
-        subtitle.setAlignment(ParagraphAlignment.CENTER);
-        XWPFRun subtitleRun = subtitle.createRun();
-        String subText = (startDate != null && endDate != null) 
-                ? "Période du " + startDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + " au " + endDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-                : "Généré par RedBoost Platform";
-        subtitleRun.setText(subText);
-        subtitleRun.setFontSize(10);
-        subtitleRun.setColor("787878");
-        subtitleRun.addBreak();
-
-        // I. Informations Générales
-        createSectionTitle(document, "I. Informations Générales du Programme");
-        XWPFTable infoTable = document.createTable();
-        infoTable.setWidth("100%");
-        addTableRow(infoTable, "Nom du Projet", programme.getNom());
-        addTableRow(infoTable, "Type", programme.getTypeProgramme());
-        addTableRow(infoTable, "Période", programme.getDateDebut() + " au " + programme.getDateFin());
-        addTableRow(infoTable, "Statut", programme.getStatut().toString());
-        addTableRow(infoTable, "Bénéficiaires", String.valueOf(programme.getNombreBeneficiaires()));
-        String secteursList = programme.getSecteurs().stream()
-                .map(Secteur::getNom)
-                .collect(Collectors.joining(", "));
-        addTableRow(infoTable, "Secteurs", secteursList);
-
-        // II. Résumé Exécutif
-        createSectionTitle(document, "II. Résumé Exécutif");
-        createSubTitle(document, "Objectifs du Programme");
-        createParagraph(document, rapport.getObjectifsProgramme());
-        createSubTitle(document, "Résultats Clés");
-        createParagraph(document, rapport.getResultatsCles());
-        createSubTitle(document, "Impact Global");
-        createParagraph(document, rapport.getImpactGlobal());
-
-        // III. Résultats et Activités
-        createSectionTitle(document, "III. Résultats et Activités");
-        
-        // A. Résultats
-        createSubTitle(document, "A. Résultats");
-        for (ObjectifGlobal og : rapport.getObjectifsGlobaux()) {
-            for (ObjectifSpecifique os : og.getObjectifsSpecifiques()) {
-                if (os.getResultats() != null && !os.getResultats().isEmpty()) {
-                    XWPFParagraph p = document.createParagraph();
-                    XWPFRun r = p.createRun();
-                    r.setText("Résultats Principaux (Objectif Spécifique: " + os.getNom() + ")");
-                    r.setBold(true);
-                    
-                    for (Resultat res : os.getResultats()) {
-                        XWPFParagraph resP = document.createParagraph();
-                        resP.setIndentationLeft(360);
-                        XWPFRun resR = resP.createRun();
-                        resR.setText("- " + res.getNom());
-                        
-                        if (res.getKpis() != null) {
-                            for (BackofficeKpi kpi : res.getKpis()) {
-                                XWPFParagraph kpiP = document.createParagraph();
-                                kpiP.setIndentationLeft(720);
-                                XWPFRun kpiR = kpiP.createRun();
-                                kpiR.setText("• KPI: " + kpi.getNom() + " (" + kpi.getUniteMesure() + ")");
-                            }
-                        }
-                    }
-                }
-                // Transversaux... similar logic
-                 if (os.getResultatsTransversaux() != null && !os.getResultatsTransversaux().isEmpty()) {
-                    XWPFParagraph p = document.createParagraph();
-                    XWPFRun r = p.createRun();
-                    r.setText("Résultats Transversaux");
-                    r.setBold(true);
-                    
-                    for (ResultatTransversal rt : os.getResultatsTransversaux()) {
-                        XWPFParagraph resP = document.createParagraph();
-                        resP.setIndentationLeft(360);
-                        XWPFRun resR = resP.createRun();
-                        resR.setText("- " + rt.getNom());
-                        
-                        if (rt.getKpis() != null) {
-                            for (BackofficeKpi kpi : rt.getKpis()) {
-                                XWPFParagraph kpiP = document.createParagraph();
-                                kpiP.setIndentationLeft(720);
-                                XWPFRun kpiR = kpiP.createRun();
-                                kpiR.setText("• KPI: " + kpi.getNom() + " (" + kpi.getUniteMesure() + ")");
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // B. Activités
-        createSubTitle(document, "B. Activités");
-        for (Sprint sprint : programme.getSprints()) {
-             List<Activite> activites = sprint.getActivites();
-             if (startDate != null && endDate != null && activites != null) {
-                activites = activites.stream()
-                        .filter(a -> {
-                            LocalDate aStart = a.getDateDebut();
-                            LocalDate aEnd = a.getDateLimite();
-                            if (aStart == null || aEnd == null) return false;
-                            return !aStart.isAfter(endDate) && !aEnd.isBefore(startDate);
-                        })
-                        .collect(Collectors.toList());
-            }
-            
-            if (activites != null) {
-                for (Activite act : activites) {
-                    // Table for Activity
-                    XWPFTable actTable = document.createTable();
-                    actTable.setWidth("100%");
-                    XWPFTableRow header = actTable.getRow(0);
-                    header.getCell(0).setText("Activité: " + act.getNom());
-                    header.getCell(0).setColor("F5F5F5"); // Light Gray bg
-                    
-                    XWPFTableRow contentRow = actTable.createRow();
-                    XWPFParagraph p = contentRow.getCell(0).addParagraph();
-                    XWPFRun r = p.createRun();
-                    r.setText("Description: " + (act.getDescription() != null ? act.getDescription() : "N/A"));
-                    r.addBreak();
-                    r.setText("Objectif/Résultat rattaché: " + (act.getObjectif() != null ? act.getObjectif() : "N/A"));
-                    
-                    if (act.getKpis() != null && !act.getKpis().isEmpty()) {
-                        r.addBreak();
-                        r.addBreak();
-                        XWPFRun kpiTitle = p.createRun();
-                        kpiTitle.setText("Indicateurs (KPIs) et Évolution:");
-                        kpiTitle.setBold(true);
-                        
-                        for (ActiviteKpi ak : act.getKpis()) {
-                            if (ak.getKpi() != null) {
-                                p.createRun().addBreak();
-                                p.createRun().setText("- " + ak.getKpi().getNom() + " (Actuel: " + (ak.getValeurActuelle() != null ? ak.getValeurActuelle() : "N/A") + ")");
-                                
-                                // History
-                                List<ActiviteKpiHistory> history = activiteKpiHistoryRepository.findByActiviteKpiIdOrderByChangedAtAsc(ak.getId());
-                                if (history != null && !history.isEmpty()) {
-                                    // Nested table for history? Or just text. Text is safer in POI inside a cell paragraph.
-                                    // Actually we can add a table inside the cell but it's complex. Let's use text lines.
-                                    for (ActiviteKpiHistory h : history) {
-                                        p.createRun().addBreak();
-                                        p.createRun().setText("    " + h.getChangedAt().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + ": " + h.getValeurActuelle());
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    
-                    document.createParagraph(); // Spacer
-                }
-            }
-        }
-
-        // IV. Conclusion
-        createSectionTitle(document, "IV. Conclusion et Recommandations");
-        createParagraph(document, rapport.getConclusionRecommandations());
-    }
+//    private void generateExpertiseFranceDocxContent(XWPFDocument document, Rapport rapport, Programme programme, LocalDate startDate, LocalDate endDate) {
+//        // Title
+//        XWPFParagraph title = document.createParagraph();
+//        title.setAlignment(ParagraphAlignment.CENTER);
+//        XWPFRun titleRun = title.createRun();
+//        titleRun.setText("RAPPORT EXPERTISE FRANCE");
+//        titleRun.setBold(true);
+//        titleRun.setFontSize(20);
+//        titleRun.setColor("003189"); // EF_NAVY
+//
+//        // Subtitle
+//        XWPFParagraph subtitle = document.createParagraph();
+//        subtitle.setAlignment(ParagraphAlignment.CENTER);
+//        XWPFRun subtitleRun = subtitle.createRun();
+//        String subText = (startDate != null && endDate != null)
+//                ? "Période du " + startDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + " au " + endDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+//                : "Généré par RedBoost Platform";
+//        subtitleRun.setText(subText);
+//        subtitleRun.setFontSize(10);
+//        subtitleRun.setColor("64738C"); // EF_MUTED
+//        subtitleRun.addBreak();
+//
+//        // I. INFORMATIONS GÉNÉRALES
+//        createSectionTitle(document, "I. Informations Générales du Programme", "003189");
+//
+//        XWPFTable infoTable = document.createTable();
+//        infoTable.setWidth("100%");
+//        if (infoTable.getNumberOfRows() > 0) infoTable.removeRow(0);
+//
+//        String secteursList = programme.getSecteurs().stream()
+//                .map(Secteur::getNom)
+//                .collect(Collectors.joining(", "));
+//
+//        addStyledTableRow(infoTable, "Nom du Projet", programme.getNom(), false, "DCE6F5", "FFFFFF");
+//        addStyledTableRow(infoTable, "Type", programme.getTypeProgramme(), true, "DCE6F5", "F8FAFD");
+//        addStyledTableRow(infoTable, "Période", programme.getDateDebut() + " au " + programme.getDateFin(), false, "DCE6F5", "FFFFFF");
+//        addStyledTableRow(infoTable, "Statut", programme.getStatut().toString(), true, "DCE6F5", "F8FAFD");
+//        addStyledTableRow(infoTable, "Bénéficiaires", String.valueOf(programme.getNombreBeneficiaires()), false, "DCE6F5", "FFFFFF");
+//        addStyledTableRow(infoTable, "Secteurs", secteursList, true, "DCE6F5", "F8FAFD");
+//
+//        document.createParagraph();
+//
+//        // II. RÉSUMÉ EXÉCUTIF
+//        createSectionTitle(document, "II. Résumé Exécutif", "003189");
+//        createSubTitle(document, "Objectifs du Programme", "0055A4");
+//        createParagraph(document, rapport.getObjectifsProgramme());
+//
+//        createSubTitle(document, "Résultats Clés", "0055A4");
+//        createParagraph(document, rapport.getResultatsCles());
+//
+//        createSubTitle(document, "Impact Global", "0055A4");
+//        createParagraph(document, rapport.getImpactGlobal());
+//
+//        // III. RÉSULTATS ET ACTIVITÉS
+//        createSectionTitle(document, "III. Résultats et Activités", "003189");
+//
+//        // A. Résultats
+//        createSubTitle(document, "A. Résultats", "C8A84B"); // Gold
+//
+//        for (ObjectifGlobal og : rapport.getObjectifsGlobaux()) {
+//            for (ObjectifSpecifique os : og.getObjectifsSpecifiques()) {
+//                if ((os.getResultats() != null && !os.getResultats().isEmpty()) || (os.getResultatsTransversaux() != null && !os.getResultatsTransversaux().isEmpty())) {
+//
+//                    XWPFParagraph osP = document.createParagraph();
+//                    setParagraphLeftBorder(osP, "0055A4", STBorder.SINGLE, "12");
+//                    setParagraphShading(osP, "DCE6F5");
+//                    XWPFRun osR = osP.createRun();
+//                    osR.setText("Résultats Principaux — Objectif Spécifique : " + os.getNom());
+//                    osR.setBold(true);
+//
+//                    if (os.getResultats() != null) {
+//                        for (Resultat res : os.getResultats()) {
+//                            XWPFParagraph resP = document.createParagraph();
+//                            resP.setIndentationLeft(360);
+//                            resP.createRun().setText("• " + res.getNom());
+//
+//                            if (res.getKpis() != null) {
+//                                for (BackofficeKpi kpi : res.getKpis()) {
+//                                    XWPFParagraph kpiP = document.createParagraph();
+//                                    kpiP.setIndentationLeft(720);
+//                                    XWPFRun kpiR = kpiP.createRun();
+//                                    kpiR.setText("◦ KPI : " + kpi.getNom() + " (" + kpi.getUniteMesure() + ")");
+//                                    kpiR.setItalic(true);
+//                                }
+//                            }
+//                        }
+//                    }
+//
+//                    if (os.getResultatsTransversaux() != null && !os.getResultatsTransversaux().isEmpty()) {
+//                        XWPFParagraph rtHeader = document.createParagraph();
+//                        rtHeader.setSpacingBefore(100);
+//                        setParagraphLeftBorder(rtHeader, "C8A84B", STBorder.SINGLE, "12");
+//                        setParagraphShading(rtHeader, "F4F6FA");
+//                        XWPFRun rtR = rtHeader.createRun();
+//                        rtR.setText("Résultats Transversaux");
+//                        rtR.setBold(true);
+//
+//                        for (ResultatTransversal rt : os.getResultatsTransversaux()) {
+//                            XWPFParagraph rtP = document.createParagraph();
+//                            rtP.setIndentationLeft(360);
+//                            rtP.createRun().setText("• " + rt.getNom());
+//
+//                            if (rt.getKpis() != null) {
+//                                for (BackofficeKpi kpi : rt.getKpis()) {
+//                                    XWPFParagraph kpiP = document.createParagraph();
+//                                    kpiP.setIndentationLeft(720);
+//                                    XWPFRun kpiR = kpiP.createRun();
+//                                    kpiR.setText("◦ KPI : " + kpi.getNom() + " (" + kpi.getUniteMesure() + ")");
+//                                    kpiR.setItalic(true);
+//                                }
+//                            }
+//                        }
+//                    }
+//                    document.createParagraph();
+//                }
+//            }
+//        }
+//
+//        // B. Activités
+//        createSubTitle(document, "B. Activités", "C8A84B");
+//
+//        List<Sprint> sprints = filterSprints(programme, startDate, endDate);
+//        if (sprints != null) {
+//            for (Sprint sprint : sprints) {
+//                List<Activite> activites = filterActivites(sprint, startDate, endDate);
+//                if (activites != null) {
+//                    for (Activite act : activites) {
+//                        XWPFTable actTable = document.createTable();
+//                        actTable.setWidth("100%");
+//                        if (actTable.getNumberOfRows() > 0) actTable.removeRow(0);
+//
+//                        XWPFTableRow headerRow = actTable.createRow();
+//                        XWPFTableCell headerCell = headerRow.getCell(0);
+//                        if (headerCell == null) headerCell = headerRow.createCell();
+//                        headerCell.getCTTc().addNewTcPr().addNewShd().setFill("003189");
+//                        XWPFParagraph headerP = headerCell.addParagraph();
+//                        XWPFRun headerR = headerP.createRun();
+//                        headerR.setText("Activité : " + act.getNom());
+//                        headerR.setColor("FFFFFF");
+//                        headerR.setBold(true);
+//
+//                        XWPFTableRow contentRow = actTable.createRow();
+//                        XWPFTableCell contentCell = contentRow.getCell(0);
+//                        if (contentCell == null) contentCell = contentRow.createCell();
+//
+//                        contentCell.addParagraph().createRun().setText("Description : " + (act.getDescription() != null ? act.getDescription() : "N/A"));
+//
+//                        XWPFRun objR = contentCell.addParagraph().createRun();
+//                        objR.setText("Objectif/Résultat rattaché : " + (act.getObjectif() != null ? act.getObjectif() : "N/A"));
+//                        objR.setItalic(true);
+//
+//                        if (act.getKpis() != null && !act.getKpis().isEmpty()) {
+//                            XWPFParagraph kpiHeader = contentCell.addParagraph();
+//                            kpiHeader.setSpacingBefore(100);
+//                            XWPFRun kpiR = kpiHeader.createRun();
+//                            kpiR.setText("Indicateurs (KPIs) et Évolution :");
+//                            kpiR.setBold(true);
+//
+//                            for (ActiviteKpi ak : act.getKpis()) {
+//                                if (ak.getKpi() != null) {
+//                                    XWPFParagraph kpiP = contentCell.addParagraph();
+//                                    kpiP.setIndentationLeft(360);
+//                                    kpiP.createRun().setText("• " + ak.getKpi().getNom() + " — Actuel : " + (ak.getValeurActuelle() != null ? ak.getValeurActuelle() : "N/A"));
+//
+//                                    List<ActiviteKpiHistory> history = activiteKpiHistoryRepository.findByActiviteKpiIdOrderByChangedAtAsc(ak.getId());
+//                                    if (history != null && !history.isEmpty()) {
+//                                        for (ActiviteKpiHistory h : history) {
+//                                            XWPFParagraph histP = contentCell.addParagraph();
+//                                            histP.setIndentationLeft(720);
+//                                            XWPFRun histR = histP.createRun();
+//                                            histR.setText(h.getChangedAt().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + ": " + h.getValeurActuelle());
+//                                            histR.setFontSize(8);
+//                                            histR.setColor("64738C");
+//                                        }
+//                                    }
+//                                }
+//                            }
+//                        }
+//                        document.createParagraph();
+//                    }
+//                }
+//            }
+//        }
+//
+//        // IV. CONCLUSION
+//        createSectionTitle(document, "IV. Conclusion et Recommandations", "003189");
+//        XWPFParagraph concP = document.createParagraph();
+//        setParagraphLeftBorder(concP, "C8A84B", STBorder.SINGLE, "12");
+//        setParagraphShading(concP, "F4F6FA");
+//        XWPFRun concR = concP.createRun();
+//        concR.setText(rapport.getConclusionRecommandations() != null ? rapport.getConclusionRecommandations() : "Aucune conclusion enregistrée.");
+//    }
 
     // --- Helper Methods for Word Generation ---
 
-    private void createSectionTitle(XWPFDocument doc, String text) {
+    private void setParagraphLeftBorder(XWPFParagraph paragraph, String color, STBorder.Enum borderType, String size) {
+        CTP ctp = paragraph.getCTP();
+        CTPPr ppr = ctp.isSetPPr() ? ctp.getPPr() : ctp.addNewPPr();
+        CTPBdr pBdr = ppr.isSetPBdr() ? ppr.getPBdr() : ppr.addNewPBdr();
+
+        CTBorder leftBorder = pBdr.isSetLeft() ? pBdr.getLeft() : pBdr.addNewLeft();
+        leftBorder.setVal(borderType);
+        leftBorder.setSz(new BigInteger(size));
+        leftBorder.setSpace(new BigInteger("4"));
+        leftBorder.setColor(color);
+    }
+
+    private void setParagraphShading(XWPFParagraph paragraph, String fill) {
+        CTP ctp = paragraph.getCTP();
+        CTPPr ppr = ctp.isSetPPr() ? ctp.getPPr() : ctp.addNewPPr();
+        CTShd shd = ppr.isSetShd() ? ppr.getShd() : ppr.addNewShd();
+        shd.setVal(STShd.CLEAR);
+        shd.setColor("auto");
+        shd.setFill(fill);
+    }
+
+    private void createSectionTitle(XWPFDocument doc, String text, String color) {
         XWPFParagraph p = doc.createParagraph();
         p.setSpacingBefore(400);
         p.setSpacingAfter(200);
@@ -2025,17 +1789,17 @@ public class RapportService {
         r.setText(text);
         r.setBold(true);
         r.setFontSize(14);
-        r.setColor("245C67");
+        r.setColor(color);
     }
 
-    private void createSubTitle(XWPFDocument doc, String text) {
+    private void createSubTitle(XWPFDocument doc, String text, String color) {
         XWPFParagraph p = doc.createParagraph();
         p.setSpacingBefore(200);
         XWPFRun r = p.createRun();
         r.setText(text);
         r.setBold(true);
         r.setFontSize(11);
-        r.setColor("E44D62");
+        r.setColor(color);
     }
 
     private void createParagraph(XWPFDocument doc, String text) {
@@ -2044,32 +1808,19 @@ public class RapportService {
         r.setText(text != null ? text : "N/A");
     }
 
-    private void addTableRow(XWPFTable table, String label, String value) {
-        XWPFTableRow row;
-        // Check if the table has only one row and it's empty (default state)
-        if (table.getNumberOfRows() == 1 && table.getRow(0).getTableCells().size() == 1 && table.getRow(0).getCell(0).getText().isEmpty()) {
-            row = table.getRow(0);
-        } else {
-            row = table.createRow();
-        }
+    private void addStyledTableRow(XWPFTable table, String label, String value, boolean alt, String labelBg, String valueBg) {
+        XWPFTableRow row = table.createRow();
         
-        // Ensure the row has at least 2 cells
-        if (row.getTableCells().size() < 2) {
-            // If it has 1 cell (default), add another one
-            if (row.getTableCells().size() == 1) {
-                row.addNewTableCell();
-            } else {
-                // Should not happen for a new row, but for safety
-                while (row.getTableCells().size() < 2) {
-                    row.addNewTableCell();
-                }
-            }
-        }
-        
-        row.getCell(0).setText(label);
-        row.getCell(1).setText(value != null ? value : "-");
-    }
+        XWPFTableCell labelCell = row.getCell(0);
+        if(labelCell == null) labelCell = row.createCell();
+        labelCell.setText(label);
+        labelCell.getCTTc().addNewTcPr().addNewShd().setFill(alt ? "ECF3F4" : labelBg);
 
+        XWPFTableCell valueCell = row.getCell(1);
+        if(valueCell == null) valueCell = row.createCell();
+        valueCell.setText(value != null ? value : "-");
+        valueCell.getCTTc().addNewTcPr().addNewShd().setFill(alt ? valueBg : "FFFFFF");
+    }
 
     /// ///////
 
@@ -2705,5 +2456,1183 @@ public class RapportService {
     }
 
 
+
+
+
+
+
+
+    ////////////////////////////docx endpoints :
+
+
+
+    // ════════════════════════════════════════════════════════════════════════════
+//  DROP-IN REPLACEMENT FOR RapportService.java
+//
+//  Replace the following methods entirely:
+//    • generateStandardDocxContent(...)
+//    • generateExpertiseFranceDocxContent(...)
+//
+//  ADD all helper methods below your existing helpers (before the closing
+//  brace of the class).
+//
+//  Make sure this import exists at the top of RapportService.java:
+//    import org.apache.poi.xwpf.usermodel.BreakType;
+// ════════════════════════════════════════════════════════════════════════════
+
+    // =========================================================================
+    // STANDARD TEMPLATE – mirrors generateRapportPdf() exactly
+    // =========================================================================
+
+    private void generateStandardDocxContent(XWPFDocument document, Rapport rapport,
+                                             Programme programme,
+                                             LocalDate startDate, LocalDate endDate) {
+        // ── Palette (mirrors PDF statics) ─────────────────────────────────────
+        final String C_PRIMARY       = "245C67";   // dark teal
+        final String C_ACCENT        = "E44D62";   // rose
+        final String C_PRIMARY_LIGHT = "DCE9EF";   // pale teal
+        final String C_SECTION_BG    = "F5F8F9";   // near-white teal tint
+        final String C_ROW_ALT       = "FAFAFA";   // alt row
+        final String C_BORDER        = "D2DCDE";   // subtle border
+        final String C_DARK          = "1E282A";   // dark text
+        final String C_MUTED         = "787882";   // muted text
+        final String C_ECF           = "ECF3F4";   // alt label bg
+        final String C_WHITE         = "FFFFFF";
+
+        // ── COVER PAGE ────────────────────────────────────────────────────────
+
+        // Eyebrow
+        XWPFParagraph eyebrow = document.createParagraph();
+        eyebrow.setSpacingAfter(60);
+        XWPFRun eyebrowR = eyebrow.createRun();
+        eyebrowR.setText("REDBOOST PLATFORM  ·  RAPPORT OFFICIEL");
+        eyebrowR.setFontSize(8);
+        eyebrowR.setColor(C_MUTED);
+
+        // Accent rule
+        docxAddColoredRule(document, C_ACCENT, 45);
+
+        // Report type
+        String reportType = (startDate != null && endDate != null)
+                ? "RAPPORT PÉRIODIQUE DE PROGRAMME"
+                : "RAPPORT NARRATIF DE PROGRAMME";
+        XWPFParagraph titleP = document.createParagraph();
+        titleP.setSpacingBefore(160);
+        titleP.setSpacingAfter(80);
+        XWPFRun titleR = titleP.createRun();
+        titleR.setText(reportType);
+        titleR.setBold(true);
+        titleR.setFontSize(22);
+        titleR.setColor(C_PRIMARY);
+
+        // Programme name
+        XWPFParagraph progP = document.createParagraph();
+        progP.setSpacingAfter(160);
+        XWPFRun progR = progP.createRun();
+        progR.setText(programme.getNom());
+        progR.setBold(true);
+        progR.setFontSize(14);
+        progR.setColor(C_ACCENT);
+
+        // Period subtitle
+        String subText = (startDate != null && endDate != null)
+                ? "Période du " + startDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                + " au " + endDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                : "Généré par RedBoost Platform";
+        XWPFParagraph subP = document.createParagraph();
+        subP.setSpacingAfter(120);
+        XWPFRun subR = subP.createRun();
+        subR.setText(subText);
+        subR.setFontSize(10);
+        subR.setColor(C_MUTED);
+
+        // Timestamp
+        XWPFParagraph tsP = document.createParagraph();
+        tsP.setAlignment(ParagraphAlignment.RIGHT);
+        tsP.setSpacingBefore(200);
+        XWPFRun tsR = tsP.createRun();
+        tsR.setText("Généré le " + java.time.LocalDateTime.now()
+                .format(DateTimeFormatter.ofPattern("dd/MM/yyyy à HH:mm")));
+        tsR.setFontSize(8);
+        tsR.setItalic(true);
+        tsR.setColor(C_MUTED);
+
+        // Page break (cover → content)
+
+        // ── SECTION 1 – FICHE D'IDENTITÉ ─────────────────────────────────────
+        stdAddSectionHeader(document, "1", "FICHE D'IDENTITÉ DU PROGRAMME",
+                C_ACCENT, C_PRIMARY);
+
+        String secteurs = programme.getSecteurs().stream()
+                .map(Secteur::getNom).collect(Collectors.joining(", "));
+        String[][] identityRows = {
+                {"Nom du Projet",  programme.getNom()},
+                {"Type",           programme.getTypeProgramme()},
+                {"Période",        programme.getDateDebut() + " → " + programme.getDateFin()},
+                {"Statut",         programme.getStatut().toString()},
+                {"Bénéficiaires",  String.valueOf(programme.getNombreBeneficiaires())},
+                {"Secteurs",       secteurs}
+        };
+        stdAddIdentityTable(document, identityRows,
+                C_PRIMARY_LIGHT, C_ECF, C_ROW_ALT, C_BORDER, C_DARK);
+        document.createParagraph().setSpacingAfter(120);
+
+        // ── SECTION 2 – RÉSUMÉ EXÉCUTIF ───────────────────────────────────────
+        stdAddSectionHeader(document, "2", "RÉSUMÉ EXÉCUTIF", C_ACCENT, C_PRIMARY);
+        stdAddSubSection(document, "Objectifs du Programme",
+                rapport.getObjectifsProgramme(), C_PRIMARY, C_ACCENT, C_DARK);
+        stdAddSubSection(document, "Résultats Clés",
+                rapport.getResultatsCles(), C_PRIMARY, C_ACCENT, C_DARK);
+        stdAddSubSection(document, "Impact Global",
+                rapport.getImpactGlobal(), C_PRIMARY, C_ACCENT, C_DARK);
+        document.createParagraph().setSpacingAfter(120);
+
+        // ── SECTION 3 – CONTEXTE ET OBJECTIFS ────────────────────────────────
+        stdAddSectionHeader(document, "3", "CONTEXTE ET OBJECTIFS", C_ACCENT, C_PRIMARY);
+        for (ObjectifGlobal og : rapport.getObjectifsGlobaux()) {
+            stdAddObjectifBlock(document, og, C_PRIMARY, C_SECTION_BG, C_DARK, C_MUTED);
+        }
+        document.createParagraph().setSpacingAfter(120);
+
+        // ── SECTION 4 – MÉTHODOLOGIE ET RÉSULTATS ────────────────────────────
+        stdAddSectionHeader(document, "4", "MÉTHODOLOGIE ET RÉSULTATS",
+                C_ACCENT, C_PRIMARY);
+        List<Sprint> sprints = filterSprints(programme, startDate, endDate);
+        if (sprints.isEmpty()) {
+            XWPFParagraph noSP = document.createParagraph();
+            XWPFRun noSR = noSP.createRun();
+            noSR.setText("Aucun sprint trouvé dans cette période.");
+            noSR.setItalic(true);
+            noSR.setColor(C_MUTED);
+        } else {
+            for (Sprint sprint : sprints) {
+                stdAddSprintBlock(document, sprint, startDate, endDate,
+                        C_PRIMARY, C_PRIMARY_LIGHT, C_ACCENT, C_MUTED, C_BORDER, C_DARK, C_ROW_ALT);
+            }
+        }
+        document.createParagraph().setSpacingAfter(120);
+
+        // ── SECTION 5 – CONCLUSION ────────────────────────────────────────────
+        stdAddSectionHeader(document, "5", "CONCLUSION & RECOMMANDATIONS",
+                C_ACCENT, C_PRIMARY);
+
+        // Conclusion in bordered box mirroring the PDF
+        XWPFTable concBox = document.createTable(1, 1);
+        docxRemoveTblBorders(concBox);
+        docxSetTblOuterBorder(concBox, C_BORDER);
+        concBox.setWidth("100%");
+        XWPFTableCell concCell = concBox.getRow(0).getCell(0);
+        docxSetCellBg(concCell, C_SECTION_BG);
+        docxSetCellLeftBorder(concCell, C_PRIMARY, "18");
+        XWPFParagraph concP = concCell.getParagraphs().get(0);
+        concP.setSpacingBefore(120);
+        concP.setSpacingAfter(120);
+        concP.setIndentationLeft(200);
+        XWPFRun concR = concP.createRun();
+        concR.setText(rapport.getConclusionRecommandations() != null
+                ? rapport.getConclusionRecommandations()
+                : "Aucune conclusion enregistrée.");
+        concR.setFontSize(10);
+        concR.setColor(C_DARK);
+
+        // Footer timestamp
+        XWPFParagraph footP = document.createParagraph();
+        footP.setAlignment(ParagraphAlignment.RIGHT);
+        footP.setSpacingBefore(200);
+        XWPFRun footR = footP.createRun();
+        footR.setText("RedBoost Platform  |  Confidentiel  —  "
+                + java.time.LocalDateTime.now()
+                .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
+        footR.setFontSize(8);
+        footR.setItalic(true);
+        footR.setColor(C_MUTED);
+    }
+
+    // =========================================================================
+    // EF TEMPLATE – mirrors generateRapportExpertiseFrancePdf() exactly
+    // =========================================================================
+
+    private void generateExpertiseFranceDocxContent(XWPFDocument document, Rapport rapport,
+                                                    Programme programme,
+                                                    LocalDate startDate, LocalDate endDate) {
+        // ── Palette (mirrors PDF EF statics) ─────────────────────────────────
+        final String EF_NAVY       = "003189";
+        final String EF_BLUE       = "0055A4";
+        final String EF_BLUE_LIGHT = "DCE6F5";
+        final String EF_GOLD       = "C8A84B";
+        final String EF_BG         = "F4F6FA";
+        final String EF_BORDER     = "C8D2E6";
+        final String EF_ROW_ALT    = "F8FAFD";
+        final String EF_MUTED      = "64738C";
+        final String EF_DARK       = "14203A";
+        final String WHITE         = "FFFFFF";
+        final String ALT_LABEL_BG  = "D2DEFA";
+
+        // ── HEADER STRIPE (navy 60% + gold 40%) ───────────────────────────────
+        XWPFTable stripeTable = document.createTable(1, 2);
+        docxRemoveTblBorders(stripeTable);
+        XWPFTableRow stripeRow = stripeTable.getRow(0);
+        docxSetCellBg(stripeRow.getCell(0), EF_NAVY);
+        docxSetCellWidth(stripeRow.getCell(0), 5616);          // ~60 %
+        docxSetCellBg(stripeRow.getCell(1), EF_GOLD);
+        docxSetCellWidth(stripeRow.getCell(1), 3744);          // ~40 %
+        docxSetRowHeight(stripeRow, 50);
+        stripeRow.getCell(0).getParagraphs().get(0).setSpacingBefore(0);
+        stripeRow.getCell(1).getParagraphs().get(0).setSpacingBefore(0);
+
+        // ── EXPERTISE FRANCE badge ─────────────────────────────────────────────
+        XWPFTable efBadge = document.createTable(1, 1);
+        docxRemoveTblBorders(efBadge);
+        efBadge.setWidth("40%");
+        XWPFTableCell efCell = efBadge.getRow(0).getCell(0);
+        docxSetCellBg(efCell, EF_NAVY);
+        docxSetCellLeftBorder(efCell, EF_GOLD, "18");
+        XWPFParagraph efP = efCell.getParagraphs().get(0);
+        efP.setSpacingBefore(100);
+        efP.setSpacingAfter(100);
+        efP.setIndentationLeft(160);
+        XWPFRun efR1 = efP.createRun();
+        efR1.setText("EXPERTISE ");
+        efR1.setBold(true);
+        efR1.setFontSize(10);
+        efR1.setColor(WHITE);
+        XWPFRun efR2 = efP.createRun();
+        efR2.setText("FRANCE");
+        efR2.setBold(true);
+        efR2.setFontSize(10);
+        efR2.setColor(EF_GOLD);
+
+        // Separator rule under badge
+        docxAddColoredRule(document, EF_BORDER, 20);
+
+        // ── TITLE ──────────────────────────────────────────────────────────────
+        XWPFParagraph titleP = document.createParagraph();
+        titleP.setAlignment(ParagraphAlignment.CENTER);
+        titleP.setSpacingBefore(140);
+        titleP.setSpacingAfter(60);
+        XWPFRun titleR = titleP.createRun();
+        titleR.setText("RAPPORT EXPERTISE FRANCE");
+        titleR.setBold(true);
+        titleR.setFontSize(20);
+        titleR.setColor(EF_NAVY);
+
+        // Subtitle
+        String subText = (startDate != null && endDate != null)
+                ? "Période du " + startDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                + " au " + endDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                : "Généré par RedBoost Platform";
+        XWPFParagraph subP = document.createParagraph();
+        subP.setAlignment(ParagraphAlignment.CENTER);
+        subP.setSpacingAfter(80);
+        XWPFRun subR = subP.createRun();
+        subR.setText(subText);
+        subR.setFontSize(10);
+        subR.setColor(EF_MUTED);
+
+        // Gold + navy double rule under title
+        XWPFTable doubleRule = document.createTable(1, 2);
+        docxRemoveTblBorders(doubleRule);
+        XWPFTableRow drRow = doubleRule.getRow(0);
+        docxSetCellBg(drRow.getCell(0), EF_GOLD);
+        docxSetCellWidth(drRow.getCell(0), 1170);  // ~1 part
+        docxSetCellBg(drRow.getCell(1), EF_NAVY);
+        docxSetCellWidth(drRow.getCell(1), 8190);  // ~8 parts
+        docxSetRowHeight(drRow, 50);
+        drRow.getCell(0).getParagraphs().get(0).setSpacingBefore(0);
+        drRow.getCell(1).getParagraphs().get(0).setSpacingBefore(0);
+        document.createParagraph().setSpacingAfter(140);
+
+        // ── SECTION I – INFORMATIONS GÉNÉRALES ───────────────────────────────
+        efAddSectionHeader(document, "I", "Informations Générales du Programme",
+                EF_NAVY, EF_GOLD);
+
+        String secteurs = programme.getSecteurs().stream()
+                .map(Secteur::getNom).collect(Collectors.joining(", "));
+        String[][] infoRows = {
+                {"Nom du Projet",  programme.getNom()},
+                {"Type",           programme.getTypeProgramme()},
+                {"Période",        programme.getDateDebut() + " au " + programme.getDateFin()},
+                {"Statut",         programme.getStatut().toString()},
+                {"Bénéficiaires",  String.valueOf(programme.getNombreBeneficiaires())},
+                {"Secteurs",       secteurs}
+        };
+        efAddInfoTable(document, infoRows, EF_BLUE_LIGHT, ALT_LABEL_BG,
+                EF_ROW_ALT, EF_BORDER, EF_DARK);
+        document.createParagraph().setSpacingAfter(120);
+
+        // ── SECTION II – RÉSUMÉ EXÉCUTIF ─────────────────────────────────────
+        efAddSectionHeader(document, "II", "Résumé Exécutif", EF_NAVY, EF_GOLD);
+        efAddSubSection(document, "Objectifs du Programme",
+                rapport.getObjectifsProgramme(), EF_BLUE, EF_GOLD, EF_DARK);
+        efAddSubSection(document, "Résultats Clés",
+                rapport.getResultatsCles(), EF_BLUE, EF_GOLD, EF_DARK);
+        efAddSubSection(document, "Impact Global",
+                rapport.getImpactGlobal(), EF_BLUE, EF_GOLD, EF_DARK);
+        document.createParagraph().setSpacingAfter(120);
+
+        // ── SECTION III – RÉSULTATS ET ACTIVITÉS ─────────────────────────────
+        efAddSectionHeader(document, "III", "Résultats et Activités", EF_NAVY, EF_GOLD);
+
+        // A. Résultats
+        efAddSubSectionLetter(document, "A. Résultats", EF_BLUE, EF_GOLD);
+
+        for (ObjectifGlobal og : rapport.getObjectifsGlobaux()) {
+            for (ObjectifSpecifique os : og.getObjectifsSpecifiques()) {
+                boolean hasResults     = os.getResultats() != null && !os.getResultats().isEmpty();
+                boolean hasTransversal = os.getResultatsTransversaux() != null
+                        && !os.getResultatsTransversaux().isEmpty();
+
+                if (!hasResults && !hasTransversal) continue;
+
+                // OS header bar (blue left border + light blue bg)
+                XWPFParagraph osP = document.createParagraph();
+                osP.setSpacingBefore(100);
+                setParagraphLeftBorder(osP, EF_BLUE, STBorder.SINGLE, "18");
+                setParagraphShading(osP, EF_BLUE_LIGHT);
+                osP.setIndentationLeft(160);
+                XWPFRun osR = osP.createRun();
+                osR.setText("Résultats Principaux — Objectif Spécifique : " + os.getNom());
+                osR.setBold(true);
+                osR.setFontSize(10);
+                osR.setColor(EF_NAVY);
+
+                // Principal results
+                if (hasResults) {
+                    for (Resultat res : os.getResultats()) {
+                        XWPFParagraph resP = document.createParagraph();
+                        resP.setIndentationLeft(360);
+                        resP.setSpacingBefore(40);
+                        XWPFRun resR = resP.createRun();
+                        resR.setText("  •  " + res.getNom());
+                        resR.setFontSize(10);
+                        resR.setColor(EF_DARK);
+
+                        if (res.getKpis() != null) {
+                            for (BackofficeKpi kpi : res.getKpis()) {
+                                XWPFParagraph kpiP = document.createParagraph();
+                                kpiP.setIndentationLeft(720);
+                                XWPFRun kpiR = kpiP.createRun();
+                                kpiR.setText("      ◦  KPI : " + kpi.getNom()
+                                        + "  (" + kpi.getUniteMesure() + ")");
+                                kpiR.setItalic(true);
+                                kpiR.setFontSize(9);
+                                kpiR.setColor(EF_MUTED);
+                            }
+                        }
+                    }
+                }
+
+                // Transversal results (gold left border + EF_BG)
+                if (hasTransversal) {
+                    XWPFParagraph rtHeader = document.createParagraph();
+                    rtHeader.setSpacingBefore(100);
+                    setParagraphLeftBorder(rtHeader, EF_GOLD, STBorder.SINGLE, "18");
+                    setParagraphShading(rtHeader, EF_BG);
+                    rtHeader.setIndentationLeft(160);
+                    XWPFRun rtHR = rtHeader.createRun();
+                    rtHR.setText("Résultats Transversaux");
+                    rtHR.setBold(true);
+                    rtHR.setFontSize(10);
+                    rtHR.setColor(EF_DARK);
+
+                    for (ResultatTransversal rt : os.getResultatsTransversaux()) {
+                        XWPFParagraph rtP = document.createParagraph();
+                        rtP.setIndentationLeft(360);
+                        rtP.setSpacingBefore(40);
+                        XWPFRun rtR = rtP.createRun();
+                        rtR.setText("  •  " + rt.getNom());
+                        rtR.setFontSize(10);
+                        rtR.setColor(EF_DARK);
+
+                        if (rt.getKpis() != null) {
+                            for (BackofficeKpi kpi : rt.getKpis()) {
+                                XWPFParagraph kpiP = document.createParagraph();
+                                kpiP.setIndentationLeft(720);
+                                XWPFRun kpiR = kpiP.createRun();
+                                kpiR.setText("      ◦  KPI : " + kpi.getNom()
+                                        + "  (" + kpi.getUniteMesure() + ")");
+                                kpiR.setItalic(true);
+                                kpiR.setFontSize(9);
+                                kpiR.setColor(EF_MUTED);
+                            }
+                        }
+                    }
+                }
+                document.createParagraph().setSpacingAfter(60);
+            }
+        }
+
+        // B. Activités
+        efAddSubSectionLetter(document, "B. Activités", EF_BLUE, EF_GOLD);
+
+        for (Sprint sprint : programme.getSprints()) {
+            List<Activite> activites = filterActivites(sprint, startDate, endDate);
+            if (activites != null) {
+                for (Activite act : activites) {
+                    efAddActivityCard(document, act,
+                            EF_NAVY, EF_GOLD, EF_BORDER, EF_MUTED, EF_DARK, WHITE, EF_BG);
+                }
+            }
+        }
+
+        document.createParagraph().setSpacingAfter(120);
+
+        // ── SECTION IV – CONCLUSION ET RECOMMANDATIONS ────────────────────────
+        efAddSectionHeader(document, "IV", "Conclusion et Recommandations",
+                EF_NAVY, EF_GOLD);
+
+        // Conclusion box: gold left border + EF_BG
+        XWPFTable concBox = document.createTable(1, 1);
+        docxRemoveTblBorders(concBox);
+        docxSetTblOuterBorder(concBox, EF_BORDER);
+        concBox.setWidth("100%");
+        XWPFTableCell concCell = concBox.getRow(0).getCell(0);
+        docxSetCellBg(concCell, EF_BG);
+        docxSetCellLeftBorder(concCell, EF_GOLD, "18");
+        XWPFParagraph concP = concCell.getParagraphs().get(0);
+        concP.setSpacingBefore(160);
+        concP.setSpacingAfter(160);
+        concP.setIndentationLeft(200);
+        XWPFRun concR = concP.createRun();
+        concR.setText(rapport.getConclusionRecommandations() != null
+                ? rapport.getConclusionRecommandations()
+                : "Aucune conclusion enregistrée.");
+        concR.setFontSize(10);
+        concR.setColor(EF_DARK);
+
+        // Timestamp footer
+        XWPFParagraph footP = document.createParagraph();
+        footP.setAlignment(ParagraphAlignment.RIGHT);
+        footP.setSpacingBefore(200);
+        XWPFRun footR = footP.createRun();
+        footR.setText("Rapport généré le "
+                + java.time.LocalDateTime.now()
+                .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
+                + "  —  RedBoost Platform");
+        footR.setFontSize(8);
+        footR.setItalic(true);
+        footR.setColor(EF_MUTED);
+    }
+
+    // =========================================================================
+    //  STANDARD TEMPLATE – private helpers
+    // =========================================================================
+
+    /** Colored horizontal rule (thin filled table row). */
+    private void docxAddColoredRule(XWPFDocument doc, String hexColor, int heightTwips) {
+        XWPFTable rule = doc.createTable(1, 1);
+        docxRemoveTblBorders(rule);
+        rule.setWidth("100%");
+        XWPFTableCell cell = rule.getRow(0).getCell(0);
+        docxSetCellBg(cell, hexColor);
+        docxSetRowHeight(rule.getRow(0), heightTwips);
+        XWPFParagraph p = cell.getParagraphs().get(0);
+        p.setSpacingBefore(0);
+        p.setSpacingAfter(0);
+        doc.createParagraph().setSpacingAfter(40);
+    }
+
+    /** Section header: [badge cell][title cell] — mirrors PDF addSectionHeader(). */
+    private void stdAddSectionHeader(XWPFDocument doc, String number, String title,
+                                     String badgeColor, String headerColor) {
+        XWPFTable t = doc.createTable(1, 2);
+        docxRemoveTblBorders(t);
+        t.setWidth("100%");
+
+        // Badge
+        XWPFTableCell badge = t.getRow(0).getCell(0);
+        docxSetCellWidth(badge, 700);
+        docxSetCellBg(badge, badgeColor);
+        docxSetCellVAlign(badge, "center");
+        XWPFParagraph bp = badge.getParagraphs().get(0);
+        bp.setAlignment(ParagraphAlignment.CENTER);
+        bp.setSpacingBefore(140);
+        bp.setSpacingAfter(140);
+        XWPFRun br = bp.createRun();
+        br.setText(number);
+        br.setBold(true);
+        br.setFontSize(9);
+        br.setColor("FFFFFF");
+
+        // Title
+        XWPFTableCell titleCell = t.getRow(0).getCell(1);
+        docxSetCellBg(titleCell, headerColor);
+        docxSetCellVAlign(titleCell, "center");
+        XWPFParagraph tp = titleCell.getParagraphs().get(0);
+        tp.setSpacingBefore(140);
+        tp.setSpacingAfter(140);
+        tp.setIndentationLeft(200);
+        XWPFRun tr = tp.createRun();
+        tr.setText(title);
+        tr.setBold(true);
+        tr.setFontSize(13);
+        tr.setColor("FFFFFF");
+
+        doc.createParagraph().setSpacingAfter(80);
+    }
+
+    /** Sub-section: bold heading + accent underline + body — mirrors addSubSection(). */
+    private void stdAddSubSection(XWPFDocument doc, String heading, String body,
+                                  String headingColor, String accentColor, String darkColor) {
+        XWPFParagraph h = doc.createParagraph();
+        h.setSpacingBefore(140);
+        h.setSpacingAfter(40);
+        XWPFRun hr = h.createRun();
+        hr.setText(heading);
+        hr.setBold(true);
+        hr.setFontSize(11);
+        hr.setColor(headingColor);
+
+        // Thin accent underline
+        docxAddColoredRule(doc, accentColor, 30);
+
+        XWPFParagraph p = doc.createParagraph();
+        p.setSpacingBefore(60);
+        p.setSpacingAfter(100);
+        XWPFRun r = p.createRun();
+        r.setText(body != null && !body.isBlank() ? body : "Non renseigné.");
+        r.setFontSize(10);
+        r.setColor(darkColor);
+    }
+
+    /** Two-column identity table — mirrors addIdentityTable(). */
+    private void stdAddIdentityTable(XWPFDocument doc, String[][] rows,
+                                     String labelBg, String altLabelBg,
+                                     String altValueBg, String borderColor, String darkColor) {
+        XWPFTable t = doc.createTable(rows.length, 2);
+        docxSetTblOuterBorder(t, borderColor);
+
+        for (int i = 0; i < rows.length; i++) {
+            boolean alt = (i % 2 == 1);
+            XWPFTableRow row = t.getRow(i);
+
+            XWPFTableCell lc = row.getCell(0);
+            docxSetCellWidth(lc, 2800);
+            docxSetCellBg(lc, alt ? altLabelBg : labelBg);
+            docxSetCellBottomBorder(lc, borderColor);
+            XWPFParagraph lp = lc.getParagraphs().get(0);
+            lp.setSpacingBefore(120);
+            lp.setSpacingAfter(120);
+            lp.setIndentationLeft(160);
+            XWPFRun lr = lp.createRun();
+            lr.setText(rows[i][0]);
+            lr.setBold(true);
+            lr.setFontSize(10);
+            lr.setColor(darkColor);
+
+            XWPFTableCell vc = row.getCell(1);
+            docxSetCellWidth(vc, 6560);
+            docxSetCellBg(vc, alt ? altValueBg : "FFFFFF");
+            docxSetCellBottomBorder(vc, borderColor);
+            docxSetCellLeftBorder(vc, borderColor, "4");
+            XWPFParagraph vp = vc.getParagraphs().get(0);
+            vp.setSpacingBefore(120);
+            vp.setSpacingAfter(120);
+            vp.setIndentationLeft(160);
+            XWPFRun vr = vp.createRun();
+            vr.setText(rows[i][1] != null ? rows[i][1] : "–");
+            vr.setFontSize(10);
+            vr.setColor(darkColor);
+        }
+    }
+
+    /** Objectif block: left-bordered header + nested specifiques — mirrors addObjectifBlock(). */
+    private void stdAddObjectifBlock(XWPFDocument doc, ObjectifGlobal og,
+                                     String primaryColor, String bgColor,
+                                     String darkColor, String mutedColor) {
+        XWPFParagraph ogP = doc.createParagraph();
+        ogP.setSpacingBefore(140);
+        ogP.setSpacingAfter(40);
+        setParagraphLeftBorder(ogP, primaryColor, STBorder.SINGLE, "12");
+        setParagraphShading(ogP, bgColor);
+        ogP.setIndentationLeft(160);
+        XWPFRun ogR = ogP.createRun();
+        ogR.setText("Objectif Global : " + og.getNom());
+        ogR.setBold(true);
+        ogR.setFontSize(11);
+        ogR.setColor(primaryColor);
+
+        if (og.getDescription() != null && !og.getDescription().isBlank()) {
+            XWPFParagraph descP = doc.createParagraph();
+            descP.setIndentationLeft(360);
+            descP.setSpacingBefore(60);
+            descP.setSpacingAfter(60);
+            XWPFRun descR = descP.createRun();
+            descR.setText(og.getDescription());
+            descR.setFontSize(10);
+            descR.setColor(darkColor);
+        }
+
+        for (ObjectifSpecifique os : og.getObjectifsSpecifiques()) {
+            XWPFParagraph osP = doc.createParagraph();
+            osP.setIndentationLeft(360);
+            osP.setSpacingBefore(80);
+            XWPFRun osR = osP.createRun();
+            osR.setText("  ▸  Objectif Spécifique : " + os.getNom());
+            osR.setBold(true);
+            osR.setFontSize(10);
+            osR.setColor(darkColor);
+
+            for (Resultat res : os.getResultats()) {
+                XWPFParagraph resP = doc.createParagraph();
+                resP.setIndentationLeft(720);
+                resP.setSpacingBefore(40);
+                XWPFRun resR = resP.createRun();
+                resR.setText("•  Résultat : " + res.getNom());
+                resR.setFontSize(10);
+                resR.setColor(darkColor);
+            }
+            for (ResultatTransversal rt : os.getResultatsTransversaux()) {
+                XWPFParagraph rtP = doc.createParagraph();
+                rtP.setIndentationLeft(720);
+                rtP.setSpacingBefore(40);
+                XWPFRun rtR = rtP.createRun();
+                rtR.setText("◦  Résultat Transversal : " + rt.getNom());
+                rtR.setFontSize(9);
+                rtR.setItalic(true);
+                rtR.setColor(mutedColor);
+            }
+        }
+        doc.createParagraph().setSpacingAfter(60);
+    }
+
+    /** Sprint block — mirrors addSprintBlock(). */
+    private void stdAddSprintBlock(XWPFDocument doc, Sprint sprint,
+                                   LocalDate startDate, LocalDate endDate,
+                                   String primaryColor, String primaryLightColor,
+                                   String accentColor, String mutedColor,
+                                   String borderColor, String darkColor, String rowAltColor) {
+        // Sprint header: left border + pale teal bg
+        XWPFParagraph sprintP = doc.createParagraph();
+        sprintP.setSpacingBefore(180);
+        sprintP.setSpacingAfter(40);
+        setParagraphLeftBorder(sprintP, primaryColor, STBorder.SINGLE, "18");
+        setParagraphShading(sprintP, primaryLightColor);
+        sprintP.setIndentationLeft(160);
+        XWPFRun sprintR = sprintP.createRun();
+        sprintR.setText("  SPRINT  :  " + sprint.getNom().toUpperCase());
+        sprintR.setBold(true);
+        sprintR.setFontSize(11);
+        sprintR.setColor(primaryColor);
+
+        if (sprint.getDescription() != null && !sprint.getDescription().isBlank()) {
+            XWPFParagraph descP = doc.createParagraph();
+            descP.setIndentationLeft(360);
+            descP.setSpacingBefore(60);
+            descP.setSpacingAfter(80);
+            XWPFRun descR = descP.createRun();
+            descR.setText(sprint.getDescription());
+            descR.setFontSize(10);
+            descR.setColor(darkColor);
+        }
+
+        List<Activite> activites = filterActivites(sprint, startDate, endDate);
+        if (activites == null || activites.isEmpty()) {
+            XWPFParagraph noP = doc.createParagraph();
+            noP.setIndentationLeft(360);
+            XWPFRun noR = noP.createRun();
+            noR.setText("Aucune activité enregistrée"
+                    + (startDate != null ? " dans cette période." : "."));
+            noR.setItalic(true);
+            noR.setColor(mutedColor);
+            return;
+        }
+
+        XWPFParagraph actLabel = doc.createParagraph();
+        actLabel.setIndentationLeft(360);
+        actLabel.setSpacingBefore(100);
+        actLabel.setSpacingAfter(60);
+        XWPFRun actLR = actLabel.createRun();
+        actLR.setText("Activités Réalisées");
+        actLR.setBold(true);
+        actLR.setFontSize(10);
+        actLR.setColor(darkColor);
+
+        for (Activite act : activites) {
+            stdAddActivityCard(doc, act, borderColor, darkColor, mutedColor,
+                    primaryColor, rowAltColor);
+        }
+    }
+
+    /** Activity card: bordered box with KPIs/tasks — mirrors addActiviteRow(). */
+    private void stdAddActivityCard(XWPFDocument doc, Activite act,
+                                    String borderColor, String darkColor, String mutedColor,
+                                    String primaryColor, String rowAltColor) {
+        XWPFTable t = doc.createTable(1, 1);
+        docxRemoveTblBorders(t);
+        docxSetTblOuterBorder(t, borderColor);
+        t.setWidth("96%");
+
+        XWPFTableCell cell = t.getRow(0).getCell(0);
+
+        // Activity name (first paragraph = existing default)
+        XWPFParagraph nameP = cell.getParagraphs().get(0);
+        nameP.setSpacingBefore(100);
+        nameP.setSpacingAfter(40);
+        nameP.setIndentationLeft(100);
+        XWPFRun nameR = nameP.createRun();
+        nameR.setText("▸  " + act.getNom());
+        nameR.setBold(true);
+        nameR.setFontSize(10);
+        nameR.setColor(darkColor);
+
+        // Meta: objectif | type
+        if (act.getObjectif() != null || act.getType() != null) {
+            String meta = (act.getObjectif() != null ? "Objectif : " + act.getObjectif() : "")
+                    + (act.getObjectif() != null && act.getType() != null ? "   |   " : "")
+                    + (act.getType() != null ? "Type : " + act.getType() : "");
+            XWPFParagraph metaP = cell.addParagraph();
+            metaP.setSpacingAfter(60);
+            metaP.setIndentationLeft(100);
+            XWPFRun metaR = metaP.createRun();
+            metaR.setText(meta);
+            metaR.setItalic(true);
+            metaR.setFontSize(9);
+            metaR.setColor(mutedColor);
+        }
+
+        // KPIs
+        if (act.getKpis() != null && !act.getKpis().isEmpty()) {
+            XWPFParagraph kpiLabel = cell.addParagraph();
+            kpiLabel.setIndentationLeft(100);
+            kpiLabel.setSpacingBefore(80);
+            kpiLabel.setSpacingAfter(40);
+            XWPFRun kpiLR = kpiLabel.createRun();
+            kpiLR.setText("Indicateurs :");
+            kpiLR.setBold(true);
+            kpiLR.setFontSize(10);
+            kpiLR.setColor(darkColor);
+
+            for (ActiviteKpi kpi : act.getKpis()) {
+                if (kpi.getKpi() == null) continue;
+                XWPFParagraph kpiP = cell.addParagraph();
+                kpiP.setIndentationLeft(260);
+                kpiP.setSpacingBefore(40);
+                XWPFRun kpiR = kpiP.createRun();
+                kpiR.setText("–  " + kpi.getKpi().getNom() + " :  "
+                        + (kpi.getValeurActuelle() != null ? kpi.getValeurActuelle() : "N/A"));
+                kpiR.setFontSize(10);
+                kpiR.setColor(darkColor);
+            }
+        }
+
+        // Tasks
+        if (act.getTaches() != null && !act.getTaches().isEmpty()) {
+            XWPFParagraph tLabel = cell.addParagraph();
+            tLabel.setIndentationLeft(100);
+            tLabel.setSpacingBefore(80);
+            tLabel.setSpacingAfter(40);
+            XWPFRun tLR = tLabel.createRun();
+            tLR.setText("Tâches :");
+            tLR.setBold(true);
+            tLR.setFontSize(10);
+            tLR.setColor(darkColor);
+
+            for (Tache tache : act.getTaches()) {
+                XWPFParagraph tP = cell.addParagraph();
+                tP.setIndentationLeft(260);
+                tP.setSpacingBefore(40);
+                String kpiSummary = (tache.getTachesKpis() != null && !tache.getTachesKpis().isEmpty())
+                        ? tache.getTachesKpis().stream()
+                        .filter(tk -> tk.getKpi() != null)
+                        .map(tk -> tk.getKpi().getNom() + ": "
+                                + (tk.getValeurActuelle() != null
+                                ? tk.getValeurActuelle() : "N/A"))
+                        .collect(Collectors.joining(", "))
+                        : "–";
+                XWPFRun tR = tP.createRun();
+                tR.setText("–  " + tache.getTitre() + "  —  KPIs : " + kpiSummary);
+                tR.setFontSize(10);
+                tR.setColor(darkColor);
+            }
+        }
+
+        // Bottom padding
+        cell.addParagraph().setSpacingAfter(80);
+        doc.createParagraph().setSpacingAfter(60);
+    }
+
+    // =========================================================================
+    //  EXPERTISE FRANCE TEMPLATE – private helpers
+    // =========================================================================
+
+    /** EF section header: [gold badge][navy title] — mirrors addEFSectionHeader(). */
+    private void efAddSectionHeader(XWPFDocument doc, String number, String title,
+                                    String navyColor, String goldColor) {
+        XWPFTable t = doc.createTable(1, 2);
+        docxRemoveTblBorders(t);
+        t.setWidth("100%");
+
+        // Gold badge
+        XWPFTableCell numCell = t.getRow(0).getCell(0);
+        docxSetCellWidth(numCell, 700);
+        docxSetCellBg(numCell, goldColor);
+        docxSetCellVAlign(numCell, "center");
+        XWPFParagraph np = numCell.getParagraphs().get(0);
+        np.setAlignment(ParagraphAlignment.CENTER);
+        np.setSpacingBefore(140);
+        np.setSpacingAfter(140);
+        XWPFRun nr = np.createRun();
+        nr.setText(number);
+        nr.setBold(true);
+        nr.setFontSize(11);
+        nr.setColor("FFFFFF");
+
+        // Navy title
+        XWPFTableCell titleCell = t.getRow(0).getCell(1);
+        docxSetCellBg(titleCell, navyColor);
+        docxSetCellVAlign(titleCell, "center");
+        XWPFParagraph tp = titleCell.getParagraphs().get(0);
+        tp.setSpacingBefore(140);
+        tp.setSpacingAfter(140);
+        tp.setIndentationLeft(200);
+        XWPFRun tr = tp.createRun();
+        tr.setText(title);
+        tr.setBold(true);
+        tr.setFontSize(13);
+        tr.setColor("FFFFFF");
+
+        doc.createParagraph().setSpacingAfter(80);
+    }
+
+    /** EF sub-section: heading + gold underline + body — mirrors addEFSubSection(). */
+    private void efAddSubSection(XWPFDocument doc, String heading, String body,
+                                 String headingColor, String goldColor, String darkColor) {
+        XWPFParagraph h = doc.createParagraph();
+        h.setSpacingBefore(140);
+        h.setSpacingAfter(40);
+        XWPFRun hr = h.createRun();
+        hr.setText(heading);
+        hr.setBold(true);
+        hr.setFontSize(10);
+        hr.setColor(headingColor);
+
+        // Gold underline
+        docxAddColoredRule(doc, goldColor, 30);
+
+        XWPFParagraph p = doc.createParagraph();
+        p.setSpacingBefore(60);
+        p.setSpacingAfter(100);
+        XWPFRun r = p.createRun();
+        r.setText(body != null && !body.isBlank() ? body : "N/A");
+        r.setFontSize(10);
+        r.setColor(darkColor);
+    }
+
+    /** EF letter sub-section (A. / B.) — mirrors addEFSubSectionLetter(). */
+    private void efAddSubSectionLetter(XWPFDocument doc, String label,
+                                       String headingColor, String goldColor) {
+        XWPFParagraph p = doc.createParagraph();
+        p.setSpacingBefore(160);
+        p.setSpacingAfter(40);
+        XWPFRun r = p.createRun();
+        r.setText(label);
+        r.setBold(true);
+        r.setFontSize(10);
+        r.setColor(headingColor);
+
+        docxAddColoredRule(doc, goldColor, 30);
+    }
+
+    /** EF info table — mirrors addEFTableRow() loop in PDF. */
+    private void efAddInfoTable(XWPFDocument doc, String[][] rows,
+                                String labelBg, String altLabelBg,
+                                String rowAltBg, String borderColor, String darkColor) {
+        XWPFTable t = doc.createTable(rows.length, 2);
+        docxSetTblOuterBorder(t, borderColor);
+
+        for (int i = 0; i < rows.length; i++) {
+            boolean alt = (i % 2 == 1);
+            XWPFTableRow row = t.getRow(i);
+
+            XWPFTableCell lc = row.getCell(0);
+            docxSetCellWidth(lc, 2800);
+            docxSetCellBg(lc, alt ? altLabelBg : labelBg);
+            docxSetCellBottomBorder(lc, borderColor);
+            XWPFParagraph lp = lc.getParagraphs().get(0);
+            lp.setSpacingBefore(120);
+            lp.setSpacingAfter(120);
+            lp.setIndentationLeft(160);
+            XWPFRun lr = lp.createRun();
+            lr.setText(rows[i][0]);
+            lr.setBold(true);
+            lr.setFontSize(10);
+            lr.setColor(darkColor);
+
+            XWPFTableCell vc = row.getCell(1);
+            docxSetCellWidth(vc, 6560);
+            docxSetCellBg(vc, alt ? rowAltBg : "FFFFFF");
+            docxSetCellBottomBorder(vc, borderColor);
+            docxSetCellLeftBorder(vc, borderColor, "4");
+            XWPFParagraph vp = vc.getParagraphs().get(0);
+            vp.setSpacingBefore(120);
+            vp.setSpacingAfter(120);
+            vp.setIndentationLeft(160);
+            XWPFRun vr = vp.createRun();
+            vr.setText(rows[i][1] != null ? rows[i][1] : "–");
+            vr.setFontSize(10);
+            vr.setColor(darkColor);
+        }
+    }
+
+    /**
+     * EF activity card — mirrors the PDF activity card:
+     *   Row 0 : navy header bar (activity name, white text)
+     *   Row 1 : gold accent line (2 pt)
+     *   Row 2 : content (description, objectif, KPIs + history)
+     */
+    private void efAddActivityCard(XWPFDocument doc, Activite act,
+                                   String navyColor, String goldColor, String borderColor,
+                                   String mutedColor, String darkColor, String whiteColor,
+                                   String bgColor) {
+        XWPFTable t = doc.createTable(3, 1);
+        docxRemoveTblBorders(t);
+        docxSetTblOuterBorder(t, borderColor);
+        t.setWidth("100%");
+
+        // ── Row 0: navy header ─────────────────────────────────────────────
+        XWPFTableCell headerCell = t.getRow(0).getCell(0);
+        docxSetCellBg(headerCell, navyColor);
+        XWPFParagraph hp = headerCell.getParagraphs().get(0);
+        hp.setSpacingBefore(100);
+        hp.setSpacingAfter(100);
+        hp.setIndentationLeft(160);
+        XWPFRun hr = hp.createRun();
+        hr.setText("Activité : " + act.getNom());
+        hr.setBold(true);
+        hr.setFontSize(9);
+        hr.setColor(whiteColor);
+
+        // ── Row 1: gold accent line ────────────────────────────────────────
+        XWPFTableCell accentCell = t.getRow(1).getCell(0);
+        docxSetCellBg(accentCell, goldColor);
+        docxSetRowHeight(t.getRow(1), 30);
+        XWPFParagraph ap = accentCell.getParagraphs().get(0);
+        ap.setSpacingBefore(0);
+        ap.setSpacingAfter(0);
+
+        // ── Row 2: content ─────────────────────────────────────────────────
+        XWPFTableCell content = t.getRow(2).getCell(0);
+        docxSetCellBg(content, bgColor);
+        docxSetCellLeftBorder(content, goldColor, "18");
+
+        // Description
+        XWPFParagraph descP = content.getParagraphs().get(0);
+        descP.setSpacingBefore(100);
+        descP.setIndentationLeft(100);
+        XWPFRun descR = descP.createRun();
+        descR.setText("Description : "
+                + (act.getDescription() != null ? act.getDescription() : "N/A"));
+        descR.setFontSize(10);
+        descR.setColor(darkColor);
+
+        // Objectif/Résultat rattaché
+        XWPFParagraph objP = content.addParagraph();
+        objP.setIndentationLeft(100);
+        objP.setSpacingAfter(80);
+        XWPFRun objR = objP.createRun();
+        objR.setText("Objectif/Résultat rattaché : "
+                + (act.getObjectif() != null ? act.getObjectif() : "N/A"));
+        objR.setItalic(true);
+        objR.setFontSize(9);
+        objR.setColor(mutedColor);
+
+        // KPIs + history
+        if (act.getKpis() != null && !act.getKpis().isEmpty()) {
+            XWPFParagraph kpiTitle = content.addParagraph();
+            kpiTitle.setIndentationLeft(100);
+            kpiTitle.setSpacingBefore(80);
+            kpiTitle.setSpacingAfter(40);
+            XWPFRun kpiTR = kpiTitle.createRun();
+            kpiTR.setText("Indicateurs (KPIs) et Évolution :");
+            kpiTR.setBold(true);
+            kpiTR.setFontSize(10);
+            kpiTR.setColor(darkColor);
+
+            for (ActiviteKpi ak : act.getKpis()) {
+                if (ak.getKpi() == null) continue;
+
+                // KPI label + current value
+                XWPFParagraph kpiP = content.addParagraph();
+                kpiP.setIndentationLeft(260);
+                kpiP.setSpacingBefore(60);
+                XWPFRun kpiR = kpiP.createRun();
+                kpiR.setText("  •  " + ak.getKpi().getNom() + "  —  Actuel : "
+                        + (ak.getValeurActuelle() != null ? ak.getValeurActuelle() : "N/A"));
+                kpiR.setFontSize(10);
+                kpiR.setColor(darkColor);
+
+                // History rows (date / value)
+                List<ActiviteKpiHistory> history =
+                        activiteKpiHistoryRepository
+                                .findByActiviteKpiIdOrderByChangedAtAsc(ak.getId());
+                if (history != null && !history.isEmpty()) {
+                    // Mini history header
+                    XWPFParagraph histHead = content.addParagraph();
+                    histHead.setIndentationLeft(440);
+                    histHead.setSpacingBefore(30);
+                    XWPFRun hhR = histHead.createRun();
+                    hhR.setText("Date                           Valeur");
+                    hhR.setFontSize(8);
+                    hhR.setBold(true);
+                    hhR.setColor(navyColor);
+
+                    for (ActiviteKpiHistory hEntry : history) {
+                        XWPFParagraph histP = content.addParagraph();
+                        histP.setIndentationLeft(440);
+                        histP.setSpacingBefore(20);
+                        XWPFRun histR = histP.createRun();
+                        histR.setText(hEntry.getChangedAt()
+                                .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
+                                + "    " + hEntry.getValeurActuelle());
+                        histR.setFontSize(8);
+                        histR.setColor(mutedColor);
+                    }
+                } else {
+                    XWPFParagraph noHistP = content.addParagraph();
+                    noHistP.setIndentationLeft(440);
+                    XWPFRun noHistR = noHistP.createRun();
+                    noHistR.setText("(Pas d'historique disponible)");
+                    noHistR.setItalic(true);
+                    noHistR.setFontSize(9);
+                    noHistR.setColor(mutedColor);
+                }
+            }
+        } else {
+            XWPFParagraph noKpiP = content.addParagraph();
+            noKpiP.setIndentationLeft(100);
+            XWPFRun noKpiR = noKpiP.createRun();
+            noKpiR.setText("Aucun KPI associé.");
+            noKpiR.setItalic(true);
+            noKpiR.setFontSize(9);
+            noKpiR.setColor(mutedColor);
+        }
+
+        content.addParagraph().setSpacingAfter(100);
+        doc.createParagraph().setSpacingAfter(80);
+    }
+
+    // =========================================================================
+    //  LOW-LEVEL POI HELPERS  (shared by both templates)
+    // =========================================================================
+
+    /** Strip all borders from a table (including inside lines). */
+    private void docxRemoveTblBorders(XWPFTable table) {
+        CTTblPr tblPr = table.getCTTbl().getTblPr() != null
+                ? table.getCTTbl().getTblPr()
+                : table.getCTTbl().addNewTblPr();
+        CTTblBorders b = tblPr.isSetTblBorders()
+                ? tblPr.getTblBorders()
+                : tblPr.addNewTblBorders();
+        CTBorder[] borders = {
+                b.isSetTop()    ? b.getTop()     : b.addNewTop(),
+                b.isSetBottom() ? b.getBottom()  : b.addNewBottom(),
+                b.isSetLeft()   ? b.getLeft()    : b.addNewLeft(),
+                b.isSetRight()  ? b.getRight()   : b.addNewRight(),
+                b.isSetInsideH()? b.getInsideH() : b.addNewInsideH(),
+                b.isSetInsideV()? b.getInsideV() : b.addNewInsideV()
+        };
+        for (CTBorder border : borders) border.setVal(STBorder.NIL);
+    }
+
+    /** Set a thin outer border on a table (no inner lines). */
+    private void docxSetTblOuterBorder(XWPFTable table, String hexColor) {
+        CTTblPr tblPr = table.getCTTbl().getTblPr() != null
+                ? table.getCTTbl().getTblPr()
+                : table.getCTTbl().addNewTblPr();
+        CTTblBorders b = tblPr.isSetTblBorders()
+                ? tblPr.getTblBorders()
+                : tblPr.addNewTblBorders();
+        for (CTBorder border : new CTBorder[]{
+                b.isSetTop()    ? b.getTop()    : b.addNewTop(),
+                b.isSetBottom() ? b.getBottom() : b.addNewBottom(),
+                b.isSetLeft()   ? b.getLeft()   : b.addNewLeft(),
+                b.isSetRight()  ? b.getRight()  : b.addNewRight()
+        }) {
+            border.setVal(STBorder.SINGLE);
+            border.setSz(new BigInteger("4"));
+            border.setColor(hexColor);
+        }
+        CTBorder ih = b.isSetInsideH() ? b.getInsideH() : b.addNewInsideH();
+        ih.setVal(STBorder.NIL);
+        CTBorder iv = b.isSetInsideV() ? b.getInsideV() : b.addNewInsideV();
+        iv.setVal(STBorder.NIL);
+    }
+
+    /** Set cell background (fill). */
+    private void docxSetCellBg(XWPFTableCell cell, String hexColor) {
+        CTTcPr tcPr = cell.getCTTc().isSetTcPr()
+                ? cell.getCTTc().getTcPr()
+                : cell.getCTTc().addNewTcPr();
+        CTShd shd = tcPr.isSetShd() ? tcPr.getShd() : tcPr.addNewShd();
+        shd.setVal(STShd.CLEAR);
+        shd.setColor("auto");
+        shd.setFill(hexColor);
+    }
+
+    /** Set explicit cell width in twips (1/20 pt). */
+    private void docxSetCellWidth(XWPFTableCell cell, int twips) {
+        CTTcPr tcPr = cell.getCTTc().isSetTcPr()
+                ? cell.getCTTc().getTcPr()
+                : cell.getCTTc().addNewTcPr();
+        CTTblWidth w = tcPr.isSetTcW() ? tcPr.getTcW() : tcPr.addNewTcW();
+        w.setType(STTblWidth.DXA);
+        w.setW(new BigInteger(String.valueOf(twips)));
+    }
+
+    /** Set exact row height in twips. */
+    /** Set exact row height in twips. */
+    private void docxSetRowHeight(XWPFTableRow row, int twips) {
+        CTTrPr trPr = row.getCtRow().isSetTrPr()
+                ? row.getCtRow().getTrPr()
+                : row.getCtRow().addNewTrPr();
+        // CTTrPr uses an array for trHeight; always add a fresh one
+        CTHeight ht = trPr.sizeOfTrHeightArray() > 0
+                ? trPr.getTrHeightArray(0)
+                : trPr.addNewTrHeight();
+        ht.setVal(new BigInteger(String.valueOf(twips)));
+        ht.setHRule(STHeightRule.EXACT);
+    }
+    /** Set vertical alignment inside a cell ("center" or "top"). */
+    private void docxSetCellVAlign(XWPFTableCell cell, String align) {
+        CTTcPr tcPr = cell.getCTTc().isSetTcPr()
+                ? cell.getCTTc().getTcPr()
+                : cell.getCTTc().addNewTcPr();
+        CTVerticalJc vJc = tcPr.isSetVAlign() ? tcPr.getVAlign() : tcPr.addNewVAlign();
+        vJc.setVal("center".equalsIgnoreCase(align)
+                ? STVerticalJc.CENTER : STVerticalJc.TOP);
+    }
+
+    /** Bottom border only on a cell (all other sides nil). */
+    private void docxSetCellBottomBorder(XWPFTableCell cell, String hexColor) {
+        CTTcPr tcPr = cell.getCTTc().isSetTcPr()
+                ? cell.getCTTc().getTcPr()
+                : cell.getCTTc().addNewTcPr();
+        CTTcBorders b = tcPr.isSetTcBorders() ? tcPr.getTcBorders() : tcPr.addNewTcBorders();
+
+        CTBorder bottom = b.isSetBottom() ? b.getBottom() : b.addNewBottom();
+        bottom.setVal(STBorder.SINGLE);
+        bottom.setSz(new BigInteger("4"));
+        bottom.setColor(hexColor);
+
+        for (CTBorder side : new CTBorder[]{
+                b.isSetTop()   ? b.getTop()   : b.addNewTop(),
+                b.isSetLeft()  ? b.getLeft()  : b.addNewLeft(),
+                b.isSetRight() ? b.getRight() : b.addNewRight()
+        }) side.setVal(STBorder.NIL);
+    }
+
+    /** Thick left border on a cell (accent) — all other sides nil. */
+    private void docxSetCellLeftBorder(XWPFTableCell cell, String hexColor, String sizeTwip) {
+        CTTcPr tcPr = cell.getCTTc().isSetTcPr()
+                ? cell.getCTTc().getTcPr()
+                : cell.getCTTc().addNewTcPr();
+        CTTcBorders b = tcPr.isSetTcBorders() ? tcPr.getTcBorders() : tcPr.addNewTcBorders();
+
+        CTBorder left = b.isSetLeft() ? b.getLeft() : b.addNewLeft();
+        left.setVal(STBorder.SINGLE);
+        left.setSz(new BigInteger(sizeTwip));
+        left.setColor(hexColor);
+    }
 
 }

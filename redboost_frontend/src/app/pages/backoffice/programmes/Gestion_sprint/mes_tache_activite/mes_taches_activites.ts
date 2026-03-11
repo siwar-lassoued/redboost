@@ -81,8 +81,11 @@ interface ActiviteDetailDTO {
     taches: TacheInActivite[];
     documents: DocumentDTO[];
     sprintNom: string;
+    sprintId: number;        // ← NEW
     programmeNom: string;
+    programmeId: number;     // ← NEW
 }
+
 
 interface ProgrammeSimple {
     id: number;
@@ -470,9 +473,14 @@ interface ProgrammeSimple {
                             <!-- Title row -->
                             <div class="flex items-start gap-2 mb-3" style="min-width:0;">
                                 <div class="flex items-center gap-2 flex-1 min-w-0">
-                                    <h3 class="text-xl font-semibold text-gray-900 truncate" [title]="act.nom">
-                                        {{ act.nom }}
-                                    </h3>
+                                   <h3
+    class="text-xl font-semibold text-gray-900 truncate cursor-pointer hover:text-rose-600 hover:underline transition-colors group flex items-center gap-1"
+    [title]="'Voir dans le programme : ' + act.nom"
+    (click)="navigateToActivity(act)"
+>
+    {{ act.nom }}
+    <span class="material-icons text-sm opacity-0 group-hover:opacity-100 transition-opacity text-rose-500">open_in_new</span>
+</h3>
                                     <span
                                         *ngIf="isNewAssignment(act.id)"
                                         class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 border border-green-300 flex-shrink-0 whitespace-nowrap"
@@ -510,6 +518,16 @@ interface ProgrammeSimple {
                                     <span class="material-icons text-base">event</span>
                                     {{ act.dateFin | date: 'dd/MM/yyyy' }}
                                 </span>
+
+                                <!-- Add after the date span in the activity card header info row -->
+<button
+    (click)="navigateToActivity(act)"
+    class="inline-flex items-center gap-1 text-xs text-rose-500 hover:text-rose-700 font-medium transition-colors flex-shrink-0"
+    title="Ouvrir dans la gestion des sprints"
+>
+    <span class="material-icons text-sm">launch</span>
+    Voir dans le programme
+</button>
                             </div>
                         </div>
 
@@ -710,6 +728,46 @@ export class MesTachesActivitesComponent implements OnInit, OnDestroy {
             }
         );
     }
+
+
+    // Add this method right after navigateToTask()
+navigateToActivity(act: ActiviteDetailDTO): void {
+    // programmeId / sprintId may be absent on the activity root object if the
+    // backend list-endpoint DTO hasn't been updated yet.
+    // Fall back to the first child tache which already carries both IDs reliably.
+    const programmeId: number | undefined =
+        (act as any).programmeId ||
+        (act.taches?.[0] as any)?.programmeId ||
+        undefined;
+
+    const sprintId: number | undefined =
+        (act as any).sprintId ||
+        (act.taches?.[0] as any)?.sprintId ||
+        undefined;
+
+    if (!programmeId) {
+        console.warn(
+            'Cannot resolve programmeId for activity — navigation aborted.',
+            act
+        );
+        return;
+    }
+
+    this.router.navigate(
+        ['/programme', programmeId],
+        {
+            queryParams: {
+                tab:        'sprints',
+                sprintId:   sprintId ?? null,
+                activiteId: act.id,
+                // no tacheId — applyDeepLink() will expand sprint + activité
+                // and scroll to the activité header
+            }
+        }
+    );
+}
+
+
     // ──────────────────────────────────────────────────────────────────────────
 
     private refreshData(userId: number): void {

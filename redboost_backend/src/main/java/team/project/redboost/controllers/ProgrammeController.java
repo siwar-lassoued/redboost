@@ -568,11 +568,10 @@ public class ProgrammeController {
         return ResponseEntity.ok(service.getEntrepreneursWithProgramDetails());
     }
 
-    @PostMapping("/{programmeId}/entrepreneurs")
+    @PostMapping("/entrepreneurs")
     public ResponseEntity<Void> assignEntrepreneursToProgram(
-            @PathVariable Long programmeId,
-            @RequestBody List<Long> entrepreneurIds) {
-        service.assignEntrepreneursToProgram(programmeId, entrepreneurIds);
+            @RequestBody AssignEntrepreneursRequest request) {
+        service.assignEntrepreneursToProgram(request.programmeIds(), request.entrepreneurIds());
         return ResponseEntity.ok().build();
     }
 // Add this endpoint to ProgrammeController.java
@@ -684,4 +683,5 @@ public class ProgrammeController {
     public record ActiviteUpdateRequest(Activite activite, List<Long> kpiIds) {}
     public record TacheCreateRequest(Tache tache, List<Long> kpiIds) {}
     public record TacheUpdateRequest(Tache tache, List<Long> kpiIds) {}
+    public record AssignEntrepreneursRequest(List<Long> programmeIds, List<Long> entrepreneurIds) {}
 }

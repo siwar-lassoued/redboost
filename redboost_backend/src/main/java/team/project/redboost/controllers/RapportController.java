@@ -167,6 +167,40 @@ public class RapportController {
         return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
     }
 
+    @GetMapping("/{id}/export/docx")
+    public ResponseEntity<byte[]> exportRapportDocx(
+            @PathVariable Long id,
+            @RequestParam(value = "startDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(value = "endDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        
+        byte[] docxBytes = rapportService.generateRapportDocx(id, startDate, endDate);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.valueOf("application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
+        String filename = (startDate != null && endDate != null) ? "Rapport_Periodique_" + id + ".docx" : "Rapport_Narratif_" + id + ".docx";
+        headers.setContentDispositionFormData("attachment", filename);
+        headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
+
+        return new ResponseEntity<>(docxBytes, headers, HttpStatus.OK);
+    }
+
+    @GetMapping("/{id}/export/expertise-france/docx")
+    public ResponseEntity<byte[]> exportRapportExpertiseFranceDocx(
+            @PathVariable Long id,
+            @RequestParam(value = "startDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(value = "endDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        
+        byte[] docxBytes = rapportService.generateRapportExpertiseFranceDocx(id, startDate, endDate);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.valueOf("application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
+        String filename = (startDate != null && endDate != null) ? "Rapport_Expertise_France_Periodique_" + id + ".docx" : "Rapport_Expertise_France_" + id + ".docx";
+        headers.setContentDispositionFormData("attachment", filename);
+        headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
+
+        return new ResponseEntity<>(docxBytes, headers, HttpStatus.OK);
+    }
+
     @PostMapping("/{id}/share/drive")
     public ResponseEntity<GoogleDriveService.DriveUploadResult> shareRapportOnDrive(
             @PathVariable Long id,

@@ -18,7 +18,6 @@ import { TestimonialsWidget } from './components/testimonials';
 import { BecomeCoachComponent } from './components/become-a-coach';
 import { ScrollToTopComponent } from './components/ScrollToTopComponent';
 import { MarketingLandingCardsComponent } from './components/marketing-landing-cards';
-import { StatComponent } from './components/stat';
 import { CareerCardsComponent } from './components/CareerCards';
 import { WhyRedBoostComponent } from './components/WhyRedBoost';
 import { CallToActionComponent } from './components/CallToAction';
@@ -32,7 +31,6 @@ import { FaqComponent } from './components/faq.component';
         RouterModule,
         TopbarWidget,
         HeroWidget,
-        StatComponent,
         CareerCardsComponent,
         WhyRedBoostComponent,
         CallToActionComponent,
@@ -60,7 +58,6 @@ import { FaqComponent } from './components/faq.component';
             <div id="home" class="landing-wrapper overflow-hidden">
                 <topbar-widget />
                 <app-hero-widget />
-                <app-stat />
                 <app-why-redboost />
                 <highlights-widget />
                 <app-call-to-action />

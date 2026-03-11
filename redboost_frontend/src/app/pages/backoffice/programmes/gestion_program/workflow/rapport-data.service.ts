@@ -118,33 +118,68 @@ export class RapportDataService {
         };
     }
 
-    // Export functions
-   exportToPdf(rapportId: number, startDate?: string, endDate?: string): Observable<Blob> {
-    const params: any = {};
-    if (startDate) params['startDate'] = startDate;
-    if (endDate) params['endDate'] = endDate;
-    return this.http.get(`${this.apiUrl}/${rapportId}/export/pdf`, {
-        params,
-        responseType: 'blob'
-    });
-}
+    // ─── Export — PDF ─────────────────────────────────────────────────────────
 
-   
-   shareToDrive(
-    rapportId: number,
-    startDate?: string,
-    endDate?: string,
-    template: 'standard' | 'expertise' = 'standard'
-): Observable<any> {
-    const params: any = {};
-    if (startDate) params['startDate'] = startDate;
-    if (endDate)   params['endDate']   = endDate;
-    params['template'] = template === 'expertise' ? 'EXPERTISE_FRANCE' : 'STANDARD';
+    exportToPdf(rapportId: number, startDate?: string, endDate?: string): Observable<Blob> {
+        const params: any = {};
+        if (startDate) params['startDate'] = startDate;
+        if (endDate)   params['endDate']   = endDate;
+        return this.http.get(`${this.apiUrl}/${rapportId}/export/pdf`, {
+            params,
+            responseType: 'blob'
+        });
+    }
 
-    return this.http.post<any>(`${this.apiUrl}/${rapportId}/share/drive`, {}, { params });
-}
+    exportExpertiseFrancePdf(rapportId: number, startDate?: string, endDate?: string): Observable<Blob> {
+        const params: any = {};
+        if (startDate) params['startDate'] = startDate;
+        if (endDate)   params['endDate']   = endDate;
+        return this.http.get(`${this.apiUrl}/${rapportId}/export/expertise-france/pdf`, {
+            params,
+            responseType: 'blob'
+        });
+    }
 
-    // Utility methods
+    // ─── Export — DOCX ────────────────────────────────────────────────────────
+
+    exportToDocx(rapportId: number, startDate?: string, endDate?: string): Observable<Blob> {
+        const params: any = {};
+        if (startDate) params['startDate'] = startDate;
+        if (endDate)   params['endDate']   = endDate;
+        return this.http.get(`${this.apiUrl}/${rapportId}/export/docx`, {
+            params,
+            responseType: 'blob'
+        });
+    }
+
+    exportExpertiseFranceDocx(rapportId: number, startDate?: string, endDate?: string): Observable<Blob> {
+        const params: any = {};
+        if (startDate) params['startDate'] = startDate;
+        if (endDate)   params['endDate']   = endDate;
+        return this.http.get(`${this.apiUrl}/${rapportId}/export/expertise-france/docx`, {
+            params,
+            responseType: 'blob'
+        });
+    }
+
+    // ─── Drive share ──────────────────────────────────────────────────────────
+
+    shareToDrive(
+        rapportId: number,
+        startDate?: string,
+        endDate?: string,
+        template: 'standard' | 'expertise' = 'standard'
+    ): Observable<any> {
+        const params: any = {};
+        if (startDate) params['startDate'] = startDate;
+        if (endDate)   params['endDate']   = endDate;
+        params['template'] = template === 'expertise' ? 'EXPERTISE_FRANCE' : 'STANDARD';
+
+        return this.http.post<any>(`${this.apiUrl}/${rapportId}/share/drive`, {}, { params });
+    }
+
+    // ─── Utility ─────────────────────────────────────────────────────────────
+
     private formatDate(dateStr: string): string {
         const date = new Date(dateStr);
         return date.toLocaleDateString('fr-FR', {
@@ -178,15 +213,4 @@ export class RapportDataService {
             default: return 'file';
         }
     }
-
-
-    exportExpertiseFrancePdf(rapportId: number, startDate?: string, endDate?: string): Observable<Blob> {
-    const params: any = {};
-    if (startDate) params['startDate'] = startDate;
-    if (endDate) params['endDate'] = endDate;
-    return this.http.get(`${this.apiUrl}/${rapportId}/export/expertise-france/pdf`, {
-        params,
-        responseType: 'blob'
-    });
-}
 }

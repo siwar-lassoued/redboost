@@ -4,6 +4,11 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { EntrepreneurDetail, KpiDetail } from '../../../../../models/entrepreneur.models';
 
+export interface KpiRow {
+    nom: string;
+    entries: { programNom: string; kpi: KpiDetail }[];
+}
+
 @Component({
     selector: 'app-entrepreneur-table',
     standalone: true,
@@ -17,50 +22,94 @@ export class EntrepreneurTableComponent implements OnChanges {
     @Output() onEditEntrepreneur = new EventEmitter<EntrepreneurDetail>();
     @Output() onSearchChange = new EventEmitter<string>();
     @Output() onDeleteEntrepreneur = new EventEmitter<number>();
-    @Output() onOpenKpiHistory = new EventEmitter<{ kpi: KpiDetail; entrepreneurName: string }>();
+    @Output() onOpenKpiHistory = new EventEmitter<{ kpi: KpiDetail; entrepreneurName: string; programNom: string }>();
+    /** Emitted when user wants to assign selected entrepreneurs to a program */
+    @Output() onAssignSelected = new EventEmitter<{ entrepreneurIds: number[] }>();
 
     filteredEntrepreneurs: EntrepreneurDetail[] = [];
+    selectedIds = new Set<number>();
 
     ngOnChanges(changes: SimpleChanges) {
         if (changes['entrepreneurs']) {
             this.filteredEntrepreneurs = changes['entrepreneurs'].currentValue ?? [];
+            // Clear selection when data changes
+            this.selectedIds.clear();
         }
     }
+
+    // ─── Selection ────────────────────────────────────────────────────────────
+
+    get isAllSelected(): boolean {
+        return this.filteredEntrepreneurs.length > 0 &&
+            this.filteredEntrepreneurs.every(e => this.selectedIds.has(e.id));
+    }
+
+    get isPartiallySelected(): boolean {
+        return !this.isAllSelected &&
+            this.filteredEntrepreneurs.some(e => this.selectedIds.has(e.id));
+    }
+
+    get selectedCount(): number {
+        return this.selectedIds.size;
+    }
+
+    toggleSelectAll() {
+        if (this.isAllSelected) {
+            this.filteredEntrepreneurs.forEach(e => this.selectedIds.delete(e.id));
+        } else {
+            this.filteredEntrepreneurs.forEach(e => this.selectedIds.add(e.id));
+        }
+    }
+
+    toggleSelection(id: number) {
+        if (this.selectedIds.has(id)) {
+            this.selectedIds.delete(id);
+        } else {
+            this.selectedIds.add(id);
+        }
+    }
+
+    isSelected(id: number): boolean {
+        return this.selectedIds.has(id);
+    }
+
+    assignSelected() {
+        this.onAssignSelected.emit({ entrepreneurIds: Array.from(this.selectedIds) });
+    }
+
+    clearSelection() {
+        this.selectedIds.clear();
+    }
+
+    // ─── Search ────────────────────────────────────────────────────────────────
 
     onSearch() {
         this.onSearchChange.emit(this.searchTerm);
     }
 
-    toggleEntrepreneurDetails(entrepreneur: EntrepreneurDetail) {
-        entrepreneur.expanded = !entrepreneur.expanded;
-    }
+    // ─── KPI helpers ──────────────────────────────────────────────────────────
 
     getInitials(firstName: string, lastName: string): string {
         return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase();
     }
 
-    getTotalKpis(entrepreneur: EntrepreneurDetail): number {
-        if (!entrepreneur.programs) return 0;
-        return entrepreneur.programs.reduce((total, program) => {
-            return total + (program.kpis?.length || 0);
-        }, 0);
+    getUniqueKpiRows(entrepreneur: EntrepreneurDetail): KpiRow[] {
+        if (!entrepreneur.programs) return [];
+        const map = new Map<string, KpiRow>();
+        for (const program of entrepreneur.programs) {
+            for (const kpi of program.kpis ?? []) {
+                const key = kpi.nom.trim().toLowerCase();
+                if (!map.has(key)) map.set(key, { nom: kpi.nom, entries: [] });
+                map.get(key)!.entries.push({ programNom: program.nom, kpi });
+            }
+        }
+        return Array.from(map.values());
     }
 
-    /**
-     * Returns the effective "current value" for display and progress calculation.
-     * Both types use valeurActuelle as the current value and valeurCible as the target.
-     */
-    getKpiCurrentValue(kpi: KpiDetail): string {
-        return kpi.valeurActuelle ?? '0';
+    getTotalUniqueKpis(entrepreneur: EntrepreneurDetail): number {
+        return this.getUniqueKpiRows(entrepreneur).length;
     }
 
-    getKpiTargetValue(kpi: KpiDetail): string {
-        return kpi.valeurCible ?? '0';
-    }
-
-    /**
-     * Progress = (valeurActuelle / valeurCible) * 100 — same formula for both types.
-     */
     getKpiProgress(kpi: KpiDetail): number {
         const current = parseFloat(kpi.valeurActuelle ?? '0');
         const target = parseFloat(kpi.valeurCible ?? '0');
@@ -68,9 +117,9 @@ export class EntrepreneurTableComponent implements OnChanges {
         return Math.min(Math.round((current / target) * 100), 100);
     }
 
-    openKpiHistory(kpi: KpiDetail, entrepreneurName: string, event: Event) {
+    openKpiHistory(kpi: KpiDetail, entrepreneurName: string, programNom: string, event: Event) {
         event.stopPropagation();
-        this.onOpenKpiHistory.emit({ kpi, entrepreneurName });
+        this.onOpenKpiHistory.emit({ kpi, entrepreneurName, programNom });
     }
 
     editEntrepreneur(entrepreneur: EntrepreneurDetail, event: Event) {

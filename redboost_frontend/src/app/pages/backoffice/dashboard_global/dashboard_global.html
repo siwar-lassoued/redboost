@@ -206,45 +206,35 @@
   </div>
 </section>
     <!-- NEW SECTION: Activities by Type -->
-  <section class="section-container">
+ <section class="section-container">
   <div class="section-header clickable" (click)="toggleActivityTypes()">
     <div class="header-left-group">
       <div class="icon-header">
-        <i class="fa-solid fa-list-check"></i>
+        <i class="fa-solid fa-layer-group"></i>
       </div>
       <div class="text-header">
         <h2>Activités par Type</h2>
-        <p>Répartition globale des activités selon leur nature</p>
+        <p>Répartition globale des activités</p>
       </div>
     </div>
-    <i class="fa-solid toggle-icon"
-       [ngClass]="isActivityTypesOpen ? 'fa-chevron-up' : 'fa-chevron-down'">
-    </i>
+    <i class="fa-solid toggle-icon" [ngClass]="isActivityTypesOpen ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
   </div>
 
-  <div class="activity-pills-wrapper" *ngIf="isActivityTypesOpen">
-    <div class="activity-pill" *ngFor="let card of activityTypeCards"
-         [style.--pill-color]="card.color">
-      <div class="pill-header">
-        <span class="pill-title">{{ card.title }}</span>
-        <span class="pill-count">{{ card.value }}</span>
+  <div class="activity-grid" *ngIf="isActivityTypesOpen">
+    <div class="activity-card" *ngFor="let card of activityTypeCards" [style.--accent-color]="card.color">
+      <div class="accent-bar"></div>
+      
+      <div class="card-content">
+        <span class="card-label">{{ card.title }}</span>
+        <span class="card-value">{{ card.value }}</span>
       </div>
-      <div class="pill-bar-track">
-        <div class="pill-bar-fill"
-             [style.width.%]="getActivityPercentage(card.value)"
-             [style.background-color]="card.color">
-        </div>
-      </div>
-      <span class="pill-percent">{{ getActivityPercentage(card.value) }}%</span>
     </div>
 
     <div *ngIf="activityTypeCards.length === 0" class="empty-state">
-      <i class="fa-solid fa-list-check"></i>
       <p>Aucune activité enregistrée</p>
     </div>
   </div>
 </section>
-
     <section class="section-container">
       <div class="section-header clickable" (click)="togglePlatformMetrics()">
         <div class="header-left-group">

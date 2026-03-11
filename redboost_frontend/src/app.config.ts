@@ -24,7 +24,6 @@ import {
 } from '@angular/fire/auth';
 import { environment } from './environment';
 
-console.log('Initializing Firebase with config:', environment.firebaseConfig);
 
 import { ToastrModule } from 'ngx-toastr';
 
@@ -49,7 +48,7 @@ export const appConfig: ApplicationConfig = {
                     );
                 })
                 .catch((error) => {
-                    console.error('Error setting Firebase persistence:', error);
+                    console.error('Error setting Firebase persistence:');
                 });
             return auth;
         }),

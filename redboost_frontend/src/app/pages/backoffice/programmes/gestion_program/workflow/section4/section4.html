@@ -15,7 +15,7 @@
                     <i class="far fa-calendar-alt"></i> <span>Rapport périodique</span>
                 </button>
 
-                <!-- ── NEW: Compare button ── -->
+                <!-- ── Compare button ── -->
                 <button class="btn-compare" (click)="openCompareDialog()">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M18 20V10M12 20V4M6 20v-6"/>
@@ -42,9 +42,9 @@
 
         <div class="section-footer">
             <button class="btn-primary-outline" (click)="exportToPdf()" [disabled]="isLoading || !rapportId"
-                    [title]="!rapportId ? 'Veuillez d\'abord enregistrer le rapport' : 'Télécharger le rapport en PDF'">
+                    [title]="!rapportId ? 'Veuillez d\'abord enregistrer le rapport' : 'Télécharger le rapport'">
                 <i class="icon-export"></i>
-                {{ isLoading ? 'Export en cours...' : 'Exporter en PDF' }}
+                {{ isLoading ? 'Export en cours...' : 'Exporter' }}
             </button>
             <button class="btn-secondary" (click)="lockWorkflow()">
                 <i class="icon-lock"></i>
@@ -303,7 +303,7 @@
 </div>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     PERIODIC REPORT DIALOG
+     EXPORT / PERIODIC REPORT DIALOG
      ══════════════════════════════════════════════════════════════════════════ -->
 <div *ngIf="showExportDialog" class="modal-overlay" (click)="closeExportDialog()">
     <div class="modal-content periodic-report-modal" (click)="$event.stopPropagation()">
@@ -322,9 +322,10 @@
 
         <div class="modal-body">
             <p class="modal-description">
-                Sélectionnez un template de rapport pour générer votre rapport périodique
+                Sélectionnez un template et un format pour générer votre rapport
             </p>
 
+            <!-- ── Period selector (periodic mode only) ── -->
             <div class="period-section" *ngIf="exportMode === 'periodic'">
                 <div class="period-header">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0891B2" stroke-width="2">
@@ -347,10 +348,63 @@
                 </div>
             </div>
 
+            <!-- ══════════════════════════════════════════════════
+                 FILE TYPE SELECTOR  (PDF / DOCX)
+                 ══════════════════════════════════════════════════ -->
+            <div class="template-section">
+                <h4 class="template-section-title">Type de fichier</h4>
+                <div class="file-type-options">
+
+                    <!-- PDF -->
+                    <div class="file-type-card" [class.selected]="selectedFileType === 'pdf'"
+                         (click)="selectFileType('pdf')">
+                        <div class="file-type-icon file-type-icon--pdf">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 1.5L18.5 9H13V3.5zM8.5 14h1.8c.9 0 1.5.6 1.5 1.5S11.2 17 10.3 17H9.5v1.5H8.5V14zm1 2h.8c.4 0 .7-.2.7-.5s-.3-.5-.7-.5h-.8v1zm3.5-2h1.6c1.1 0 1.9.8 1.9 2s-.8 2-1.9 2H13V14zm1 3h.6c.6 0 .9-.4.9-1s-.3-1-.9-1H14v2zm3-3h3v1h-2v.8h1.8v1H18v1.7h-1V14z"/>
+                            </svg>
+                        </div>
+                        <div class="file-type-info">
+                            <span class="file-type-label">PDF</span>
+                            <span class="file-type-desc">Document portable, idéal pour le partage</span>
+                        </div>
+                        <div class="file-type-check" *ngIf="selectedFileType === 'pdf'">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- DOCX -->
+                    <div class="file-type-card" [class.selected]="selectedFileType === 'docx'"
+                         (click)="selectFileType('docx')">
+                        <div class="file-type-icon file-type-icon--docx">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 1.5L18.5 9H13V3.5zM7 14.2l1.3 3.7 1.3-3.7H11l-2 5.3H7.7L5.8 14.2H7zm5.4 0h1.4l1.1 4 1.1-4h1.4l-1.8 5.3h-1.4l-1.8-5.3z"/>
+                            </svg>
+                        </div>
+                        <div class="file-type-info">
+                            <span class="file-type-label">DOCX</span>
+                            <span class="file-type-desc">Document Word, modifiable après export</span>
+                        </div>
+                        <div class="file-type-check" *ngIf="selectedFileType === 'docx'">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ══════════════════════════════════════════════════
+                 TEMPLATE SELECTOR  (Standard / Expertise France)
+                 ══════════════════════════════════════════════════ -->
             <div class="template-section">
                 <h4 class="template-section-title">Choisissez votre template de rapport</h4>
                 <div class="template-options">
-                    <div class="template-card" [class.selected]="selectedTemplate === 'standard'" (click)="selectTemplate('standard')">
+
+                    <div class="template-card" [class.selected]="selectedTemplate === 'standard'"
+                         (click)="selectTemplate('standard')">
                         <div class="template-icon standard">
                             <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -360,13 +414,24 @@
                             <h5>Template Standard</h5>
                             <p>Rapport synthétique, structure simple, KPI + recommandations</p>
                             <div class="template-features">
-                                <div class="feature-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg><span>Format synthétique et clair</span></div>
-                                <div class="feature-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg><span>Section KPI avec graphiques</span></div>
-                                <div class="feature-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg><span>Recommandations actionnables</span></div>
+                                <div class="feature-item">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg>
+                                    <span>Format synthétique et clair</span>
+                                </div>
+                                <div class="feature-item">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg>
+                                    <span>Section KPI avec graphiques</span>
+                                </div>
+                                <div class="feature-item">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg>
+                                    <span>Recommandations actionnables</span>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="template-card" [class.selected]="selectedTemplate === 'expertise'" (click)="selectTemplate('expertise')">
+
+                    <div class="template-card" [class.selected]="selectedTemplate === 'expertise'"
+                         (click)="selectTemplate('expertise')">
                         <div class="template-icon expertise">
                             <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -376,12 +441,22 @@
                             <h5>Template Expertise France</h5>
                             <p>Format institutionnel, structuré, conforme aux standards Expertise France</p>
                             <div class="template-features">
-                                <div class="feature-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg><span>Format institutionnel normé</span></div>
-                                <div class="feature-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg><span>Structure détaillée et complète</span></div>
-                                <div class="feature-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg><span>Conformité standards internationaux</span></div>
+                                <div class="feature-item">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg>
+                                    <span>Format institutionnel normé</span>
+                                </div>
+                                <div class="feature-item">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg>
+                                    <span>Structure détaillée et complète</span>
+                                </div>
+                                <div class="feature-item">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg>
+                                    <span>Conformité standards internationaux</span>
+                                </div>
                             </div>
                         </div>
                     </div>
+
                 </div>
             </div>
         </div>

@@ -432,9 +432,13 @@ public class ActiviteService {
 
         Sprint sprint = activite.getSprint();
         String sprintNom = sprint != null ? sprint.getNom() : "Sprint supprimé";
+        Long sprintId = sprint != null ? sprint.getId() : null;
         String programmeNom = (sprint != null && sprint.getProgramme() != null)
                 ? sprint.getProgramme().getNom()
                 : "Programme supprimé";
+        Long programmeId = (sprint != null && sprint.getProgramme() != null)
+                ? sprint.getProgramme().getId()
+                : null;
 
         return ActiviteDetailDTO.builder()
                 .id(activite.getId())
@@ -456,6 +460,8 @@ public class ActiviteService {
                 .documents(documents)
                 .sprintNom(sprintNom)
                 .programmeNom(programmeNom)
+                .sprintId(sprintId)
+                .programmeId(programmeId)
                 .build();
     }
 
