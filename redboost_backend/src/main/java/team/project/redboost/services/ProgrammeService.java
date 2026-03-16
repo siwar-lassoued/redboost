@@ -510,6 +510,13 @@ public class ProgrammeService {
                     map.put("nom", a.getNom());
                     map.put("dateLimite", a.getDateLimite());
 
+                    if (a.getSprint() != null) {
+                        map.put("sprintId", a.getSprint().getId());
+                        if (a.getSprint().getProgramme() != null) {
+                            map.put("programmeId", a.getSprint().getProgramme().getId());
+                        }
+                    }
+
                     // Calculate days late
                     long daysLate = ChronoUnit.DAYS.between(a.getDateLimite(), today);
                     map.put("daysLate", daysLate);
@@ -539,6 +546,16 @@ public class ProgrammeService {
                     map.put("dateLimite", t.getDateLimite());
                     map.put("status", t.getStatus().toString());
 
+                    if (t.getActivite() != null) {
+                        map.put("activiteId", t.getActivite().getId());
+                        if (t.getActivite().getSprint() != null) {
+                            map.put("sprintId", t.getActivite().getSprint().getId());
+                            if (t.getActivite().getSprint().getProgramme() != null) {
+                                map.put("programmeId", t.getActivite().getSprint().getProgramme().getId());
+                            }
+                        }
+                    }
+
                     long daysLate = ChronoUnit.DAYS.between(t.getDateLimite(), today);
                     map.put("daysLate", daysLate);
 
@@ -554,6 +571,8 @@ public class ProgrammeService {
             map.put("id", s.getId());
             map.put("nom", s.getNom());
             map.put("dateFin", s.getDateFin());
+            map.put("programmeId", s.getProgrammeId());
+
 
             // Calculate days late if dateFin exists
             if (s.getDateFin() != null) {
@@ -766,7 +785,7 @@ public class ProgrammeService {
             List<ProgrammeKpi> programmeKpis = entry.getValue();
 
             String aggregatedValue = calculateGlobalKpiValue(kpi, programmeKpis);
-            String trend = calculateTrend(programmeKpis);
+            String trend = calculateTrend(kpi, programmeKpis); // Pass kpi to calculateTrend
 
             // Determine category name
             String categoryName = "Sans catégorie";
@@ -941,34 +960,32 @@ public class ProgrammeService {
     private String calculateGlobalKpiValue(BackofficeKpi kpi, List<ProgrammeKpi> programmeKpis) {
         double total = 0;
         String typeSuivi = kpi.getTypesuivi();
+        String typeDeSaisie = kpi.getTypedesaisie();
+
+        boolean isProgression = "progression".equalsIgnoreCase(typeDeSaisie);
 
         if ("Entrepreneur".equalsIgnoreCase(typeSuivi)) {
-            // ENTREPRENEUR type: sum the last valeurActuelle from the history of each entrepreneur value
+            // ENTREPRENEUR type: sum values from programme_kpi_entrepreneur_valeurs
             for (ProgrammeKpi pk : programmeKpis) {
-                // Get all entrepreneur values for this programme-KPI link
-                List<ProgrammeKpiValeur> valeurs = programmeKpiValeurRepository.findByProgrammeKpiId(pk.getId());
+                List<ProgrammeKpiValeur> entrepreneurValeurs = programmeKpiValeurRepository.findByProgrammeKpiId(pk.getId());
 
-                for (ProgrammeKpiValeur pkv : valeurs) {
-                    // Get the history for this specific entrepreneur value, ordered by most recent first
-                    List<ProgrammeKpiValeurHistory> history = programmeKpiValeurHistoryRepository
-                            .findByProgrammeKpiValeurIdOrderByChangedAtDesc(pkv.getId());
-
-                    // If there is history, add the value from the most recent record
-                    if (!history.isEmpty()) {
-                        total += parseDoubleSafe(history.get(0).getValeurActuelle());
+                for (ProgrammeKpiValeur pkv : entrepreneurValeurs) {
+                    // Use the fields from ProgrammeKpiValeur directly, not from history.
+                    if (isProgression) {
+                        total += parseDoubleSafe(pkv.getValeurPrecedente());
+                    } else {
+                        total += parseDoubleSafe(pkv.getValeurActuelle());
                     }
                 }
             }
         } else {
-            // OPERATIONNEL type (default): sum last valeurActuelle from programme_kpi_history
+            // OPERATIONNEL type (default): sum values from programme_kpis
             for (ProgrammeKpi pk : programmeKpis) {
-                // Get history for this programme-KPI link
-                List<ProgrammeKpiHistory> history = programmeKpiHistoryRepository
-                        .findByProgrammeKpiIdOrderByChangedAtDesc(pk.getId());
-
-                // Sum last historical valeurActuelle entry
-                if (!history.isEmpty()) {
-                    total += parseDoubleSafe(history.get(0).getValeurActuelle());
+                // Use the fields from ProgrammeKpi directly, not from history.
+                if (isProgression) {
+                    total += parseDoubleSafe(pk.getValeurPrecedente());
+                } else {
+                    total += parseDoubleSafe(pk.getValeurActuelle());
                 }
             }
         }
@@ -1005,21 +1022,51 @@ public class ProgrammeService {
         }
     }
 
-    private String calculateTrend(List<ProgrammeKpi> programmeKpis) {
+    private String calculateTrend(BackofficeKpi kpi, List<ProgrammeKpi> programmeKpis) {
         double totalChange = 0;
         int count = 0;
 
-        for (ProgrammeKpi pk : programmeKpis) {
-            if (pk.getValeurActuelle() != null && pk.getValeurPrecedente() != null) {
-                try {
-                    double current = Double.parseDouble(pk.getValeurActuelle().replaceAll("[^0-9.]", ""));
-                    double previous = Double.parseDouble(pk.getValeurPrecedente().replaceAll("[^0-9.]", ""));
-                    if (previous > 0) {
-                        totalChange += ((current - previous) / previous) * 100;
-                        count++;
+        String typeSuivi = kpi.getTypesuivi();
+
+        if ("Entrepreneur".equalsIgnoreCase(typeSuivi)) {
+            // For Entrepreneur KPIs, we need to look at ProgrammeKpiValeur
+            for (ProgrammeKpi pk : programmeKpis) {
+                List<ProgrammeKpiValeur> entrepreneurValeurs = programmeKpiValeurRepository.findByProgrammeKpiId(pk.getId());
+                for (ProgrammeKpiValeur pkv : entrepreneurValeurs) {
+                    String currentVal = pkv.getValeurActuelle();
+                    String previousVal = pkv.getValeurPrecedente();
+
+                    if (currentVal != null && previousVal != null) {
+                        try {
+                            double current = parseDoubleSafe(currentVal);
+                            double previous = parseDoubleSafe(previousVal);
+                            if (previous > 0) {
+                                totalChange += ((current - previous) / previous) * 100;
+                                count++;
+                            }
+                        } catch (NumberFormatException e) {
+                            // Skip invalid values
+                        }
                     }
-                } catch (NumberFormatException e) {
-                    // Skip invalid values
+                }
+            }
+        } else {
+            // For Operationnel (or other) KPIs, use ProgrammeKpi directly
+            for (ProgrammeKpi pk : programmeKpis) {
+                String currentVal = pk.getValeurActuelle();
+                String previousVal = pk.getValeurPrecedente();
+
+                if (currentVal != null && previousVal != null) {
+                    try {
+                        double current = parseDoubleSafe(currentVal);
+                        double previous = parseDoubleSafe(previousVal);
+                        if (previous > 0) {
+                            totalChange += ((current - previous) / previous) * 100;
+                            count++;
+                        }
+                    } catch (NumberFormatException e) {
+                        // Skip invalid values
+                    }
                 }
             }
         }

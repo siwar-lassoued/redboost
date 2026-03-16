@@ -48,21 +48,66 @@
             </div>
         </div>
 
-        <div class="alerts-section">
-            <div class="alerts-header">
-                <mat-icon>warning</mat-icon> Alertes urgentes ({{ alerts().length }})
+       <div class="alerts-section">
+    <div class="alerts-header">
+        <mat-icon>warning</mat-icon> Alertes urgentes ({{ alerts().length }})
+    </div>
+
+    <!-- Empty state -->
+    <div *ngIf="alerts().length === 0" class="alerts-empty">
+        <mat-icon style="color:#10b981;font-size:32px;width:32px;height:32px;">
+            check_circle
+        </mat-icon>
+        <span>Aucun élément en retard — tout est à jour !</span>
+    </div>
+
+    <div class="alerts-list">
+        <div
+            *ngFor="let alert of alerts()"
+            class="alert-item"
+            [class.alert-clickable]="alert._raw?.programmeId"
+            (click)="navigateToRetardItem(alert)"
+            [title]="alert._raw?.programmeId ? 'Voir dans le programme' : ''"
+        >
+            <!-- Type icon pill -->
+            <div class="alert-type-icon"
+                 [class.icon-sprint]="alert._raw?.type === 'SPRINT'"
+                 [class.icon-activite]="alert._raw?.type === 'ACTIVITE'"
+                 [class.icon-tache]="alert._raw?.type === 'TACHE'">
+                <mat-icon>{{ getAlertIcon(alert) }}</mat-icon>
             </div>
-            <div class="alerts-list">
-                <div *ngFor="let alert of alerts()" class="alert-item">
-                    <div class="alert-icon"><mat-icon>error_outline</mat-icon></div>
-                    <div class="alert-content">
-                        <div class="alert-title"       [title]="alert.title">{{ alert.title }}</div>
-                        <div class="alert-description" [title]="alert.description">{{ alert.description }}</div>
+
+            <div class="alert-content">
+                <div class="alert-header-row">
+                    <div class="alert-title" [title]="alert.title">
+                        {{ alert.title }}
                     </div>
-                    <span class="alert-days">{{ alert.days }}</span>
+                    <span class="alert-type-badge"
+                          [class.badge-sprint]="alert._raw?.type === 'SPRINT'"
+                          [class.badge-activite]="alert._raw?.type === 'ACTIVITE'"
+                          [class.badge-tache]="alert._raw?.type === 'TACHE'">
+                        {{ getAlertTypeLabel(alert) }}
+                    </span>
+                </div>
+                <div class="alert-description" [title]="alert.description">
+                    {{ alert.description }}
                 </div>
             </div>
+
+            <div class="alert-right">
+                <span class="alert-days"
+                      [class.alert-days-today]="alert._raw?.daysLate === 0">
+                    {{ alert.days }}
+                </span>
+                <!-- Arrow only shows when navigable -->
+                <mat-icon *ngIf="alert._raw?.programmeId"
+                          class="alert-nav-arrow">
+                    arrow_forward
+                </mat-icon>
+            </div>
         </div>
+    </div>
+</div>
 
         <div class="sprints-section">
             <div class="section-header">

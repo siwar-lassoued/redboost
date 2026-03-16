@@ -7,7 +7,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ProgrammeService } from '../../../programme.service';
 import { Programme } from '../../../../../../models/programme';
 import { SprintManagerComponent } from '../sprints/sprint-management';
-
+import { Router } from '@angular/router';
 interface MetricCard {
     iconName: string;
     title: string;
@@ -23,6 +23,7 @@ interface Alert {
     title: string;
     description: string;
     days: string;
+    _raw?: any;   // ← ADD
 }
 
 interface Stats {
@@ -63,6 +64,9 @@ interface GlobalStatistics {
 })
 export class DashboardViewComponent implements OnInit {
     protected service = inject(ProgrammeService);
+
+
+    constructor(private router: Router) {}
 
     @ViewChild('sprintManager') sprintManager!: SprintManagerComponent;
 
@@ -220,27 +224,71 @@ export class DashboardViewComponent implements OnInit {
         });
     }
 
-    loadRetardItems() {
-        this.service.getRetardItems().subscribe({
-            next: (data) => {
-                this.retardItems.set(data);
-                const newAlerts: Alert[] = [];
-                if (data?.items) {
-                    data.items.forEach((item: any) => {
-                        const itemName = item.type === 'TACHE' ? item.titre : item.nom;
-                        const itemDate = item.type === 'SPRINT' ? item.dateFin : item.dateLimite;
-                        newAlerts.push({
-                            title:       `${item.type}: ${itemName}`,
-                            description: item.description || `Date limite: ${itemDate}`,
-                            days:        `${item.daysLate} jour${item.daysLate > 1 ? 's' : ''}`,
-                        });
-                    });
-                }
-                this.alerts.set(newAlerts);
-            },
-            error: () => this.alerts.set([]),
-        });
+   // Replace the existing loadRetardItems() method
+loadRetardItems() {
+    this.service.getRetardItems().subscribe({
+        next: (data) => {
+            this.retardItems.set(data);
+            const newAlerts: Alert[] = [];
+            if (data?.items) {
+                data.items.forEach((item: any) => {
+                    const itemName = item.type === 'TACHE' ? item.titre : item.nom;
+                    const itemDate = item.type === 'SPRINT' ? item.dateFin : item.dateLimite;
+                    newAlerts.push({
+                        title:       `${item.type}: ${itemName}`,
+                        description: item.description || `Date limite: ${itemDate}`,
+                        days:        item.daysLate > 0
+                                       ? `+${item.daysLate} jour${item.daysLate > 1 ? 's' : ''}`
+                                       : "Aujourd'hui",
+                        // ← store original item for navigation
+                        _raw: item,
+                    } as any);
+                });
+            }
+            this.alerts.set(newAlerts);
+        },
+        error: () => this.alerts.set([]),
+    });
+}
+
+// Add this navigation method
+navigateToRetardItem(alert: any): void {
+    const item = alert._raw;
+    if (!item?.programmeId) return;
+
+    const queryParams: Record<string, any> = { tab: 'sprints' };
+
+    if (item.type === 'SPRINT') {
+        queryParams['sprintId'] = item.sprintId ?? item.id;
+
+    } else if (item.type === 'ACTIVITE') {
+        queryParams['sprintId']   = item.sprintId;
+        queryParams['activiteId'] = item.id;
+
+    } else if (item.type === 'TACHE') {
+        queryParams['sprintId']   = item.sprintId;
+        queryParams['activiteId'] = item.activiteId;
+        queryParams['tacheId']    = item.id;
     }
+
+    this.router.navigate(['/programme', item.programmeId], { queryParams });
+}
+
+// Add this helper for the icon
+getAlertIcon(alert: any): string {
+    const type = alert._raw?.type;
+    return type === 'SPRINT'   ? 'bolt'
+         : type === 'ACTIVITE' ? 'layers'
+         : 'task_alt';
+}
+
+// Add this helper for the type label
+getAlertTypeLabel(alert: any): string {
+    const type = alert._raw?.type;
+    return type === 'SPRINT'   ? 'Sprint'
+         : type === 'ACTIVITE' ? 'Activité'
+         : 'Tâche';
+}
 
     loadGlobalStatistics() {
         this.service.getGlobalStatistics().subscribe({

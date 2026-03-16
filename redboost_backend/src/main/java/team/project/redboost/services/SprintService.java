@@ -11,7 +11,9 @@ import team.project.redboost.entities.Sprint;
 import team.project.redboost.repositories.ProgrammeRepository;
 import team.project.redboost.repositories.RapportRepository;
 import team.project.redboost.repositories.SprintRepository;
+import team.project.redboost.entities.StatutProgramme;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +51,15 @@ public class SprintService {
         }
 
         sprint.setProgramme(programme);
+
+        if (sprint.getDateDebut() != null && !sprint.getDateDebut().isAfter(LocalDate.now())) {
+            sprint.setStatus(Sprint.StatusSprint.EN_COURS);
+            if (programme.getStatut() != StatutProgramme.EN_COURS) {
+                programme.setStatut(StatutProgramme.EN_COURS);
+                programmeRepository.save(programme);
+            }
+        }
+
         return sprintRepository.save(sprint);
     }
 
@@ -66,6 +77,16 @@ public class SprintService {
         existing.setDescription(updated.getDescription());
         existing.setDateDebut(updated.getDateDebut());
         existing.setDateLimite(updated.getDateLimite());
+        existing.setStatus(updated.getStatus());
+
+
+        if (existing.getStatus() == Sprint.StatusSprint.EN_COURS) {
+            Programme programme = existing.getProgramme();
+            if (programme != null && programme.getStatut() != StatutProgramme.EN_COURS) {
+                programme.setStatut(StatutProgramme.EN_COURS);
+                programmeRepository.save(programme);
+            }
+        }
 
         Sprint saved = sprintRepository.save(existing);
 

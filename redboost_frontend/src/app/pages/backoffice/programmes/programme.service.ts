@@ -16,6 +16,23 @@ export interface UserResponsable {
     email: string;
     role: string;
 }
+
+export interface RetardItem {
+  id: number;
+  type: 'SPRINT' | 'ACTIVITE' | 'TACHE';
+  nom: string;
+  titre?: string;
+  daysLate: number;
+  dateLimite: string;
+  status: string;
+  programmeId: number;
+  sprintId?: number;
+  activiteId?: number;
+}
+
+export interface RetardItemsDTO {
+  items: RetardItem[];
+}
 export interface UserEntrepreneur {
     id: number;
     fullName: string;
@@ -512,9 +529,9 @@ updateKpiValuesForEntrepreneur(
     );
 }
 
-    getRetardItems(): Observable<any> {
-        return this.http.get<any>(`${this.api}/retard-items`);
-    }
+    getRetardItems(): Observable<RetardItemsDTO> {
+  return this.http.get<RetardItemsDTO>(`${this.api}/retard-items`);
+}
 
     getAllEntrepreneurs(): Observable<UserEntrepreneur[]> {
         return this.http.get<any[]>(`${this.userApi}/entrepreneurs`).pipe(

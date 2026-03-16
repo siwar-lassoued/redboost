@@ -152,40 +152,45 @@ export class SprintManagementComponent implements OnInit, OnChanges {
      * Safe to call even if some IDs are null (graceful no-op for missing IDs).
      */
     private applyDeepLink(): void {
-        if (!this.deepLinkSprintId) return;
+    if (!this.deepLinkSprintId) return;
 
-        // 1. Expand the sprint
-        this.expandedSprints.update(list =>
-            list.includes(this.deepLinkSprintId!)
-                ? list
-                : [...list, this.deepLinkSprintId!]
-        );
+    // 1. Expand the sprint
+    this.expandedSprints.update(list =>
+        list.includes(this.deepLinkSprintId!)
+            ? list
+            : [...list, this.deepLinkSprintId!]
+    );
 
-        // 2. Expand the activité (one tick later so *ngIf renders the activités)
+    // 2. One tick later so *ngIf renders the expanded content
+    setTimeout(() => {
+        if (this.deepLinkActiviteId) {
+            // Expand the activité
+            this.expandedActivites.update(list =>
+                list.includes(this.deepLinkActiviteId!)
+                    ? list
+                    : [...list, this.deepLinkActiviteId!]
+            );
+        }
+
+        // 3. Another tick so tâches render (if needed)
         setTimeout(() => {
-            if (this.deepLinkActiviteId) {
-                this.expandedActivites.update(list =>
-                    list.includes(this.deepLinkActiviteId!)
-                        ? list
-                        : [...list, this.deepLinkActiviteId!]
-                );
+            if (this.deepLinkTacheId) {
+                // TACHE: scroll to task + highlight
+                this.highlightedTacheId.set(this.deepLinkTacheId);
+                this.scrollToElement(`task-${this.deepLinkTacheId}`);
+                setTimeout(() => this.highlightedTacheId.set(null), 4000);
+
+            } else if (this.deepLinkActiviteId) {
+                // ACTIVITE: scroll to activité header
+                this.scrollToElement(`activite-${this.deepLinkActiviteId}`);
+
+            } else {
+                // SPRINT only: scroll to the sprint card and briefly highlight it
+                this.scrollToElement(`sprint-${this.deepLinkSprintId}`);
             }
-
-            // 3. Scroll + highlight the task (another tick so tâches render)
-            setTimeout(() => {
-                if (this.deepLinkTacheId) {
-                    this.highlightedTacheId.set(this.deepLinkTacheId);
-                    this.scrollToElement(`task-${this.deepLinkTacheId}`);
-
-                    // Remove the highlight after 4 s
-                    setTimeout(() => this.highlightedTacheId.set(null), 4000);
-                } else if (this.deepLinkActiviteId) {
-                    // No task specified — at least scroll to the activité header
-                    this.scrollToElement(`activite-${this.deepLinkActiviteId}`);
-                }
-            }, 300);
-        }, 150);
-    }
+        }, 300);
+    }, 150);
+}
 
     /** Smooth-scroll to a DOM element by id. Falls back silently if not found. */
     private scrollToElement(id: string): void {
