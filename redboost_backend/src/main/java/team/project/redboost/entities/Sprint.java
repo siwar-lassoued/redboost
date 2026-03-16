@@ -50,6 +50,9 @@ public class Sprint {
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate dateFinReel;
 
+    @Column(name = "sprint_order")
+    private Integer order;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "programme_id")
     @JsonIgnoreProperties({"sprints", "hibernateLazyInitializer", "handler"})

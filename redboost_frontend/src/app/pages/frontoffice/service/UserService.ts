@@ -32,7 +32,6 @@ export class UserService {
             .get<any[]>(`${this.apiUrl}/coach/requests`, { headers })
             .pipe(
                 catchError((error) => {
-                    console.error('Error fetching coach requests:', error);
                     throw error; // Let the component handle the error
                 }),
             );
@@ -58,10 +57,7 @@ export class UserService {
                     this.userCache.set(userId, user);
                 }),
                 catchError((error) => {
-                    console.error(
-                        `Error fetching user with ID ${userId}:`,
-                        error,
-                    );
+                   
                     return of(null);
                 }),
             );
@@ -87,10 +83,7 @@ export class UserService {
             .post(`${this.apiUrl}/coach/approve/${requestId}`, {}, { headers })
             .pipe(
                 catchError((error) => {
-                    console.error(
-                        `Error approving coach request ${requestId}:`,
-                        error,
-                    );
+                   
                     throw error;
                 }),
             );
@@ -104,10 +97,7 @@ export class UserService {
             .post(`${this.apiUrl}/coach/reject/${requestId}`, {}, { headers })
             .pipe(
                 catchError((error) => {
-                    console.error(
-                        `Error rejecting coach request ${requestId}:`,
-                        error,
-                    );
+                    
                     throw error;
                 }),
             );

@@ -7,14 +7,7 @@
         </div>
 
         <div class="header-actions">
-            <button class="btn-outline-teal">
-                <i class="icon-import"></i>
-                Importer Programme Workflow
-            </button>
-            <button class="btn-outline-pink">
-                <i class="icon-settings"></i>
-                Modifier les KPI
-            </button>
+           
             <span class="badge-step">Étape {{ currentSection }}/{{ totalSections }}</span>
         </div>
     </div>
@@ -44,7 +37,7 @@
         </button>
         <button class="section-tab" [class.active]="currentSection === 2" [class.completed]="isSectionCompleted(2)" (click)="goToSection(2)">
             <i *ngIf="isSectionCompleted(2)" class="icon-check"></i>
-            Contexte & Objectifs
+            Cadre logique
         </button>
         <button class="section-tab" [class.active]="currentSection === 3" [class.completed]="isSectionCompleted(3)" (click)="goToSection(3)">
             <i *ngIf="isSectionCompleted(3)" class="icon-check"></i>

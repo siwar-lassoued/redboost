@@ -5,6 +5,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import team.project.redboost.dto.ProgrammeKpiHistoryResponse;
 import team.project.redboost.dto.ProgrammeKpiRequest;
 import team.project.redboost.dto.ProgrammeKpiResponse;
 import team.project.redboost.entities.ProgrammeKpiHistory;
@@ -39,7 +40,6 @@ public class ProgrammeKpiController {
         return ResponseEntity.ok(response);
     }
 
-    // Mettre à jour la valeur d'un entrepreneur pour un KPI spécifique
     // Mettre à jour la valeur d'un entrepreneur pour un KPI spécifique
     @PutMapping("/{programmeId}/kpis/{kpiId}/entrepreneur-values")
     public ResponseEntity<Void> updateEntrepreneurValue(
@@ -98,11 +98,11 @@ public class ProgrammeKpiController {
 
     // Récupérer l'historique des modifications des valeurs globales (précédente, actuelle, cible)
     @GetMapping("/{programmeId}/kpis/{kpiId}/history")
-    public ResponseEntity<List<ProgrammeKpiHistory>> getGlobalKpiHistory(
+    public ResponseEntity<List<ProgrammeKpiHistoryResponse>> getGlobalKpiHistory(
             @PathVariable Long programmeId,
             @PathVariable Long kpiId) {
 
-        List<ProgrammeKpiHistory> history = programmeKpiService.getKpiHistory(programmeId, kpiId);
+        List<ProgrammeKpiHistoryResponse> history = programmeKpiService.getKpiHistory(programmeId, kpiId);
         return ResponseEntity.ok(history);
     }
 

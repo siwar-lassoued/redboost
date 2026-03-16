@@ -191,37 +191,39 @@ export class RapportRedactionComponent implements OnInit {
         });
     }
 
-    private cleanObjectivesForSave(objectives: GlobalObjective[]): GlobalObjective[] {
-        return objectives.map((og) => {
-            const globalObj: any = {
-                nom: og.nom,
-                description: og.description,
-                objectifsSpecifiques: og.objectifsSpecifiques.map((os) => {
-                    const specificObj: any = {
-                        nom: os.nom,
-                        description: os.description,
-                        kpiIds: os.kpiIds || [],
-                        resultats: os.resultats.map((r) => ({
-                            ...(r.id && { id: r.id }),
-                            nom: r.nom,
-                            description: r.description,
-                            kpiIds: r.kpiIds || [],
-                        })),
-                        resultatsTransversaux: os.resultatsTransversaux.map((r) => ({
-                            ...(r.id && { id: r.id }),
-                            nom: r.nom,
-                            description: r.description,
-                            kpiIds: r.kpiIds || [],
-                        })),
-                    };
-                    if (os.id) specificObj.id = os.id;
-                    return specificObj;
-                }),
-            };
-            if (og.id) globalObj.id = og.id;
-            return globalObj;
-        });
-    }
+ private cleanObjectivesForSave(objectives: GlobalObjective[]): GlobalObjective[] {
+    return objectives.map((og) => {
+        const globalObj: any = {
+            nom: og.nom,
+            description: og.description,
+            // ✅ resultatsTransversaux now lives at global objective level
+            resultatsTransversaux: (og.resultatsTransversaux || []).map((r) => ({
+                ...(r.id && { id: r.id }),
+                nom: r.nom,
+                description: r.description,
+                kpiIds: r.kpiIds || [],
+            })),
+            objectifsSpecifiques: og.objectifsSpecifiques.map((os) => {
+                const specificObj: any = {
+                    nom: os.nom,
+                    description: os.description,
+                    kpiIds: os.kpiIds || [],
+                    resultats: (os.resultats || []).map((r) => ({
+                        ...(r.id && { id: r.id }),
+                        nom: r.nom,
+                        description: r.description,
+                        kpiIds: r.kpiIds || [],
+                    })),
+                    // ✅ resultatsTransversaux removed from specific objective
+                };
+                if (os.id) specificObj.id = os.id;
+                return specificObj;
+            }),
+        };
+        if (og.id) globalObj.id = og.id;
+        return globalObj;
+    });
+}
 
     // Navigation methods
     get progress(): number {

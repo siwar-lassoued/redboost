@@ -41,11 +41,8 @@ interface KpiCategory {
     <div class="flex justify-between items-start">
         <div>
             <h2 class="modal-title">
-                {{ isEditing ? 'Modifier' : 'Créer' }} une nouvelle tâche
+                {{ isEditing ? 'Modifier' : 'Créer' }} une tâche
             </h2>
-            <p class="modal-subtitle">
-                Remplissez les informations pour créer une nouvelle tâche.
-            </p>
         </div>
         <button class="close-btn" (click)="onClose()">
             <mat-icon>close</mat-icon>
@@ -67,14 +64,6 @@ interface KpiCategory {
                         </button>
                     </div>
 
-                    <h2 class="modal-title">
-                        {{ isEditing ? 'Modifier' : 'Créer' }} une nouvelle
-                        tâche
-                    </h2>
-                    <p class="modal-subtitle">
-                        Remplissez les informations pour créer une nouvelle
-                        tâche.
-                    </p>
                 </div>
                 <div class="modal-body">
                     <div class="form-group">

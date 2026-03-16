@@ -35,7 +35,7 @@ html {
     background-color: #f8f9fa;
 
     .layout-main-container {
-        margin-top: 20px; // Height of topbar
+        margin-top: 2rem !important; // ✅ Matches the actual topbar height: 4rem
         margin-left: 100px; // Width of sidebar
         flex: 1;
         display: flex;

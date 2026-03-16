@@ -22,9 +22,9 @@ public class ResultatTransversal {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "objectif_specifique_id", nullable = false)
-    @JsonIgnoreProperties({"resultats", "resultatsTransversaux", "kpis", "objectifGlobal"})
-    private ObjectifSpecifique objectifSpecifique;
+    @JoinColumn(name = "objectif_global_id", nullable = false)
+    @JsonIgnoreProperties({"objectifsSpecifiques", "rapport", "resultatsTransversaux"})
+    private ObjectifGlobal objectifGlobal;
 
     @Column(nullable = false)
     private String nom;

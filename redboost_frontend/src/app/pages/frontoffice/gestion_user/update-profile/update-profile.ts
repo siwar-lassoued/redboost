@@ -148,7 +148,6 @@ export class ProfileUpdateDialogComponent implements OnInit, OnChanges {
     populateForm(): void {
         if (!this.user) return;
 
-        console.log('Populating form with user data:', this.user);
 
         this.profileForm.patchValue({
             firstName: this.user.firstName || '',
@@ -327,7 +326,6 @@ export class ProfileUpdateDialogComponent implements OnInit, OnChanges {
         addIfPresent('obstaclePrincipal', formValue.obstaclePrincipal);
     }
 
-    console.log('Sending update payload:', payload);
 
     const accessToken = localStorage.getItem('accessToken');
     if (!accessToken) {

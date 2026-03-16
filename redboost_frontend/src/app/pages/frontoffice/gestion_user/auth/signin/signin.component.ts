@@ -50,10 +50,10 @@ export class SigninComponent {
             return;
         }
 
-        console.log('Attempting login with email:', this.email);
+        console.log('Attempting login with email:');
         this.authService.login(this.email, this.password).subscribe({
             next: (response) => {
-                console.log('Login successful:', response);
+                console.log('Login successful:');
                 const accessToken = response.accessToken;
                 const refreshToken = response.refreshToken;
 
@@ -65,7 +65,7 @@ export class SigninComponent {
                 this.router.navigate(['profile']);
             },
             error: (error) => {
-                console.error('Login failed:', error);
+                console.error('Login failed:');
                 let errorMessage = 'Échec de la connexion';
                 this.loginError = null;
 
@@ -91,7 +91,7 @@ export class SigninComponent {
                     }
                 } else {
                     errorMessage = 'Erreur serveur ou réseau';
-                    console.error('Unexpected error format:', error);
+                    console.error('Unexpected error format:');
                 }
 
                 this.errorMessage = errorMessage;
@@ -107,7 +107,7 @@ export class SigninComponent {
                 });
             },
             error: (error) => {
-                console.error('Failed to resend confirmation email:', error);
+                console.error('Failed to resend confirmation email:');
                 this.errorMessage =
                     'Échec de l’envoi de l’email de confirmation';
             },
@@ -119,14 +119,9 @@ export class SigninComponent {
         this.loginError = null;
         this.errorMessage = null;
 
-        console.log(
-            'Firebase initialized with config:',
-            environment.firebaseConfig,
-        );
-
+        
         (await this.authService.googleLogin()).subscribe({
             next: (response: any) => {
-                console.log('Google login successful:', response);
                 const accessToken = response.accessToken;
                 const refreshToken = response.refreshToken;
 
@@ -138,7 +133,7 @@ export class SigninComponent {
                 this.router.navigate(['profile']);
             },
             error: (error: any) => {
-                console.error('Google login failed:', error);
+                console.error('Google login failed:');
                 this.errorMessage = 'Échec de la connexion Google';
             },
         });

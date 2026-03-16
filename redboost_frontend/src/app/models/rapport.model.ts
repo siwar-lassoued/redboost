@@ -13,7 +13,6 @@ export interface SpecificObjective {
     kpiIds: number[];
     kpis?: KpiLightDTO[];
     resultats: Resultat[];
-    resultatsTransversaux: Resultat[];
 }
 
 export interface GlobalObjective {
@@ -21,6 +20,8 @@ export interface GlobalObjective {
     nom: string;
     description: string;
     objectifsSpecifiques: SpecificObjective[];
+    resultatsTransversaux?: Resultat[];   // ✅ moved here from SpecificObjective
+
 }
 
 export interface KpiLightDTO {

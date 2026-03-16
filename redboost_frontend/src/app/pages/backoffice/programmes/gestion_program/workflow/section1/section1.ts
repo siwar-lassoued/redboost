@@ -18,7 +18,7 @@ import { AiService, ImproveResponse } from '../../../ai.service';
                 <!-- Objectifs du programme -->
                 <div class="form-group">
                     <div class="form-header">
-                        <label>Objectifs du programme</label>
+                        <label>Context</label>
                         <button
                             class="btn-ai"
                             (click)="generateWithAI('programObjectives', localProgramObjectives, 'objectives')"
@@ -38,7 +38,7 @@ import { AiService, ImproveResponse } from '../../../ai.service';
                 <!-- Résultats clés -->
                 <div class="form-group">
                     <div class="form-header">
-                        <label>Résultats clés</label>
+                        <label>Mission</label>
                         <button
                             class="btn-ai"
                             (click)="generateWithAI('keyResults', localKeyResults, 'results')"

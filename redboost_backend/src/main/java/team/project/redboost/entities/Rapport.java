@@ -47,6 +47,7 @@ public class Rapport {
             joinColumns = @JoinColumn(name = "rapport_id"),
             inverseJoinColumns = @JoinColumn(name = "sprint_id")
     )
+    @OrderBy("order ASC")
     @JsonIgnoreProperties({"programme", "activites", "taches"})
     @Builder.Default
     private List<Sprint> sprintsMethodologie = new ArrayList<>();

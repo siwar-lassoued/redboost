@@ -30,4 +30,11 @@ public class ProgrammeKpiHistory {
     // Optional: Track who made the change
     @Column(name = "changed_by")
     private Long changedBy; // User ID
+
+    // New fields to track source of update
+    @Column(name = "tache_id")
+    private Long tacheId;
+
+    @Column(name = "activite_id")
+    private Long activiteId;
 }

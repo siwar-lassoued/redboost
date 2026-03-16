@@ -19,6 +19,11 @@ interface KpiHistoryEntry {
     changedAt: string;
     changedBy?: number;
     typedesaisie?: 'progression' | 'normal' | null;
+    // ✅ Add these
+    tacheId?: number | null;
+    activiteId?: number | null;
+    activiteNom?: string | null;
+    tacheTitre?: string | null;
 }
 
 interface EntrepreneurHistoryGroup {
@@ -108,7 +113,17 @@ interface EntrepreneurHistoryGroup {
                         <span class="entry-date">{{ formatDate(entry.changedAt) }}</span>
                         <span class="entry-time">{{ formatTime(entry.changedAt) }}</span>
                     </div>
-                    
+                    <!-- Source Badge: Activité or Tâche -->
+<div class="entry-source-badges" *ngIf="entry.activiteId || entry.tacheId">
+    <span *ngIf="entry.activiteId" class="source-badge activite-badge">
+        <mat-icon>local_activity</mat-icon>
+        Activité: {{ entry.activiteNom }}
+    </span>
+    <span *ngIf="entry.tacheId" class="source-badge tache-badge">
+        <mat-icon>task_alt</mat-icon>
+        Tâche: {{ entry.tacheTitre }}
+    </span>
+</div>
                     <!-- Normal Type (2 values) -->
                     <div *ngIf="data.typedesaisie !== 'progression'" class="entry-values">
                         <div class="value-item highlight">
@@ -481,6 +496,41 @@ interface EntrepreneurHistoryGroup {
 .entrepreneur-history-list {
     padding: 16px;
     background: #fafafa;
+}
+.entry-source-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.source-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+
+    mat-icon {
+        font-size: 14px !important;
+        width: 14px !important;
+        height: 14px !important;
+    }
+}
+
+.activite-badge {
+    background-color: #e0f2fe;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
+}
+
+.tache-badge {
+    background-color: #dcfce7;
+    color: #15803d;
+    border: 1px solid #bbf7d0;
 }
     `],
 })

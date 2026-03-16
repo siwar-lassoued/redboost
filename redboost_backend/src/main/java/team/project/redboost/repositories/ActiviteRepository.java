@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import team.project.redboost.entities.Activite;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface ActiviteRepository extends JpaRepository<Activite, Long> {
@@ -17,4 +18,6 @@ public interface ActiviteRepository extends JpaRepository<Activite, Long> {
 
     @Query("SELECT a.type, COUNT(a) FROM Activite a GROUP BY a.type")
     List<Object[]> countActivitiesByTypeGlobal();
+
+    List<Activite> findByStatusAndDateDebutLessThanEqual(Activite.StatusActivite status, LocalDate date);
 }

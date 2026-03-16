@@ -75,6 +75,7 @@ public class Programme {
     // Ajouter dans Programme.java (à la fin des attributs)
     // Programme.java
     @OneToMany(mappedBy = "programme", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("order ASC")
     @JsonIgnoreProperties({"programme", "sprints", "activites", "taches", "hibernateLazyInitializer", "handler"})
     private List<Sprint> sprints = new ArrayList<>();
 

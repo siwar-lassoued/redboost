@@ -3,6 +3,7 @@ package team.project.redboost.services;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import team.project.redboost.dto.ProgrammeKpiHistoryResponse;
 import team.project.redboost.dto.ProgrammeKpiRequest;
 import team.project.redboost.dto.ProgrammeKpiResponse;
 import team.project.redboost.entities.*;
@@ -24,6 +25,11 @@ public class ProgrammeKpiService {
     private final UserRepository userRepository;
     private final ProgrammeKpiHistoryRepository programmeKpiHistoryRepository;
     private final ProgrammeKpiValeurHistoryRepository programmeKpiValeurHistoryRepository;
+    private final ActiviteKpiRepository activiteKpiRepository;
+    private final TacheKpiRepository tacheKpiRepository;
+    private final SprintRepository sprintRepository;
+    private final ActiviteRepository activiteRepository;
+    private final TacheRepository tacheRepository;
 
     @Transactional
     public ProgrammeKpiResponse saveOrUpdate(ProgrammeKpiRequest request) {
@@ -259,13 +265,43 @@ public class ProgrammeKpiService {
         programmeKpiValeurRepository.delete(pkv);
     }
 
-    public List<ProgrammeKpiHistory> getKpiHistory(Long programmeId, Long kpiId) {
+    public List<ProgrammeKpiHistoryResponse> getKpiHistory(Long programmeId, Long kpiId) {
         ProgrammeKpi programmeKpi = programmeKpiRepository
                 .findByProgrammeIdAndKpiId(programmeId, kpiId)
                 .orElseThrow(() -> new IllegalArgumentException("Lien Programme-KPI non trouvé"));
 
-        return programmeKpiHistoryRepository
+        List<ProgrammeKpiHistory> historyList = programmeKpiHistoryRepository
                 .findByProgrammeKpiIdOrderByChangedAtDesc(programmeKpi.getId());
+
+        return historyList.stream().map(h -> {
+            String activiteNom = null;
+            if (h.getActiviteId() != null) {
+                activiteNom = activiteRepository.findById(h.getActiviteId())
+                        .map(Activite::getNom)
+                        .orElse(null);
+            }
+
+            String tacheTitre = null;
+            if (h.getTacheId() != null) {
+                tacheTitre = tacheRepository.findById(h.getTacheId())
+                        .map(Tache::getTitre)
+                        .orElse(null);
+            }
+
+            return ProgrammeKpiHistoryResponse.builder()
+                    .id(h.getId())
+                    .programmeKpiId(h.getProgrammeKpiId())
+                    .valeurPrecedente(h.getValeurPrecedente())
+                    .valeurActuelle(h.getValeurActuelle())
+                    .valeurCible(h.getValeurCible())
+                    .changedAt(h.getChangedAt())
+                    .changedBy(h.getChangedBy())
+                    .tacheId(h.getTacheId())
+                    .activiteId(h.getActiviteId())
+                    .activiteNom(activiteNom)
+                    .tacheTitre(tacheTitre)
+                    .build();
+        }).collect(Collectors.toList());
     }
 
     public List<ProgrammeKpiValeurHistory> getEntrepreneurValueHistory(Long programmeId, Long kpiId, Long userId) {
@@ -279,6 +315,88 @@ public class ProgrammeKpiService {
 
         return programmeKpiValeurHistoryRepository
                 .findByProgrammeKpiValeurIdOrderByChangedAtDesc(pkv.getId());
+    }
+
+    @Transactional
+    public void updateOperationalKpi(Long programmeId, Long kpiId, double delta, Long activiteId, Long tacheId) {
+        BackofficeKpi kpi = backofficeKpiRepository.findById(kpiId)
+                .orElseThrow(() -> new IllegalArgumentException("KPI non trouvé"));
+
+        // Only process OPERATIONNEL KPIs
+        if (!"OPERATIONNEL".equalsIgnoreCase(kpi.getTypesuivi())) {
+            return;
+        }
+
+        ProgrammeKpi programmeKpi = programmeKpiRepository
+                .findByProgrammeIdAndKpiId(programmeId, kpiId)
+                .orElseGet(() -> {
+                     ProgrammeKpi newPk = ProgrammeKpi.builder()
+                        .programmeId(programmeId)
+                        .kpiId(kpiId)
+                        .build();
+                     return programmeKpiRepository.save(newPk);
+                });
+
+        boolean isProgression = "progression".equalsIgnoreCase(kpi.getTypedesaisie());
+
+        if (isProgression) {
+            String oldValeurPrecedente = programmeKpi.getValeurPrecedente();
+            double currentValeurPrecedente = parseDouble(oldValeurPrecedente);
+            double newValeurPrecedente = currentValeurPrecedente + delta;
+
+            programmeKpi.setValeurPrecedente(String.valueOf(newValeurPrecedente));
+            programmeKpi.setValeurActuelle(null); // As per progression logic
+            programmeKpi = programmeKpiRepository.save(programmeKpi);
+
+            ProgrammeKpiHistory history = ProgrammeKpiHistory.builder()
+                    .programmeKpiId(programmeKpi.getId())
+                    .valeurPrecedente(oldValeurPrecedente) // Old previous value
+                    .valeurActuelle(String.valueOf(delta)) // The value that was added
+                    .valeurCible(programmeKpi.getValeurCible())
+                    .changedAt(LocalDateTime.now())
+                    .tacheId(tacheId)
+                    .activiteId(activiteId)
+                    .build();
+            programmeKpiHistoryRepository.save(history);
+
+        } else {
+            // For Normal type, we recalculate total from all activities/tasks to be safe/consistent
+            double total = 0.0;
+            List<Sprint> sprints = sprintRepository.findByProgrammeId(programmeId);
+
+            for (Sprint sprint : sprints) {
+                for (Activite activite : sprint.getActivites()) {
+                    double activiteVal = activiteKpiRepository.findByActiviteIdAndKpiId(activite.getId(), kpiId)
+                            .map(ak -> parseDouble(ak.getValeurActuelle()))
+                            .orElse(0.0);
+                    total += activiteVal;
+
+                    for (Tache tache : activite.getTaches()) {
+                        double tacheVal = tacheKpiRepository.findByTacheIdAndKpiId(tache.getId(), kpiId)
+                                .map(tk -> parseDouble(tk.getValeurActuelle()))
+                                .orElse(0.0);
+                        total += tacheVal;
+                    }
+                }
+            }
+
+            String oldValue = programmeKpi.getValeurActuelle();
+            String newValue = String.valueOf(total);
+
+            programmeKpi.setValeurActuelle(newValue);
+            programmeKpi = programmeKpiRepository.save(programmeKpi);
+
+            ProgrammeKpiHistory history = ProgrammeKpiHistory.builder()
+                    .programmeKpiId(programmeKpi.getId())
+                    .valeurPrecedente(oldValue)
+                    .valeurActuelle(newValue)
+                    .valeurCible(programmeKpi.getValeurCible())
+                    .changedAt(LocalDateTime.now())
+                    .tacheId(tacheId)
+                    .activiteId(activiteId)
+                    .build();
+            programmeKpiHistoryRepository.save(history);
+        }
     }
 
     private double parseDouble(String value) {

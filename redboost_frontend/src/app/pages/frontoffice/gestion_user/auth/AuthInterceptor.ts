@@ -44,18 +44,13 @@ export const AuthInterceptor: HttpInterceptorFn = (
     const requestPath = req.url
         .replace(/^https?:\/\/[^\/]+/, '')
         .replace(/\/$/, '');
-    console.log(`Intercepted URL: ${req.url}`);
-    console.log(`Normalized path: ${requestPath}`);
+  
 
     // Check if it's a public endpoint
     const isPublic = publicEndpoints.includes(requestPath);
-    console.log(`Is public: ${isPublic}`);
 
     if (isPublic) {
-        console.log(
-            `Skipping AuthInterceptor for public endpoint: ${requestPath}`,
-        );
-
+       
         const publicReq = req.clone({
             headers: req.headers.delete('Authorization'),
             withCredentials: false,
@@ -70,7 +65,6 @@ export const AuthInterceptor: HttpInterceptorFn = (
         req.url.includes('/Auth/refresh') ||
         req.url.includes('/Auth/confirm-email')
     ) {
-        console.log(`Skipping AuthInterceptor for ${req.url}`);
         return next(req.clone({ withCredentials: true }));
     }
 
@@ -90,14 +84,10 @@ export const AuthInterceptor: HttpInterceptorFn = (
         catchError((error) => {
             if (error.status === 401 && !authService.isRefreshing) {
                 authService.isRefreshing = true;
-                console.log('Access token expired, attempting to refresh');
 
                 return authService.refreshToken().pipe(
                     switchMap((response: any) => {
-                        console.log(
-                            'Refresh successful, new access token:',
-                            response.accessToken,
-                        );
+                      
                         localStorage.setItem(
                             'accessToken',
                             response.accessToken,

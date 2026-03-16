@@ -11,6 +11,12 @@ import {
     signal,
     ElementRef,
 } from '@angular/core';
+// Add to existing imports at the top of the file
+import {
+  CdkDragDrop,
+  DragDropModule,
+  moveItemInArray,
+} from '@angular/cdk/drag-drop';
 import { CommonModule, DatePipe } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -35,6 +41,7 @@ import { TaskViewDetailsComponent } from "../dialogs/task-detail/task-detail";
         MatButtonModule,
         FormsModule,
         DatePipe,
+        DragDropModule,          // ← add this
         SprintModalComponent,
         ActivityModalComponent,
         TaskModalComponent,
@@ -194,6 +201,28 @@ export class SprintManagementComponent implements OnInit, OnChanges {
 
     // ─── Data loading ────────────────────────────────────────────────────────
 
+
+
+onSprintDrop(event: CdkDragDrop<any[]>): void {
+    if (event.previousIndex === event.currentIndex) return;
+
+    // Optimistic UI update
+    this.sprints.update(list => {
+        const updated = [...list];
+        moveItemInArray(updated, event.previousIndex, event.currentIndex);
+        return updated;
+    });
+
+    // Persist to backend
+    const orderedIds = this.sprints().map(s => s.id);
+    this.service.reorderSprints(orderedIds).subscribe({
+        error: () => {
+            // Rollback: re-fetch from DB if the call fails
+            this.loadSprints();
+        }
+    });
+}
+
     loadOptionnelKpis() {
         this.service.getOptionnelKpis(this.programmeId).subscribe({
             next: (data) => this.optionnelKpis.set(data),
@@ -237,19 +266,22 @@ export class SprintManagementComponent implements OnInit, OnChanges {
     // ─── Status helpers ───────────────────────────────────────────────────────
 
     getStatusLabel(sprint: any): string {
-        if (sprint.status === 'TERMINEE') return 'Terminé';
-        const now = new Date();
-        const end = new Date(sprint.dateFin || sprint.dateLimite);
-        const start = new Date(sprint.dateDebut);
-        if (now > end) return 'En retard';
-        if (now >= start && now <= end) return 'En cours';
-        return 'À venir';
-    }
+    if (sprint.status === 'TERMINEE') return 'Terminé';
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const end = new Date(sprint.dateFin || sprint.dateLimite); end.setHours(0, 0, 0, 0);
+    const start = new Date(sprint.dateDebut); start.setHours(0, 0, 0, 0);
+    if (today > end) return 'En retard';
+    if (today >= start && today <= end) return 'En cours';
+    return 'À venir';
+}
 
-    isLate(sprint: any): boolean {
-        if (sprint.status === 'TERMINEE') return false;
-        return new Date() > new Date(sprint.dateFin || sprint.dateLimite);
-    }
+
+   isLate(sprint: any): boolean {
+    if (sprint.status === 'TERMINEE') return false;
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const end = new Date(sprint.dateFin || sprint.dateLimite); end.setHours(0, 0, 0, 0);
+    return today > end;
+}
 
     isActivityLate(act: any): boolean {
         if (act.status === 'TERMINEE') return false;
@@ -290,18 +322,19 @@ export class SprintManagementComponent implements OnInit, OnChanges {
     }
 
     getSprintStatusBadge(sprint: any): string {
-        if (sprint.status === 'TERMINEE') return 'bg-green-500 text-white';
-        const now = new Date();
-        const end = new Date(sprint.dateFin || sprint.dateLimite);
-        const start = new Date(sprint.dateDebut);
-        if (now > end) return 'bg-red-500 text-white';
-        if (now >= start && now <= end) return 'bg-[#2a7b8c] text-white';
-        return 'bg-gray-500 text-white';
-    }
+    if (sprint.status === 'TERMINEE') return 'bg-green-500 text-white';
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const end = new Date(sprint.dateFin || sprint.dateLimite); end.setHours(0, 0, 0, 0);
+    const start = new Date(sprint.dateDebut); start.setHours(0, 0, 0, 0);
+    if (today > end) return 'bg-red-500 text-white';
+    if (today >= start && today <= end) return 'bg-[#2a7b8c] text-white';
+    return 'bg-gray-500 text-white';
+}
 
     getActivityStatusBadge(activity: any): string {
         if (activity.status === 'TERMINEE') return 'bg-green-500 text-white text-xs';
         if (this.isActivityLate(activity)) return 'bg-red-500 text-white text-xs';
+        if (activity.status === 'NON_DEMARREE') return 'bg-gray-500 text-white text-xs'; // ← add this
         return 'bg-[#2a7b8c] text-white text-xs';
     }
 
@@ -326,15 +359,23 @@ export class SprintManagementComponent implements OnInit, OnChanges {
     }
 
     isTaskLate(tache: any): boolean {
-        if (tache.status === 'TERMINEE') return false;
-        return new Date() > new Date(tache.dateLimite);
-    }
+    if (tache.status === 'TERMINEE') return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // strip time → midnight
+    const limit = new Date(tache.dateLimite);
+    limit.setHours(0, 0, 0, 0); // strip time → midnight
+    return today > limit; // only late if strictly AFTER the deadline day
+}
 
     getTaskDelayDays(tache: any): number {
-        if (tache.status === 'TERMINEE') return 0;
-        const diff = new Date().getTime() - new Date(tache.dateLimite).getTime();
-        return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
-    }
+    if (tache.status === 'TERMINEE') return 0;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const limit = new Date(tache.dateLimite);
+    limit.setHours(0, 0, 0, 0);
+    const diff = today.getTime() - limit.getTime();
+    return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+}
 
     // ─── Checkbox toggle ─────────────────────────────────────────────────────
 

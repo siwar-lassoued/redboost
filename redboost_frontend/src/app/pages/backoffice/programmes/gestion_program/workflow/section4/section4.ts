@@ -84,29 +84,20 @@ export class RapportSection4Component implements OnInit, OnChanges {
         private http: HttpClient
     ) {}
 
-    ngOnInit(): void {
-        if (this.recommendations && this.recommendations.length > 0) {
-            this.localRecommendations = JSON.parse(JSON.stringify(this.recommendations));
-        } else {
-            this.localRecommendations = [{ id: '1', content: '' }];
-        }
-        this.localConclusionText = this.conclusionText || '';
-        this.isInitialized = true;
-    }
+  ngOnInit(): void {
+    this.localRecommendations = (this.recommendations?.length > 0)
+        ? [{ ...this.recommendations[0] }]
+        : [{ id: '1', content: '' }];
+    this.localConclusionText = this.conclusionText || '';
+    this.isInitialized = true;
+}
 
     ngOnChanges(changes: SimpleChanges): void {
-        if (!this.isInitialized) {
-            if (changes['recommendations']) {
-                if (this.recommendations && this.recommendations.length > 0) {
-                    this.localRecommendations = JSON.parse(JSON.stringify(this.recommendations));
-                } else {
-                    this.localRecommendations = [{ id: '1', content: '' }];
-                }
-            }
-            if (changes['conclusionText']) {
-                this.localConclusionText = this.conclusionText || '';
-            }
-        }
+      if (changes['recommendations']) {
+      this.localRecommendations = (this.recommendations?.length > 0)
+        ? [{ ...this.recommendations[0] }]
+        : [{ id: '1', content: '' }];
+}
     }
 
     emitChanges(): void {
@@ -118,18 +109,6 @@ export class RapportSection4Component implements OnInit, OnChanges {
 
     // ─── Recommendations ────────────────────────────────────────────────────
 
-    addRecommendation(): void {
-        const newId = (this.localRecommendations.length + 1).toString();
-        this.localRecommendations.push({ id: newId, content: '' });
-        this.emitChanges();
-    }
-
-    removeRecommendation(index: number): void {
-        if (this.localRecommendations.length > 1) {
-            this.localRecommendations.splice(index, 1);
-            this.emitChanges();
-        }
-    }
 
     onRecommendationChange(): void {
         this.emitChanges();

@@ -36,10 +36,6 @@ public class ObjectifSpecifique {
     @Builder.Default
     private List<Resultat> resultats = new ArrayList<>();
 
-    @OneToMany(mappedBy = "objectifSpecifique", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private List<ResultatTransversal> resultatsTransversaux = new ArrayList<>();
-
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "objectif_specifique_kpi",

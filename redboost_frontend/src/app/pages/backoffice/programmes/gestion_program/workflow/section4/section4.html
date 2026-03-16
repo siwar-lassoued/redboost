@@ -6,11 +6,7 @@
         <div class="recommendations-header">
             <p>Formulez vos conclusions et recommandations</p>
             <div class="recommendations-actions">
-                <button class="btn-add" (click)="addRecommendation()">
-                    <i class="icon-plus"></i>
-                    Ajouter une recommandation
-                </button>
-
+               
                 <button class="btn-rapport-per" (click)="openPeriodicReportDialog()">
                     <i class="far fa-calendar-alt"></i> <span>Rapport périodique</span>
                 </button>
@@ -25,20 +21,13 @@
             </div>
         </div>
 
-        <div class="recommendations-list">
-            <div *ngFor="let rec of localRecommendations; let i = index" class="recommendation-card">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <h4>Recommandation #{{ i + 1 }}</h4>
-                    <button *ngIf="localRecommendations.length > 1" class="btn-icon" (click)="removeRecommendation(i)"
-                            style="background: none; border: 1px solid #e5e7eb; padding: 0.25rem 0.5rem; cursor: pointer;">
-                        <i class="icon-delete"></i>
-                    </button>
-                </div>
-                <textarea [(ngModel)]="rec.content" (ngModelChange)="onRecommendationChange()"
-                          placeholder="Saisissez votre recommandation..." rows="3">
-                </textarea>
-            </div>
-        </div>
+       <div class="recommendations-list">
+    <div class="recommendation-card">
+        <textarea [(ngModel)]="localRecommendations[0].content" (ngModelChange)="onRecommendationChange()"
+                  placeholder="Saisissez votre recommandation..." rows="10">
+        </textarea>
+    </div>
+</div>
 
         <div class="section-footer">
             <button class="btn-primary-outline" (click)="exportToPdf()" [disabled]="isLoading || !rapportId"

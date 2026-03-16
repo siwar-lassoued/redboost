@@ -20,8 +20,5 @@ public class ObjectifSpecifiqueDTO {
     private List<ResultatDTO> resultats = new ArrayList<>();
 
     @Builder.Default
-    private List<ResultatTransversalDTO> resultatsTransversaux = new ArrayList<>();
-
-    @Builder.Default
     private List<Long> kpiIds = new ArrayList<>();
 }

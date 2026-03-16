@@ -116,28 +116,23 @@ export class UserProfileComponent implements OnInit {
      */
     private fetchProfilePicture(url: string): Observable<SafeUrl | string> {
         if (!url) {
-            console.log('No URL provided, using default avatar');
             return of(this.defaultAvatar);
         }
 
-        console.log('Processing profile picture URL:', url);
 
         // Check cache first
         if (this.avatarUrlCache.has(url)) {
-            console.log('Returning cached image for:', url);
             return of(this.avatarUrlCache.get(url)!);
         }
 
         // For data URLs, return directly
         if (url.startsWith('data:')) {
-            console.log('Data URL detected, returning directly');
             return of(url);
         }
 
         // For /uploads/* paths (static resources served by Spring), construct full URL
         // These are served by WebConfig's ResourceHandlerRegistry and don't need auth headers
         const fullUrl = this.getImageUrl(url);
-        console.log('Constructed full URL:', fullUrl);
         
         // Cache and return the URL directly - no need to fetch as blob
         this.avatarUrlCache.set(url, fullUrl);
@@ -147,7 +142,6 @@ export class UserProfileComponent implements OnInit {
     fetchUserProfile(): void {
         const accessToken = localStorage.getItem('accessToken');
         if (!accessToken) {
-            console.error('No access token found');
             this.messageService.add({
                 severity: 'error',
                 summary: 'Error',
@@ -163,7 +157,6 @@ export class UserProfileComponent implements OnInit {
 
         this.http.get(`${environment.apiUrl}/users/profile`, { headers }).subscribe({
             next: (response: any) => {
-                console.log('Profile response:', response);
                 
                 this.user = {
                     id: response.id || 0,
@@ -210,20 +203,16 @@ export class UserProfileComponent implements OnInit {
                 
                 // Load profile picture
                 if (this.user.profilePictureUrl) {
-                    console.log('Loading profile picture:', this.user.profilePictureUrl);
                     this.fetchProfilePicture(this.user.profilePictureUrl).subscribe((dataUrl) => {
                         this.profilePictureDataUrl = dataUrl;
-                        console.log('Profile picture loaded successfully:', dataUrl);
                     });
                 } else {
-                    console.log('No profile picture URL, using default avatar');
                     this.profilePictureDataUrl = this.defaultAvatar;
                 }
                 
                 this.isLoading = false;
             },
             error: (error) => {
-                console.error('Failed to fetch user profile:', error);
                 this.messageService.add({
                     severity: 'error',
                     summary: 'Error',
@@ -342,7 +331,6 @@ export class UserProfileComponent implements OnInit {
 
             const accessToken = localStorage.getItem('accessToken');
             if (!accessToken) {
-                console.error('No access token found');
                 this.messageService.add({
                     severity: 'error',
                     summary: 'Error',
@@ -356,10 +344,8 @@ export class UserProfileComponent implements OnInit {
                 Authorization: `Bearer ${accessToken}`,
             });
 
-            console.log('Uploading profile picture...');
             this.http.post(`${environment.apiUrl}/users/upload`, formData, { headers }).subscribe({
                 next: (response: any) => {
-                    console.log('Upload response:', response);
                     const imageUrl = response.imageUrl;
                     
                     // Update user object
@@ -370,7 +356,6 @@ export class UserProfileComponent implements OnInit {
                     
                     // Construct the full URL and display immediately
                     const fullImageUrl = this.getImageUrl(imageUrl);
-                    console.log('Setting new profile picture URL:', fullImageUrl);
                     
                     // Add cache buster to force browser to reload the image
                     const cacheBustedUrl = `${fullImageUrl}?t=${new Date().getTime()}`;
@@ -388,7 +373,6 @@ export class UserProfileComponent implements OnInit {
                     this.userService.setUser(this.user);
                 },
                 error: (error) => {
-                    console.error('Failed to upload image:', error);
                     this.messageService.add({
                         severity: 'error',
                         summary: 'Error',
@@ -442,7 +426,6 @@ export class UserProfileComponent implements OnInit {
 
         const accessToken = localStorage.getItem('accessToken');
         if (!accessToken) {
-            console.error('No access token found');
             this.messageService.add({
                 severity: 'error',
                 summary: 'Error',
@@ -475,7 +458,6 @@ export class UserProfileComponent implements OnInit {
                 this.userService.setUser(this.user);
             },
             error: (error) => {
-                console.error('Failed to update name:', error);
                 this.messageService.add({
                     severity: 'error',
                     summary: 'Error',

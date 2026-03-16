@@ -183,7 +183,6 @@ export class KpiManagementComponent implements OnInit {
 
         this.service.getProgrammeKpiValues(this.programmeId).subscribe({
             next: (data) => {
-                console.log('📊 Raw KPI data from backend:', data);
 
                 const processedData = data.map((item) => {
                     if (item.typesuivi === 'ENTREPRENEUR') {
@@ -243,7 +242,6 @@ export class KpiManagementComponent implements OnInit {
                     };
                 });
 
-                console.log('✅ Final processed data:', processedData);
                 this.programmeKpiValues.set(processedData);
                 this.applyFilters();
                 this.kpiValuesLoading.set(false);
@@ -445,7 +443,6 @@ export class KpiManagementComponent implements OnInit {
         this.programmeKpiValues.set([...this.programmeKpiValues()]);
         this.applyFilters();
 
-        console.log(`💾 Saving entrepreneur ${sourceEntrepreneur.userName}:`, entPayload);
 
         this.service
             .updateKpiValuesForEntrepreneur(
@@ -453,7 +450,6 @@ export class KpiManagementComponent implements OnInit {
             )
             .subscribe({
                 next: (response: any) => {
-                    console.log(`✅ Saved entrepreneur ${sourceEntrepreneur.userName}`, response);
 
                     if (kpi.typedesaisie === 'progression') {
                         // Backend returns null — compute cumulated total locally:
@@ -471,7 +467,6 @@ export class KpiManagementComponent implements OnInit {
                             ? String(response.valeurCible)
                             : sourceEntrepreneur.valeurCible;
 
-                        console.log(`📊 Cumul: ${existingTotal} + ${newProgress} = ${computedTotal} → valeurPrecedente: ${newPrecedente}`);
 
                         // Update the SOURCE object with the new cumulated total
                         sourceEntrepreneur.valeurPrecedente         = newPrecedente;
@@ -579,7 +574,6 @@ export class KpiManagementComponent implements OnInit {
                 next: () => {
                     kpi.isAttached = true;
                     this.updateGroupCounts();
-                    console.log(`✅ KPI Global "${kpi.nom}" attaché avec succès`);
                 },
                 error: (err) => {
                     console.error('Error adding global KPI', err);
@@ -595,7 +589,6 @@ export class KpiManagementComponent implements OnInit {
                 next: () => {
                     kpi.isAttached = false;
                     this.updateGroupCounts();
-                    console.log(`✅ KPI Global "${kpi.nom}" détaché`);
                 },
                 error: (err) => {
                     console.error('Error removing global KPI', err);
@@ -615,7 +608,6 @@ export class KpiManagementComponent implements OnInit {
     }
 
     saveKpiCard(kpi: any) {
-        console.log('💾 Saving KPI Card:', kpi);
 
         let globalChanged = false;
         let payload: any = {
@@ -664,11 +656,9 @@ export class KpiManagementComponent implements OnInit {
 
             if (globalChanged) {
                 kpi.saveStatus = 'saving';
-                console.log('📤 Saving global values:', payload);
 
                 this.service.updateProgrammeKpiValue(payload).subscribe({
                     next: (updated) => {
-                        console.log('✅ Saved - Backend response:', updated);
 
                         if (kpi.typedesaisie === 'progression') {
                             kpi.valeurPrecedente          = updated.valeurPrecedente;

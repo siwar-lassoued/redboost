@@ -72,7 +72,6 @@ export class AuthService {
                     this.token = response.accessToken;
                 }),
                 catchError((error) => {
-                    console.error('Token refresh failed:', error);
                     // Clear tokens on refresh failure
                     localStorage.removeItem('accessToken');
                     localStorage.removeItem('refreshToken');
@@ -94,7 +93,6 @@ export class AuthService {
             const result = await signInWithPopup(this.auth, provider);
             const idToken = await result.user?.getIdToken();
 
-            console.log('Firebase ID Token:', idToken);
 
             const loginPayload = { idToken };
 
@@ -102,7 +100,6 @@ export class AuthService {
                 withCredentials: true,
             });
         } catch (error) {
-            console.error('Google login error:', error);
             this.messageService.add({
                 severity: 'error',
                 summary: 'Google Error',
@@ -122,7 +119,6 @@ export class AuthService {
             const decodedToken: any = jwtDecode(token);
             return decodedToken.role; // Matches "role" claim from JwtUtil
         } catch (error) {
-            console.error('Error decoding token:', error);
             return null;
         }
     }
@@ -157,7 +153,6 @@ export class AuthService {
             const decodedToken: any = jwtDecode(token);
             return decodedToken.userId; // Matches "userId" claim from JwtUtil
         } catch (error) {
-            console.error('Erreur lors du dÃ©codage du token:', error);
             return null;
         }
     }
@@ -170,7 +165,6 @@ export class AuthService {
             .post(`${this.API_URL}/logout`, {}, { withCredentials: true })
             .pipe(
                 catchError((error) => {
-                    console.error('Logout failed:', error);
                     return throwError(error);
                 }),
             );
@@ -187,14 +181,12 @@ export class AuthService {
 
         try {
             const decodedToken: any = jwtDecode(token);
-            console.log('Decoded Token:', decodedToken); // Debug log
             return of({
                 id: parseInt(decodedToken.userId, 10),
                 role: decodedToken.role,
                 email: decodedToken.sub, // Use sub claim as email since that's where it's stored in the token
             });
         } catch (error) {
-            console.error('Token decode error:', error);
             return of(null);
         }
     }

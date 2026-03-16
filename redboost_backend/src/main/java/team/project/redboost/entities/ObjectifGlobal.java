@@ -35,4 +35,8 @@ public class ObjectifGlobal {
     @OneToMany(mappedBy = "objectifGlobal", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<ObjectifSpecifique> objectifsSpecifiques = new ArrayList<>();
+
+    @OneToMany(mappedBy = "objectifGlobal", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<ResultatTransversal> resultatsTransversaux = new ArrayList<>();
 }

@@ -6,7 +6,9 @@ import com.lowagie.text.Image;
 import com.lowagie.text.Rectangle;
 import com.lowagie.text.pdf.*;
 import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.awt.Color;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -16,6 +18,7 @@ import com.lowagie.text.Phrase;
 import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
 import lombok.RequiredArgsConstructor;
+import org.apache.poi.util.Units;
 import org.apache.poi.xwpf.usermodel.*;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.*;
 import org.springframework.beans.factory.annotation.Value;
@@ -41,6 +44,9 @@ public class RapportService {
 
     @Value("${file.upload-dir:uploads}")
     private String uploadDir;
+
+    @Value("${report.expertise-france.logo-path}")
+    private String expertiseFranceLogoPath;
 
     private final RapportRepository rapportRepository;
     private final ProgrammeRepository programmeRepository;
@@ -217,12 +223,12 @@ public class RapportService {
     }
 
     // ResultatTransversal operations
-    public ResultatTransversalDTO addResultatTransversal(Long objectifSpecifiqueId, ResultatTransversalDTO dto) {
-        ObjectifSpecifique objectifSpecifique = objectifSpecifiqueRepository.findById(objectifSpecifiqueId)
-                .orElseThrow(() -> new RuntimeException("ObjectifSpecifique not found"));
+    public ResultatTransversalDTO addResultatTransversal(Long objectifGlobalId, ResultatTransversalDTO dto) {
+        ObjectifGlobal objectifGlobal = objectifGlobalRepository.findById(objectifGlobalId)
+                .orElseThrow(() -> new RuntimeException("ObjectifGlobal not found"));
 
         ResultatTransversal resultat = ResultatTransversal.builder()
-                .objectifSpecifique(objectifSpecifique)
+                .objectifGlobal(objectifGlobal)
                 .nom(dto.getNom())
                 .description(dto.getDescription())
                 .build();
@@ -288,6 +294,9 @@ public class RapportService {
                 .objectifsSpecifiques(og.getObjectifsSpecifiques().stream()
                         .map(this::convertObjectifSpecifiqueToDTO)
                         .collect(Collectors.toList()))
+                .resultatsTransversaux(og.getResultatsTransversaux().stream()
+                        .map(this::convertResultatTransversalToDTO)
+                        .collect(Collectors.toList()))
                 .build();
     }
 
@@ -299,9 +308,6 @@ public class RapportService {
                 .description(os.getDescription())
                 .resultats(os.getResultats().stream()
                         .map(this::convertResultatToDTO)
-                        .collect(Collectors.toList()))
-                .resultatsTransversaux(os.getResultatsTransversaux().stream()
-                        .map(this::convertResultatTransversalToDTO)
                         .collect(Collectors.toList()))
                 .kpiIds(os.getKpis().stream()
                         .map(BackofficeKpi::getId)
@@ -324,7 +330,7 @@ public class RapportService {
     private ResultatTransversalDTO convertResultatTransversalToDTO(ResultatTransversal resultat) {
         return ResultatTransversalDTO.builder()
                 .id(resultat.getId())
-                .objectifSpecifiqueId(resultat.getObjectifSpecifique().getId())
+                .objectifGlobalId(resultat.getObjectifGlobal().getId())
                 .nom(resultat.getNom())
                 .description(resultat.getDescription())
                 .kpiIds(resultat.getKpis().stream()
@@ -494,51 +500,51 @@ public class RapportService {
                         } else {
                             os.getResultats().clear();
                         }
-
-                        // --- Handle Resultats Transversaux (Nested Level 2) ---
-                        if (osDTO.getResultatsTransversaux() != null) {
-                            List<ResultatTransversalDTO> incomingTransDTOs = osDTO.getResultatsTransversaux();
-                            List<ResultatTransversal> existingTrans = os.getResultatsTransversaux();
-
-                            List<Long> incomingTransIds = incomingTransDTOs.stream()
-                                    .map(ResultatTransversalDTO::getId)
-                                    .filter(id -> id != null)
-                                    .collect(Collectors.toList());
-
-                            existingTrans.removeIf(r -> r.getId() != null && !incomingTransIds.contains(r.getId()));
-
-                            for (ResultatTransversalDTO rtDTO : incomingTransDTOs) {
-                                ResultatTransversal res;
-                                if (rtDTO.getId() != null) {
-                                    res = existingTrans.stream()
-                                            .filter(item -> item.getId().equals(rtDTO.getId()))
-                                            .findFirst()
-                                            .orElseGet(() -> {
-                                                ResultatTransversal newRes = new ResultatTransversal();
-                                                newRes.setObjectifSpecifique(os);
-                                                existingTrans.add(newRes);
-                                                return newRes;
-                                            });
-                                } else {
-                                    res = new ResultatTransversal();
-                                    res.setObjectifSpecifique(os);
-                                    existingTrans.add(res);
-                                }
-
-                                res.setNom(rtDTO.getNom());
-                                res.setDescription(rtDTO.getDescription());
-
-                                if (rtDTO.getKpiIds() != null) {
-                                    List<BackofficeKpi> kpis = backofficeKpiRepository.findAllById(rtDTO.getKpiIds());
-                                    res.setKpis(kpis);
-                                }
-                            }
-                        } else {
-                            os.getResultatsTransversaux().clear();
-                        }
                     }
                 } else {
                     og.getObjectifsSpecifiques().clear();
+                }
+
+                // --- Handle Resultats Transversaux (Nested Level 1) ---
+                if (ogDTO.getResultatsTransversaux() != null) {
+                    List<ResultatTransversalDTO> incomingTransDTOs = ogDTO.getResultatsTransversaux();
+                    List<ResultatTransversal> existingTrans = og.getResultatsTransversaux();
+
+                    List<Long> incomingTransIds = incomingTransDTOs.stream()
+                            .map(ResultatTransversalDTO::getId)
+                            .filter(id -> id != null)
+                            .collect(Collectors.toList());
+
+                    existingTrans.removeIf(r -> r.getId() != null && !incomingTransIds.contains(r.getId()));
+
+                    for (ResultatTransversalDTO rtDTO : incomingTransDTOs) {
+                        ResultatTransversal res;
+                        if (rtDTO.getId() != null) {
+                            res = existingTrans.stream()
+                                    .filter(item -> item.getId().equals(rtDTO.getId()))
+                                    .findFirst()
+                                    .orElseGet(() -> {
+                                        ResultatTransversal newRes = new ResultatTransversal();
+                                        newRes.setObjectifGlobal(og);
+                                        existingTrans.add(newRes);
+                                        return newRes;
+                                    });
+                        } else {
+                            res = new ResultatTransversal();
+                            res.setObjectifGlobal(og);
+                            existingTrans.add(res);
+                        }
+
+                        res.setNom(rtDTO.getNom());
+                        res.setDescription(rtDTO.getDescription());
+
+                        if (rtDTO.getKpiIds() != null) {
+                            List<BackofficeKpi> kpis = backofficeKpiRepository.findAllById(rtDTO.getKpiIds());
+                            res.setKpis(kpis);
+                        }
+                    }
+                } else {
+                    og.getResultatsTransversaux().clear();
                 }
             }
         } else {
@@ -776,6 +782,63 @@ public class RapportService {
             addEFSubSectionLetter(document, "A. Résultats", h2Font, EF_GOLD);
 
             for (ObjectifGlobal og : rapport.getObjectifsGlobaux()) {
+
+                // NEW: Global Objective Header
+                Paragraph ogHeader = new Paragraph("Objectif Global : " + og.getNom(), boldFont);
+                ogHeader.setSpacingBefore(8);
+                ogHeader.setSpacingAfter(4);
+                document.add(ogHeader);
+                
+                // Add Description for Global Objective
+                if (og.getDescription() != null && !og.getDescription().isBlank()) {
+                    Paragraph ogDesc = new Paragraph("Description : " + og.getDescription(), normalFont);
+                    ogDesc.setIndentationLeft(12);
+                    ogDesc.setSpacingAfter(6);
+                    document.add(ogDesc);
+                }
+
+                // MOVED: Résultats transversaux
+                if (og.getResultatsTransversaux() != null && !og.getResultatsTransversaux().isEmpty()) {
+
+                    PdfPTable rtTable = new PdfPTable(1);
+                    rtTable.setWidthPercentage(100);
+                    rtTable.setSpacingBefore(6);
+                    rtTable.setSpacingAfter(4);
+                    PdfPCell rtCell = new PdfPCell(new Phrase("Résultats Transversaux", boldFont));
+                    rtCell.setBackgroundColor(EF_BG);
+                    rtCell.setPadding(8); rtCell.setPaddingLeft(12);
+                    rtCell.setBorderColor(EF_GOLD);
+                    rtCell.setBorderWidthLeft(4); rtCell.setBorderWidthTop(0);
+                    rtCell.setBorderWidthRight(1); rtCell.setBorderWidthBottom(1);
+                    rtTable.addCell(rtCell);
+                    document.add(rtTable);
+
+                    for (ResultatTransversal rt : og.getResultatsTransversaux()) {
+                        Paragraph rtp = new Paragraph("  •  " + rt.getNom(), normalFont);
+                        rtp.setIndentationLeft(12);
+                        rtp.setSpacingBefore(3);
+                        document.add(rtp);
+
+                        if (rt.getDescription() != null && !rt.getDescription().isBlank()) {
+                            Paragraph rtDesc = new Paragraph("Description : " + rt.getDescription(), italicFont);
+                            rtDesc.setIndentationLeft(24);
+                            document.add(rtDesc);
+                        }
+
+                        if (rt.getKpis() != null && !rt.getKpis().isEmpty()) {
+                            for (BackofficeKpi kpi : rt.getKpis()) {
+                                Paragraph kp = new Paragraph(
+                                        "      ◦  KPI : " + kpi.getNom()
+                                                + "  (" + kpi.getUniteMesure() + ")",
+                                        italicFont);
+                                kp.setIndentationLeft(24);
+                                document.add(kp);
+                            }
+                        }
+                    }
+                    document.add(efSpacer(6));
+                }
+
                 for (ObjectifSpecifique os : og.getObjectifsSpecifiques()) {
 
                     // 1. Résultats principaux
@@ -795,6 +858,13 @@ public class RapportService {
                         osCell.setBorderWidthRight(1); osCell.setBorderWidthBottom(1);
                         osTable.addCell(osCell);
                         document.add(osTable);
+                        
+                        if (os.getDescription() != null && !os.getDescription().isBlank()) {
+                            Paragraph osDesc = new Paragraph("Description : " + os.getDescription(), normalFont);
+                            osDesc.setIndentationLeft(12);
+                            osDesc.setSpacingAfter(4);
+                            document.add(osDesc);
+                        }
 
                         for (Resultat res : os.getResultats()) {
                             Paragraph rp = new Paragraph("  •  " + res.getNom(), normalFont);
@@ -802,44 +872,14 @@ public class RapportService {
                             rp.setSpacingBefore(3);
                             document.add(rp);
 
+                            if (res.getDescription() != null && !res.getDescription().isBlank()) {
+                                Paragraph resDesc = new Paragraph("Description : " + res.getDescription(), italicFont);
+                                resDesc.setIndentationLeft(24);
+                                document.add(resDesc);
+                            }
+
                             if (res.getKpis() != null && !res.getKpis().isEmpty()) {
                                 for (BackofficeKpi kpi : res.getKpis()) {
-                                    Paragraph kp = new Paragraph(
-                                            "      ◦  KPI : " + kpi.getNom()
-                                                    + "  (" + kpi.getUniteMesure() + ")",
-                                            italicFont);
-                                    kp.setIndentationLeft(24);
-                                    document.add(kp);
-                                }
-                            }
-                        }
-                        document.add(efSpacer(6));
-                    }
-
-                    // 2. Résultats transversaux
-                    if (os.getResultatsTransversaux() != null && !os.getResultatsTransversaux().isEmpty()) {
-
-                        PdfPTable rtTable = new PdfPTable(1);
-                        rtTable.setWidthPercentage(100);
-                        rtTable.setSpacingBefore(8);
-                        rtTable.setSpacingAfter(4);
-                        PdfPCell rtCell = new PdfPCell(new Phrase("Résultats Transversaux", boldFont));
-                        rtCell.setBackgroundColor(EF_BG);
-                        rtCell.setPadding(8); rtCell.setPaddingLeft(12);
-                        rtCell.setBorderColor(EF_GOLD);
-                        rtCell.setBorderWidthLeft(4); rtCell.setBorderWidthTop(0);
-                        rtCell.setBorderWidthRight(1); rtCell.setBorderWidthBottom(1);
-                        rtTable.addCell(rtCell);
-                        document.add(rtTable);
-
-                        for (ResultatTransversal rt : os.getResultatsTransversaux()) {
-                            Paragraph rtp = new Paragraph("  •  " + rt.getNom(), normalFont);
-                            rtp.setIndentationLeft(12);
-                            rtp.setSpacingBefore(3);
-                            document.add(rtp);
-
-                            if (rt.getKpis() != null && !rt.getKpis().isEmpty()) {
-                                for (BackofficeKpi kpi : rt.getKpis()) {
                                     Paragraph kp = new Paragraph(
                                             "      ◦  KPI : " + kpi.getNom()
                                                     + "  (" + kpi.getUniteMesure() + ")",
@@ -1386,378 +1426,7 @@ public class RapportService {
             throw new RuntimeException("Error generating Word document", e);
         }
     }
-
-//    private void generateStandardDocxContent(XWPFDocument document, Rapport rapport, Programme programme, LocalDate startDate, LocalDate endDate) {
-//        // Title
-//        XWPFParagraph title = document.createParagraph();
-//        title.setAlignment(ParagraphAlignment.CENTER);
-//        XWPFRun titleRun = title.createRun();
-//        titleRun.setText((startDate != null && endDate != null) ? "RAPPORT PÉRIODIQUE DE PROGRAMME" : "RAPPORT NARRATIF DE PROGRAMME");
-//        titleRun.setBold(true);
-//        titleRun.setFontSize(20);
-//        titleRun.setColor("245C67"); // PRIMARY
-//
-//        // Subtitle
-//        XWPFParagraph subtitle = document.createParagraph();
-//        subtitle.setAlignment(ParagraphAlignment.CENTER);
-//        XWPFRun subtitleRun = subtitle.createRun();
-//        String subText = (startDate != null && endDate != null)
-//                ? "Période du " + startDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + " au " + endDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-//                : "Généré par RedBoost Platform";
-//        subtitleRun.setText(subText);
-//        subtitleRun.setFontSize(10);
-//        subtitleRun.setColor("787878");
-//        subtitleRun.addBreak();
-//
-//        // 1. FICHE D'IDENTITÉ
-//        createSectionTitle(document, "1. FICHE D'IDENTITÉ DU PROGRAMME", "245C67");
-//
-//        XWPFTable infoTable = document.createTable();
-//        infoTable.setWidth("100%");
-//        if (infoTable.getNumberOfRows() > 0) infoTable.removeRow(0);
-//
-//        String secteursList = programme.getSecteurs().stream()
-//                .map(Secteur::getNom)
-//                .collect(Collectors.joining(", "));
-//
-//        addStyledTableRow(infoTable, "Nom du Projet", programme.getNom(), false, "DCE9EF", "FFFFFF");
-//        addStyledTableRow(infoTable, "Type", programme.getTypeProgramme(), true, "DCE9EF", "FAFAFA");
-//        addStyledTableRow(infoTable, "Période", programme.getDateDebut() + " au " + programme.getDateFin(), false, "DCE9EF", "FFFFFF");
-//        addStyledTableRow(infoTable, "Statut", programme.getStatut().toString(), true, "DCE9EF", "FAFAFA");
-//        addStyledTableRow(infoTable, "Bénéficiaires", String.valueOf(programme.getNombreBeneficiaires()), false, "DCE9EF", "FFFFFF");
-//        addStyledTableRow(infoTable, "Secteurs", secteursList, true, "DCE9EF", "FAFAFA");
-//
-//        document.createParagraph(); // Spacer
-//
-//        // 2. RÉSUMÉ EXÉCUTIF
-//        createSectionTitle(document, "2. RÉSUMÉ EXÉCUTIF", "245C67");
-//        createSubTitle(document, "Objectifs du Programme", "245C67");
-//        createParagraph(document, rapport.getObjectifsProgramme());
-//
-//        createSubTitle(document, "Résultats Clés", "245C67");
-//        createParagraph(document, rapport.getResultatsCles());
-//
-//        createSubTitle(document, "Impact Global", "245C67");
-//        createParagraph(document, rapport.getImpactGlobal());
-//
-//        // 3. CONTEXTE ET OBJECTIFS
-//        createSectionTitle(document, "3. CONTEXTE ET OBJECTIFS", "245C67");
-//
-//        for (ObjectifGlobal og : rapport.getObjectifsGlobaux()) {
-//            XWPFParagraph ogP = document.createParagraph();
-//            setParagraphLeftBorder(ogP, "245C67", STBorder.SINGLE, "12");
-//            XWPFRun ogR = ogP.createRun();
-//            ogR.setText("Objectif Global : " + og.getNom());
-//            ogR.setBold(true);
-//            ogR.setColor("245C67");
-//            ogR.setFontSize(12);
-//
-//            if (og.getDescription() != null) {
-//                XWPFParagraph descP = document.createParagraph();
-//                descP.setIndentationLeft(360);
-//                descP.createRun().setText(og.getDescription());
-//            }
-//
-//            for (ObjectifSpecifique os : og.getObjectifsSpecifiques()) {
-//                XWPFParagraph osP = document.createParagraph();
-//                osP.setIndentationLeft(360);
-//                osP.setSpacingBefore(100);
-//                XWPFRun osR = osP.createRun();
-//                osR.setText("▸ Objectif Spécifique : " + os.getNom());
-//                osR.setBold(true);
-//
-//                for (Resultat res : os.getResultats()) {
-//                    XWPFParagraph resP = document.createParagraph();
-//                    resP.setIndentationLeft(720);
-//                    resP.createRun().setText("• Résultat : " + res.getNom());
-//                }
-//                for (ResultatTransversal rt : os.getResultatsTransversaux()) {
-//                    XWPFParagraph rtP = document.createParagraph();
-//                    rtP.setIndentationLeft(720);
-//                    XWPFRun rtR = rtP.createRun();
-//                    rtR.setText("◦ Résultat Transversal : " + rt.getNom());
-//                    rtR.setItalic(true);
-//                }
-//            }
-//            document.createParagraph();
-//        }
-//
-//        // 4. MÉTHODOLOGIE ET RÉSULTATS
-//        createSectionTitle(document, "4. MÉTHODOLOGIE ET RÉSULTATS", "245C67");
-//
-//        List<Sprint> sprints = filterSprints(programme, startDate, endDate);
-//        if (sprints.isEmpty()) {
-//            createParagraph(document, "Aucun sprint trouvé dans cette période.");
-//        } else {
-//            for (Sprint sprint : sprints) {
-//                XWPFParagraph sprintP = document.createParagraph();
-//                setParagraphLeftBorder(sprintP, "245C67", STBorder.SINGLE, "12");
-//                setParagraphShading(sprintP, "DCE9EF");
-//                XWPFRun sprintR = sprintP.createRun();
-//                sprintR.setText("  SPRINT : " + sprint.getNom().toUpperCase());
-//                sprintR.setBold(true);
-//                sprintR.setColor("245C67");
-//
-//                if (sprint.getDescription() != null) {
-//                    XWPFParagraph descP = document.createParagraph();
-//                    descP.setIndentationLeft(360);
-//                    descP.createRun().setText(sprint.getDescription());
-//                }
-//
-//                List<Activite> activites = filterActivites(sprint, startDate, endDate);
-//                if (activites == null || activites.isEmpty()) {
-//                    XWPFParagraph noActP = document.createParagraph();
-//                    noActP.setIndentationLeft(360);
-//                    noActP.createRun().setText("Aucune activité enregistrée.");
-//                } else {
-//                    XWPFParagraph actHeader = document.createParagraph();
-//                    actHeader.setIndentationLeft(360);
-//                    actHeader.setSpacingBefore(100);
-//                    XWPFRun actHeaderR = actHeader.createRun();
-//                    actHeaderR.setText("Activités Réalisées");
-//                    actHeaderR.setBold(true);
-//
-//                    for (Activite act : activites) {
-//                        XWPFTable actTable = document.createTable();
-//                        actTable.setWidth("95%");
-//                        actTable.setTableAlignment(TableRowAlign.RIGHT);
-//                        if (actTable.getNumberOfRows() > 0) actTable.removeRow(0);
-//
-//                        XWPFTableRow row = actTable.createRow();
-//                        XWPFTableCell cell = row.getCell(0);
-//                        if (cell == null) cell = row.createCell();
-//
-//                        XWPFParagraph nameP = cell.addParagraph();
-//                        nameP.createRun().setText("▸ " + act.getNom());
-//
-//                        if (act.getObjectif() != null || act.getType() != null) {
-//                            XWPFParagraph metaP = cell.addParagraph();
-//                            XWPFRun metaR = metaP.createRun();
-//                            String metaText = (act.getObjectif() != null ? "Objectif : " + act.getObjectif() : "") +
-//                                    (act.getObjectif() != null && act.getType() != null ? "   |   " : "") +
-//                                    (act.getType() != null ? "Type : " + act.getType() : "");
-//                            metaR.setText(metaText);
-//                            metaR.setItalic(true);
-//                            metaR.setFontSize(9);
-//                        }
-//
-//                        if (act.getKpis() != null && !act.getKpis().isEmpty()) {
-//                            XWPFParagraph kpiHeader = cell.addParagraph();
-//                            kpiHeader.createRun().setText("Indicateurs :");
-//
-//                            for (ActiviteKpi kpi : act.getKpis()) {
-//                                if (kpi.getKpi() != null) {
-//                                    XWPFParagraph kpiP = cell.addParagraph();
-//                                    kpiP.setIndentationLeft(360);
-//                                    kpiP.createRun().setText("- " + kpi.getKpi().getNom() + ": " + (kpi.getValeurActuelle() != null ? kpi.getValeurActuelle() : "N/A"));
-//                                }
-//                            }
-//                        }
-//
-//                        document.createParagraph();
-//                    }
-//                }
-//            }
-//        }
-//
-//        // 5. CONCLUSION
-//        createSectionTitle(document, "5. CONCLUSION & RECOMMANDATIONS", "245C67");
-//        createParagraph(document, rapport.getConclusionRecommandations());
-//    }
-
-//    private void generateExpertiseFranceDocxContent(XWPFDocument document, Rapport rapport, Programme programme, LocalDate startDate, LocalDate endDate) {
-//        // Title
-//        XWPFParagraph title = document.createParagraph();
-//        title.setAlignment(ParagraphAlignment.CENTER);
-//        XWPFRun titleRun = title.createRun();
-//        titleRun.setText("RAPPORT EXPERTISE FRANCE");
-//        titleRun.setBold(true);
-//        titleRun.setFontSize(20);
-//        titleRun.setColor("003189"); // EF_NAVY
-//
-//        // Subtitle
-//        XWPFParagraph subtitle = document.createParagraph();
-//        subtitle.setAlignment(ParagraphAlignment.CENTER);
-//        XWPFRun subtitleRun = subtitle.createRun();
-//        String subText = (startDate != null && endDate != null)
-//                ? "Période du " + startDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + " au " + endDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-//                : "Généré par RedBoost Platform";
-//        subtitleRun.setText(subText);
-//        subtitleRun.setFontSize(10);
-//        subtitleRun.setColor("64738C"); // EF_MUTED
-//        subtitleRun.addBreak();
-//
-//        // I. INFORMATIONS GÉNÉRALES
-//        createSectionTitle(document, "I. Informations Générales du Programme", "003189");
-//
-//        XWPFTable infoTable = document.createTable();
-//        infoTable.setWidth("100%");
-//        if (infoTable.getNumberOfRows() > 0) infoTable.removeRow(0);
-//
-//        String secteursList = programme.getSecteurs().stream()
-//                .map(Secteur::getNom)
-//                .collect(Collectors.joining(", "));
-//
-//        addStyledTableRow(infoTable, "Nom du Projet", programme.getNom(), false, "DCE6F5", "FFFFFF");
-//        addStyledTableRow(infoTable, "Type", programme.getTypeProgramme(), true, "DCE6F5", "F8FAFD");
-//        addStyledTableRow(infoTable, "Période", programme.getDateDebut() + " au " + programme.getDateFin(), false, "DCE6F5", "FFFFFF");
-//        addStyledTableRow(infoTable, "Statut", programme.getStatut().toString(), true, "DCE6F5", "F8FAFD");
-//        addStyledTableRow(infoTable, "Bénéficiaires", String.valueOf(programme.getNombreBeneficiaires()), false, "DCE6F5", "FFFFFF");
-//        addStyledTableRow(infoTable, "Secteurs", secteursList, true, "DCE6F5", "F8FAFD");
-//
-//        document.createParagraph();
-//
-//        // II. RÉSUMÉ EXÉCUTIF
-//        createSectionTitle(document, "II. Résumé Exécutif", "003189");
-//        createSubTitle(document, "Objectifs du Programme", "0055A4");
-//        createParagraph(document, rapport.getObjectifsProgramme());
-//
-//        createSubTitle(document, "Résultats Clés", "0055A4");
-//        createParagraph(document, rapport.getResultatsCles());
-//
-//        createSubTitle(document, "Impact Global", "0055A4");
-//        createParagraph(document, rapport.getImpactGlobal());
-//
-//        // III. RÉSULTATS ET ACTIVITÉS
-//        createSectionTitle(document, "III. Résultats et Activités", "003189");
-//
-//        // A. Résultats
-//        createSubTitle(document, "A. Résultats", "C8A84B"); // Gold
-//
-//        for (ObjectifGlobal og : rapport.getObjectifsGlobaux()) {
-//            for (ObjectifSpecifique os : og.getObjectifsSpecifiques()) {
-//                if ((os.getResultats() != null && !os.getResultats().isEmpty()) || (os.getResultatsTransversaux() != null && !os.getResultatsTransversaux().isEmpty())) {
-//
-//                    XWPFParagraph osP = document.createParagraph();
-//                    setParagraphLeftBorder(osP, "0055A4", STBorder.SINGLE, "12");
-//                    setParagraphShading(osP, "DCE6F5");
-//                    XWPFRun osR = osP.createRun();
-//                    osR.setText("Résultats Principaux — Objectif Spécifique : " + os.getNom());
-//                    osR.setBold(true);
-//
-//                    if (os.getResultats() != null) {
-//                        for (Resultat res : os.getResultats()) {
-//                            XWPFParagraph resP = document.createParagraph();
-//                            resP.setIndentationLeft(360);
-//                            resP.createRun().setText("• " + res.getNom());
-//
-//                            if (res.getKpis() != null) {
-//                                for (BackofficeKpi kpi : res.getKpis()) {
-//                                    XWPFParagraph kpiP = document.createParagraph();
-//                                    kpiP.setIndentationLeft(720);
-//                                    XWPFRun kpiR = kpiP.createRun();
-//                                    kpiR.setText("◦ KPI : " + kpi.getNom() + " (" + kpi.getUniteMesure() + ")");
-//                                    kpiR.setItalic(true);
-//                                }
-//                            }
-//                        }
-//                    }
-//
-//                    if (os.getResultatsTransversaux() != null && !os.getResultatsTransversaux().isEmpty()) {
-//                        XWPFParagraph rtHeader = document.createParagraph();
-//                        rtHeader.setSpacingBefore(100);
-//                        setParagraphLeftBorder(rtHeader, "C8A84B", STBorder.SINGLE, "12");
-//                        setParagraphShading(rtHeader, "F4F6FA");
-//                        XWPFRun rtR = rtHeader.createRun();
-//                        rtR.setText("Résultats Transversaux");
-//                        rtR.setBold(true);
-//
-//                        for (ResultatTransversal rt : os.getResultatsTransversaux()) {
-//                            XWPFParagraph rtP = document.createParagraph();
-//                            rtP.setIndentationLeft(360);
-//                            rtP.createRun().setText("• " + rt.getNom());
-//
-//                            if (rt.getKpis() != null) {
-//                                for (BackofficeKpi kpi : rt.getKpis()) {
-//                                    XWPFParagraph kpiP = document.createParagraph();
-//                                    kpiP.setIndentationLeft(720);
-//                                    XWPFRun kpiR = kpiP.createRun();
-//                                    kpiR.setText("◦ KPI : " + kpi.getNom() + " (" + kpi.getUniteMesure() + ")");
-//                                    kpiR.setItalic(true);
-//                                }
-//                            }
-//                        }
-//                    }
-//                    document.createParagraph();
-//                }
-//            }
-//        }
-//
-//        // B. Activités
-//        createSubTitle(document, "B. Activités", "C8A84B");
-//
-//        List<Sprint> sprints = filterSprints(programme, startDate, endDate);
-//        if (sprints != null) {
-//            for (Sprint sprint : sprints) {
-//                List<Activite> activites = filterActivites(sprint, startDate, endDate);
-//                if (activites != null) {
-//                    for (Activite act : activites) {
-//                        XWPFTable actTable = document.createTable();
-//                        actTable.setWidth("100%");
-//                        if (actTable.getNumberOfRows() > 0) actTable.removeRow(0);
-//
-//                        XWPFTableRow headerRow = actTable.createRow();
-//                        XWPFTableCell headerCell = headerRow.getCell(0);
-//                        if (headerCell == null) headerCell = headerRow.createCell();
-//                        headerCell.getCTTc().addNewTcPr().addNewShd().setFill("003189");
-//                        XWPFParagraph headerP = headerCell.addParagraph();
-//                        XWPFRun headerR = headerP.createRun();
-//                        headerR.setText("Activité : " + act.getNom());
-//                        headerR.setColor("FFFFFF");
-//                        headerR.setBold(true);
-//
-//                        XWPFTableRow contentRow = actTable.createRow();
-//                        XWPFTableCell contentCell = contentRow.getCell(0);
-//                        if (contentCell == null) contentCell = contentRow.createCell();
-//
-//                        contentCell.addParagraph().createRun().setText("Description : " + (act.getDescription() != null ? act.getDescription() : "N/A"));
-//
-//                        XWPFRun objR = contentCell.addParagraph().createRun();
-//                        objR.setText("Objectif/Résultat rattaché : " + (act.getObjectif() != null ? act.getObjectif() : "N/A"));
-//                        objR.setItalic(true);
-//
-//                        if (act.getKpis() != null && !act.getKpis().isEmpty()) {
-//                            XWPFParagraph kpiHeader = contentCell.addParagraph();
-//                            kpiHeader.setSpacingBefore(100);
-//                            XWPFRun kpiR = kpiHeader.createRun();
-//                            kpiR.setText("Indicateurs (KPIs) et Évolution :");
-//                            kpiR.setBold(true);
-//
-//                            for (ActiviteKpi ak : act.getKpis()) {
-//                                if (ak.getKpi() != null) {
-//                                    XWPFParagraph kpiP = contentCell.addParagraph();
-//                                    kpiP.setIndentationLeft(360);
-//                                    kpiP.createRun().setText("• " + ak.getKpi().getNom() + " — Actuel : " + (ak.getValeurActuelle() != null ? ak.getValeurActuelle() : "N/A"));
-//
-//                                    List<ActiviteKpiHistory> history = activiteKpiHistoryRepository.findByActiviteKpiIdOrderByChangedAtAsc(ak.getId());
-//                                    if (history != null && !history.isEmpty()) {
-//                                        for (ActiviteKpiHistory h : history) {
-//                                            XWPFParagraph histP = contentCell.addParagraph();
-//                                            histP.setIndentationLeft(720);
-//                                            XWPFRun histR = histP.createRun();
-//                                            histR.setText(h.getChangedAt().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + ": " + h.getValeurActuelle());
-//                                            histR.setFontSize(8);
-//                                            histR.setColor("64738C");
-//                                        }
-//                                    }
-//                                }
-//                            }
-//                        }
-//                        document.createParagraph();
-//                    }
-//                }
-//            }
-//        }
-//
-//        // IV. CONCLUSION
-//        createSectionTitle(document, "IV. Conclusion et Recommandations", "003189");
-//        XWPFParagraph concP = document.createParagraph();
-//        setParagraphLeftBorder(concP, "C8A84B", STBorder.SINGLE, "12");
-//        setParagraphShading(concP, "F4F6FA");
-//        XWPFRun concR = concP.createRun();
-//        concR.setText(rapport.getConclusionRecommandations() != null ? rapport.getConclusionRecommandations() : "Aucune conclusion enregistrée.");
-//    }
-
+    
     // --- Helper Methods for Word Generation ---
 
     private void setParagraphLeftBorder(XWPFParagraph paragraph, String color, STBorder.Enum borderType, String size) {
@@ -2105,17 +1774,35 @@ public class RapportService {
             doc.add(desc);
         }
 
+        // MOVED: Resultat Transversal before Specific Objectives
+        for (ResultatTransversal rt : og.getResultatsTransversaux()) {
+            doc.add(indentedBullet("Résultat Transversal : " + rt.getNom(), 28, "◦", F_ITALIC));
+            if (rt.getDescription() != null && !rt.getDescription().isBlank()) {
+                Paragraph rtDesc = new Paragraph(rt.getDescription(), F_NORMAL);
+                rtDesc.setIndentationLeft(42);
+                doc.add(rtDesc);
+            }
+        }
+
         for (ObjectifSpecifique os : og.getObjectifsSpecifiques()) {
             Paragraph osTitle = new Paragraph("  ▸  Objectif Spécifique : " + os.getNom(), F_LABEL);
             osTitle.setIndentationLeft(14);
             osTitle.setSpacingBefore(6);
             doc.add(osTitle);
 
+            if (os.getDescription() != null && !os.getDescription().isBlank()) {
+                Paragraph osDesc = new Paragraph(os.getDescription(), F_NORMAL);
+                osDesc.setIndentationLeft(28);
+                doc.add(osDesc);
+            }
+
             for (Resultat res : os.getResultats()) {
                 doc.add(indentedBullet("Résultat : " + res.getNom(), 28, "•", F_NORMAL));
-            }
-            for (ResultatTransversal rt : os.getResultatsTransversaux()) {
-                doc.add(indentedBullet("Résultat Transversal : " + rt.getNom(), 28, "◦", F_ITALIC));
+                if (res.getDescription() != null && !res.getDescription().isBlank()) {
+                    Paragraph resDesc = new Paragraph(res.getDescription(), F_NORMAL);
+                    resDesc.setIndentationLeft(42);
+                    doc.add(resDesc);
+                }
             }
         }
     }
@@ -2685,22 +2372,46 @@ public class RapportService {
         docxRemoveTblBorders(efBadge);
         efBadge.setWidth("40%");
         XWPFTableCell efCell = efBadge.getRow(0).getCell(0);
-        docxSetCellBg(efCell, EF_NAVY);
-        docxSetCellLeftBorder(efCell, EF_GOLD, "18");
-        XWPFParagraph efP = efCell.getParagraphs().get(0);
-        efP.setSpacingBefore(100);
-        efP.setSpacingAfter(100);
-        efP.setIndentationLeft(160);
-        XWPFRun efR1 = efP.createRun();
-        efR1.setText("EXPERTISE ");
-        efR1.setBold(true);
-        efR1.setFontSize(10);
-        efR1.setColor(WHITE);
-        XWPFRun efR2 = efP.createRun();
-        efR2.setText("FRANCE");
-        efR2.setBold(true);
-        efR2.setFontSize(10);
-        efR2.setColor(EF_GOLD);
+        // TRY TO INSERT LOGO HERE
+        boolean logoInserted = false;
+        try {
+             if (expertiseFranceLogoPath != null && !expertiseFranceLogoPath.isBlank()) {
+                Path path = Paths.get(expertiseFranceLogoPath);
+                 if (Files.exists(path)) {
+                     XWPFParagraph p = efCell.getParagraphs().get(0);
+                     XWPFRun r = p.createRun();
+                     try (InputStream is = new FileInputStream(path.toFile())) {
+                         // Add the picture - set width/height as needed.
+                         // 150x50 pixels approx -> 150*9525, 50*9525 EMUs if using pixels?
+                         // Better: width 200pt, height auto.
+                         r.addPicture(is, org.apache.poi.ss.usermodel.Workbook.PICTURE_TYPE_PNG, "expertise-france.png",
+                                 Units.toEMU(150), Units.toEMU(50));
+                         logoInserted = true;
+                     }
+                 }
+             }
+        } catch (Exception e) {
+             System.err.println("Could not insert EF logo: " + e.getMessage());
+        }
+
+        if (!logoInserted) {
+            docxSetCellBg(efCell, EF_NAVY);
+            docxSetCellLeftBorder(efCell, EF_GOLD, "18");
+            XWPFParagraph efP = efCell.getParagraphs().get(0);
+            efP.setSpacingBefore(100);
+            efP.setSpacingAfter(100);
+            efP.setIndentationLeft(160);
+            XWPFRun efR1 = efP.createRun();
+            efR1.setText("EXPERTISE ");
+            efR1.setBold(true);
+            efR1.setFontSize(10);
+            efR1.setColor(WHITE);
+            XWPFRun efR2 = efP.createRun();
+            efR2.setText("FRANCE");
+            efR2.setBold(true);
+            efR2.setFontSize(10);
+            efR2.setColor(EF_GOLD);
+        }
 
         // Separator rule under badge
         docxAddColoredRule(document, EF_BORDER, 20);
@@ -2777,12 +2488,79 @@ public class RapportService {
         efAddSubSectionLetter(document, "A. Résultats", EF_BLUE, EF_GOLD);
 
         for (ObjectifGlobal og : rapport.getObjectifsGlobaux()) {
+
+            // NEW: Global Objective Header
+            XWPFParagraph ogP = document.createParagraph();
+            ogP.setSpacingBefore(100);
+            ogP.setSpacingAfter(40);
+            XWPFRun ogR = ogP.createRun();
+            ogR.setText("Objectif Global : " + og.getNom());
+            ogR.setBold(true);
+            ogR.setFontSize(11);
+            ogR.setColor(EF_NAVY);
+            
+            // Add description for Global Objective
+            if (og.getDescription() != null && !og.getDescription().isBlank()) {
+                XWPFParagraph ogDesc = document.createParagraph();
+                ogDesc.setIndentationLeft(160);
+                ogDesc.setSpacingAfter(60);
+                XWPFRun ogDescR = ogDesc.createRun();
+                ogDescR.setText("Description : " + og.getDescription());
+                ogDescR.setFontSize(10);
+                ogDescR.setColor(EF_DARK);
+            }
+
+            // MOVED: Transversal results (gold left border + EF_BG)
+            if (og.getResultatsTransversaux() != null && !og.getResultatsTransversaux().isEmpty()) {
+                XWPFParagraph rtHeader = document.createParagraph();
+                rtHeader.setSpacingBefore(60);
+                setParagraphLeftBorder(rtHeader, EF_GOLD, STBorder.SINGLE, "18");
+                setParagraphShading(rtHeader, EF_BG);
+                rtHeader.setIndentationLeft(160);
+                XWPFRun rtHR = rtHeader.createRun();
+                rtHR.setText("Résultats Transversaux");
+                rtHR.setBold(true);
+                rtHR.setFontSize(10);
+                rtHR.setColor(EF_DARK);
+
+                for (ResultatTransversal rt : og.getResultatsTransversaux()) {
+                    XWPFParagraph rtP = document.createParagraph();
+                    rtP.setIndentationLeft(360);
+                    rtP.setSpacingBefore(40);
+                    XWPFRun rtR = rtP.createRun();
+                    rtR.setText("  •  " + rt.getNom());
+                    rtR.setFontSize(10);
+                    rtR.setColor(EF_DARK);
+                    
+                    if (rt.getDescription() != null && !rt.getDescription().isBlank()) {
+                        XWPFParagraph rtDesc = document.createParagraph();
+                        rtDesc.setIndentationLeft(520);
+                        XWPFRun rtDescR = rtDesc.createRun();
+                        rtDescR.setText("Description : " + rt.getDescription());
+                        rtDescR.setFontSize(9);
+                        rtDescR.setItalic(true);
+                        rtDescR.setColor(EF_MUTED);
+                    }
+
+                    if (rt.getKpis() != null) {
+                        for (BackofficeKpi kpi : rt.getKpis()) {
+                            XWPFParagraph kpiP = document.createParagraph();
+                            kpiP.setIndentationLeft(720);
+                            XWPFRun kpiR = kpiP.createRun();
+                            kpiR.setText("      ◦  KPI : " + kpi.getNom()
+                                    + "  (" + kpi.getUniteMesure() + ")");
+                            kpiR.setItalic(true);
+                            kpiR.setFontSize(9);
+                            kpiR.setColor(EF_MUTED);
+                        }
+                    }
+                }
+            }
+
             for (ObjectifSpecifique os : og.getObjectifsSpecifiques()) {
                 boolean hasResults     = os.getResultats() != null && !os.getResultats().isEmpty();
-                boolean hasTransversal = os.getResultatsTransversaux() != null
-                        && !os.getResultatsTransversaux().isEmpty();
 
-                if (!hasResults && !hasTransversal) continue;
+                if (!hasResults) continue;
 
                 // OS header bar (blue left border + light blue bg)
                 XWPFParagraph osP = document.createParagraph();
@@ -2795,6 +2573,17 @@ public class RapportService {
                 osR.setBold(true);
                 osR.setFontSize(10);
                 osR.setColor(EF_NAVY);
+                
+                if (os.getDescription() != null && !os.getDescription().isBlank()) {
+                    XWPFParagraph osDesc = document.createParagraph();
+                    osDesc.setIndentationLeft(160);
+                    osDesc.setSpacingAfter(40);
+                    XWPFRun osDescR = osDesc.createRun();
+                    osDescR.setText("Description : " + os.getDescription());
+                    osDescR.setFontSize(10);
+                    osDescR.setColor(EF_DARK);
+                }
+
 
                 // Principal results
                 if (hasResults) {
@@ -2806,46 +2595,19 @@ public class RapportService {
                         resR.setText("  •  " + res.getNom());
                         resR.setFontSize(10);
                         resR.setColor(EF_DARK);
+                        
+                        if (res.getDescription() != null && !res.getDescription().isBlank()) {
+                            XWPFParagraph resDesc = document.createParagraph();
+                            resDesc.setIndentationLeft(520);
+                            XWPFRun resDescR = resDesc.createRun();
+                            resDescR.setText("Description : " + res.getDescription());
+                            resDescR.setFontSize(9);
+                            resDescR.setItalic(true);
+                            resDescR.setColor(EF_MUTED);
+                        }
 
                         if (res.getKpis() != null) {
                             for (BackofficeKpi kpi : res.getKpis()) {
-                                XWPFParagraph kpiP = document.createParagraph();
-                                kpiP.setIndentationLeft(720);
-                                XWPFRun kpiR = kpiP.createRun();
-                                kpiR.setText("      ◦  KPI : " + kpi.getNom()
-                                        + "  (" + kpi.getUniteMesure() + ")");
-                                kpiR.setItalic(true);
-                                kpiR.setFontSize(9);
-                                kpiR.setColor(EF_MUTED);
-                            }
-                        }
-                    }
-                }
-
-                // Transversal results (gold left border + EF_BG)
-                if (hasTransversal) {
-                    XWPFParagraph rtHeader = document.createParagraph();
-                    rtHeader.setSpacingBefore(100);
-                    setParagraphLeftBorder(rtHeader, EF_GOLD, STBorder.SINGLE, "18");
-                    setParagraphShading(rtHeader, EF_BG);
-                    rtHeader.setIndentationLeft(160);
-                    XWPFRun rtHR = rtHeader.createRun();
-                    rtHR.setText("Résultats Transversaux");
-                    rtHR.setBold(true);
-                    rtHR.setFontSize(10);
-                    rtHR.setColor(EF_DARK);
-
-                    for (ResultatTransversal rt : os.getResultatsTransversaux()) {
-                        XWPFParagraph rtP = document.createParagraph();
-                        rtP.setIndentationLeft(360);
-                        rtP.setSpacingBefore(40);
-                        XWPFRun rtR = rtP.createRun();
-                        rtR.setText("  •  " + rt.getNom());
-                        rtR.setFontSize(10);
-                        rtR.setColor(EF_DARK);
-
-                        if (rt.getKpis() != null) {
-                            for (BackofficeKpi kpi : rt.getKpis()) {
                                 XWPFParagraph kpiP = document.createParagraph();
                                 kpiP.setIndentationLeft(720);
                                 XWPFRun kpiR = kpiP.createRun();
@@ -3058,9 +2820,30 @@ public class RapportService {
             descP.setSpacingBefore(60);
             descP.setSpacingAfter(60);
             XWPFRun descR = descP.createRun();
-            descR.setText(og.getDescription());
+            descR.setText("Description : " + og.getDescription());
             descR.setFontSize(10);
             descR.setColor(darkColor);
+        }
+
+        // MOVED: Resultat Transversal before Specific Objectives
+        for (ResultatTransversal rt : og.getResultatsTransversaux()) {
+            XWPFParagraph rtP = doc.createParagraph();
+            rtP.setIndentationLeft(720);
+            rtP.setSpacingBefore(40);
+            XWPFRun rtR = rtP.createRun();
+            rtR.setText("◦  Résultat Transversal : " + rt.getNom());
+            rtR.setFontSize(9);
+            rtR.setItalic(true);
+            rtR.setColor(mutedColor);
+            
+            if (rt.getDescription() != null && !rt.getDescription().isBlank()) {
+                XWPFParagraph rtDesc = doc.createParagraph();
+                rtDesc.setIndentationLeft(860);
+                XWPFRun rtDescR = rtDesc.createRun();
+                rtDescR.setText("Description : " + rt.getDescription());
+                rtDescR.setFontSize(9);
+                rtDescR.setColor(mutedColor);
+            }
         }
 
         for (ObjectifSpecifique os : og.getObjectifsSpecifiques()) {
@@ -3072,6 +2855,15 @@ public class RapportService {
             osR.setBold(true);
             osR.setFontSize(10);
             osR.setColor(darkColor);
+            
+            if (os.getDescription() != null && !os.getDescription().isBlank()) {
+                XWPFParagraph osDesc = doc.createParagraph();
+                osDesc.setIndentationLeft(420);
+                XWPFRun osDescR = osDesc.createRun();
+                osDescR.setText("Description : " + os.getDescription());
+                osDescR.setFontSize(10);
+                osDescR.setColor(darkColor);
+            }
 
             for (Resultat res : os.getResultats()) {
                 XWPFParagraph resP = doc.createParagraph();
@@ -3081,16 +2873,15 @@ public class RapportService {
                 resR.setText("•  Résultat : " + res.getNom());
                 resR.setFontSize(10);
                 resR.setColor(darkColor);
-            }
-            for (ResultatTransversal rt : os.getResultatsTransversaux()) {
-                XWPFParagraph rtP = doc.createParagraph();
-                rtP.setIndentationLeft(720);
-                rtP.setSpacingBefore(40);
-                XWPFRun rtR = rtP.createRun();
-                rtR.setText("◦  Résultat Transversal : " + rt.getNom());
-                rtR.setFontSize(9);
-                rtR.setItalic(true);
-                rtR.setColor(mutedColor);
+                
+                if (res.getDescription() != null && !res.getDescription().isBlank()) {
+                    XWPFParagraph resDesc = doc.createParagraph();
+                    resDesc.setIndentationLeft(800);
+                    XWPFRun resDescR = resDesc.createRun();
+                    resDescR.setText("Description : " + res.getDescription());
+                    resDescR.setFontSize(9);
+                    resDescR.setColor(darkColor);
+                }
             }
         }
         doc.createParagraph().setSpacingAfter(60);
@@ -3175,6 +2966,17 @@ public class RapportService {
         nameR.setBold(true);
         nameR.setFontSize(10);
         nameR.setColor(darkColor);
+        
+        if (act.getDescription() != null && !act.getDescription().isBlank()) {
+             XWPFParagraph descP = cell.addParagraph();
+             descP.setSpacingAfter(60);
+             descP.setIndentationLeft(140);
+             XWPFRun descR = descP.createRun();
+             descR.setText("Description : " + act.getDescription());
+             descR.setFontSize(10);
+             descR.setColor(darkColor);
+        }
+
 
         // Meta: objectif | type
         if (act.getObjectif() != null || act.getType() != null) {

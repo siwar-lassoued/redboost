@@ -352,6 +352,10 @@ export class ProgrammeService {
         return this.http.delete(`${this.api}/sprint-documents/${documentId}`);
     }
 
+
+    reorderSprints(sprintIds: number[]): Observable<void> {
+    return this.http.put<void>(`https://redboost.tn/api/v1/sprints/reorder`, sprintIds);
+}
     // Add to ProgrammeService class
 
     // ACTIVITY DOCUMENT METHODS

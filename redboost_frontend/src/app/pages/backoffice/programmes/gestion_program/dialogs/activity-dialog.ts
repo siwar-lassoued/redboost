@@ -51,13 +51,10 @@ interface KpiCategory {
                <div class="modal-header">
                    <div>
                         <h2 class="modal-title">
-                            {{ isEditing ? 'Modifier' : 'Créer' }} une nouvelle
+                            {{ isEditing ? 'Modifier' : 'Créer' }} une
                             activité
                        </h2>
-                       <p class="modal-subtitle">
-                           Entrez les détails de l'activité que vous souhaitez
-                            ajouter.
-                       </p>
+                       
                    </div>
                </div>
 

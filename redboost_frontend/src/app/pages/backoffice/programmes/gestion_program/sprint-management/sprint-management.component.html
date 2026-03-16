@@ -51,15 +51,19 @@
     </div>
 
     <!-- Sprint Cards -->
-    <div *ngIf="!sprintsLoading() && sprints().length > 0" class="space-y-4">
-
+<div *ngIf="!sprintsLoading() && sprints().length > 0"
+     class="space-y-4"
+     cdkDropList
+     (cdkDropListDropped)="onSprintDrop($event)">
         <!--
             ▶ Each sprint card has id="sprint-{id}" so applyDeepLink() can
               scroll to it if needed.
         -->
         <div *ngFor="let sprint of sprints()"
-             [id]="'sprint-' + sprint.id"
-             class="card-container">
+     [id]="'sprint-' + sprint.id"
+     class="card-container"
+     cdkDrag>
+    <div *cdkDragPlaceholder class="drag-placeholder"></div>
 
             <div class="overflow-hidden border-2 border-[#ea5073]/30 shadow-lg rounded-xl"
                  [class.ring-4]="deepLinkSprintId === sprint.id && !deepLinkActiviteId"
@@ -78,7 +82,7 @@
                                 <span class="badge rounded-full flex-shrink-0" [ngClass]="getSprintStatusBadge(sprint)">
                                     {{ getStatusLabel(sprint) }}
                                 </span>
-                                <span *ngIf="isLate(sprint) && sprint.status !== 'TERMINEE'"
+                                <span *ngIf="isLate(sprint) && sprint.status !== 'TERMINEE' "
                                       class="badge text-red-600 border-red-300 bg-red-50 rounded-full flex-shrink-0">
                                     <span class="icon-clock"></span> +{{ getDelayDays(sprint) }} jours de retard
                                 </span>
@@ -206,7 +210,7 @@
                                                     </h5>
                                                     <span class="badge rounded-full flex-shrink-0"
                                                           [ngClass]="getActivityStatusBadge(act)">
-                                                        {{ act.status === 'TERMINEE' ? 'Terminée' : isActivityLate(act) ? 'Retard' : 'En cours' }}
+{{ isActivityLate(act) && act.status !== 'TERMINEE' ? 'Retard' : formatStatus(act.status) }}
                                                     </span>
                                                     <span *ngIf="act.responsableId"
                                                           class="badge bg-[#2a7b8c]/10 text-[#2a7b8c] border-[#2a7b8c]/30 text-xs rounded-full flex-shrink-0">

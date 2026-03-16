@@ -12,7 +12,7 @@ import java.util.List;
 @Builder
 public class ResultatTransversalDTO {
     private Long id;
-    private Long objectifSpecifiqueId;
+    private Long objectifGlobalId;
     private String nom;
     private String description;
 

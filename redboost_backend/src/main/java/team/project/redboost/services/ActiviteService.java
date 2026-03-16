@@ -8,8 +8,14 @@ import team.project.redboost.entities.*;
 import team.project.redboost.repositories.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -26,6 +32,9 @@ public class ActiviteService {
     private final UserRepository userRepository;
     private final NotificationService notificationService; // Inject the new service
     private final ProgrammeKpiRepository programmeKpiRepository;
+    private final ProgrammeKpiService programmeKpiService;
+    private final ActiviteKpiHistoryRepository activiteKpiHistoryRepository;
+    private final TacheKpiHistoryRepository tacheKpiHistoryRepository;
 
     // ==================== CRUD ACTIVITÉ & TÂCHE ====================
     public Activite createActivity(Long sprintId, Activite activite, List<Long> kpiIds) {
@@ -40,6 +49,7 @@ public class ActiviteService {
         );
 
         activite.setSprint(sprint);
+        updateStatusBasedOnDate(activite);
         Activite saved = activiteRepository.save(activite);
 
         if (kpiIds != null && !kpiIds.isEmpty()) {
@@ -99,6 +109,7 @@ public class ActiviteService {
         }
         // 👆 END SAFE UPDATE 👆
 
+        updateStatusBasedOnDate(existing);
         Activite saved = activiteRepository.save(existing);
 
         // Replace KPIs logic (remains the same)
@@ -141,9 +152,32 @@ public class ActiviteService {
     public void deleteActivity(Long activityId) {
         Activite activite = activiteRepository.findById(activityId).orElse(null);
         if (activite != null) {
+            Long programmeId = (activite.getSprint() != null && activite.getSprint().getProgramme() != null)
+                ? activite.getSprint().getProgramme().getId() : null;
+
+            // For each KPI in the activity and its tasks, trigger an update with a negative delta
+            if (programmeId != null) {
+                // Handle ActiviteKpis
+                activiteKpiRepository.findByActiviteId(activityId).forEach(ak -> {
+                    double oldValue = parseDouble(ak.getValeurActuelle());
+                    if (oldValue != 0) {
+                        programmeKpiService.updateOperationalKpi(programmeId, ak.getKpiId(), -oldValue, activityId, null);
+                    }
+                });
+                // Handle TacheKpis within the activity
+                tacheRepository.findByActiviteId(activityId).forEach(tache -> {
+                    tacheKpiRepository.findByTacheId(tache.getId()).forEach(tk -> {
+                        double oldValue = parseDouble(tk.getValeurActuelle());
+                        if (oldValue != 0) {
+                            programmeKpiService.updateOperationalKpi(programmeId, tk.getKpiId(), -oldValue, null, tache.getId());
+                        }
+                    });
+                });
+            }
+
             Sprint sprint = activite.getSprint();
-            activiteRepository.deleteById(activityId);
-            // Check and update sprint status after deletion
+            activiteRepository.deleteById(activityId); // This will cascade delete Taches, TacheKpis, etc.
+            
             if (sprint != null) {
                 checkAndUpdateSprintStatus(sprint);
             }
@@ -180,6 +214,7 @@ public class ActiviteService {
         }
 
         tache.setActivite(activite);
+        updateStatusBasedOnDate(tache);
         Tache saved = tacheRepository.save(tache);
 
         if (kpiIds != null && !kpiIds.isEmpty()) {
@@ -246,10 +281,13 @@ public class ActiviteService {
         existing.setDifficulte(updated.getDifficulte());
         existing.setStatus(newStatus);
 
+        updateStatusBasedOnDate(existing);
+        Tache.StatusTache currentStatus = existing.getStatus();
+
         // Automatically set dateFinReel when status changes to TERMINEE
-        if (newStatus == Tache.StatusTache.TERMINEE && oldStatus != Tache.StatusTache.TERMINEE) {
+        if (currentStatus == Tache.StatusTache.TERMINEE && oldStatus != Tache.StatusTache.TERMINEE) {
             existing.setDateFinReel(LocalDate.now());
-        } else if (newStatus != Tache.StatusTache.TERMINEE && oldStatus == Tache.StatusTache.TERMINEE) {
+        } else if (currentStatus != Tache.StatusTache.TERMINEE && oldStatus == Tache.StatusTache.TERMINEE) {
             // Reset dateFinReel if task is reopened
             existing.setDateFinReel(null);
         }
@@ -337,9 +375,22 @@ public class ActiviteService {
     public void deleteTache(Long tacheId) {
         Tache tache = tacheRepository.findById(tacheId).orElse(null);
         if (tache != null) {
+            Long programmeId = (tache.getActivite() != null && tache.getActivite().getSprint() != null && tache.getActivite().getSprint().getProgramme() != null)
+                ? tache.getActivite().getSprint().getProgramme().getId() : null;
+
+            // For each KPI in the task, trigger an update with a negative delta
+            if (programmeId != null) {
+                tacheKpiRepository.findByTacheId(tacheId).forEach(tk -> {
+                    double oldValue = parseDouble(tk.getValeurActuelle());
+                    if (oldValue != 0) {
+                        programmeKpiService.updateOperationalKpi(programmeId, tk.getKpiId(), -oldValue, null, tacheId);
+                    }
+                });
+            }
+
             Activite activite = tache.getActivite();
             tacheRepository.deleteById(tacheId);
-            // Check and update activity status after deletion
+            
             if (activite != null) {
                 checkAndUpdateActiviteStatus(activite);
             }
@@ -352,7 +403,8 @@ public class ActiviteService {
 
     // ==================== DETAILED SPRINTS (with calculations) ====================
     public List<SprintDetailDTO> getSprintsWithDetails(Long programmeId) {
-        List<Sprint> sprints = sprintRepository.findByProgrammeId(programmeId);
+        // Correctly use ordered list
+        List<Sprint> sprints = sprintRepository.findByProgrammeIdOrderByOrderAsc(programmeId);
         return sprints.stream().map(this::mapToSprintDetailDTO).toList();
     }
 
@@ -736,10 +788,9 @@ public class ActiviteService {
     }
     
     // ==================== KPI VALUE UPDATES ====================
-// Add these methods to ActiviteService.java
 
     public List<ActiviteKpiValuesDTO> getActivitiesKpiValuesForProgramme(Long programmeId) {
-        List<Sprint> sprints = sprintRepository.findByProgrammeId(programmeId);
+        List<Sprint> sprints = sprintRepository.findByProgrammeIdOrderByOrderAsc(programmeId);
         List<ActiviteKpiValuesDTO> result = new ArrayList<>();
 
         for (Sprint sprint : sprints) {
@@ -781,7 +832,7 @@ public class ActiviteService {
     }
 
     public List<TacheKpiValuesDTO> getTachesKpiValuesForProgramme(Long programmeId) {
-        List<Sprint> sprints = sprintRepository.findByProgrammeId(programmeId);
+        List<Sprint> sprints = sprintRepository.findByProgrammeIdOrderByOrderAsc(programmeId);
         List<TacheKpiValuesDTO> result = new ArrayList<>();
 
         for (Sprint sprint : sprints) {
@@ -824,48 +875,207 @@ public class ActiviteService {
 
         return result;
     }
+    
     public void updateActiviteKpiValeur(Long activiteId, Long kpiId, String valeur) {
         ActiviteKpi ak = activiteKpiRepository.findByActiviteIdAndKpiId(activiteId, kpiId)
                 .orElseThrow(() -> new RuntimeException("KPI non trouvé pour cette activité"));
+        
+        BackofficeKpi kpi = kpiRepository.findById(kpiId)
+                .orElseThrow(() -> new RuntimeException("KPI non trouvé: " + kpiId));
+
+        String oldValue = ak.getValeurActuelle();
+        double delta;
+
+        boolean isProgression = "progression".equalsIgnoreCase(kpi.getTypedesaisie());
+
+        if (isProgression) {
+            delta = parseDouble(valeur);
+        } else {
+            delta = parseDouble(valeur) - parseDouble(oldValue);
+        }
+        
         ak.setValeurActuelle(valeur);
         activiteKpiRepository.save(ak);
+        
+        ActiviteKpiHistory history = ActiviteKpiHistory.builder()
+            .activiteKpiId(ak.getId())
+            .valeurPrecedente(oldValue)
+            .valeurActuelle(valeur)
+            .changedAt(LocalDateTime.now())
+            .build();
+        activiteKpiHistoryRepository.save(history);
+        
+        if (delta != 0) {
+            triggerProgrammeKpiUpdateFromActivite(activiteId, kpiId, delta);
+        }
     }
     
     public void updateActiviteKpiValeurAndCible(Long activiteId, Long kpiId, String valeur, String valeurCible) {
         ActiviteKpi ak = activiteKpiRepository.findByActiviteIdAndKpiId(activiteId, kpiId)
                 .orElseThrow(() -> new RuntimeException("KPI non trouvé pour cette activité"));
-        if (valeur != null) ak.setValeurActuelle(valeur);
-        if (valeurCible != null) ak.setValeurCible(valeurCible);
+        
+        BackofficeKpi kpi = kpiRepository.findById(kpiId)
+                .orElseThrow(() -> new RuntimeException("KPI non trouvé: " + kpiId));
+
+        String oldValue = ak.getValeurActuelle();
+        double delta = 0.0;
+
+        boolean isProgression = "progression".equalsIgnoreCase(kpi.getTypedesaisie());
+
+        if (valeur != null) {
+            if (isProgression) {
+                delta = parseDouble(valeur);
+            } else {
+                delta = parseDouble(valeur) - parseDouble(oldValue);
+            }
+            ak.setValeurActuelle(valeur);
+        }
+
+        if (valeurCible != null) {
+            ak.setValeurCible(valeurCible);
+        }
+        
         activiteKpiRepository.save(ak);
+        
+        if (valeur != null) {
+            ActiviteKpiHistory history = ActiviteKpiHistory.builder()
+                .activiteKpiId(ak.getId())
+                .valeurPrecedente(oldValue)
+                .valeurActuelle(valeur)
+                .changedAt(LocalDateTime.now())
+                .build();
+            activiteKpiHistoryRepository.save(history);
+        }
+        
+        if (delta != 0) {
+            triggerProgrammeKpiUpdateFromActivite(activiteId, kpiId, delta);
+        }
     }
 
     public void updateTacheKpiValeur(Long tacheId, Long kpiId, String valeur) {
         TacheKpi tk = tacheKpiRepository.findByTacheIdAndKpiId(tacheId, kpiId)
                 .orElseThrow(() -> new RuntimeException("KPI non trouvé pour cette tâche"));
+        
+        BackofficeKpi kpi = kpiRepository.findById(kpiId)
+                .orElseThrow(() -> new RuntimeException("KPI non trouvé: " + kpiId));
+
+        String oldValue = tk.getValeurActuelle();
+        double delta;
+
+        boolean isProgression = "progression".equalsIgnoreCase(kpi.getTypedesaisie());
+
+        if (isProgression) {
+            delta = parseDouble(valeur);
+        } else {
+            delta = parseDouble(valeur) - parseDouble(oldValue);
+        }
+        
         tk.setValeurActuelle(valeur);
         tacheKpiRepository.save(tk);
+        
+        TacheKpiHistory history = TacheKpiHistory.builder()
+            .tacheKpiId(tk.getId())
+            .valeurPrecedente(oldValue)
+            .valeurActuelle(valeur)
+            .changedAt(LocalDateTime.now())
+            .build();
+        tacheKpiHistoryRepository.save(history);
+        
+        if (delta != 0) {
+            triggerProgrammeKpiUpdateFromTache(tacheId, kpiId, delta);
+        }
     }
     
     public void updateTacheKpiValeurAndCible(Long tacheId, Long kpiId, String valeur, String valeurCible) {
         TacheKpi tk = tacheKpiRepository.findByTacheIdAndKpiId(tacheId, kpiId)
                 .orElseThrow(() -> new RuntimeException("KPI non trouvé pour cette tâche"));
-        if (valeur != null) tk.setValeurActuelle(valeur);
-        if (valeurCible != null) tk.setValeurCible(valeurCible);
+        
+        BackofficeKpi kpi = kpiRepository.findById(kpiId)
+                .orElseThrow(() -> new RuntimeException("KPI non trouvé: " + kpiId));
+
+        String oldValue = tk.getValeurActuelle();
+        double delta = 0.0;
+
+        boolean isProgression = "progression".equalsIgnoreCase(kpi.getTypedesaisie());
+
+        if (valeur != null) {
+            if (isProgression) {
+                delta = parseDouble(valeur);
+            } else {
+                delta = parseDouble(valeur) - parseDouble(oldValue);
+            }
+            tk.setValeurActuelle(valeur);
+        }
+
+        if (valeurCible != null) {
+            tk.setValeurCible(valeurCible);
+        }
+        
         tacheKpiRepository.save(tk);
+
+        if (valeur != null) {
+            TacheKpiHistory history = TacheKpiHistory.builder()
+                .tacheKpiId(tk.getId())
+                .valeurPrecedente(oldValue)
+                .valeurActuelle(valeur)
+                .changedAt(LocalDateTime.now())
+                .build();
+            tacheKpiHistoryRepository.save(history);
+        }
+        
+        if (delta != 0) {
+            triggerProgrammeKpiUpdateFromTache(tacheId, kpiId, delta);
+        }
     }
 
     public void deleteActiviteKpiValeur(Long activiteId, Long kpiId) {
         ActiviteKpi ak = activiteKpiRepository.findByActiviteIdAndKpiId(activiteId, kpiId)
                 .orElseThrow(() -> new RuntimeException("KPI non trouvé pour cette activité"));
+        
+        BackofficeKpi kpi = kpiRepository.findById(kpiId)
+                .orElseThrow(() -> new RuntimeException("KPI non trouvé: " + kpiId));
+
+        String oldValue = ak.getValeurActuelle();
         ak.setValeurActuelle(null);
         activiteKpiRepository.save(ak);
+        
+        ActiviteKpiHistory history = ActiviteKpiHistory.builder()
+            .activiteKpiId(ak.getId())
+            .valeurPrecedente(oldValue)
+            .valeurActuelle(null)
+            .changedAt(LocalDateTime.now())
+            .build();
+        activiteKpiHistoryRepository.save(history);
+        
+        double delta = 0.0 - parseDouble(oldValue);
+        if (delta != 0) {
+            triggerProgrammeKpiUpdateFromActivite(activiteId, kpiId, delta);
+        }
     }
 
     public void deleteTacheKpiValeur(Long tacheId, Long kpiId) {
         TacheKpi tk = tacheKpiRepository.findByTacheIdAndKpiId(tacheId, kpiId)
                 .orElseThrow(() -> new RuntimeException("KPI non trouvé pour cette tâche"));
+        
+        BackofficeKpi kpi = kpiRepository.findById(kpiId)
+                .orElseThrow(() -> new RuntimeException("KPI non trouvé: " + kpiId));
+
+        String oldValue = tk.getValeurActuelle();
         tk.setValeurActuelle(null);
         tacheKpiRepository.save(tk);
+        
+        TacheKpiHistory history = TacheKpiHistory.builder()
+            .tacheKpiId(tk.getId())
+            .valeurPrecedente(oldValue)
+            .valeurActuelle(null)
+            .changedAt(LocalDateTime.now())
+            .build();
+        tacheKpiHistoryRepository.save(history);
+        
+        double delta = 0.0 - parseDouble(oldValue);
+        if (delta != 0) {
+            triggerProgrammeKpiUpdateFromTache(tacheId, kpiId, delta);
+        }
     }
     
     // ==================== STATISTICS ====================
@@ -917,7 +1127,7 @@ public class ActiviteService {
     }
 
     public List<SprintKpiStatisticsDTO> getKpiStatisticsForProgramme(Long programmeId) {
-        List<Sprint> sprints = sprintRepository.findByProgrammeId(programmeId);
+        List<Sprint> sprints = sprintRepository.findByProgrammeIdOrderByOrderAsc(programmeId);
         List<SprintKpiStatisticsDTO> result = new ArrayList<>();
 
         for (Sprint sprint : sprints) {
@@ -996,7 +1206,7 @@ public class ActiviteService {
     }
 
     public StatisticsDTO getStatistics(Long programmeId) {
-        List<Sprint> sprints = sprintRepository.findByProgrammeId(programmeId);
+        List<Sprint> sprints = sprintRepository.findByProgrammeIdOrderByOrderAsc(programmeId);
         return calculateStatistics(sprints);
     }
 
@@ -1117,5 +1327,54 @@ public class ActiviteService {
                 .respectDelaisRate(respectDelaisRate)
                 .objectifsDepassesRate(objectifsDepassesRate)
                 .build();
+    }
+
+    private void triggerProgrammeKpiUpdateFromActivite(Long activiteId, Long kpiId, double delta) {
+        Activite activite = activiteRepository.findById(activiteId).orElse(null);
+        if (activite != null && activite.getSprint() != null && activite.getSprint().getProgramme() != null) {
+            Long programmeId = activite.getSprint().getProgramme().getId();
+            programmeKpiService.updateOperationalKpi(programmeId, kpiId, delta, activiteId, null);
+        }
+    }
+
+    private void triggerProgrammeKpiUpdateFromTache(Long tacheId, Long kpiId, double delta) {
+        Tache tache = tacheRepository.findById(tacheId).orElse(null);
+        if (tache != null && tache.getActivite() != null && tache.getActivite().getSprint() != null && tache.getActivite().getSprint().getProgramme() != null) {
+            Long programmeId = tache.getActivite().getSprint().getProgramme().getId();
+            programmeKpiService.updateOperationalKpi(programmeId, kpiId, delta, null, tacheId);
+        }
+    }
+
+    private double parseDouble(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return 0.0;
+        }
+        try {
+            return Double.parseDouble(value);
+        } catch (NumberFormatException e) {
+            return 0.0;
+        }
+    }
+
+    private void updateStatusBasedOnDate(Activite activite) {
+        if (activite.getDateDebut() != null) {
+            LocalDate today = LocalDate.now();
+            if (activite.getDateDebut().isAfter(today)) {
+                activite.setStatus(Activite.StatusActivite.NON_DEMARREE);
+            } else if (activite.getStatus() == Activite.StatusActivite.NON_DEMARREE) {
+                activite.setStatus(Activite.StatusActivite.EN_COURS);
+            }
+        }
+    }
+
+    private void updateStatusBasedOnDate(Tache tache) {
+        if (tache.getDateDebut() != null) {
+            LocalDate today = LocalDate.now();
+            if (tache.getDateDebut().isAfter(today)) {
+                tache.setStatus(Tache.StatusTache.NON_DEMARREE);
+            } else if (tache.getStatus() == Tache.StatusTache.NON_DEMARREE) {
+                tache.setStatus(Tache.StatusTache.EN_COURS);
+            }
+        }
     }
 }

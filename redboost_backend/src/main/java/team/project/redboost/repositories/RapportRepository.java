@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import team.project.redboost.entities.Rapport;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -20,4 +21,6 @@ public interface RapportRepository extends JpaRepository<Rapport, Long> {
            "LEFT JOIN FETCH os.resultats " +
            "WHERE r.id = :id")
     Optional<Rapport> findByIdWithDetails(Long id);
+
+    List<Rapport> findBySprintsMethodologie_Id(Long sprintId);
 }

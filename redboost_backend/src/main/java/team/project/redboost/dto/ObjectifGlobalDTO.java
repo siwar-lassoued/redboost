@@ -18,4 +18,7 @@ public class ObjectifGlobalDTO {
 
     @Builder.Default
     private List<ObjectifSpecifiqueDTO> objectifsSpecifiques = new ArrayList<>();
+
+    @Builder.Default
+    private List<ResultatTransversalDTO> resultatsTransversaux = new ArrayList<>();
 }
