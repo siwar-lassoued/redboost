@@ -52,6 +52,7 @@ public class ProgrammeKpiService {
 
         boolean isProgression = "progression".equalsIgnoreCase(kpi.getTypedesaisie());
         boolean isEntrepreneur = "ENTREPRENEUR".equalsIgnoreCase(kpi.getTypesuivi());
+        boolean isOperationnel = "OPERATIONNEL".equalsIgnoreCase(kpi.getTypesuivi());
 
         if (isProgression) {
             // Allow setting initial previous value if it's new OR if it hasn't been set yet (null or empty)
@@ -67,7 +68,13 @@ public class ProgrammeKpiService {
             programmeKpi.setValeurCible(request.valeurCible());
         } else {
             // OPERATIONNEL + normal and others
-            programmeKpi.setValeurActuelle(request.valeurActuelle());
+            if (isOperationnel && !isProgression) {
+                // Force calculation from activities/tasks
+                double total = calculateTotalForOperationalNormalKpi(request.programmeId(), request.kpiId());
+                programmeKpi.setValeurActuelle(String.valueOf(total));
+            } else {
+                programmeKpi.setValeurActuelle(request.valeurActuelle());
+            }
             programmeKpi.setValeurCible(request.valeurCible());
             programmeKpi.setValeurPrecedente(null);
         }
@@ -350,7 +357,7 @@ public class ProgrammeKpiService {
 
             ProgrammeKpiHistory history = ProgrammeKpiHistory.builder()
                     .programmeKpiId(programmeKpi.getId())
-                    .valeurPrecedente(oldValeurPrecedente) // Old previous value
+                    .valeurPrecedente(oldValeurPrecedente)
                     .valeurActuelle(String.valueOf(delta)) // The value that was added
                     .valeurCible(programmeKpi.getValeurCible())
                     .changedAt(LocalDateTime.now())
@@ -361,24 +368,7 @@ public class ProgrammeKpiService {
 
         } else {
             // For Normal type, we recalculate total from all activities/tasks to be safe/consistent
-            double total = 0.0;
-            List<Sprint> sprints = sprintRepository.findByProgrammeId(programmeId);
-
-            for (Sprint sprint : sprints) {
-                for (Activite activite : sprint.getActivites()) {
-                    double activiteVal = activiteKpiRepository.findByActiviteIdAndKpiId(activite.getId(), kpiId)
-                            .map(ak -> parseDouble(ak.getValeurActuelle()))
-                            .orElse(0.0);
-                    total += activiteVal;
-
-                    for (Tache tache : activite.getTaches()) {
-                        double tacheVal = tacheKpiRepository.findByTacheIdAndKpiId(tache.getId(), kpiId)
-                                .map(tk -> parseDouble(tk.getValeurActuelle()))
-                                .orElse(0.0);
-                        total += tacheVal;
-                    }
-                }
-            }
+            double total = calculateTotalForOperationalNormalKpi(programmeId, kpiId);
 
             String oldValue = programmeKpi.getValeurActuelle();
             String newValue = String.valueOf(total);
@@ -397,6 +387,28 @@ public class ProgrammeKpiService {
                     .build();
             programmeKpiHistoryRepository.save(history);
         }
+    }
+
+    private double calculateTotalForOperationalNormalKpi(Long programmeId, Long kpiId) {
+        double total = 0.0;
+        List<Sprint> sprints = sprintRepository.findByProgrammeId(programmeId);
+
+        for (Sprint sprint : sprints) {
+            for (Activite activite : sprint.getActivites()) {
+                double activiteVal = activiteKpiRepository.findByActiviteIdAndKpiId(activite.getId(), kpiId)
+                        .map(ak -> parseDouble(ak.getValeurActuelle()))
+                        .orElse(0.0);
+                total += activiteVal;
+
+                for (Tache tache : activite.getTaches()) {
+                    double tacheVal = tacheKpiRepository.findByTacheIdAndKpiId(tache.getId(), kpiId)
+                            .map(tk -> parseDouble(tk.getValeurActuelle()))
+                            .orElse(0.0);
+                    total += tacheVal;
+                }
+            }
+        }
+        return total;
     }
 
     private double parseDouble(String value) {

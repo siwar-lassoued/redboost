@@ -192,12 +192,7 @@ p { margin: 0; font-size: 0.9rem; color: $text-light; }
   }
 
   .info {
-    .card-title {
-      font-size: 0.85rem;
-      color: $text-light;
-      display: block;
-      margin-bottom: 8px;
-    }
+   
     h3 {
       font-size: 1.8rem;
       color: $text-dark;
@@ -653,8 +648,128 @@ p { margin: 0; font-size: 0.9rem; color: $text-light; }
   }
 }
 
+
+// --- Info Eye Tooltip ---
+// --- Info Eye Tooltip ---
+.card-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+
+  .card-title {
+    font-size: 0.82rem;
+    color: $text-light;
+    display: block;
+    margin-bottom: 0;
+    flex: 1;
+    line-height: 1.4;
+  }
+}
+
+.info-icon-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+
+  .info-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    background: #f0f4f8;
+    border: 1px solid #e2e8f0;
+    color: #78909c;
+    font-size: 0.72rem;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+
+    &:hover {
+      background: #fce4ec;
+      border-color: #f48fb1;
+      color: #e91e63;
+    }
+  }
+
+  .info-tooltip {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    background: #fff;
+    border: 1px solid #e8ecf0;
+    border-radius: 10px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.10);
+    padding: 10px 14px;
+    min-width: 190px;
+    z-index: 200;
+    animation: fadeIn 0.15s ease;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: -5px;
+      right: 8px;
+      width: 8px;
+      height: 8px;
+      background: #fff;
+      border-left: 1px solid #e8ecf0;
+      border-top: 1px solid #e8ecf0;
+      transform: rotate(45deg);
+    }
+
+    .tooltip-header {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: #b0bec5;
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #f5f5f5;
+    }
+
+    .tooltip-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding: 4px 0;
+
+      & + .tooltip-row {
+        border-top: 1px solid #fafafa;
+      }
+
+      .tooltip-program {
+        font-size: 0.78rem;
+        color: #546e7a;
+        font-weight: 500;
+      }
+
+      .tooltip-value {
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: #263238;
+        background: #f5f7f9;
+        padding: 1px 7px;
+        border-radius: 4px;
+      }
+    }
+  }
+
+  &:hover .info-tooltip {
+    display: block;
+  }
+}
 // Simple entry animation
 @keyframes slideDown {
   from { opacity: 0; transform: translateY(-10px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+

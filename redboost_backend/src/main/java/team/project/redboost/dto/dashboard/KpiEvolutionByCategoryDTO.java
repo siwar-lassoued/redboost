@@ -23,6 +23,6 @@ public class KpiEvolutionByCategoryDTO {
     @AllArgsConstructor
     public static class DataPoint {
         private LocalDate date;
-        private double achievementRate; // Percentage
+        private Double achievementRate; // Percentage
     }
 }

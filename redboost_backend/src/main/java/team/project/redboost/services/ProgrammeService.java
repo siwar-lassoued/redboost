@@ -786,6 +786,7 @@ public class ProgrammeService {
 
             String aggregatedValue = calculateGlobalKpiValue(kpi, programmeKpis);
             String trend = calculateTrend(kpi, programmeKpis); // Pass kpi to calculateTrend
+            String info = buildKpiInfo(kpi, programmeKpis); // Build detailed info
 
             // Determine category name
             String categoryName = "Sans catégorie";
@@ -803,6 +804,7 @@ public class ProgrammeService {
                         .color(getColorForKpi(kpi))
                         .bg(getBgForKpi(kpi))
                         .category(categoryName) // Set category name
+                        .info(info) // Set the info string
                         .build());
             } else if ("OPTIONNEL".equals(kpi.getType())) {
                 optionnelIndicators.add(OptionnelIndicatorDTO.builder()
@@ -814,6 +816,7 @@ public class ProgrammeService {
                         .color(getColorForKpi(kpi))
                         .bg(getBgForKpi(kpi))
                         .category(categoryName) // Set category name
+                        .info(info) // Set the info string
                         .build());
             }
         }
@@ -992,6 +995,46 @@ public class ProgrammeService {
 
         return formatValue(total, kpi.getUniteMesure());
     }
+
+    private String buildKpiInfo(BackofficeKpi kpi, List<ProgrammeKpi> programmeKpis) {
+        String typeSuivi = kpi.getTypesuivi();
+        String typeDeSaisie = kpi.getTypedesaisie();
+        boolean isProgression = "progression".equalsIgnoreCase(typeDeSaisie);
+
+        List<String> parts = new ArrayList<>();
+
+        for (ProgrammeKpi pk : programmeKpis) {
+            double programTotal = 0.0;
+            // Get programme name
+            String programmeName = pk.getProgramme().getNom();
+
+            if ("Entrepreneur".equalsIgnoreCase(typeSuivi)) {
+                List<ProgrammeKpiValeur> entrepreneurValeurs = programmeKpiValeurRepository.findByProgrammeKpiId(pk.getId());
+                for (ProgrammeKpiValeur pkv : entrepreneurValeurs) {
+                     if (isProgression) {
+                        programTotal += parseDoubleSafe(pkv.getValeurPrecedente());
+                    } else {
+                        programTotal += parseDoubleSafe(pkv.getValeurActuelle());
+                    }
+                }
+            } else {
+                 if (isProgression) {
+                    programTotal += parseDoubleSafe(pk.getValeurPrecedente());
+                } else {
+                    programTotal += parseDoubleSafe(pk.getValeurActuelle());
+                }
+            }
+             if (programTotal > 0) {
+                 parts.add(programmeName + ":" + formatValue(programTotal, "").trim());
+             }
+        }
+
+        if (parts.isEmpty()) {
+            return "Aucune donnée";
+        }
+        return String.join(", ", parts);
+    }
+
 
     /**
      * Safely parse a string value to double, handling null and invalid formats

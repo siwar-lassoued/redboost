@@ -18,5 +18,5 @@ public class GlobalIndicatorDTO {
     private String color;
     private String bg;
     private String category; // Add this field
-
+    private String info;
 }

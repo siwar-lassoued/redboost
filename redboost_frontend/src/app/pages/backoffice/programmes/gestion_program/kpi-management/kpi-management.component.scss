@@ -373,6 +373,17 @@
 .value-input-unit {
   @apply absolute right-4 text-sm font-bold text-slate-500 pointer-events-none;
 }
+.value-readonly-wrapper {
+  @apply relative flex items-center;
+}
+
+.value-readonly-display {
+  @apply w-full px-4 py-3 bg-slate-100 border-2 border-slate-200 rounded-lg
+         text-sm text-slate-700 font-semibold cursor-default select-none;
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+}
 
 /* ==================== ENTREPRENEURS SECTION ==================== */
 .entrepreneurs-section {

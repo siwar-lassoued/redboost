@@ -578,9 +578,12 @@
                     *ngIf="expandedSections['realisation']"
                 >
                     <svg
-                        [attr.viewBox]="'0 0 ' + (taskRealization.categories.length * 150 + 100) + ' 300'"
-                        class="bar-chart"
-                    >
+    [attr.viewBox]="'0 0 ' + getBarChartWidth() + ' 300'"
+    [style.max-width]="getBarChartMaxWidth()"
+    [style.margin]="'0 auto'"
+    [style.display]="'block'"
+    class="bar-chart"
+>
                         <text x="20" y="20" fill="#666" font-size="12">
                             {{ getMaxTasks() }}
                         </text>
@@ -743,15 +746,11 @@
                                     ></div>
                                 </div>
                                 <div class="performance-labels">
-                                    <span
-                                        >Actuel: {{ kpi.valeurActuelle || 'N/A'
-                                        }} {{ kpi.unit }}</span
-                                    >
-                                    <span
-                                        >Cible: {{ kpi.valeurCible || 'N/A' }}
-                                        {{ kpi.unit }}</span
-                                    >
-                                </div>
+    <span>
+        Actuel: {{ (kpi.valeurActuelle !== null ? kpi.valeurActuelle : (kpi.valeurPrecedente !== null ? kpi.valeurPrecedente : 'N/A')) }} {{ kpi.unit }}
+    </span>
+    <span>Cible: {{ kpi.valeurCible || 'N/A' }} {{ kpi.unit }}</span>
+</div>
                             </div>
                         </div>
                     </div>
@@ -1007,7 +1006,7 @@
             </div>
 
             <div class="activity-content" *ngIf="expandedSections['activityTypes']">
-                <div class="activity-grid">
+                <div class="activity-grid" [class.activity-grid--single]="getActivityTypeKeys().length === 1">
                     <div 
                         class="activity-card" 
                         *ngFor="let key of getActivityTypeKeys(); let i = index"
@@ -1028,13 +1027,6 @@
                             <div class="activity-count-container">
                                 <h2 class="activity-count">{{ activityTypeCounts[key] }}</h2>
                                 <span class="activity-unit">activités</span>
-                            </div>
-                            <div class="activity-bar-indicator">
-                                <div 
-                                    class="activity-bar-fill"
-                                    [style.background]="getActivityGradient(i)"
-                                    [style.width.%]="getActivityBarWidth(key)"
-                                ></div>
                             </div>
                         </div>
                     </div>

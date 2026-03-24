@@ -155,13 +155,14 @@ public class ActiviteService {
             Long programmeId = (activite.getSprint() != null && activite.getSprint().getProgramme() != null)
                 ? activite.getSprint().getProgramme().getId() : null;
 
-            // For each KPI in the activity and its tasks, trigger an update with a negative delta
+            // Capture deltas BEFORE deletion
+            List<KpiDelta> deltas = new ArrayList<>();
             if (programmeId != null) {
                 // Handle ActiviteKpis
                 activiteKpiRepository.findByActiviteId(activityId).forEach(ak -> {
                     double oldValue = parseDouble(ak.getValeurActuelle());
                     if (oldValue != 0) {
-                        programmeKpiService.updateOperationalKpi(programmeId, ak.getKpiId(), -oldValue, activityId, null);
+                        deltas.add(new KpiDelta(ak.getKpiId(), -oldValue, activityId, null));
                     }
                 });
                 // Handle TacheKpis within the activity
@@ -169,7 +170,7 @@ public class ActiviteService {
                     tacheKpiRepository.findByTacheId(tache.getId()).forEach(tk -> {
                         double oldValue = parseDouble(tk.getValeurActuelle());
                         if (oldValue != 0) {
-                            programmeKpiService.updateOperationalKpi(programmeId, tk.getKpiId(), -oldValue, null, tache.getId());
+                            deltas.add(new KpiDelta(tk.getKpiId(), -oldValue, null, tache.getId()));
                         }
                     });
                 });
@@ -178,6 +179,13 @@ public class ActiviteService {
             Sprint sprint = activite.getSprint();
             activiteRepository.deleteById(activityId); // This will cascade delete Taches, TacheKpis, etc.
             
+            // Apply updates AFTER deletion so that recalculation (for normal KPIs) sees the correct state
+            if (programmeId != null) {
+                for (KpiDelta d : deltas) {
+                    programmeKpiService.updateOperationalKpi(programmeId, d.kpiId, d.delta, d.activiteId, d.tacheId);
+                }
+            }
+
             if (sprint != null) {
                 checkAndUpdateSprintStatus(sprint);
             }
@@ -378,12 +386,13 @@ public class ActiviteService {
             Long programmeId = (tache.getActivite() != null && tache.getActivite().getSprint() != null && tache.getActivite().getSprint().getProgramme() != null)
                 ? tache.getActivite().getSprint().getProgramme().getId() : null;
 
-            // For each KPI in the task, trigger an update with a negative delta
+            // Capture deltas BEFORE deletion
+            List<KpiDelta> deltas = new ArrayList<>();
             if (programmeId != null) {
                 tacheKpiRepository.findByTacheId(tacheId).forEach(tk -> {
                     double oldValue = parseDouble(tk.getValeurActuelle());
                     if (oldValue != 0) {
-                        programmeKpiService.updateOperationalKpi(programmeId, tk.getKpiId(), -oldValue, null, tacheId);
+                        deltas.add(new KpiDelta(tk.getKpiId(), -oldValue, null, tacheId));
                     }
                 });
             }
@@ -391,6 +400,13 @@ public class ActiviteService {
             Activite activite = tache.getActivite();
             tacheRepository.deleteById(tacheId);
             
+            // Apply updates AFTER deletion
+            if (programmeId != null) {
+                for (KpiDelta d : deltas) {
+                    programmeKpiService.updateOperationalKpi(programmeId, d.kpiId, d.delta, d.activiteId, d.tacheId);
+                }
+            }
+
             if (activite != null) {
                 checkAndUpdateActiviteStatus(activite);
             }
@@ -1377,4 +1393,7 @@ public class ActiviteService {
             }
         }
     }
+    
+    // Private record to store KPI deltas during deletion
+    private record KpiDelta(Long kpiId, double delta, Long activiteId, Long tacheId) {}
 }

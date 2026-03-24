@@ -182,7 +182,8 @@ public class ProgrammeDashboardService {
             Double achievementRate = calculateAchievementRate(
                     valeurPrecedente,
                     valeurActuelle,
-                    valeurCible
+                    valeurCible,
+                    kpi
             );
 
             if (achievementRate != null) {
@@ -326,43 +327,94 @@ public class ProgrammeDashboardService {
             List<ProgrammeKpi> kpis = entry.getValue();
             String color = categoryColors.get(categoryName);
 
-            // Collect all history points for all KPIs in this category
+            // Fetch all history for all KPIs in this category
             List<ProgrammeKpiHistory> allHistory = new ArrayList<>();
+            Map<Long, BackofficeKpi> kpiDefinitionMap = new HashMap<>();
+
             for (ProgrammeKpi pk : kpis) {
+                kpiDefinitionMap.put(pk.getId(), pk.getKpi());
                 allHistory.addAll(programmeKpiHistoryRepository.findByProgrammeKpiIdOrderByChangedAtDesc(pk.getId()));
             }
 
-            // If no history, skip
+            // Skip if no history
             if (allHistory.isEmpty()) continue;
 
-            // Group history by date (day) to calculate average achievement per day
-            Map<LocalDate, List<Double>> achievementByDate = new HashMap<>();
+            // Sort history by date ASC to replay events
+            allHistory.sort(Comparator.comparing(ProgrammeKpiHistory::getChangedAt));
 
-            for (ProgrammeKpiHistory history : allHistory) {
-                LocalDate date = history.getChangedAt().toLocalDate();
-                Double achievement = calculateAchievementRate(
-                        history.getValeurPrecedente(),
-                        history.getValeurActuelle(),
-                        history.getValeurCible()
-                );
+            // Track state of each KPI
+            Map<Long, String> kpiCurrentValues = new HashMap<>();
+            Map<Long, String> kpiTargetValues = new HashMap<>();
+            Map<Long, String> kpiPreviousValues = new HashMap<>();
 
-                if (achievement != null) {
-                    achievementByDate.computeIfAbsent(date, k -> new ArrayList<>()).add(achievement);
+            // Use TreeMap to store daily averages sorted by date
+            Map<LocalDate, Double> dailyAverages = new TreeMap<>();
+
+            // Group history by date (LocalDate)
+            Map<LocalDate, List<ProgrammeKpiHistory>> historyByDate = allHistory.stream()
+                    .collect(Collectors.groupingBy(
+                            h -> h.getChangedAt().toLocalDate(),
+                            TreeMap::new,
+                            Collectors.toList()
+                    ));
+
+            // Iterate through dates chronologically
+            for (Map.Entry<LocalDate, List<ProgrammeKpiHistory>> dateEntry : historyByDate.entrySet()) {
+                LocalDate date = dateEntry.getKey();
+                List<ProgrammeKpiHistory> dayEvents = dateEntry.getValue();
+
+                // Apply updates for this day
+                for (ProgrammeKpiHistory history : dayEvents) {
+                    // Update current value if present
+                    if (history.getValeurActuelle() != null) {
+                        kpiCurrentValues.put(history.getProgrammeKpiId(), history.getValeurActuelle());
+                    }
+
+                    // Update target value if present
+                    if (history.getValeurCible() != null) {
+                        kpiTargetValues.put(history.getProgrammeKpiId(), history.getValeurCible());
+                    }
+
+                    // Update previous value if present
+                    if (history.getValeurPrecedente() != null) {
+                        kpiPreviousValues.put(history.getProgrammeKpiId(), history.getValeurPrecedente());
+                    }
+                }
+
+                // Calculate the average for the category on this day based on current state of all KPIs
+                double sum = 0.0;
+                int count = 0;
+                
+                Set<Long> involvedKpis = new HashSet<>();
+                involvedKpis.addAll(kpiCurrentValues.keySet());
+                involvedKpis.addAll(kpiTargetValues.keySet());
+                involvedKpis.addAll(kpiPreviousValues.keySet());
+
+                for (Long kpiId : involvedKpis) {
+                    String current = kpiCurrentValues.get(kpiId);
+                    String target = kpiTargetValues.get(kpiId);
+                    String previous = kpiPreviousValues.get(kpiId);
+                    BackofficeKpi kpi = kpiDefinitionMap.get(kpiId);
+                    
+                    if (kpi != null && target != null) {
+                        Double rate = calculateAchievementRate(previous, current, target, kpi);
+                        if (rate != null) {
+                            sum += rate;
+                            count++;
+                        }
+                    }
+                }
+
+                if (count > 0) {
+                    double average = sum / count;
+                    dailyAverages.put(date, Math.round(average * 100) / 100.0);
                 }
             }
 
-            // Calculate average per date
-            List<KpiEvolutionByCategoryDTO.DataPoint> dataPoints = new ArrayList<>();
-            for (Map.Entry<LocalDate, List<Double>> dateEntry : achievementByDate.entrySet()) {
-                LocalDate date = dateEntry.getKey();
-                List<Double> rates = dateEntry.getValue();
-                double average = rates.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
-                
-                dataPoints.add(new KpiEvolutionByCategoryDTO.DataPoint(date, Math.round(average * 100) / 100.0));
-            }
-
-            // Sort data points by date
-            dataPoints.sort(Comparator.comparing(KpiEvolutionByCategoryDTO.DataPoint::getDate));
+            // Convert map to list of DataPoint
+            List<KpiEvolutionByCategoryDTO.DataPoint> dataPoints = dailyAverages.entrySet().stream()
+                    .map(e -> new KpiEvolutionByCategoryDTO.DataPoint(e.getKey(), e.getValue()))
+                    .collect(Collectors.toList());
 
             evolutionList.add(new KpiEvolutionByCategoryDTO(categoryName, color, dataPoints));
         }
@@ -374,27 +426,47 @@ public class ProgrammeDashboardService {
      * Helper method to calculate achievement rate
      * Returns null if calculation is not possible
      */
-    private Double calculateAchievementRate(String valeurPrecedente, String valeurActuelle, String valeurCible) {
+    private Double calculateAchievementRate(String valeurPrecedente, String valeurActuelle, String valeurCible, BackofficeKpi kpi) {
         try {
-            // Need at least current and target values
-            if (valeurActuelle == null || valeurActuelle.trim().isEmpty() ||
-                    valeurCible == null || valeurCible.trim().isEmpty()) {
-                return null;
+            // Determine type of calculation based on KPI properties
+            boolean useProgression = false;
+            if (kpi != null && "OPERATIONNEL".equals(kpi.getTypesuivi()) && "progression".equals(kpi.getTypedesaisie())) {
+                useProgression = true;
             }
 
-            double actuelle = parseNumericValue(valeurActuelle);
-            double cible = parseNumericValue(valeurCible);
+            if (useProgression) {
+                // For progression, we use previous value against target
+                if (valeurPrecedente == null || valeurPrecedente.trim().isEmpty() ||
+                        valeurCible == null || valeurCible.trim().isEmpty()) {
+                    return null;
+                }
 
-            if (cible == 0) {
-                // If target is 0, can't calculate percentage
-                return actuelle >= cible ? 100.0 : 0.0;
+                double precedente = parseNumericValue(valeurPrecedente);
+                double cible = parseNumericValue(valeurCible);
+
+                if (cible == 0) {
+                    return precedente >= cible ? 100.0 : 0.0;
+                }
+
+                double rate = (precedente / cible) * 100;
+                return Math.round(rate * 100) / 100.0;
+            } else {
+                // Normal calculation using current value against target
+                if (valeurActuelle == null || valeurActuelle.trim().isEmpty() ||
+                        valeurCible == null || valeurCible.trim().isEmpty()) {
+                    return null;
+                }
+
+                double actuelle = parseNumericValue(valeurActuelle);
+                double cible = parseNumericValue(valeurCible);
+
+                if (cible == 0) {
+                    return actuelle >= cible ? 100.0 : 0.0;
+                }
+
+                double rate = (actuelle / cible) * 100;
+                return Math.round(rate * 100) / 100.0;
             }
-
-            // Calculate: (valeurActuelle / valeurCible) * 100
-            double rate = (actuelle / cible) * 100;
-
-            // Round to 2 decimal places
-            return Math.round(rate * 100) / 100.0;
 
         } catch (NumberFormatException e) {
             // If values are not numeric, return null

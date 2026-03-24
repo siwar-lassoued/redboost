@@ -18,4 +18,5 @@ public class OptionnelIndicatorDTO {
     private String color;
     private String bg;
     private String category;
+    private String info;
 }

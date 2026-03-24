@@ -422,4 +422,23 @@ export class DashboardProgramComponent implements OnInit, OnDestroy {
         );
         return Math.min((this.activityTypeCounts[key] / maxCount) * 100, 100);
     }
+
+
+
+
+    // Add these two methods to DashboardProgramComponent
+
+getBarChartWidth(): number {
+    if (!this.taskRealization) return 400;
+    const count = this.taskRealization.categories.length;
+    // Minimum width of 300, each category needs ~150px, cap at reasonable max
+    return Math.max(count * 150 + 100, 300);
+}
+
+getBarChartMaxWidth(): string {
+    if (!this.taskRealization) return '400px';
+    const count = this.taskRealization.categories.length;
+    if (count <= 2) return `${count * 200}px`;
+    return '100%';
+}
 }

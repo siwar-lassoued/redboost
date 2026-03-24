@@ -407,20 +407,14 @@
                         <!-- OPERATIONNEL + Normal Type: two values -->
                         <ng-container *ngIf="kpi.typesuivi === 'OPERATIONNEL' && kpi.typedesaisie !== 'progression'">
                             <div class="value-input-group">
-                                <label class="value-input-label">
-                                    Valeur
-                                    <span class="required-star">*</span>
-                                </label>
-                                <div class="value-input-wrapper">
-                                    <input
-                                        type="number"
-                                        class="value-input required-input"
-                                        [(ngModel)]="kpi.valeurActuelle"
-                                        placeholder="Ex: 150"
-                                    />
-                                    <span class="value-input-unit">{{ kpi.kpiUnite || "TND" }}</span>
-                                </div>
-                            </div>
+    <label class="value-input-label">Valeur</label>
+    <div class="value-readonly-wrapper">
+        <span class="value-readonly-display">
+            {{ kpi.valeurActuelle ?? '—' }}
+        </span>
+        <span class="value-input-unit">{{ kpi.kpiUnite || "TND" }}</span>
+    </div>
+</div>
 
                             <div class="value-input-group">
                                 <label class="value-input-label">Objectif</label>

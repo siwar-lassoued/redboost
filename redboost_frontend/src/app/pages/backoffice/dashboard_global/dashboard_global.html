@@ -110,16 +110,28 @@
           <div class="grid-4-col">
             <div class="metric-card" *ngFor="let item of category.indicators" [style.border-left-color]="item.color">
               <div class="card-content">
-                <div class="info">
-                  <span class="card-title">{{ item.title }}</span>
-                  <div class="value-row">
-                    <h3>{{ item.value }}</h3>
-                  </div>
-                  <div class="trend-row">
-                    <span class="trend-val" [style.color]="'#00c853'">↑ {{ item.trend }}</span>
-                    <span class="trend-period">{{ item.period }}</span>
-                  </div>
-                </div>
+              <div class="info">
+  <div class="card-title-row">
+    <span class="card-title">{{ item.title }}</span>
+    <span class="info-icon-wrapper" *ngIf="item.info">
+      <i class="fa-solid fa-eye info-trigger"></i>
+      <div class="info-tooltip">
+        <div class="tooltip-header">Détail par programme</div>
+        <div class="tooltip-row" *ngFor="let part of item.info.split(', ')">
+          <span class="tooltip-program">{{ part.split(':')[0] }}</span>
+          <span class="tooltip-value">{{ part.split(':')[1] }}</span>
+        </div>
+      </div>
+    </span>
+  </div>
+  <div class="value-row">
+    <h3>{{ item.value }}</h3>
+  </div>
+  <div class="trend-row">
+    <span class="trend-val" [style.color]="'#00c853'">↑ {{ item.trend }}</span>
+    <span class="trend-period">{{ item.period }}</span>
+  </div>
+</div>
                 <div class="icon-box" [style.background-color]="item.bg" [style.color]="item.color">
                 <i class="fa-solid" [ngClass]="item.icon"></i>
                 </div>
@@ -180,16 +192,28 @@
       <div class="grid-4-col">
         <div class="metric-card" *ngFor="let item of category.indicators" [style.border-left-color]="item.color">
           <div class="card-content">
-            <div class="info">
-              <span class="card-title">{{ item.title }}</span>
-              <div class="value-row">
-                <h3>{{ item.value }}</h3>
-              </div>
-              <div class="trend-row">
-                <span class="trend-val" [style.color]="'#00c853'">↑ {{ item.trend }}</span>
-                <span class="trend-period">{{ item.period }}</span>
-              </div>
-            </div>
+          <div class="info">
+  <div class="card-title-row">
+    <span class="card-title">{{ item.title }}</span>
+    <span class="info-icon-wrapper" *ngIf="item.info">
+      <i class="fa-solid fa-eye info-trigger"></i>
+      <div class="info-tooltip">
+        <div class="tooltip-header">Détail par programme</div>
+        <div class="tooltip-row" *ngFor="let part of item.info.split(', ')">
+          <span class="tooltip-program">{{ part.split(':')[0] }}</span>
+          <span class="tooltip-value">{{ part.split(':')[1] }}</span>
+        </div>
+      </div>
+    </span>
+  </div>
+  <div class="value-row">
+    <h3>{{ item.value }}</h3>
+  </div>
+  <div class="trend-row">
+    <span class="trend-val" [style.color]="'#00c853'">↑ {{ item.trend }}</span>
+    <span class="trend-period">{{ item.period }}</span>
+  </div>
+</div>
             <div class="icon-box" [style.background-color]="item.bg" [style.color]="item.color">
               <i class="fa-solid" [ngClass]="item.icon"></i>
             </div>

@@ -203,20 +203,22 @@
 
                                             <!-- LEFT: Activity info -->
                                             <div class="flex-1 min-w-0">
-                                                <div class="flex items-center gap-2 mb-1 flex-wrap">
-                                                    <h5 class="text-base font-semibold text-[#2a7b8c] truncate max-w-[260px]"
-                                                        [title]="act.nom">
-                                                        {{ act.nom }}
-                                                    </h5>
-                                                    <span class="badge rounded-full flex-shrink-0"
-                                                          [ngClass]="getActivityStatusBadge(act)">
-{{ isActivityLate(act) && act.status !== 'TERMINEE' ? 'Retard' : formatStatus(act.status) }}
-                                                    </span>
-                                                    <span *ngIf="act.responsableId"
-                                                          class="badge bg-[#2a7b8c]/10 text-[#2a7b8c] border-[#2a7b8c]/30 text-xs rounded-full flex-shrink-0">
-                                                        <span class="icon-users"></span> {{ getResponsableName(act.responsableId) }}
-                                                    </span>
-                                                </div>
+                                             <!-- REPLACE the entire name+badges div -->
+<div class="activity-name-row">
+    <div class="activity-badges">
+        <span class="badge rounded-full flex-shrink-0"
+              [ngClass]="getActivityStatusBadge(act)">
+            {{ isActivityLate(act) && act.status !== 'TERMINEE' ? 'Retard' : formatStatus(act.status) }}
+        </span>
+        <span *ngIf="act.responsableId"
+              class="badge bg-[#2a7b8c]/10 text-[#2a7b8c] border-[#2a7b8c]/30 text-xs rounded-full flex-shrink-0">
+            <span class="icon-users"></span> {{ getResponsableName(act.responsableId) }}
+        </span>
+    </div>
+    <h5 class="text-base font-semibold text-[#2a7b8c]" [title]="act.nom">
+        {{ act.nom }}
+    </h5>
+</div>
                                                 <p class="text-xs text-gray-600 mb-2 line-clamp-2 break-words" [title]="act.description">
                                                     {{ act.description }}
                                                 </p>

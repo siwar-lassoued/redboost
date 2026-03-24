@@ -28,6 +28,7 @@ export interface GlobalIndicatorDTO {
   color: string;
   bg: string;
   category: string;
+  info: string; // ← ADD THIS
 }
 
 export interface PlatformMetricsDTO {

@@ -763,10 +763,10 @@ public class RapportService {
             addEFSectionHeader(document, "II", "Résumé Exécutif",
                     EF_NAVY, EF_GOLD, h1Font, h1BadgeFont);
 
-            addEFSubSection(document, "Objectifs du Programme",
+            addEFSubSection(document, "Context",
                     rapport.getObjectifsProgramme(), h2Font, normalFont, EF_GOLD);
 
-            addEFSubSection(document, "Résultats Clés",
+            addEFSubSection(document, "Mission",
                     rapport.getResultatsCles(), h2Font, normalFont, EF_GOLD);
 
             addEFSubSection(document, "Impact Global",
@@ -788,7 +788,7 @@ public class RapportService {
                 ogHeader.setSpacingBefore(8);
                 ogHeader.setSpacingAfter(4);
                 document.add(ogHeader);
-                
+
                 // Add Description for Global Objective
                 if (og.getDescription() != null && !og.getDescription().isBlank()) {
                     Paragraph ogDesc = new Paragraph("Description : " + og.getDescription(), normalFont);
@@ -858,7 +858,7 @@ public class RapportService {
                         osCell.setBorderWidthRight(1); osCell.setBorderWidthBottom(1);
                         osTable.addCell(osCell);
                         document.add(osTable);
-                        
+
                         if (os.getDescription() != null && !os.getDescription().isBlank()) {
                             Paragraph osDesc = new Paragraph("Description : " + os.getDescription(), normalFont);
                             osDesc.setIndentationLeft(12);
@@ -1426,7 +1426,7 @@ public class RapportService {
             throw new RuntimeException("Error generating Word document", e);
         }
     }
-    
+
     // --- Helper Methods for Word Generation ---
 
     private void setParagraphLeftBorder(XWPFParagraph paragraph, String color, STBorder.Enum borderType, String size) {
@@ -1479,7 +1479,7 @@ public class RapportService {
 
     private void addStyledTableRow(XWPFTable table, String label, String value, boolean alt, String labelBg, String valueBg) {
         XWPFTableRow row = table.createRow();
-        
+
         XWPFTableCell labelCell = row.getCell(0);
         if(labelCell == null) labelCell = row.createCell();
         labelCell.setText(label);
@@ -1547,13 +1547,13 @@ public class RapportService {
 
             // ── SECTION 2 – Executive Summary ──────────────────────────────
             addSectionHeader(doc, "2", "RÉSUMÉ EXÉCUTIF");
-            addSubSection(doc, "Objectifs du Programme", rapport.getObjectifsProgramme());
-            addSubSection(doc, "Résultats Clés",         rapport.getResultatsCles());
+            addSubSection(doc, "Context", rapport.getObjectifsProgramme());
+            addSubSection(doc, "Mission",         rapport.getResultatsCles());
             addSubSection(doc, "Impact Global",          rapport.getImpactGlobal());
             doc.add(spacer(16));
 
             // ── SECTION 3 – Contexte & Objectifs ───────────────────────────
-            addSectionHeader(doc, "3", "CONTEXTE ET OBJECTIFS");
+            addSectionHeader(doc, "3", "CADRE LOGIQUE");
             for (ObjectifGlobal og : rapport.getObjectifsGlobaux()) {
                 addObjectifBlock(doc, og);
             }
@@ -2266,16 +2266,16 @@ public class RapportService {
 
         // ── SECTION 2 – RÉSUMÉ EXÉCUTIF ───────────────────────────────────────
         stdAddSectionHeader(document, "2", "RÉSUMÉ EXÉCUTIF", C_ACCENT, C_PRIMARY);
-        stdAddSubSection(document, "Objectifs du Programme",
+        stdAddSubSection(document, "Context",
                 rapport.getObjectifsProgramme(), C_PRIMARY, C_ACCENT, C_DARK);
-        stdAddSubSection(document, "Résultats Clés",
+        stdAddSubSection(document, "Mission",
                 rapport.getResultatsCles(), C_PRIMARY, C_ACCENT, C_DARK);
         stdAddSubSection(document, "Impact Global",
                 rapport.getImpactGlobal(), C_PRIMARY, C_ACCENT, C_DARK);
         document.createParagraph().setSpacingAfter(120);
 
-        // ── SECTION 3 – CONTEXTE ET OBJECTIFS ────────────────────────────────
-        stdAddSectionHeader(document, "3", "CONTEXTE ET OBJECTIFS", C_ACCENT, C_PRIMARY);
+        // ── SECTION 3 – CADRE LOGIQUE ────────────────────────────────
+        stdAddSectionHeader(document, "3", "CADRE LOGIQUE", C_ACCENT, C_PRIMARY);
         for (ObjectifGlobal og : rapport.getObjectifsGlobaux()) {
             stdAddObjectifBlock(document, og, C_PRIMARY, C_SECTION_BG, C_DARK, C_MUTED);
         }
@@ -2473,9 +2473,9 @@ public class RapportService {
 
         // ── SECTION II – RÉSUMÉ EXÉCUTIF ─────────────────────────────────────
         efAddSectionHeader(document, "II", "Résumé Exécutif", EF_NAVY, EF_GOLD);
-        efAddSubSection(document, "Objectifs du Programme",
+        efAddSubSection(document, "Context",
                 rapport.getObjectifsProgramme(), EF_BLUE, EF_GOLD, EF_DARK);
-        efAddSubSection(document, "Résultats Clés",
+        efAddSubSection(document, "Mission",
                 rapport.getResultatsCles(), EF_BLUE, EF_GOLD, EF_DARK);
         efAddSubSection(document, "Impact Global",
                 rapport.getImpactGlobal(), EF_BLUE, EF_GOLD, EF_DARK);
@@ -2498,7 +2498,7 @@ public class RapportService {
             ogR.setBold(true);
             ogR.setFontSize(11);
             ogR.setColor(EF_NAVY);
-            
+
             // Add description for Global Objective
             if (og.getDescription() != null && !og.getDescription().isBlank()) {
                 XWPFParagraph ogDesc = document.createParagraph();
@@ -2531,7 +2531,7 @@ public class RapportService {
                     rtR.setText("  •  " + rt.getNom());
                     rtR.setFontSize(10);
                     rtR.setColor(EF_DARK);
-                    
+
                     if (rt.getDescription() != null && !rt.getDescription().isBlank()) {
                         XWPFParagraph rtDesc = document.createParagraph();
                         rtDesc.setIndentationLeft(520);
@@ -2573,7 +2573,7 @@ public class RapportService {
                 osR.setBold(true);
                 osR.setFontSize(10);
                 osR.setColor(EF_NAVY);
-                
+
                 if (os.getDescription() != null && !os.getDescription().isBlank()) {
                     XWPFParagraph osDesc = document.createParagraph();
                     osDesc.setIndentationLeft(160);
@@ -2595,7 +2595,7 @@ public class RapportService {
                         resR.setText("  •  " + res.getNom());
                         resR.setFontSize(10);
                         resR.setColor(EF_DARK);
-                        
+
                         if (res.getDescription() != null && !res.getDescription().isBlank()) {
                             XWPFParagraph resDesc = document.createParagraph();
                             resDesc.setIndentationLeft(520);
@@ -2835,7 +2835,7 @@ public class RapportService {
             rtR.setFontSize(9);
             rtR.setItalic(true);
             rtR.setColor(mutedColor);
-            
+
             if (rt.getDescription() != null && !rt.getDescription().isBlank()) {
                 XWPFParagraph rtDesc = doc.createParagraph();
                 rtDesc.setIndentationLeft(860);
@@ -2855,7 +2855,7 @@ public class RapportService {
             osR.setBold(true);
             osR.setFontSize(10);
             osR.setColor(darkColor);
-            
+
             if (os.getDescription() != null && !os.getDescription().isBlank()) {
                 XWPFParagraph osDesc = doc.createParagraph();
                 osDesc.setIndentationLeft(420);
@@ -2873,7 +2873,7 @@ public class RapportService {
                 resR.setText("•  Résultat : " + res.getNom());
                 resR.setFontSize(10);
                 resR.setColor(darkColor);
-                
+
                 if (res.getDescription() != null && !res.getDescription().isBlank()) {
                     XWPFParagraph resDesc = doc.createParagraph();
                     resDesc.setIndentationLeft(800);
@@ -2966,7 +2966,7 @@ public class RapportService {
         nameR.setBold(true);
         nameR.setFontSize(10);
         nameR.setColor(darkColor);
-        
+
         if (act.getDescription() != null && !act.getDescription().isBlank()) {
              XWPFParagraph descP = cell.addParagraph();
              descP.setSpacingAfter(60);

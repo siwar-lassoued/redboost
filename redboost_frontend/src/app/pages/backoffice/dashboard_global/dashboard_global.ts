@@ -270,7 +270,9 @@ this.optionnelIndicatorCategories = this.mapGlobalIndicatorsByCategory(data.opti
         period: indicator.period,
         icon: indicator.icon,
         color: indicator.color,
-        bg: indicator.bg
+        bg: indicator.bg,
+        info: indicator.info  // ← ADD THIS
+
       }))
     }));
   }
