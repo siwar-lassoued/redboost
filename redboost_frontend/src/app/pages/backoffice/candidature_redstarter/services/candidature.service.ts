@@ -40,9 +40,10 @@ export class CandidatureService {
         if (filters?.page) params = params.set('page', filters.page.toString());
         if (filters?.limit) params = params.set('limit', filters.limit.toString());
 
-        return this.http.get<{ data: any[], success: boolean }>(this.baseUrl, { params }).pipe(
+        return this.http.get<any>(`${this.baseUrl}/admin/all`, { params: { ...params.keys().reduce((acc: any, key) => ({ ...acc, [key]: params.get(key) }), {}), size: '1000' } }).pipe(
             map(res => {
-                let filtered = res.data || [];
+                let items: any[] = res.content || res.data || (Array.isArray(res) ? res : []);
+                let filtered = items;
 
                 if (filters?.type) {
                     if (filters.type === 'spontanees') {
@@ -94,7 +95,7 @@ export class CandidatureService {
     }
 
     getById(id: string): Observable<Candidature> {
-        return this.http.get<Candidature>(`${this.baseUrl}/${id}`);
+        return this.http.get<Candidature>(`${this.baseUrl}/admin/${id}`);
     }
 
     create(data: Partial<Candidature>): Observable<Candidature> {
@@ -109,15 +110,18 @@ export class CandidatureService {
         compteRenduEntretien?: string;
         noteEntretien?: number;
     }): Observable<Candidature> {
-        return this.http.put<Candidature>(`${this.baseUrl}/${id}/statut`, body);
+        return this.http.put<Candidature>(`${this.baseUrl}/admin/${id}/status`, {
+            statut: body.statut === 'acceptee' ? 'ACCEPTE' : (body.statut === 'refusee' ? 'REFUSE' : body.statut.toUpperCase()),
+            commentaires: body.noteInterne || body.motifRejet || ''
+        });
     }
 
     accept(id: string): Observable<Candidature> {
-        return this.http.put<Candidature>(`${this.baseUrl}/${id}/accept`, {});
+        return this.http.put<Candidature>(`${this.baseUrl}/admin/${id}/status`, { statut: 'ACCEPTE', commentaires: '' });
     }
 
     reject(id: string, note?: string): Observable<Candidature> {
-        return this.http.put<Candidature>(`${this.baseUrl}/${id}/reject`, { note });
+        return this.http.put<Candidature>(`${this.baseUrl}/admin/${id}/status`, { statut: 'REFUSE', commentaires: note || '' });
     }
 
     addNote(id: string, note: string): Observable<Candidature> {
@@ -129,6 +133,6 @@ export class CandidatureService {
     }
 
     delete(id: string): Observable<void> {
-        return this.http.delete<void>(`${this.baseUrl}/${id}`);
+        return this.http.delete<void>(`${this.baseUrl}/admin/${id}`);
     }
 }

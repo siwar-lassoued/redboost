@@ -37,7 +37,7 @@ export interface FormTemplateView {
 @Injectable({ providedIn: 'root' })
 export class FormTemplateService {
     private http = inject(HttpClient);
-    private baseUrl = `${environment.apiUrl}/form-templates`;
+    private baseUrl = `${environment.apiUrl}/templates`;
 
     getAll(): Observable<FormTemplateDTO[]> {
         return this.http.get<FormTemplateDTO[]>(this.baseUrl);
