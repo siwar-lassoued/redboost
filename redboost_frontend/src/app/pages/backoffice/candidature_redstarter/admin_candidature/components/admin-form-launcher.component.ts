@@ -33,21 +33,21 @@ type Step = 'choice' | 'templates' | 'form';
         <div *ngIf="step() === 'choice'" class="fl-body">
           <div class="fl-choice-grid">
             <button (click)="handleChoiceSelect('new')" class="fl-choice-card">
-              <div class="fl-choice-icon" style="background: linear-gradient(135deg, #2563EB, #3B82F6);">
+              <div class="fl-choice-icon" style="background: linear-gradient(to right, #ea5073, #6d3345);">
                 <lucide-icon name="plus" [size]="24" class="text-white"></lucide-icon>
               </div>
               <h4>Créer un nouveau formulaire</h4>
               <p>Construisez un formulaire personnalisé de A à Z avec vos propres questions.</p>
             </button>
             <button (click)="handleChoiceSelect('existing')" class="fl-choice-card">
-              <div class="fl-choice-icon" style="background: linear-gradient(135deg, #7B2D8B, #9F1D8F);">
+              <div class="fl-choice-icon" style="background: linear-gradient(to right, #6d3345, #2a5f6f);">
                 <lucide-icon name="file-text" [size]="24" class="text-white"></lucide-icon>
               </div>
               <h4>Utiliser un template existant</h4>
               <p>Réutilisez un ancien formulaire et modifiez les questions si besoin.</p>
             </button>
             <button (click)="handleChoiceSelect('spontaneous')" class="fl-choice-card">
-              <div class="fl-choice-icon" style="background: linear-gradient(135deg, #059669, #10B981);">
+              <div class="fl-choice-icon" style="background: linear-gradient(to right, #2a7b8c, #1a4d5c);">
                 <lucide-icon name="mail" [size]="24" class="text-white"></lucide-icon>
               </div>
               <h4>Candidature spontanée</h4>
@@ -65,7 +65,7 @@ type Step = 'choice' | 'templates' | 'form';
             <div *ngFor="let template of templates" class="fl-template-card">
               <div class="fl-template-header">
                 <div class="fl-template-icon"
-                  [style.background]="template.profileType === 'coach' ? 'linear-gradient(135deg, #00d2ff, #3aafff)' : 'linear-gradient(135deg, #1E40AF, #3B82F6)'">
+                  [style.background]="template.profileType === 'coach' ? 'linear-gradient(to right, #2a7b8c, #1a4d5c)' : 'linear-gradient(to right, #ea5073, #6d3345)'">
                   <lucide-icon name="file-text" [size]="20" class="text-white"></lucide-icon>
                 </div>
                 <div class="fl-template-info">
@@ -75,8 +75,8 @@ type Step = 'choice' | 'templates' | 'form';
               </div>
               <div class="fl-template-meta">
                 <span class="fl-meta-label">Type:</span>
-                <span class="fl-meta-badge" [style.background]="template.profileType === 'coach' ? '#DBEAFE' : '#E0E7FF'"
-                  [style.color]="template.profileType === 'coach' ? '#1E40AF' : '#4338CA'">{{ template.profileType }}</span>
+                <span class="fl-meta-badge" [style.background]="template.profileType === 'coach' ? '#e5f3f4' : '#fceef1'"
+                  [style.color]="template.profileType === 'coach' ? '#1a4d5c' : '#bd3b5a'">{{ template.profileType }}</span>
               </div>
               <div class="fl-template-meta">
                 <span class="fl-meta-label">Questions:</span>
@@ -173,78 +173,69 @@ type Step = 'choice' | 'templates' | 'form';
     </div>
   `,
   styles: [`
-    :host { display: block; }
+    :host { display: block; font-family: 'Poppins', sans-serif; }
     .fl-overlay { position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center; padding:16px; background:rgba(0,0,0,0.5); }
     .fl-box { background:#fff; width:100%; max-height:90vh; overflow-y:auto; border-radius:20px; box-shadow:0 20px 60px rgba(0,0,0,0.2); position:relative; }
-    .fl-header { padding:16px 24px; border-bottom:1px solid #F3F4F6; position:sticky; top:0; background:#fff; z-index:10; display:flex; align-items:center; justify-content:space-between; }
-    .fl-title { font-weight:800; font-size:18px; color:#1A1A2E; margin:0; }
-    .fl-subtitle { font-size:12px; color:#9CA3AF; margin:4px 0 0; }
+    .fl-header { padding:24px; border-bottom:1px solid #F3F4F6; position:sticky; top:0; background:#fff; z-index:10; display:flex; align-items:center; justify-content:space-between; }
+    .fl-title { @apply text-2xl font-bold text-slate-900 mb-2; margin:0; }
+    .fl-subtitle { @apply text-sm text-gray-500; margin:0; }
     .fl-close-btn { padding:8px; border-radius:12px; border:none; background:none; cursor:pointer; color:#9CA3AF; transition:all .2s; }
     .fl-close-btn:hover { background:#F3F4F6; color:#333; }
     .fl-body { padding:24px; }
     .fl-choice-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
     .fl-choice-card { padding:24px; border-radius:20px; border:2px solid #E5E7EB; background:#fff; cursor:pointer; transition:all .2s; text-align:center; }
-    .fl-choice-card:hover { transform:scale(1.02); box-shadow:0 8px 24px rgba(0,0,0,0.1); }
-    .fl-choice-card h4 { font-weight:700; color:#1A1A2E; margin:0 0 8px; font-size:14px; }
-    .fl-choice-card p { font-size:12px; color:#6B7280; line-height:1.5; margin:0; }
+    .fl-choice-card:hover { transform:scale(1.02); box-shadow:0 8px 24px rgba(0,0,0,0.1); border-color:#ea5073; }
+    .fl-choice-card h4 { @apply font-bold text-slate-900 mb-2 text-sm; }
+    .fl-choice-card p { @apply text-xs text-gray-500; margin:0;}
     .fl-choice-icon { width:56px; height:56px; border-radius:12px; display:flex; align-items:center; justify-content:center; margin:0 auto 16px; }
-    .fl-back-btn { display:flex; align-items:center; gap:8px; padding:8px 16px; border-radius:12px; border:none; background:none; cursor:pointer; color:#6B7280; font-size:14px; font-weight:500; transition:all .2s; margin-bottom:16px; }
-    .fl-back-btn:hover { background:#F3F4F6; }
+    .fl-back-btn { @apply flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-slate-300 font-medium hover:bg-slate-50 transition text-sm cursor-pointer mb-4; background:none; }
     .fl-templates-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; max-height:70vh; overflow-y:auto; }
     .fl-template-card { background:#fff; border:2px solid #E5E7EB; border-radius:20px; padding:20px; transition:all .2s; }
-    .fl-template-card:hover { border-color:#3B82F6; box-shadow:0 8px 24px rgba(0,0,0,0.1); }
+    .fl-template-card:hover { border-color:#ea5073; box-shadow:0 8px 24px rgba(0,0,0,0.1); }
     .fl-template-header { display:flex; align-items:flex-start; gap:12px; margin-bottom:12px; }
     .fl-template-icon { width:48px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-    .fl-template-info h4 { font-weight:700; font-size:14px; color:#1A1A2E; margin:0 0 4px; }
-    .fl-template-info p { font-size:12px; color:#6B7280; margin:0; }
+    .fl-template-info h4 { @apply font-bold text-slate-900 mb-1 text-sm; margin:0; }
+    .fl-template-info p { @apply text-xs text-gray-500; margin:0; }
     .fl-template-meta { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
-    .fl-meta-label { font-size:12px; color:#9CA3AF; }
-    .fl-meta-badge { font-size:11px; font-weight:600; padding:2px 10px; border-radius:20px; text-transform:capitalize; }
-    .fl-meta-count { font-size:12px; font-weight:700; color:#3B82F6; }
+    .fl-meta-label { @apply text-xs text-gray-500; }
+    .fl-meta-badge { @apply text-xs font-semibold px-3 py-1 rounded-full capitalize; }
+    .fl-meta-count { @apply text-xs font-bold text-rose-600; }
     .fl-template-actions { display:flex; flex-direction:column; gap:8px; margin-top:12px; }
-    .fl-btn-primary { display:flex; align-items:center; justify-content:center; gap:6px; padding:10px 20px; border-radius:12px; font-size:13px; font-weight:700; color:#fff; border:none; cursor:pointer; transition:all .2s; background:linear-gradient(135deg, #1E40AF, #3B82F6); }
-    .fl-btn-primary:hover { opacity:0.9; }
-    .fl-btn-primary:disabled { opacity:0.4; cursor:not-allowed; }
-    .fl-btn-outline { display:flex; align-items:center; justify-content:center; gap:6px; padding:10px 20px; border-radius:12px; font-size:13px; font-weight:700; color:#3B82F6; border:2px solid #3B82F6; background:none; cursor:pointer; transition:all .2s; }
-    .fl-btn-outline:hover { background:#fff0f5; }
-    .fl-btn-text { padding:8px 16px; border-radius:12px; border:none; background:none; cursor:pointer; font-size:14px; font-weight:500; color:#6B7280; transition:all .2s; }
-    .fl-btn-text:hover { background:#F3F4F6; }
-    .fl-form-body { display:flex; flex-direction:column; gap:20px; }
-    .fl-form-field label { display:block; font-size:14px; font-weight:600; color:#333; margin-bottom:8px; }
-    .fl-form-field input[type="text"], .fl-form-field input[type="date"], .fl-form-field textarea { width:100%; border:1px solid #E5E7EB; border-radius:12px; padding:10px 16px; font-size:13px; outline:none; color:#333; transition:border-color .2s; box-sizing:border-box; }
-    .fl-form-field input:focus, .fl-form-field textarea:focus { border-color:#3B82F6; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
+    .fl-btn-primary { @apply px-8 py-3 bg-[#ea5073] hover:bg-[#d4476a] text-white rounded-lg font-bold shadow-lg hover:shadow-xl disabled:opacity-60 disabled:cursor-not-allowed transition flex items-center justify-center gap-2; border:none; cursor:pointer; }
+    .fl-btn-outline { @apply px-6 py-2.5 rounded-lg border-2 border-rose-500 text-rose-500 font-medium hover:bg-rose-50 transition flex items-center justify-center gap-2; background:none; cursor:pointer; }
+    .fl-btn-text { @apply px-6 py-3 rounded-lg border-2 border-slate-300 font-medium hover:bg-slate-50 transition; background:none; cursor:pointer; }
+    .fl-form-body { display:flex; flex-direction:column; gap:24px; padding-right:12px; }
+    .fl-form-field label { @apply block text-sm font-semibold text-slate-700 mb-2; margin-bottom:8px; }
+    .fl-form-field input[type="text"], .fl-form-field input[type="date"], .fl-form-field textarea { @apply w-full px-4 py-3 rounded-lg border-2 border-slate-300 focus:border-rose-500 focus:ring-4 focus:ring-rose-100 outline-none transition-all text-sm; box-sizing:border-box; }
     .fl-form-field textarea { resize:none; }
     .fl-radio-group { display:flex; gap:16px; }
-    .fl-radio-group label { display:flex; align-items:center; gap:6px; font-size:14px; color:#333; cursor:pointer; }
+    .fl-radio-group label { @apply flex items-center gap-2 text-sm text-slate-700 font-medium cursor-pointer; }
+    .fl-radio-group input[type="radio"] { accent-color:#ea5073; cursor:pointer; transform:scale(1.1); margin:0; }
     .fl-questions-list { display:flex; flex-direction:column; gap:16px; }
-    .fl-question-item { border:1px solid #E5E7EB; border-radius:16px; padding:20px; background:#fff; box-shadow:0 2px 4px rgba(0,0,0,0.02); transition:all .2s; }
-    .fl-question-item:hover { border-color:#3B82F6; box-shadow:0 4px 12px rgba(59,130,246,0.05); }
-    .fl-question-row { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
-    .fl-question-row input { flex:1; background:#fff; border:1px solid #E5E7EB; border-radius:8px; padding:6px 12px; font-size:13px; outline:none; color:#333; }
-    .fl-question-row input:focus { border-color:#3B82F6; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
-    .fl-q-badge { font-size:11px; font-weight:700; color:#6B7280; background:#fff; padding:4px 8px; border-radius:8px; }
-    .fl-q-delete, .fl-q-delete-sm { padding:6px; border-radius:8px; border:none; background:none; cursor:pointer; color:#9CA3AF; transition:all .2s; }
-    .fl-q-delete:hover, .fl-q-delete-sm:hover { color:#EF4444; background:#FEF2F2; }
-    .fl-type-row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
-    .fl-type-row label { display:flex; align-items:center; gap:6px; font-size:12px; color:#6B7280; cursor:pointer; font-weight:500; }
-    .fl-type-row input[type="radio"], .fl-type-row input[type="checkbox"] { accent-color:#3B82F6; cursor:pointer; }
+    .fl-question-item { border:2px solid #E5E7EB; border-radius:16px; padding:20px; background:#fff; transition:all .2s; }
+    .fl-question-item:hover { border-color:#ea5073; box-shadow:0 4px 12px rgba(234, 80, 115, 0.05); }
+    .fl-question-row { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
+    .fl-question-row input { @apply flex-1 px-4 py-2.5 rounded-lg border-2 border-slate-300 focus:border-rose-500 focus:ring-4 focus:ring-rose-100 outline-none transition-all text-sm; }
+    .fl-q-badge { @apply bg-rose-100 text-rose-600 px-3 py-1.5 rounded-lg text-xs font-bold leading-none; }
+    .fl-q-delete, .fl-q-delete-sm { padding:8px; border-radius:8px; border:none; background:none; cursor:pointer; color:#9CA3AF; transition:all .2s; }
+    .fl-q-delete:hover, .fl-q-delete-sm:hover { color:#ea5073; background:#FEF2F2; }
+    .fl-type-row { display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin-bottom: 8px; }
+    .fl-type-row label { @apply flex items-center gap-2 text-xs font-medium text-slate-600 cursor-pointer; }
+    .fl-type-row input[type="radio"], .fl-type-row input[type="checkbox"] { accent-color:#ea5073; cursor:pointer; margin:0;}
     .fl-required-check { margin-left:auto; border-left:1px solid #E5E7EB; padding-left:12px; }
-    .fl-options { margin-left:24px; margin-top:12px; }
-    .fl-options-label { font-size:12px; font-weight:600; color:#6B7280; margin-bottom:8px; }
-    .fl-option-row { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
-    .fl-option-row input { flex:1; background:#fff; border:1px solid #E5E7EB; border-radius:8px; padding:6px 12px; font-size:12px; outline:none; color:#333; }
-    .fl-option-row input:focus { border-color:#3B82F6; box-shadow:0 0 0 3px rgba(59,130,246,0.1); }
-    .fl-add-option { font-size:12px; color:#3B82F6; font-weight:600; background:none; border:none; cursor:pointer; display:flex; align-items:center; gap:6px; margin-top:8px; padding:4px 0; }
-    .fl-add-option:hover { color:#a17dfd; }
-    .fl-add-question { width:100%; padding:10px; border:2px dashed #D1D5DB; border-radius:12px; font-size:14px; font-weight:500; color:#6B7280; background:none; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:all .2s; }
-    .fl-add-question:hover { border-color:#3B82F6; color:#3B82F6; }
-    .fl-footer { padding:16px 24px; border-top:1px solid #F3F4F6; display:flex; align-items:center; justify-content:space-between; position:sticky; bottom:0; background:#fff; }
+    .fl-options { margin-left:48px; margin-top:12px; }
+    .fl-options-label { @apply text-xs font-semibold text-slate-500 mb-2 block; }
+    .fl-option-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+    .fl-option-row input { @apply flex-1 px-3 py-2 rounded-lg border-2 border-slate-200 focus:border-rose-500 outline-none transition-all text-sm; }
+    .fl-add-option { @apply flex items-center gap-1 text-xs font-semibold text-rose-500 hover:text-rose-600 mt-2 cursor-pointer bg-transparent border-none p-0; }
+    .fl-add-question { @apply w-full py-4 border-2 border-dashed border-slate-300 rounded-xl text-sm font-semibold text-slate-500 hover:border-rose-500 hover:text-rose-500 hover:bg-rose-50 transition-all flex items-center justify-center gap-2 cursor-pointer bg-transparent; }
+    .fl-footer { padding:24px; border-top:1px solid #F3F4F6; display:flex; align-items:center; justify-content:flex-end; gap:16px; position:sticky; bottom:0; background:#fff; }
     .fl-success-overlay { position:absolute; inset:0; z-index:20; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.9); border-radius:20px; }
     .fl-success-content { display:flex; flex-direction:column; align-items:center; gap:16px; }
     .fl-success-icon { width:64px; height:64px; border-radius:50%; background:#22C55E; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 24px rgba(34,197,94,0.3); }
-    .fl-success-content p { font-size:18px; font-weight:700; color:#1A1A2E; margin:0; }
+    .fl-success-content p { @apply text-xl font-bold text-slate-900; margin:0; }
     .text-white { color:#fff; }
-    @media(max-width:768px) { .fl-choice-grid { grid-template-columns:1fr; } .fl-templates-grid { grid-template-columns:1fr; } }
+    @media(max-width:768px) { .fl-choice-grid { grid-template-columns:1fr; } .fl-templates-grid { grid-template-columns:1fr; } .fl-footer { justify-content:space-between; } }
   `]
 })
 export class AdminFormLauncherComponent implements OnChanges {
