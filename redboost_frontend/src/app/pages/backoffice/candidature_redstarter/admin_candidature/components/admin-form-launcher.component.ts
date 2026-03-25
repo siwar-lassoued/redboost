@@ -157,7 +157,7 @@ type Step = 'choice' | 'templates' | 'form';
         <div *ngIf="step() === 'form'" class="fl-footer">
           <button (click)="onBack()" class="fl-btn-text">Retour</button>
           <button (click)="handlePublish()" [disabled]="!formTitle || !formDescription || publishing" class="fl-btn-primary">
-            <lucide-icon *ngIf="publishing" name="loader-2" [size]="16" class="animate-spin"></lucide-icon>
+            <lucide-icon *ngIf="publishing" name="loader" [size]="16" class="animate-spin"></lucide-icon>
             {{ publishing ? 'Publication...' : "Publier le formulaire" }}
           </button>
         </div>
