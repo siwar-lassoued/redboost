@@ -33,7 +33,7 @@ type Step = 'choice' | 'templates' | 'form';
         <div *ngIf="step() === 'choice'" class="fl-body">
           <div class="fl-choice-grid">
             <button (click)="handleChoiceSelect('new')" class="fl-choice-card">
-              <div class="fl-choice-icon" style="background: linear-gradient(135deg, #1A3A3A, #C0392B);">
+              <div class="fl-choice-icon" style="background: linear-gradient(135deg, #2563EB, #3B82F6);">
                 <lucide-icon name="plus" [size]="24" class="text-white"></lucide-icon>
               </div>
               <h4>Créer un nouveau formulaire</h4>
@@ -65,7 +65,7 @@ type Step = 'choice' | 'templates' | 'form';
             <div *ngFor="let template of templates" class="fl-template-card">
               <div class="fl-template-header">
                 <div class="fl-template-icon"
-                  [style.background]="template.profileType === 'coach' ? 'linear-gradient(135deg, #00d2ff, #3aafff)' : 'linear-gradient(135deg, #1A3A3A, #C0392B)'">
+                  [style.background]="template.profileType === 'coach' ? 'linear-gradient(135deg, #00d2ff, #3aafff)' : 'linear-gradient(135deg, #1E40AF, #3B82F6)'">
                   <lucide-icon name="file-text" [size]="20" class="text-white"></lucide-icon>
                 </div>
                 <div class="fl-template-info">
@@ -75,8 +75,8 @@ type Step = 'choice' | 'templates' | 'form';
               </div>
               <div class="fl-template-meta">
                 <span class="fl-meta-label">Type:</span>
-                <span class="fl-meta-badge" [style.background]="template.profileType === 'coach' ? '#D1FAE5' : '#ffe0ef'"
-                  [style.color]="template.profileType === 'coach' ? '#065F46' : '#C0392B'">{{ template.profileType }}</span>
+                <span class="fl-meta-badge" [style.background]="template.profileType === 'coach' ? '#DBEAFE' : '#E0E7FF'"
+                  [style.color]="template.profileType === 'coach' ? '#1E40AF' : '#4338CA'">{{ template.profileType }}</span>
               </div>
               <div class="fl-template-meta">
                 <span class="fl-meta-label">Questions:</span>
@@ -192,7 +192,7 @@ type Step = 'choice' | 'templates' | 'form';
     .fl-back-btn:hover { background:#F3F4F6; }
     .fl-templates-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; max-height:70vh; overflow-y:auto; }
     .fl-template-card { background:#fff; border:2px solid #E5E7EB; border-radius:20px; padding:20px; transition:all .2s; }
-    .fl-template-card:hover { border-color:#C0392B; box-shadow:0 8px 24px rgba(0,0,0,0.1); }
+    .fl-template-card:hover { border-color:#3B82F6; box-shadow:0 8px 24px rgba(0,0,0,0.1); }
     .fl-template-header { display:flex; align-items:flex-start; gap:12px; margin-bottom:12px; }
     .fl-template-icon { width:48px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
     .fl-template-info h4 { font-weight:700; font-size:14px; color:#1A1A2E; margin:0 0 4px; }
@@ -200,42 +200,44 @@ type Step = 'choice' | 'templates' | 'form';
     .fl-template-meta { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
     .fl-meta-label { font-size:12px; color:#9CA3AF; }
     .fl-meta-badge { font-size:11px; font-weight:600; padding:2px 10px; border-radius:20px; text-transform:capitalize; }
-    .fl-meta-count { font-size:12px; font-weight:700; color:#C0392B; }
+    .fl-meta-count { font-size:12px; font-weight:700; color:#3B82F6; }
     .fl-template-actions { display:flex; flex-direction:column; gap:8px; margin-top:12px; }
-    .fl-btn-primary { display:flex; align-items:center; justify-content:center; gap:6px; padding:10px 20px; border-radius:12px; font-size:13px; font-weight:700; color:#fff; border:none; cursor:pointer; transition:all .2s; background:linear-gradient(135deg, #1A3A3A, #C0392B); }
+    .fl-btn-primary { display:flex; align-items:center; justify-content:center; gap:6px; padding:10px 20px; border-radius:12px; font-size:13px; font-weight:700; color:#fff; border:none; cursor:pointer; transition:all .2s; background:linear-gradient(135deg, #1E40AF, #3B82F6); }
     .fl-btn-primary:hover { opacity:0.9; }
     .fl-btn-primary:disabled { opacity:0.4; cursor:not-allowed; }
-    .fl-btn-outline { display:flex; align-items:center; justify-content:center; gap:6px; padding:10px 20px; border-radius:12px; font-size:13px; font-weight:700; color:#C0392B; border:2px solid #C0392B; background:none; cursor:pointer; transition:all .2s; }
+    .fl-btn-outline { display:flex; align-items:center; justify-content:center; gap:6px; padding:10px 20px; border-radius:12px; font-size:13px; font-weight:700; color:#3B82F6; border:2px solid #3B82F6; background:none; cursor:pointer; transition:all .2s; }
     .fl-btn-outline:hover { background:#fff0f5; }
     .fl-btn-text { padding:8px 16px; border-radius:12px; border:none; background:none; cursor:pointer; font-size:14px; font-weight:500; color:#6B7280; transition:all .2s; }
     .fl-btn-text:hover { background:#F3F4F6; }
     .fl-form-body { display:flex; flex-direction:column; gap:20px; }
     .fl-form-field label { display:block; font-size:14px; font-weight:600; color:#333; margin-bottom:8px; }
     .fl-form-field input[type="text"], .fl-form-field input[type="date"], .fl-form-field textarea { width:100%; border:1px solid #E5E7EB; border-radius:12px; padding:10px 16px; font-size:13px; outline:none; color:#333; transition:border-color .2s; box-sizing:border-box; }
-    .fl-form-field input:focus, .fl-form-field textarea:focus { border-color:#C0392B; }
+    .fl-form-field input:focus, .fl-form-field textarea:focus { border-color:#3B82F6; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
     .fl-form-field textarea { resize:none; }
     .fl-radio-group { display:flex; gap:16px; }
     .fl-radio-group label { display:flex; align-items:center; gap:6px; font-size:14px; color:#333; cursor:pointer; }
-    .fl-questions-list { display:flex; flex-direction:column; gap:12px; }
-    .fl-question-item { border:1px solid #E5E7EB; border-radius:12px; padding:16px; background:#F9FAFB; }
+    .fl-questions-list { display:flex; flex-direction:column; gap:16px; }
+    .fl-question-item { border:1px solid #E5E7EB; border-radius:16px; padding:20px; background:#fff; box-shadow:0 2px 4px rgba(0,0,0,0.02); transition:all .2s; }
+    .fl-question-item:hover { border-color:#3B82F6; box-shadow:0 4px 12px rgba(59,130,246,0.05); }
     .fl-question-row { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
     .fl-question-row input { flex:1; background:#fff; border:1px solid #E5E7EB; border-radius:8px; padding:6px 12px; font-size:13px; outline:none; color:#333; }
-    .fl-question-row input:focus { border-color:#C0392B; }
+    .fl-question-row input:focus { border-color:#3B82F6; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
     .fl-q-badge { font-size:11px; font-weight:700; color:#6B7280; background:#fff; padding:4px 8px; border-radius:8px; }
     .fl-q-delete, .fl-q-delete-sm { padding:6px; border-radius:8px; border:none; background:none; cursor:pointer; color:#9CA3AF; transition:all .2s; }
     .fl-q-delete:hover, .fl-q-delete-sm:hover { color:#EF4444; background:#FEF2F2; }
     .fl-type-row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
-    .fl-type-row label { display:flex; align-items:center; gap:4px; font-size:12px; color:#6B7280; cursor:pointer; }
+    .fl-type-row label { display:flex; align-items:center; gap:6px; font-size:12px; color:#6B7280; cursor:pointer; font-weight:500; }
+    .fl-type-row input[type="radio"], .fl-type-row input[type="checkbox"] { accent-color:#3B82F6; cursor:pointer; }
     .fl-required-check { margin-left:auto; border-left:1px solid #E5E7EB; padding-left:12px; }
     .fl-options { margin-left:24px; margin-top:12px; }
     .fl-options-label { font-size:12px; font-weight:600; color:#6B7280; margin-bottom:8px; }
     .fl-option-row { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
     .fl-option-row input { flex:1; background:#fff; border:1px solid #E5E7EB; border-radius:8px; padding:6px 12px; font-size:12px; outline:none; color:#333; }
-    .fl-option-row input:focus { border-color:#C0392B; }
-    .fl-add-option { font-size:12px; color:#C0392B; font-weight:500; background:none; border:none; cursor:pointer; display:flex; align-items:center; gap:4px; margin-top:4px; }
+    .fl-option-row input:focus { border-color:#3B82F6; box-shadow:0 0 0 3px rgba(59,130,246,0.1); }
+    .fl-add-option { font-size:12px; color:#3B82F6; font-weight:600; background:none; border:none; cursor:pointer; display:flex; align-items:center; gap:6px; margin-top:8px; padding:4px 0; }
     .fl-add-option:hover { color:#a17dfd; }
     .fl-add-question { width:100%; padding:10px; border:2px dashed #D1D5DB; border-radius:12px; font-size:14px; font-weight:500; color:#6B7280; background:none; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:all .2s; }
-    .fl-add-question:hover { border-color:#C0392B; color:#C0392B; }
+    .fl-add-question:hover { border-color:#3B82F6; color:#3B82F6; }
     .fl-footer { padding:16px 24px; border-top:1px solid #F3F4F6; display:flex; align-items:center; justify-content:space-between; position:sticky; bottom:0; background:#fff; }
     .fl-success-overlay { position:absolute; inset:0; z-index:20; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.9); border-radius:20px; }
     .fl-success-content { display:flex; flex-direction:column; align-items:center; gap:16px; }
