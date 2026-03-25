@@ -1,0 +1,206 @@
+<div class="hist-page">
+  <!-- HEADER -->
+  <div class="hist-header">
+    <div>
+      <h1 class="hist-title">Historique des Candidatures</h1>
+      <p class="hist-subtitle">Suivi des candidatures traitées — présélectionnées, acceptées et rejetées</p>
+    </div>
+    <button (click)="exportExcel()" class="btn-export">
+      <lucide-icon name="download" [size]="16"></lucide-icon> Exporter CSV
+    </button>
+  </div>
+
+  <!-- KPI CARDS -->
+  <div class="kpi-row">
+    <div class="kpi-card kpi-total">
+      <div class="kpi-icon-wrap"><lucide-icon name="archive" [size]="20"></lucide-icon></div>
+      <div class="kpi-info">
+        <p class="kpi-value">{{ kpiTotal() }}</p>
+        <p class="kpi-label">Total traitées</p>
+      </div>
+    </div>
+    <div class="kpi-card kpi-preselected">
+      <div class="kpi-icon-wrap"><lucide-icon name="star" [size]="20"></lucide-icon></div>
+      <div class="kpi-info">
+        <p class="kpi-value">{{ kpiPreselected() }}</p>
+        <p class="kpi-label">Présélectionnées</p>
+      </div>
+    </div>
+    <div class="kpi-card kpi-accepted">
+      <div class="kpi-icon-wrap"><lucide-icon name="check-circle" [size]="20"></lucide-icon></div>
+      <div class="kpi-info">
+        <p class="kpi-value">{{ kpiAccepted() }}</p>
+        <p class="kpi-label">Acceptées</p>
+      </div>
+    </div>
+    <div class="kpi-card kpi-rejected">
+      <div class="kpi-icon-wrap"><lucide-icon name="x-circle" [size]="20"></lucide-icon></div>
+      <div class="kpi-info">
+        <p class="kpi-value">{{ kpiRejected() }}</p>
+        <p class="kpi-label">Rejetées</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROFILE TABS -->
+  <div class="profile-tabs">
+    <button (click)="filterProfile.set('coaches'); loadCandidatures()" class="ptab" [class.active]="filterProfile()==='coaches'">
+      <lucide-icon name="briefcase" [size]="14"></lucide-icon> Coaches
+    </button>
+    <button (click)="filterProfile.set('entrepreneurs'); loadCandidatures()" class="ptab" [class.active]="filterProfile()==='entrepreneurs'">
+      <lucide-icon name="rocket" [size]="14"></lucide-icon> Entrepreneurs
+    </button>
+  </div>
+
+  <!-- ROUND TABS -->
+  <div class="round-tabs">
+    <button (click)="activeRound.set(0)" class="rtab" [class.active]="activeRound()===0">Tous les rounds</button>
+    @for (rn of roundNumbers(); track rn) {
+      <button (click)="activeRound.set(rn)" class="rtab" [class.active]="activeRound()===rn">Round {{ rn }}</button>
+    }
+  </div>
+
+  <!-- FILTERS -->
+  <div class="hist-filters">
+    <div class="search-wrap">
+      <lucide-icon name="search" [size]="16" class="search-icon"></lucide-icon>
+      <input type="text" placeholder="Rechercher..." [value]="searchTerm()" (input)="searchTerm.set($any($event.target).value)" class="search-input">
+    </div>
+    <select [value]="filterProgram()" (change)="filterProgram.set($any($event.target).value)" class="filter-select">
+      <option value="all">Tous les programmes</option>
+      @for (p of programs(); track p.id) { <option [value]="p.nom">{{ p.nom }}</option> }
+    </select>
+    <select [value]="filterStatus()" (change)="filterStatus.set($any($event.target).value)" class="filter-select">
+      <option value="all">Tous les statuts</option>
+      <option value="PRESELECTIONNE">Présélectionné</option>
+      <option value="ACCEPTE">Accepté</option>
+      <option value="REJETE">Rejeté</option>
+    </select>
+  </div>
+
+  <!-- COUNT -->
+  <p class="hist-count">{{ filtered().length }} candidature{{ filtered().length > 1 ? 's' : '' }}</p>
+
+  <!-- SPLIT LAYOUT -->
+  <div class="split-layout">
+    <!-- LEFT: Table -->
+    <div class="split-table" [class.full]="!selected()">
+      @if (filtered().length > 0) {
+        <div class="table-card">
+          <table class="hist-table">
+            <thead>
+              <tr><th>Candidat</th><th>Programme</th><th>Statut</th><th>Date</th></tr>
+            </thead>
+            <tbody>
+              @for (c of filtered(); track c.id) {
+                <tr class="table-row" [class.selected]="selected()?.id === c.id" (click)="openDetail(c)">
+                  <td>
+                    <div class="name-cell2">
+                      <div class="avatar-sm"
+                        [style.background]="c.type === 'coaches' ? 'linear-gradient(135deg, #00d2ff, #3aafff)' : 'linear-gradient(135deg, #1A3A3A, #C0392B)'">
+                        {{ getInitials(c.nom) }}
+                      </div>
+                      <div>
+                        <p class="name-txt">{{ c.nom }}</p>
+                        <p class="email-txt">{{ c.email }}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="prog-txt">{{ c.programme || '—' }}</td>
+                  <td>
+                    <span class="status-pill" [style.background]="getStatusCfg(c.statut).bg" [style.color]="getStatusCfg(c.statut).color">
+                      {{ getStatusCfg(c.statut).label }}
+                    </span>
+                  </td>
+                  <td class="date-txt">{{ formatDate(c.submittedAt) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <div class="empty-state">
+          <lucide-icon name="archive" [size]="40" style="color:#D1D5DB"></lucide-icon>
+          <p class="empty-text">Aucune candidature dans l'historique</p>
+        </div>
+      }
+    </div>
+
+    <!-- RIGHT: Detail Panel -->
+    @if (selected()) {
+      <div class="detail-panel">
+        <div class="dp-header">
+          <div class="dp-avatar"
+            [style.background]="selected()!.type === 'coaches' ? 'linear-gradient(135deg, #00d2ff, #3aafff)' : 'linear-gradient(135deg, #1A3A3A, #C0392B)'">
+            {{ getInitials(selected()!.nom) }}
+          </div>
+          <div class="dp-title">
+            <h3>{{ selected()!.nom }}</h3>
+            <p>{{ selected()!.email }}<br>{{ selected()!.phone }}</p>
+          </div>
+          <button (click)="selected.set(null)" class="dp-close"><lucide-icon name="x" [size]="16"></lucide-icon></button>
+        </div>
+
+        <div class="dp-status-row">
+          <span class="status-pill big" [style.background]="getStatusCfg(selected()!.statut).bg" [style.color]="getStatusCfg(selected()!.statut).color">
+            {{ getStatusCfg(selected()!.statut).label }}
+          </span>
+          @if (selected()!.programme) { <span class="prog-label">{{ selected()!.programme }}</span> }
+        </div>
+
+        <!-- Journey Timeline -->
+        <div class="journey-section">
+          <h4 class="sec-title"><lucide-icon name="route" [size]="14"></lucide-icon> Parcours</h4>
+          <div class="journey-timeline">
+            @for (step of getJourneySteps(selected()!); track step.statut; let i = $index; let last = $last) {
+              <div class="journey-step">
+                <div class="step-line-wrap">
+                  <div class="step-dot" [class.reached]="step.reached" [class.current]="step.current"
+                    [style.border-color]="step.reached ? getStepColor(step.statut) : '#D1D5DB'"
+                    [style.background]="step.current ? getStepColor(step.statut) : (step.reached ? getStepColor(step.statut) : '#fff')">
+                  </div>
+                  @if (!last) {
+                    <div class="step-line" [style.background]="step.reached ? getStepColor(step.statut) : '#E5E7EB'"></div>
+                  }
+                </div>
+                <div class="step-info" [class.dimmed]="!step.reached">
+                  <p class="step-label">{{ step.label }}</p>
+                  <p class="step-desc">{{ step.description }}</p>
+                  @if (step.date) { <p class="step-date">{{ formatDate(step.date) }}</p> }
+                  @if (step.note) { <p class="step-note">{{ step.note }}</p> }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Actions -->
+        @if (selected()!.statut === 'PRESELECTIONNE') {
+          <div class="dp-actions">
+            <button (click)="onAccept()" class="btn-action btn-green">
+              <lucide-icon name="check" [size]="14"></lucide-icon> Accepter
+            </button>
+            <button (click)="showRejectModal.set(true)" class="btn-action btn-reject-outline">
+              <lucide-icon name="x" [size]="14"></lucide-icon> Rejeter
+            </button>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>
+
+<!-- Reject Modal -->
+@if (showRejectModal()) {
+  <div class="reject-overlay">
+    <div class="reject-box">
+      <h3>Motif de rejet</h3>
+      <p>Veuillez indiquer la raison du rejet de cette candidature.</p>
+      <textarea [(ngModel)]="motifRejet" rows="4" placeholder="Saisissez le motif du rejet..."></textarea>
+      <div class="reject-actions">
+        <button (click)="showRejectModal.set(false)" class="btn-cancel">Annuler</button>
+        <button (click)="onReject()" [disabled]="!motifRejet.trim()" class="btn-confirm-reject">Confirmer le rejet</button>
+      </div>
+    </div>
+  </div>
+}

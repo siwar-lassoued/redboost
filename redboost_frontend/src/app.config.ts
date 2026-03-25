@@ -26,6 +26,7 @@ import { environment } from './environment';
 
 
 import { ToastrModule } from 'ngx-toastr';
+import { LucideAngularModule, icons } from 'lucide-angular';
 
 export const appConfig: ApplicationConfig = {
     providers: [
@@ -62,5 +63,6 @@ export const appConfig: ApplicationConfig = {
         }),
         provideNativeDateAdapter(), // ✅ Fixed missing comma
         importProvidersFrom(ToastrModule.forRoot()), // ✅ Import ToastrModule properly
+        importProvidersFrom(LucideAngularModule.pick(icons)), // ✅ Register all Lucide icons
     ],
 };

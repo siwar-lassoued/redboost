@@ -14,9 +14,6 @@ import { ScrollToTopComponent } from './ScrollToTopComponent';
         CommonModule,
         ButtonModule,
         RippleModule,
-        TopbarWidget,
-        FooterWidget,
-        ScrollToTopComponent,
     ],
     template: `
         <div class="min-h-screen flex flex-col relative">

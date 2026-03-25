@@ -4,7 +4,7 @@ export const environment = {
     apiUploads:'https://redboost.tn/api',
     //apiUploads:'https://redboost.tn/api',
 
-    apiUrl: 'https://redboost.tn/api',
+    apiUrl: 'http://localhost:8082/api',
     //apiUrl: 'https://redboost.tn/api',
 
     firebaseConfig: {

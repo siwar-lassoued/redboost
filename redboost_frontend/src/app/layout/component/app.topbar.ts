@@ -65,7 +65,6 @@ interface ExtendedUser extends Omit<User, 'profilePictureUrl'> {
         ChipModule,
         ReactiveFormsModule,
         FormsModule,
-        AppConfigurator,
         MatTooltipModule,
         MatIconModule,
         MatBadgeModule,
@@ -224,8 +223,8 @@ interface ExtendedUser extends Omit<User, 'profilePictureUrl'> {
                     </button>
                     <div class="profile-dropdown custom-scrollbar" *ngIf="showProfileDropdown">
                         <div class="dropdown-header">
-                            <h3>{{ user?.firstName || 'Utilisateur' }} {{ user?.lastName || '' }}</h3>
-                            <span class="profile-role">{{ user?.role || 'Rôle inconnu' }}</span>
+                            <h3>{{ user.firstName || 'Utilisateur' }} {{ user.lastName || '' }}</h3>
+                            <span class="profile-role">{{ user.role || 'Rôle inconnu' }}</span>
                         </div>
                         <div class="dropdown-body">
                             <a class="profile-item" (click)="navigateToProfile()">

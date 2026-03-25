@@ -39,7 +39,7 @@ interface KpiCategory {
 @Component({
     selector: 'app-activity-modal',
     standalone: true,
-    imports: [CommonModule, FormsModule, MatIconModule, DatePipe],
+    imports: [CommonModule, FormsModule, MatIconModule],
     template: `
        <div
            class="modal-overlay"
