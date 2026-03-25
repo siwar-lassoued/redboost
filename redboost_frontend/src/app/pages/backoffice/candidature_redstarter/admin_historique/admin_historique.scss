@@ -112,5 +112,74 @@
 .btn-confirm-reject:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn-confirm-reject:hover:not(:disabled) { opacity: 0.9; }
 
-@media(max-width: 1024px) { .split-layout { flex-direction: column; } .detail-panel { width: 100%; max-height: none; } .kpi-row { grid-template-columns: repeat(2, 1fr); } }
-@media(max-width: 600px) { .kpi-row { grid-template-columns: 1fr; } }
+/* ══════════════════════════════════════════════════
+   RESPONSIVE — Tablet (≤1024px)
+   ══════════════════════════════════════════════════ */
+@media (max-width: 1024px) {
+  .split-layout { flex-direction: column; }
+  .detail-panel { width: 100%; max-height: none; }
+  .kpi-row { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ══════════════════════════════════════════════════
+   RESPONSIVE — Phone (≤768px)
+   ══════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .hist-page { padding: 16px; }
+  .hist-header { flex-direction: column; gap: 12px; }
+  .hist-title { font-size: 22px; }
+  .hist-subtitle { font-size: 13px; }
+  .btn-export { width: 100%; justify-content: center; }
+
+  .kpi-row { grid-template-columns: 1fr; gap: 10px; }
+  .kpi-card { padding: 16px; gap: 12px; }
+  .kpi-value { font-size: 20px; }
+
+  .profile-tabs, .round-tabs { gap: 6px; }
+  .ptab, .rtab { padding: 7px 12px; font-size: 12px; }
+
+  .hist-filters { flex-direction: column; gap: 8px; }
+  .search-wrap { min-width: unset; width: 100%; }
+  .filter-select { width: 100%; }
+
+  /* Table → card on mobile */
+  .hist-table thead { display: none; }
+  .hist-table, .hist-table tbody, .hist-table tr, .hist-table td {
+    display: block; width: 100%;
+  }
+  .table-row {
+    padding: 14px; margin-bottom: 8px;
+    border-radius: 12px; border-bottom: none;
+    background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  }
+  .table-row td { padding: 4px 0; }
+  .name-cell2 { gap: 10px; }
+  .avatar-sm { width: 32px; height: 32px; font-size: 11px; border-radius: 8px; }
+  .name-txt { font-size: 13px; }
+  .date-txt { font-size: 11px; }
+
+  /* Detail panel full-width */
+  .detail-panel { width: 100%; padding: 16px; border-radius: 12px; }
+  .dp-header { flex-wrap: wrap; }
+  .dp-avatar { width: 44px; height: 44px; font-size: 14px; }
+  .dp-title h3 { font-size: 16px; }
+  .dp-title p { font-size: 12px; }
+  .dp-actions { flex-direction: column; gap: 8px; }
+  .dp-actions .btn-action { width: 100%; justify-content: center; }
+
+  /* Reject modal */
+  .reject-overlay { padding: 12px; }
+  .reject-box { padding: 20px; border-radius: 16px; }
+  .reject-actions { flex-direction: column; gap: 8px; }
+  .reject-actions button { width: 100%; }
+}
+
+/* ══════════════════════════════════════════════════
+   RESPONSIVE — Small phone (≤400px)
+   ══════════════════════════════════════════════════ */
+@media (max-width: 400px) {
+  .hist-page { padding: 12px; }
+  .hist-title { font-size: 18px; }
+  .kpi-icon-wrap { width: 36px; height: 36px; }
+  .kpi-value { font-size: 18px; }
+}

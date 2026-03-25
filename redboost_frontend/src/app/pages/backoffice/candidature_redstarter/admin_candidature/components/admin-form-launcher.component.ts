@@ -247,7 +247,32 @@ type Step = 'choice' | 'templates' | 'form';
     .text-white { color:#fff; }
     .animate-spin { animation: spin 1s linear infinite; }
     @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-    @media(max-width:768px) { .fl-choice-grid { grid-template-columns:1fr; } .fl-templates-grid { grid-template-columns:1fr; } .fl-footer { justify-content:space-between; } }
+    @media(max-width:768px) {
+      .fl-overlay { padding:0; align-items:flex-end; }
+      .fl-box { max-height:95vh; border-radius:20px 20px 0 0; }
+      .fl-header { padding:16px 20px; }
+      .fl-title { font-size:1.25rem; }
+      .fl-body { padding:20px; }
+      .fl-choice-grid { grid-template-columns:1fr; gap:12px; }
+      .fl-choice-card { padding:20px 16px; }
+      .fl-choice-icon { width:44px; height:44px; margin-bottom:12px; }
+      .fl-templates-grid { grid-template-columns:1fr; }
+      .fl-question-row { flex-wrap:wrap; }
+      .fl-question-row input { min-width:0; }
+      .fl-type-row { gap:8px; }
+      .fl-required-check { margin-left:0; border-left:none; padding-left:0; margin-top:8px; width:100%; }
+      .fl-options { margin-left:0; }
+      .fl-radio-group { flex-direction:column; gap:12px; }
+      .fl-footer { padding:16px 20px; flex-wrap:wrap; gap:10px; }
+      .fl-btn-primary { width:100%; }
+      .fl-btn-text { width:100%; text-align:center; }
+    }
+    @media(max-width:400px) {
+      .fl-title { font-size:1.1rem; }
+      .fl-subtitle { font-size:0.75rem; }
+      .fl-body { padding:14px; }
+      .fl-choice-card h4 { font-size:0.8rem; }
+    }
   `]
 })
 export class AdminFormLauncherComponent implements OnChanges {
