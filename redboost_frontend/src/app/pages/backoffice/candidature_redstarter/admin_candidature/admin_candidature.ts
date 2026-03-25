@@ -141,7 +141,7 @@ export class AdminCandidaturesComponent implements OnInit {
   getInitials(c: Candidature): string { if (!c?.nom) return '??'; return c.nom.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase(); }
 
   getAnswerIcon(type: string): string {
-    switch (type) { case 'text-court': case 'text-long': return 'file-text'; case 'qcm': case 'qcu': return 'check-circle'; case 'upload': return 'download'; default: return 'clipboard-list'; }
+    switch (type) { case 'text-court': case 'text-long': return 'file-text'; case 'qcm': case 'qcu': return 'circle-check'; case 'upload': return 'download'; default: return 'clipboard-list'; }
   }
 
   getStatusCfg(c: Candidature): { bg: string; color: string; label: string } {
@@ -149,7 +149,7 @@ export class AdminCandidaturesComponent implements OnInit {
   }
 
   getStatusIcon(c: Candidature): string {
-    switch (c.statut) { case 'EN_ATTENTE': return 'clock'; case 'EN_REVISION': return 'eye'; case 'ENTRETIEN': return 'users'; case 'PRESELECTIONNE': return 'star'; case 'ACCEPTE': return 'check-circle'; case 'REJETE': return 'x-circle'; default: return 'clock'; }
+    switch (c.statut) { case 'EN_ATTENTE': return 'clock'; case 'EN_REVISION': return 'eye'; case 'ENTRETIEN': return 'users'; case 'PRESELECTIONNE': return 'star'; case 'ACCEPTE': return 'circle-check'; case 'REJETE': return 'circle-x'; default: return 'clock'; }
   }
 
   getLogColor(statut: string): { bg: string; color: string } {

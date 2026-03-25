@@ -56,6 +56,7 @@ redboost_frontend/.env*
 # ============================
 # Secrets & credentials — NEVER commit these!
 # ============================
+redboost_backend/src/main/resources/application.properties
 redboost_backend/src/main/resources/application-prod.properties
 redboost_backend/src/main/resources/application-dev.properties
 redboost_backend/src/main/resources/credentials.json
@@ -63,6 +64,7 @@ redboost_backend/src/main/resources/firebase-service-account.json
 redboost_backend/src/main/resources/google-oauth-credentials.json
 redboost_backend/src/main/resources/redboost-credentials.json
 redboost_backend/src/main/resources/tokens/
+redboost_frontend/src/environment.ts
 
 
 
