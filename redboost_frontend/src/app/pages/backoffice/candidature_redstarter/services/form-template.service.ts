@@ -31,6 +31,7 @@ export interface FormTemplateView {
     program: string;
     sectors: string[];
     questions: FormQuestionDTO[];
+    deadline?: string;
     createdAt: string;
 }
 
@@ -60,6 +61,7 @@ export class FormTemplateService {
             program: dto.program || '',
             sectors,
             questions,
+            deadline: dto.deadline,
             createdAt: dto.createdAt || ''
         };
     }

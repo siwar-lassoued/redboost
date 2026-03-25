@@ -23,6 +23,7 @@ import { WhyRedBoostComponent } from './components/WhyRedBoost';
 import { CallToActionComponent } from './components/CallToAction';
 import { QuotesWidget } from './components/QuotesWidget';
 import { FaqComponent } from './components/faq.component';
+import { OffersPopupComponent } from './components/offers-popup.component';
 
 @Component({
     selector: 'app-landing',
@@ -50,6 +51,7 @@ import { FaqComponent } from './components/faq.component';
         CommonModule,
         BecomeCoachComponent,
         ScrollToTopComponent,
+        OffersPopupComponent,
     ],
     template: `
         <div class="dark:bg-surface-900 min-h-screen">
@@ -66,6 +68,7 @@ import { FaqComponent } from './components/faq.component';
                 <app-marketing-landing-cards />
                 <app-faq />
                 <footer-widget />
+                <app-offers-popup />
                 <app-scroll-to-top />
             </div>
         </div>
