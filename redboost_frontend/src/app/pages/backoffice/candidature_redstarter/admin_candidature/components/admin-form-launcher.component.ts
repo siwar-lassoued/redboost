@@ -84,11 +84,15 @@ type Step = 'choice' | 'templates' | 'form';
               </div>
               <div class="fl-template-actions">
                 <button (click)="handleTemplateSelect(template)" class="fl-btn-primary">
-                  <lucide-icon name="check" [size]="14"></lucide-icon> Utiliser ce template
+                  <lucide-icon name="check" [size]="14"></lucide-icon> Éditer / Utiliser
                 </button>
-                <button (click)="handleTemplateDuplicate(template)" class="fl-btn-outline">
-                  <lucide-icon name="copy" [size]="14"></lucide-icon> Dupliquer
+                <button (click)="handleTemplateDelete(template)" class="fl-btn-outline" style="color:#DC2626; border-color:#DC2626;">
+                  <lucide-icon name="trash-2" [size]="14"></lucide-icon> Supprimer
                 </button>
+              </div>
+              <div class="fl-template-link" style="margin-top: 12px; font-size: 0.75rem; color: #6b7280; word-break: break-all; background: #f8fafc; padding: 8px; border-radius: 8px; border: 1px dashed #cbd5e1;">
+                <strong>Lien public direct :</strong> <br/>
+                <a [href]="'/redstarter?templateId=' + template.id" target="_blank" style="color: #ea5073; text-decoration: none;">https://redboost.tn/redstarter?templateId={{ template.id }}</a>
               </div>
             </div>
           </div>
@@ -331,9 +335,17 @@ export class AdminFormLauncherComponent implements OnChanges {
     this.questions = template.questions.map(q => ({ ...q, id: Math.random() })); this.step.set('form');
   }
 
-  handleTemplateDuplicate(template: FormTemplate): void {
-    this.formTitle = `${template.title} (copie)`; this.formDescription = template.description; this.profileType = template.profileType;
-    this.questions = template.questions.map(q => ({ ...q, id: Math.random() })); this.step.set('form');
+  handleTemplateDelete(template: FormTemplate): void {
+    if (confirm(`Êtes-vous sûr de vouloir supprimer le modèle "${template.title}" ?`)) {
+      this.formTemplateSvc.delete(template.id).subscribe({
+        next: () => {
+           this.successMessage = 'Formulaire supprimé !';
+           this.loadTemplates();
+           setTimeout(() => { this.successMessage = ''; }, 1800);
+        },
+        error: () => alert('Erreur lors de la suppression')
+      });
+    }
   }
 
   onBack(): void {

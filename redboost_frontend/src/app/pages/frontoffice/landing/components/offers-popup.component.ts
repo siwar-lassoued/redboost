@@ -173,8 +173,16 @@ export class OffersPopupComponent implements OnInit {
       this.formTemplateSvc.getAll().subscribe({
           next: (dtos) => {
               const all = dtos.map(dto => FormTemplateService.toView(dto));
-              // Only show templates with no deadline or whose deadline is still in the future
-              this.templates = all.filter(t => !t.deadline || !this.isExpired(t.deadline));
+              const valid = all.filter(t => !t.deadline || !this.isExpired(t.deadline));
+              
+              // Group by profileType and get the latest
+              const latestMap = new Map<string, FormTemplateView>();
+              // dtos are usually returned in insertion order. Let's assume the last one is the latest.
+              valid.forEach(t => {
+                  latestMap.set(t.profileType, t);
+              });
+              
+              this.templates = Array.from(latestMap.values());
               this.loading = false;
           },
           error: (err: any) => {
@@ -190,7 +198,7 @@ export class OffersPopupComponent implements OnInit {
 
   apply(template: FormTemplateView) {
       this.display = false;
-      this.router.navigate(['/redstarter']);
+      this.router.navigate(['/redstarter'], { queryParams: { templateId: template.id } });
   }
 
   /** Check if a deadline date string (YYYY-MM-DD) is in the past */

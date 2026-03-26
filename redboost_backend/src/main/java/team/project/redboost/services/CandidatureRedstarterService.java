@@ -199,10 +199,14 @@ public class CandidatureRedstarterService {
         candidature.setNombreEmploisCrees(dto.getNombreEmploisCrees());
         
         // Step 5
-        candidature.setBesoinsAccompagnement(dto.getBesoinsAccompagnement());
+        candidature.setBesoinsAccompagnement(dto.getBesoinsAccompagnement() != null ? dto.getBesoinsAccompagnement() : new ArrayList<>());
         candidature.setBeneficieAccompagnement(dto.getBeneficieAccompagnement());
         candidature.setDetailsAccompagnement(dto.getDetailsAccompagnement());
         candidature.setBesoinsFormation(dto.getBesoinsFormation() != null ? dto.getBesoinsFormation() : new ArrayList<>());
+        
+        // Dynamic Fields
+        candidature.setFormTemplateId(dto.getFormTemplateId());
+        candidature.setDynamicAnswers(dto.getDynamicAnswers());
         
         return candidature;
     }

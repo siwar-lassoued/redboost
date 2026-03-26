@@ -48,33 +48,17 @@ public class LocalFileStorageService {
         return uploadDir;
     }
 
-//    // New method to upload file and return both filename and MIME type
-//    public FileUploadResult uploadFileWithMimeType(MultipartFile file) {
-//        try {
-//            File directory = new File(uploadDir);
-//            if (!directory.exists()) {
-//                directory.mkdirs();
-//            }
-//            String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
-//            Path filePath = Paths.get(uploadDir, fileName);
-//            Files.copy(file.getInputStream(), filePath);
-//            String mimeType = file.getContentType() != null ? file.getContentType() : Files.probeContentType(filePath);
-//            return new FileUploadResult(fileName, mimeType != null ? mimeType : "application/octet-stream");
-//        } catch (IOException e) {
-//            throw new RuntimeException("Failed to store file: " + file.getOriginalFilename(), e);
-//        }
-//    }
-// Sanitize filename to remove problematic characters
-private String sanitizeFileName(String originalFileName) {
-    if (originalFileName == null) {
-        return UUID.randomUUID().toString();
+    // Sanitize filename to remove problematic characters
+    private String sanitizeFileName(String originalFileName) {
+        if (originalFileName == null) {
+            return UUID.randomUUID().toString();
+        }
+        // Replace problematic characters with underscore and normalize
+        return originalFileName
+                .replaceAll("[^a-zA-Z0-9._-]", "_") // Replace non-alphanumeric (except ._-)
+                .replaceAll("_+", "_") // Replace multiple underscores with single
+                .replaceAll("^_|_$", ""); // Remove leading/trailing underscores
     }
-    // Replace problematic characters with underscore and normalize
-    return originalFileName
-            .replaceAll("[^a-zA-Z0-9._-]", "_") // Replace non-alphanumeric (except ._-)
-            .replaceAll("_+", "_") // Replace multiple underscores with single
-            .replaceAll("^_|_$", ""); // Remove leading/trailing underscores
-}
 
     public FileUploadResult uploadFileWithMimeType(MultipartFile file) {
         try {
@@ -93,6 +77,7 @@ private String sanitizeFileName(String originalFileName) {
             throw new RuntimeException("Failed to store file: " + file.getOriginalFilename(), e);
         }
     }
+
     // Helper class to return filename and MIME type
     public static class FileUploadResult {
         private final String fileName;
