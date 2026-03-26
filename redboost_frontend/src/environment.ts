@@ -4,8 +4,8 @@ export const environment = {
     apiUploads:'https://redboost.tn/api',
     //apiUploads:'https://redboost.tn/api',
 
+    //apiUrl: 'http://localhost:8087/api',
     apiUrl: 'https://redboost.tn/api',
-    //apiUrl: 'https://redboost.tn/api',
 
     firebaseConfig: {
         apiKey: 'AIzaSyBfq3z--mKyHOSGk6yZ3xbkLjAVF51vLaA',

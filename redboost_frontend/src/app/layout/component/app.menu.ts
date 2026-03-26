@@ -184,9 +184,22 @@ export class AppMenu implements OnInit {
                     }, */
                 ],
             },
-         
-       
-        
+            {
+                label: 'CANDIDATURES',
+                icon: 'pi pi-fw pi-id-card',
+                items: [
+                    {
+                        label: 'Gestion',
+                        icon: 'pi pi-fw pi-list',
+                        routerLink: ['/admin_redstarter'],
+                    },
+                    {
+                        label: 'Historique',
+                        icon: 'pi pi-fw pi-history',
+                        routerLink: ['/admin_historique'],
+                    },
+                ],
+            },
         ];
     }
 

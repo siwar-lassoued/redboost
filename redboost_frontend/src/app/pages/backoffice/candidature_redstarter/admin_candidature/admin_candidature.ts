@@ -1,271 +1,166 @@
-import { Component, OnInit } from '@angular/core';
-import {
-    CandidatureService,
-    CandidatureRedstarter,
-    PageResponse,
-} from '../candidature.service';
+import { Component, OnInit, signal, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
+import { LucideAngularModule } from 'lucide-angular';
+import { CandidatureService, CandidatureLog } from '../services/candidature.service';
+import { Candidature, CandidatureStatus, FormAnswer, CANDIDATURE_STATUTS } from '../models/candidature.model';
+import { RouterModule } from '@angular/router';
+import { AdminFormLauncherComponent } from './components/admin-form-launcher.component';
+import { STATUS_CONFIG } from '../constants/colors.constants';
+import { SelectionRoundService } from '../services/selection-round.service';
+
+type TabType = 'coaches' | 'entrepreneurs' | 'spontanees';
 
 @Component({
-    selector: 'app-admin-candidatures',
-    templateUrl: './admin_candidature.html',
-    styleUrls: ['./admin_candidature.scss'],
-    standalone: true,
-
-    imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  selector: 'app-admin-candidatures',
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [CommonModule, FormsModule, LucideAngularModule, RouterModule, AdminFormLauncherComponent],
+  templateUrl: './admin_candidature.html',
+  styleUrls: ['./admin_candidature.scss'],
 })
 export class AdminCandidaturesComponent implements OnInit {
-    candidatures: CandidatureRedstarter[] = [];
-    selectedCandidature: CandidatureRedstarter | null = null;
+  private svc = inject(CandidatureService);
+  private roundSvc = inject(SelectionRoundService);
 
-    // Pagination
-    currentPage = 0;
-    pageSize = 10;
-    totalElements = 0;
-    totalPages = 0;
+  activeTab = signal<TabType>('coaches');
+  searchQuery = '';
+  statusFilter = 'ALL';
+  filterProgram = 'all';
+  modalTab = signal<'detail' | 'historique'>('detail');
 
-    // Filter
-    selectedStatus = '';
-    searchQuery = '';
+  tabs = [
+    { id: 'coaches' as TabType, label: 'Coaches' },
+    { id: 'entrepreneurs' as TabType, label: 'Entrepreneurs' },
+    { id: 'spontanees' as TabType, label: 'Spontanées' }
+  ];
 
-    // Statistics
-    statistics: { [key: string]: number } = {};
+  candidatures = signal<Candidature[]>([]);
+  allCandidatures = signal<Candidature[]>([]);
+  selected = signal<Candidature | null>(null);
+  showDetail = signal(false);
+  showFormLauncher = signal(false);
+  statuts = CANDIDATURE_STATUTS;
+  programmes = signal<string[]>([]);
+  historiqueLogs = signal<CandidatureLog[]>([]);
 
-    // Status update
-    newStatus = '';
-    adminComments = '';
+  coachCount = signal(0);
+  entCount = signal(0);
+  spontCount = signal(0);
 
-    loading = false;
-    Math = Math; // Make Math available in template
+  acceptingIds = new Set<string>();
 
-    constructor(private candidatureService: CandidatureService) {}
+  ngOnInit(): void {
+    this.loadAll();
+  }
 
-    ngOnInit(): void {
-        this.loadCandidatures();
-        this.loadStatistics();
+  private readonly ACTIVE_STATUSES = ['EN_ATTENTE', 'EN_REVISION', 'ENTRETIEN'];
+
+  loadAll(): void {
+    this.svc.getAll({ type: 'coaches' }).subscribe(r => {
+      this.coachCount.set((r.data || []).filter(c => this.ACTIVE_STATUSES.includes(c.statut)).length);
+    });
+    this.svc.getAll({ type: 'entrepreneurs' }).subscribe(r => {
+      this.entCount.set((r.data || []).filter(c => this.ACTIVE_STATUSES.includes(c.statut)).length);
+    });
+    this.svc.getAll({ type: 'spontanees' }).subscribe(r => {
+      this.spontCount.set((r.data || []).filter(c => this.ACTIVE_STATUSES.includes(c.statut)).length);
+    });
+    this.load();
+  }
+
+  load(): void {
+    this.svc.getAll({
+      type: this.activeTab(),
+      search: this.searchQuery || undefined,
+      statut: this.statusFilter === 'ALL' ? undefined : this.statusFilter as CandidatureStatus
+    }).subscribe(r => {
+      let data = r.data || [];
+      if (this.filterProgram !== 'all') {
+        data = data.filter(c => c.programme === this.filterProgram);
+      }
+      data = data.filter(c => this.ACTIVE_STATUSES.includes(c.statut));
+      this.candidatures.set(data);
+      const progs = [...new Set((r.data || []).map(c => c.programme).filter(Boolean))] as string[];
+      this.programmes.set(progs);
+    });
+  }
+
+  onTabChange(tabId: TabType): void {
+    this.activeTab.set(tabId);
+    this.searchQuery = '';
+    this.statusFilter = 'ALL';
+    this.filterProgram = 'all';
+    this.load();
+  }
+
+  onViewDetail(c: Candidature): void {
+    this.selected.set(c);
+    this.modalTab.set('detail');
+    this.showDetail.set(true);
+  }
+
+  advanceRound(): void {
+    if (this.filterProgram === 'all') return;
+    if (confirm('Êtes-vous sûr de vouloir clôturer le round actuel pour le programme sélectionné ?')) {
+      this.roundSvc.advanceRound(this.filterProgram).subscribe({
+        next: () => { alert('Le round a été clôturé avec succès.'); this.loadAll(); },
+        error: (err: any) => { console.error(err); alert('Erreur lors de la clôture du round.'); }
+      });
     }
+  }
 
-    loadCandidatures() {
-        this.loading = true;
+  onChangeStatut(newStatut: CandidatureStatus): void {
+    const id = this.selected()?.id;
+    if (!id) return;
+    this.svc.updateStatut(id, { statut: newStatut }).subscribe({
+      next: () => { this.showDetail.set(false); this.loadAll(); },
+      error: (err) => { console.error('Status update failed:', err); alert('Erreur: ' + (err.error?.message || err.message || 'Transition non autorisée')); }
+    });
+  }
 
-        if (this.searchQuery) {
-            this.searchCandidatures();
-        } else if (this.selectedStatus) {
-            this.loadByStatus();
-        } else {
-            this.loadAllCandidatures();
-        }
-    }
+  onAccept(id: string): void {
+    if (this.acceptingIds.has(id)) return;
+    this.acceptingIds.add(id);
+    this.svc.accept(id).subscribe({
+      next: () => { this.acceptingIds.delete(id); this.showDetail.set(false); this.loadAll(); },
+      error: (err) => { this.acceptingIds.delete(id); console.error('Acceptation failed:', err); alert('Erreur: ' + (err.error?.message || err.message || 'Echec acceptation')); }
+    });
+  }
 
-    loadAllCandidatures() {
-        this.candidatureService
-            .getAllCandidatures(this.currentPage, this.pageSize)
-            .subscribe({
-                next: (response: PageResponse<CandidatureRedstarter>) => {
-                    this.candidatures = response.content;
-                    this.totalElements = response.totalElements;
-                    this.totalPages = response.totalPages;
-                    this.loading = false;
-                },
-                error: (error) => {
-                    console.error('Error loading candidatures', error);
-                    alert('Erreur lors du chargement des candidatures');
-                    this.loading = false;
-                },
-            });
-    }
+  loadHistorique(): void {
+    const id = this.selected()?.id;
+    if (!id) return;
+    this.svc.getHistorique(id).subscribe({
+      next: (logs) => this.historiqueLogs.set(logs),
+      error: () => this.historiqueLogs.set([])
+    });
+  }
 
-    loadByStatus() {
-        this.candidatureService
-            .getCandidaturesByStatus(
-                this.selectedStatus,
-                this.currentPage,
-                this.pageSize,
-            )
-            .subscribe({
-                next: (response: PageResponse<CandidatureRedstarter>) => {
-                    this.candidatures = response.content;
-                    this.totalElements = response.totalElements;
-                    this.totalPages = response.totalPages;
-                    this.loading = false;
-                },
-                error: (error) => {
-                    console.error(
-                        'Error loading candidatures by status',
-                        error,
-                    );
-                    alert('Erreur lors du chargement des candidatures');
-                    this.loading = false;
-                },
-            });
-    }
+  isCoach(c: Candidature): boolean { return c.type === 'coaches'; }
+  getInitials(c: Candidature): string { if (!c?.nom) return '??'; return c.nom.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase(); }
 
-    searchCandidatures() {
-        this.candidatureService
-            .searchCandidatures(
-                this.searchQuery,
-                this.currentPage,
-                this.pageSize,
-            )
-            .subscribe({
-                next: (response: PageResponse<CandidatureRedstarter>) => {
-                    this.candidatures = response.content;
-                    this.totalElements = response.totalElements;
-                    this.totalPages = response.totalPages;
-                    this.loading = false;
-                },
-                error: (error) => {
-                    console.error('Error searching candidatures', error);
-                    alert('Erreur lors de la recherche');
-                    this.loading = false;
-                },
-            });
-    }
+  getAnswerIcon(type: string): string {
+    switch (type) { case 'text-court': case 'text-long': return 'file-text'; case 'qcm': case 'qcu': return 'circle-check'; case 'upload': return 'download'; default: return 'clipboard-list'; }
+  }
 
-    loadStatistics() {
-        this.candidatureService.getStatistics().subscribe({
-            next: (stats) => {
-                this.statistics = stats;
-            },
-            error: (error) => {
-                console.error('Error loading statistics', error);
-            },
-        });
-    }
+  getStatusCfg(c: Candidature): { bg: string; color: string; label: string } {
+    return (STATUS_CONFIG.candidature as any)[c.statut] || { bg: '#F3F4F6', color: '#6B7280', label: c.statut || 'Inconnu' };
+  }
 
-    viewCandidature(id: number) {
-        this.candidatureService.getCandidatureById(id).subscribe({
-            next: (candidature) => {
-                this.selectedCandidature = candidature;
-                this.newStatus = candidature.statut || 'EN_ATTENTE';
-                this.adminComments = candidature.commentairesAdmin || '';
-            },
-            error: (error) => {
-                console.error('Error loading candidature details', error);
-                alert('Erreur lors du chargement des détails');
-            },
-        });
-    }
+  getStatusIcon(c: Candidature): string {
+    switch (c.statut) { case 'EN_ATTENTE': return 'clock'; case 'EN_REVISION': return 'eye'; case 'ENTRETIEN': return 'users'; case 'PRESELECTIONNE': return 'star'; case 'ACCEPTE': return 'circle-check'; case 'REJETE': return 'circle-x'; default: return 'clock'; }
+  }
 
-    updateStatus(id: number, newStatus: string, commentaires?: string) {
-        if (!newStatus) {
-            alert('Veuillez sélectionner un statut');
-            return;
-        }
+  getLogColor(statut: string): { bg: string; color: string } {
+    const cfg = (STATUS_CONFIG.candidature as any)[statut];
+    return cfg || { bg: '#F3F4F6', color: '#6B7280' };
+  }
 
-        this.candidatureService
-            .updateCandidatureStatus(id, newStatus, commentaires)
-            .subscribe({
-                next: (response) => {
-                    console.log('Status updated successfully', response);
-                    alert('✅ Statut mis à jour avec succès!');
-                    this.selectedCandidature = null;
-                    this.loadCandidatures();
-                    this.loadStatistics();
-                },
-                error: (error) => {
-                    console.error('Error updating status', error);
-                    alert('❌ Erreur lors de la mise à jour du statut');
-                },
-            });
-    }
-
-    deleteCandidature(id: number) {
-        if (
-            confirm(
-                '⚠️ Êtes-vous sûr de vouloir supprimer cette candidature? Cette action est irréversible.',
-            )
-        ) {
-            this.candidatureService.deleteCandidature(id).subscribe({
-                next: (response) => {
-                    console.log('Candidature deleted', response);
-                    alert('✅ Candidature supprimée avec succès!');
-                    this.loadCandidatures();
-                    this.loadStatistics();
-                },
-                error: (error) => {
-                    console.error('Error deleting candidature', error);
-                    alert('❌ Erreur lors de la suppression');
-                },
-            });
-        }
-    }
-
-    onStatusFilterChange(status: string) {
-        this.selectedStatus = status;
-        this.currentPage = 0;
-        this.loadCandidatures();
-    }
-
-    onSearchQueryChange(query: string) {
-        this.searchQuery = query;
-        this.currentPage = 0;
-
-        // Debounce search
-        setTimeout(() => {
-            if (this.searchQuery === query) {
-                this.loadCandidatures();
-            }
-        }, 500);
-    }
-
-    clearFilters() {
-        this.selectedStatus = '';
-        this.searchQuery = '';
-        this.currentPage = 0;
-        this.loadCandidatures();
-    }
-
-    nextPage() {
-        if (this.currentPage < this.totalPages - 1) {
-            this.currentPage++;
-            this.loadCandidatures();
-            window.scrollTo(0, 0);
-        }
-    }
-
-    previousPage() {
-        if (this.currentPage > 0) {
-            this.currentPage--;
-            this.loadCandidatures();
-            window.scrollTo(0, 0);
-        }
-    }
-
-    goToPage(page: number) {
-        this.currentPage = page;
-        this.loadCandidatures();
-        window.scrollTo(0, 0);
-    }
-
-    getStatusBadgeClass(status: string): string {
-        switch (status) {
-            case 'EN_ATTENTE':
-                return 'badge-warning';
-            case 'EN_COURS_EVALUATION':
-                return 'badge-info';
-            case 'ACCEPTE':
-                return 'badge-success';
-            case 'REFUSE':
-                return 'badge-danger';
-            default:
-                return 'badge-secondary';
-        }
-    }
-
-    getStatusLabel(status: string): string {
-        switch (status) {
-            case 'EN_ATTENTE':
-                return 'En Attente';
-            case 'EN_COURS_EVALUATION':
-                return "En Cours d'Évaluation";
-            case 'ACCEPTE':
-                return 'Accepté';
-            case 'REFUSE':
-                return 'Refusé';
-            default:
-                return status;
-        }
-    }
+  isObject(val: any): boolean { return typeof val === 'object' && val !== null && !Array.isArray(val); }
+  isArray(val: any): boolean { return Array.isArray(val); }
+  asFile(val: any): { name: string; size: string } { return val as { name: string; size: string }; }
+  asArray(val: any): string[] { return val as string[]; }
+  getNote(): string | null { return (this.selected() as any)?.noteInterne || null; }
+  getMotif(): string | null { return (this.selected() as any)?.motifRejet || null; }
 }

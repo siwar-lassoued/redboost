@@ -19,8 +19,16 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import java.util.UUID;
+
+import team.project.redboost.entities.CandidatureLog;
+import team.project.redboost.entities.Role;
+import team.project.redboost.entities.User;
+import team.project.redboost.repositories.CandidatureLogRepository;
+import team.project.redboost.repositories.UserRepository;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +36,9 @@ import java.util.UUID;
 public class CandidatureRedstarterService {
     
     private final CandidatureRedstarterRepository candidatureRepository;
+    private final NotificationService notificationService;
+    private final UserRepository userRepository;
+    private final CandidatureLogRepository logRepository;
     private static final String UPLOAD_DIR = "uploads/candidatures/";
     
     @Transactional
@@ -47,6 +58,25 @@ public class CandidatureRedstarterService {
         
         CandidatureRedstarter savedCandidature = candidatureRepository.save(candidature);
         log.info("Candidature saved with ID: {}", savedCandidature.getId());
+        
+        logAction(savedCandidature.getId(), "Candidature reçue", null, CandidatureRedstarter.StatutCandidature.EN_ATTENTE.name(),
+                null, "Système", "Via formulaire en ligne");
+        
+        // Notify admins
+        try {
+            List<User> admins = userRepository.findByRoleIn(Arrays.asList(Role.ADMIN, Role.SUPERADMIN));
+            String message = "Nouvelle candidature soumise par " + savedCandidature.getNomPrenom() + " (" + savedCandidature.getNomEntreprise() + ")";
+            for (User admin : admins) {
+                notificationService.createAndSendNotification(
+                    admin.getId(),
+                    message,
+                    "NOUVELLE_CANDIDATURE",
+                    savedCandidature.getId()
+                );
+            }
+        } catch (Exception e) {
+            log.error("Failed to send notifications for new candidature", e);
+        }
         
         return savedCandidature;
     }
@@ -72,13 +102,19 @@ public class CandidatureRedstarterService {
         log.info("Updating status of candidature ID: {} to {}", id, newStatut);
         
         CandidatureRedstarter candidature = getCandidatureById(id);
+        CandidatureRedstarter.StatutCandidature oldStatut = candidature.getStatut();
         candidature.setStatut(newStatut);
         
         if (commentaires != null && !commentaires.isEmpty()) {
             candidature.setCommentairesAdmin(commentaires);
         }
         
-        return candidatureRepository.save(candidature);
+        CandidatureRedstarter updated = candidatureRepository.save(candidature);
+        
+        logAction(id, "Changement de statut", oldStatut.name(), newStatut.name(),
+                null, "Admin", commentaires);
+                
+        return updated;
     }
     
     public Page<CandidatureRedstarter> searchCandidatures(String searchTerm, Pageable pageable) {
@@ -100,7 +136,29 @@ public class CandidatureRedstarterService {
             candidature.getDocuments().forEach(this::deleteDocument);
         }
         
+        List<CandidatureLog> logs = logRepository.findByCandidatureIdOrderByCreatedAtDesc(id);
+        logRepository.deleteAll(logs);
+        
         candidatureRepository.deleteById(id);
+    }
+    
+    public List<CandidatureLog> getHistorique(Long candidatureId) {
+        return logRepository.findByCandidatureIdOrderByCreatedAtDesc(candidatureId);
+    }
+    
+    private void logAction(Long candidatureId, String action, String statutAvant,
+                           String statutApres, String faitPar, String faitParNom, String note) {
+        CandidatureLog logEntry = CandidatureLog.builder()
+                .candidatureId(candidatureId)
+                .action(action)
+                .statutAvant(statutAvant)
+                .statutApres(statutApres)
+                .faitPar(faitPar)
+                .faitParNom(faitParNom != null ? faitParNom : "Admin")
+                .note(note)
+                .createdAt(LocalDateTime.now())
+                .build();
+        logRepository.save(logEntry);
     }
     
     private CandidatureRedstarter mapDtoToEntity(CandidatureRedstarterDTO dto) {

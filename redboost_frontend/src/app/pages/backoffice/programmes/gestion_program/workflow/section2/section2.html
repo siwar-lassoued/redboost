@@ -37,7 +37,7 @@
                         </textarea>
                      
                         <button class="btn-link" (click)="addSpecificObjective(i)">
-                            {{ objective.objectifsSpecifiques?.length || 0 }} objectif(s) spécifique(s) - Cliquer pour ajouter
+                            {{ objective.objectifsSpecifiques.length || 0 }} objectif(s) spécifique(s) - Cliquer pour ajouter
                         </button>
 
                         <!-- Specific Objectives -->
@@ -133,7 +133,7 @@
                                                     <span>📈</span>
                                                     <span>Résultats attendus</span>
                                                     <span style="background: #fed7aa; padding: 0.125rem 0.5rem; border-radius: 12px; font-size: 0.75rem;">
-                                                        {{ specific.resultats?.length || 0 }}
+                                                        {{ specific.resultats.length || 0 }}
                                                     </span>
                                                 </div>
                                                 <button class="btn-add-resultat" (click)="addResultat(i, si)" type="button">

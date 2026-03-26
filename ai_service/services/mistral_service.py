@@ -1,4 +1,4 @@
-from mistralai import Mistral
+from mistralai.client import Mistral
 import os
 from typing import List, Dict, Any
 import json

@@ -103,7 +103,7 @@ public class GmailConfig {
 
         GoogleTokenResponse tokenResponse = new GoogleTokenResponse().setRefreshToken(refreshToken);
         Credential credential = flow.createAndStoreCredential(tokenResponse, "user");
-        refreshCredentialIfNeeded(credential);
+//        refreshCredentialIfNeeded(credential);
         return credential;
     }
 

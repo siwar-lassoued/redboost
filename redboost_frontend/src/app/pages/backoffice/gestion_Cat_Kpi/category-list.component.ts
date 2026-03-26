@@ -167,7 +167,7 @@ import { KpiDialogComponent } from './kpi-dialog.component';
                                     </h4>
 
                                     <span class="kpi-count-badge shrink-0">
-                                        {{ cat.kpis?.length || 0 }} KPI
+                                        {{ cat.kpis.length || 0 }} KPI
                                     </span>
                                 </div>
                                 <p class="category-subtitle">

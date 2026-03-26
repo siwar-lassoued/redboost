@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import team.project.redboost.dto.CandidatureRedstarterDTO;
+import team.project.redboost.entities.CandidatureLog;
 import team.project.redboost.entities.CandidatureRedstarter;
 import team.project.redboost.services.CandidatureRedstarterService;
 
@@ -222,6 +223,21 @@ public class CandidatureRedstarterController {
             log.error("Error deleting candidature", e);
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(Map.of("success", false, "message", "Candidature non trouvée"));
+        }
+    }
+    
+    /**
+     * Get candidature historique logs (Admin)
+     * GET /api/candidatures/{id}/historique
+     */
+    @GetMapping("/{id}/historique")
+    public ResponseEntity<List<CandidatureLog>> getHistorique(@PathVariable Long id) {
+        try {
+            List<CandidatureLog> logs = candidatureService.getHistorique(id);
+            return ResponseEntity.ok(logs);
+        } catch (Exception e) {
+            log.error("Error fetching historique", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 }
