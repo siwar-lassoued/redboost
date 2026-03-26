@@ -35,100 +35,7 @@
                             rows="2"
                             class="objective-description-input">
                         </textarea>
-                        <!-- ✅ NEW POSITION: Résultats Transversaux at global objective level -->
-  <div style="margin-top: 1rem; padding: 0.75rem; background: #f0f9ff; border-radius: 6px; border: 1px solid #bae6fd;">
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
-      <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; color: #0369a1; font-weight: 500;">
-        <span>🔄</span>
-        <span>Résultats Transversaux</span>
-        <span style="background: #bae6fd; padding: 0.125rem 0.5rem; border-radius: 12px; font-size: 0.75rem;">
-          {{ objective.resultatsTransversaux?.length || 0 }}
-        </span>
-      </div>
-      <button class="btn-add-resultat" (click)="addResultatTransversal(i)" type="button">
-        + Ajouter résultat transversal
-      </button>
-    </div>
-
-    <div *ngIf="objective.resultatsTransversaux && objective.resultatsTransversaux.length > 0"
-         style="display: flex; flex-direction: column; gap: 0.75rem;">
-      <div *ngFor="let resultat of objective.resultatsTransversaux; let rti = index"
-           style="padding: 0.75rem; background: white; border-radius: 6px; border: 1px solid #bae6fd;">
-        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
-          <span style="font-weight: 600; color: #0ea5e9; font-size: 0.875rem;">
-            Résultat Transversal {{ rti + 1 }}
-          </span>
-          <button class="btn-icon-small" (click)="removeResultatTransversal(i, rti)" title="Supprimer" type="button">
-            🗑️
-          </button>
-        </div>
-
-        <input
-          type="text"
-          [(ngModel)]="resultat.nom"
-          (ngModelChange)="emitChanges()"
-          placeholder="Nom du résultat transversal"
-          style="width: 100%; margin-bottom: 0.5rem; padding: 0.5rem; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 0.875rem;" />
-
-        <textarea
-          [(ngModel)]="resultat.description"
-          (ngModelChange)="emitChanges()"
-          placeholder="Description du résultat transversal"
-          rows="2"
-          style="width: 100%; padding: 0.5rem; border: 1px solid #e5e7eb; border-radius: 4px; margin-bottom: 0.5rem; font-size: 0.8125rem;">
-        </textarea>
-
-        <!-- KPIs for this global-level Résultat Transversal -->
-        <div style="margin-top: 0.5rem;">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
-            <span style="font-size: 0.8125rem; color: #6b7280; font-weight: 500;">KPIs du résultat:</span>
-            <button class="btn-select-kpis-small" (click)="toggleGlobalRtKpiSelection(i, rti)" type="button">
-              Sélectionner
-            </button>
-          </div>
-
-          <div *ngIf="isGlobalRtKpiSelectionOpen(i, rti)" class="kpi-selection-dropdown-small">
-            <div class="kpi-dropdown-header">
-              <input type="text" [(ngModel)]="kpiSearchText" placeholder="Rechercher..." class="kpi-search-input-small" />
-              <button class="btn-close-dropdown-small" (click)="closeGlobalRtKpiSelection(i, rti)" type="button">✕</button>
-            </div>
-            <div class="kpi-list-small">
-              <div *ngFor="let kpi of getFilteredKpis()" class="kpi-item-small">
-                <label class="kpi-checkbox-label-small">
-                  <input
-                    type="checkbox"
-                    [checked]="isGlobalRtKpiSelected(i, kpi.id, rti)"
-                    (change)="toggleGlobalRtKpi(i, kpi.id, rti)" />
-                  <div>
-                    <div style="font-weight: 500; font-size: 0.8125rem;">{{ kpi.nom }}</div>
-                    <div style="font-size: 0.75rem; color: #6b7280;">{{ kpi.uniteMesure }}</div>
-                  </div>
-                </label>
-              </div>
-            </div>
-          </div>
-
-          <div *ngIf="resultat.kpiIds && resultat.kpiIds.length > 0"
-               style="display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.5rem;">
-            <span *ngFor="let kpi of resultat.kpis" class="kpi-tag-small">
-              {{ kpi.nom }}
-              <button (click)="toggleGlobalRtKpi(i, kpi.id, rti)" type="button"
-                      style="background: none; border: none; margin-left: 0.25rem; cursor: pointer; color: #dc2626;">✕</button>
-            </span>
-          </div>
-          <div *ngIf="!resultat.kpiIds || resultat.kpiIds.length === 0"
-               style="font-size: 0.75rem; color: #9ca3af; font-style: italic; margin-top: 0.25rem;">
-            Aucun KPI pour ce résultat
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div *ngIf="!objective.resultatsTransversaux || objective.resultatsTransversaux.length === 0"
-         style="font-size: 0.8125rem; color: #9ca3af; font-style: italic; text-align: center; padding: 0.5rem;">
-      Aucun résultat transversal ajouté.
-    </div>
-  </div>
+                     
                         <button class="btn-link" (click)="addSpecificObjective(i)">
                             {{ objective.objectifsSpecifiques.length || 0 }} objectif(s) spécifique(s) - Cliquer pour ajouter
                         </button>
@@ -331,6 +238,103 @@
                                 </div>
                             </div>
                         </div>
+
+
+
+                           <!-- ✅ NEW POSITION: Résultats Transversaux at global objective level -->
+  <div style="margin-top: 1rem; padding: 0.75rem; background: #f0f9ff; border-radius: 6px; border: 1px solid #bae6fd;">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+      <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; color: #0369a1; font-weight: 500;">
+        <span>🔄</span>
+        <span>Résultats Transversaux</span>
+        <span style="background: #bae6fd; padding: 0.125rem 0.5rem; border-radius: 12px; font-size: 0.75rem;">
+          {{ objective.resultatsTransversaux?.length || 0 }}
+        </span>
+      </div>
+      <button class="btn-add-resultat" (click)="addResultatTransversal(i)" type="button">
+        + Ajouter résultat transversal
+      </button>
+    </div>
+
+    <div *ngIf="objective.resultatsTransversaux && objective.resultatsTransversaux.length > 0"
+         style="display: flex; flex-direction: column; gap: 0.75rem;">
+      <div *ngFor="let resultat of objective.resultatsTransversaux; let rti = index"
+           style="padding: 0.75rem; background: white; border-radius: 6px; border: 1px solid #bae6fd;">
+        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+          <span style="font-weight: 600; color: #0ea5e9; font-size: 0.875rem;">
+            Résultat Transversal {{ rti + 1 }}
+          </span>
+          <button class="btn-icon-small" (click)="removeResultatTransversal(i, rti)" title="Supprimer" type="button">
+            🗑️
+          </button>
+        </div>
+
+        <input
+          type="text"
+          [(ngModel)]="resultat.nom"
+          (ngModelChange)="emitChanges()"
+          placeholder="Nom du résultat transversal"
+          style="width: 100%; margin-bottom: 0.5rem; padding: 0.5rem; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 0.875rem;" />
+
+        <textarea
+          [(ngModel)]="resultat.description"
+          (ngModelChange)="emitChanges()"
+          placeholder="Description du résultat transversal"
+          rows="2"
+          style="width: 100%; padding: 0.5rem; border: 1px solid #e5e7eb; border-radius: 4px; margin-bottom: 0.5rem; font-size: 0.8125rem;">
+        </textarea>
+
+        <!-- KPIs for this global-level Résultat Transversal -->
+        <div style="margin-top: 0.5rem;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+            <span style="font-size: 0.8125rem; color: #6b7280; font-weight: 500;">KPIs du résultat:</span>
+            <button class="btn-select-kpis-small" (click)="toggleGlobalRtKpiSelection(i, rti)" type="button">
+              Sélectionner
+            </button>
+          </div>
+
+          <div *ngIf="isGlobalRtKpiSelectionOpen(i, rti)" class="kpi-selection-dropdown-small">
+            <div class="kpi-dropdown-header">
+              <input type="text" [(ngModel)]="kpiSearchText" placeholder="Rechercher..." class="kpi-search-input-small" />
+              <button class="btn-close-dropdown-small" (click)="closeGlobalRtKpiSelection(i, rti)" type="button">✕</button>
+            </div>
+            <div class="kpi-list-small">
+              <div *ngFor="let kpi of getFilteredKpis()" class="kpi-item-small">
+                <label class="kpi-checkbox-label-small">
+                  <input
+                    type="checkbox"
+                    [checked]="isGlobalRtKpiSelected(i, kpi.id, rti)"
+                    (change)="toggleGlobalRtKpi(i, kpi.id, rti)" />
+                  <div>
+                    <div style="font-weight: 500; font-size: 0.8125rem;">{{ kpi.nom }}</div>
+                    <div style="font-size: 0.75rem; color: #6b7280;">{{ kpi.uniteMesure }}</div>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="resultat.kpiIds && resultat.kpiIds.length > 0"
+               style="display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.5rem;">
+            <span *ngFor="let kpi of resultat.kpis" class="kpi-tag-small">
+              {{ kpi.nom }}
+              <button (click)="toggleGlobalRtKpi(i, kpi.id, rti)" type="button"
+                      style="background: none; border: none; margin-left: 0.25rem; cursor: pointer; color: #dc2626;">✕</button>
+            </span>
+          </div>
+          <div *ngIf="!resultat.kpiIds || resultat.kpiIds.length === 0"
+               style="font-size: 0.75rem; color: #9ca3af; font-style: italic; margin-top: 0.25rem;">
+            Aucun KPI pour ce résultat
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="!objective.resultatsTransversaux || objective.resultatsTransversaux.length === 0"
+         style="font-size: 0.8125rem; color: #9ca3af; font-style: italic; text-align: center; padding: 0.5rem;">
+      Aucun résultat transversal ajouté.
+    </div>
+  </div>
                     </div>
 
                     <div class="objective-actions">

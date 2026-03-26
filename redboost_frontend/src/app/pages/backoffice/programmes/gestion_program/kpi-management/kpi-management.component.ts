@@ -1006,11 +1006,12 @@ getAverageEntrepreneurCumul(kpi: any): number | null {
 
   const vals: number[] = kpi.entrepreneurValues
     .map((e: any) => e.valeurPrecedente)
-    .filter((v: any) => v != null) as number[];
+    .filter((v: any) => v != null && v !== '' && !isNaN(parseFloat(v)))
+    .map((v: any) => parseFloat(v));
 
   if (!vals.length) return null;
   const avg = vals.reduce((sum, v) => sum + v, 0) / vals.length;
-  return Math.round(avg * 100) / 100; // round to 2 decimal places
+  return Math.round(avg * 100) / 100;
 }
 
 /**
@@ -1022,8 +1023,8 @@ getAverageEntrepreneurValeur(kpi: any): number | null {
   if (!kpi.entrepreneurValues?.length) return null;
 
   const vals: number[] = kpi.entrepreneurValues
-    .map((e: any) => e.valeur)
-    .filter((v: any) => v != null) as number[];
+    .map((e: any) => parseFloat(e.valeur))
+    .filter((v: number) => !isNaN(v));
 
   if (!vals.length) return null;
   const avg = vals.reduce((sum, v) => sum + v, 0) / vals.length;
