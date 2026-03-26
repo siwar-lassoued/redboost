@@ -246,18 +246,21 @@ export class NotificationWebSocketService {
    * Handle notification click and navigate to the appropriate page
    */
   handleNotificationClick(notification: AppNotification) {
-
-    // Navigate based on notification type
-    if (notification.type === 'TASK_ASSIGNMENT' && notification.entityId) {
-      // Navigate to mes-taches with the task ID as a query parameter
-      this.router.navigate(['/mes-taches'], {
-        queryParams: { taskId: notification.entityId }
-      });
-    } else {
-      // Default navigation to mes-taches
-      this.router.navigate(['/mes-taches']);
-    }
+  if (notification.type === 'TASK_ASSIGNMENT' && notification.entityId) {
+    this.router.navigate(['/mes-taches'], {
+      queryParams: { taskId: notification.entityId }
+    });
+  } else if (notification.type === 'ACTIVITY_ASSIGNMENT' && notification.entityId) {
+    this.router.navigate(['/mes-taches'], {
+      queryParams: { 
+        activiteId: notification.entityId,
+        tab: 'activites'          // ensures the activités tab is selected
+      }
+    });
+  } else {
+    this.router.navigate(['/mes-taches']);
   }
+}
 
   disconnect() {
     if (this.stompClient) {

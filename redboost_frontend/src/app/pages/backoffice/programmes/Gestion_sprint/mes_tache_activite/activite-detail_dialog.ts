@@ -386,14 +386,14 @@ interface ActiviteDetailDTO {
                         Fermer
                     </button>
                     <button
-                        (click)="goToMyTasks()"
-                        class="flex-1 py-3 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-semibold transition text-sm flex items-center justify-center gap-2 shadow-sm"
-                    >
-                        <span class="w-5 h-5 rounded-full border-2 border-white flex items-center justify-center flex-shrink-0">
-                            <span class="material-icons" style="font-size:12px;">adjust</span>
-                        </span>
-                        Voir toutes mes tâches
-                    </button>
+    (click)="goToMyTasks()"
+    class="flex-1 py-3 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-semibold transition text-sm flex items-center justify-center gap-2 shadow-sm"
+>
+    <span class="w-5 h-5 rounded-full border-2 border-white flex items-center justify-center flex-shrink-0">
+        <span class="material-icons" style="font-size:12px;">adjust</span>
+    </span>
+    Voir mes Tâches
+</button>
                 </div>
             </div>
         </div>
@@ -418,8 +418,14 @@ interface ActiviteDetailDTO {
 export class ActivityDetailsModalComponent implements OnInit, OnDestroy {
     @Input() activite: ActiviteDetailDTO | null = null;
     @Input() isVisible = false;
-    @Output() closeModal = new EventEmitter<void>();
+@Output() closeModal = new EventEmitter<void>();
+@Output() switchToTaches = new EventEmitter<void>(); // ← ADD
 
+
+goToMyTasks() {
+    this.close();
+    this.switchToTaches.emit(); // ← emit to parent
+}
     constructor(private router: Router) {}
 
     ngOnInit() {
@@ -435,10 +441,7 @@ export class ActivityDetailsModalComponent implements OnInit, OnDestroy {
         this.closeModal.emit();
     }
 
-    goToMyTasks() {
-        this.close();
-        this.router.navigate(['/mes-taches']);
-    }
+   
 
     countCompletedTasks(): number {
         if (!this.activite) return 0;
@@ -491,6 +494,7 @@ export class ActivityDetailsModalComponent implements OnInit, OnDestroy {
         return 'description';
     }
 
+    
     formatFileSize(bytes: number): string {
         if (bytes < 1024)        return bytes + ' B';
         if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';

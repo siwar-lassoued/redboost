@@ -25,6 +25,7 @@ public class BackofficeCategoryService {
     @Autowired private ObjectifSpecifiqueRepository objectifSpecifiqueRepository;
     @Autowired private ResultatRepository resultatRepository;
     @Autowired private ResultatTransversalRepository resultatTransversalRepository;
+    @Autowired private ProgrammeRepository programmeRepo;
 
     public List<BackofficeCategoryResponse> getAll() {
         return categoryRepo.findAll().stream()
@@ -84,7 +85,9 @@ public class BackofficeCategoryService {
         kpi.setTypedesaisie(req.typedesaisie());
 
         cat.addKpi(kpi);
-        kpiRepo.save(kpi);
+        kpi = kpiRepo.save(kpi);
+
+        syncGlobalKpi(kpi);
 
         return new BackofficeKpiResponse(
                 kpi.getId(),
@@ -112,6 +115,8 @@ public class BackofficeCategoryService {
 
         kpi = kpiRepo.save(kpi);
 
+        syncGlobalKpi(kpi);
+
         return new BackofficeKpiResponse(
                 kpi.getId(),
                 kpi.getNom(),
@@ -122,6 +127,21 @@ public class BackofficeCategoryService {
                 kpi.getTypedesaisie()
         );
     }
+
+    private void syncGlobalKpi(BackofficeKpi kpi) {
+        if ("GLOBAL".equalsIgnoreCase(kpi.getType())) {
+            List<Programme> allProgrammes = programmeRepo.findAll();
+            for (Programme p : allProgrammes) {
+                if (programmeKpiRepository.findByProgrammeIdAndKpiId(p.getId(), kpi.getId()).isEmpty()) {
+                    ProgrammeKpi pk = new ProgrammeKpi();
+                    pk.setProgrammeId(p.getId());
+                    pk.setKpiId(kpi.getId());
+                    programmeKpiRepository.save(pk);
+                }
+            }
+        }
+    }
+
     public void deleteKpi(Long kpiId) {
         BackofficeKpi kpi = kpiRepo.findById(kpiId)
                 .orElseThrow(() -> new RuntimeException("KPI introuvable"));

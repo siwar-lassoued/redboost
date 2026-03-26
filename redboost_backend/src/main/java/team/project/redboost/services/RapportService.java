@@ -950,9 +950,21 @@ public class RapportService {
                                 "Description : " + (act.getDescription() != null
                                         ? act.getDescription() : "N/A"), normalFont));
 
+                        // Methodologie
+                        if (act.getMethodologie() != null && !act.getMethodologie().isBlank()) {
+                            contentCell.addElement(new Paragraph(
+                                    "Méthodologie : " + act.getMethodologie(), normalFont));
+                        }
+
+                        // Resultat Attendu
+                        if (act.getResultatAttendu() != null && !act.getResultatAttendu().isBlank()) {
+                            contentCell.addElement(new Paragraph(
+                                    "Résultat Attendu : " + act.getResultatAttendu(), normalFont));
+                        }
+
                         // Objectif rattaché
                         Paragraph objLine = new Paragraph(
-                                "Objectif/Résultat rattaché : " + (act.getObjectif() != null
+                                "Objectif : " + (act.getObjectif() != null
                                         ? act.getObjectif() : "N/A"), italicFont);
                         objLine.setSpacingAfter(6);
                         contentCell.addElement(objLine);
@@ -1540,10 +1552,6 @@ public class RapportService {
             addCoverPage(doc, writer, programme, startDate, endDate);
             doc.newPage();
 
-            // ── SECTION 1 – Programme Identity ─────────────────────────────
-//            addSectionHeader(doc, "1", "FICHE D'IDENTITÉ DU PROGRAMME");
-//            addIdentityTable(doc, programme);
-//            doc.add(spacer(16));
 
             // ── SECTION 2 – Executive Summary ──────────────────────────────
             addSectionHeader(doc, "2", "RÉSUMÉ EXÉCUTIF");
@@ -1870,6 +1878,13 @@ public class RapportService {
         name.setSpacingAfter(4);
         cell.addElement(name);
 
+        // Description
+        if (act.getDescription() != null && !act.getDescription().isBlank()) {
+            Paragraph desc = new Paragraph("Description : " + act.getDescription(), F_NORMAL);
+            desc.setSpacingAfter(4);
+            cell.addElement(desc);
+        }
+
         if (act.getObjectif() != null || act.getType() != null) {
             String metaText =
                     (act.getObjectif() != null ? "Objectif : " + act.getObjectif() : "") +
@@ -1878,6 +1893,20 @@ public class RapportService {
             Paragraph meta = new Paragraph(metaText, F_ITALIC);
             meta.setSpacingAfter(6);
             cell.addElement(meta);
+        }
+
+        // Methodologie
+        if (act.getMethodologie() != null && !act.getMethodologie().isBlank()) {
+            Paragraph meth = new Paragraph("Méthodologie : " + act.getMethodologie(), F_NORMAL);
+            meth.setSpacingAfter(4);
+            cell.addElement(meth);
+        }
+
+        // Resultat Attendu
+        if (act.getResultatAttendu() != null && !act.getResultatAttendu().isBlank()) {
+            Paragraph res = new Paragraph("Résultat Attendu : " + act.getResultatAttendu(), F_NORMAL);
+            res.setSpacingAfter(4);
+            cell.addElement(res);
         }
 
         // KPIs mini-table
@@ -2967,14 +2996,37 @@ public class RapportService {
         nameR.setFontSize(10);
         nameR.setColor(darkColor);
 
+        // Description
         if (act.getDescription() != null && !act.getDescription().isBlank()) {
              XWPFParagraph descP = cell.addParagraph();
-             descP.setSpacingAfter(60);
+             descP.setSpacingAfter(40);
              descP.setIndentationLeft(140);
              XWPFRun descR = descP.createRun();
              descR.setText("Description : " + act.getDescription());
              descR.setFontSize(10);
              descR.setColor(darkColor);
+        }
+
+        // Methodologie
+        if (act.getMethodologie() != null && !act.getMethodologie().isBlank()) {
+            XWPFParagraph methP = cell.addParagraph();
+            methP.setSpacingAfter(40);
+            methP.setIndentationLeft(140);
+            XWPFRun methR = methP.createRun();
+            methR.setText("Méthodologie : " + act.getMethodologie());
+            methR.setFontSize(10);
+            methR.setColor(darkColor);
+        }
+
+        // Resultat Attendu
+        if (act.getResultatAttendu() != null && !act.getResultatAttendu().isBlank()) {
+            XWPFParagraph resP = cell.addParagraph();
+            resP.setSpacingAfter(40);
+            resP.setIndentationLeft(140);
+            XWPFRun resR = resP.createRun();
+            resR.setText("Résultat Attendu : " + act.getResultatAttendu());
+            resR.setFontSize(10);
+            resR.setColor(darkColor);
         }
 
 
@@ -3228,12 +3280,32 @@ public class RapportService {
         descR.setFontSize(10);
         descR.setColor(darkColor);
 
-        // Objectif/Résultat rattaché
+        // Methodologie
+        if (act.getMethodologie() != null && !act.getMethodologie().isBlank()) {
+            XWPFParagraph methP = content.addParagraph();
+            methP.setIndentationLeft(100);
+            XWPFRun methR = methP.createRun();
+            methR.setText("Méthodologie : " + act.getMethodologie());
+            methR.setFontSize(10);
+            methR.setColor(darkColor);
+        }
+
+        // Resultat Attendu
+        if (act.getResultatAttendu() != null && !act.getResultatAttendu().isBlank()) {
+            XWPFParagraph resP = content.addParagraph();
+            resP.setIndentationLeft(100);
+            XWPFRun resR = resP.createRun();
+            resR.setText("Résultat Attendu : " + act.getResultatAttendu());
+            resR.setFontSize(10);
+            resR.setColor(darkColor);
+        }
+
+        // Objectif
         XWPFParagraph objP = content.addParagraph();
         objP.setIndentationLeft(100);
         objP.setSpacingAfter(80);
         XWPFRun objR = objP.createRun();
-        objR.setText("Objectif/Résultat rattaché : "
+        objR.setText("Objectif : "
                 + (act.getObjectif() != null ? act.getObjectif() : "N/A"));
         objR.setItalic(true);
         objR.setFontSize(9);

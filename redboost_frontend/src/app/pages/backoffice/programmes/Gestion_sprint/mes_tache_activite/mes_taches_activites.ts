@@ -459,12 +459,17 @@ interface ProgrammeSimple {
                         <p class="text-lg">Aucune activité assignée</p>
                     </div>
 
-                    <div
-                        *ngFor="let act of mesActivites; let i = index"
-                        class="bg-white rounded-2xl shadow-sm border-t-4 overflow-hidden hover:shadow-lg transition-all"
-                        [style.border-top-color]="getActivityColor(i)"
-                        [class.animate-slideIn]="isNewAssignment(act.id)"
-                    >
+                    <!-- in the *ngFor loop for mesActivites -->
+<div
+  *ngFor="let act of mesActivites; let i = index"
+  [id]="'activite-' + act.id"                          
+  class="bg-white rounded-2xl shadow-sm border-t-4 overflow-hidden hover:shadow-lg transition-all"
+  [style.border-top-color]="getActivityColor(i)"
+  [class.ring-4]="act.id === highlightedActiviteId"   
+  [class.ring-rose-500]="act.id === highlightedActiviteId"
+  [class.shadow-xl]="act.id === highlightedActiviteId"
+  [class.animate-slideIn]="isNewAssignment(act.id)"
+>
                         <!-- Activity card header -->
                         <div
                             class="p-5 pb-4"
@@ -564,11 +569,12 @@ interface ProgrammeSimple {
             </div>
 
             <app-activity-details-modal
-                [activite]="selectedActivite"
-                [isVisible]="showActivityModal"
-                (closeModal)="closeActivityModal()"
-            >
-            </app-activity-details-modal>
+    [activite]="selectedActivite"
+    [isVisible]="showActivityModal"
+    (closeModal)="closeActivityModal()"
+    (switchToTaches)="switchToTachesTab()"
+>
+</app-activity-details-modal>
         </div>
     `,
     styles: [
@@ -657,6 +663,9 @@ export class MesTachesActivitesComponent implements OnInit, OnDestroy {
     private connectionSubscription?: Subscription;
     isConnected = false;
 
+    // ── new fields (alongside highlightedTaskId / taskIdFromRoute) ──
+highlightedActiviteId: number | null = null;
+private activiteIdFromRoute: number | null = null;
     private previousTacheIds: Set<number> = new Set();
     private previousActiviteIds: Set<number> = new Set();
     private newTacheIds: Set<number> = new Set();
@@ -687,8 +696,20 @@ export class MesTachesActivitesComponent implements OnInit, OnDestroy {
                 this.taskIdFromRoute = +taskId;
                 this.currentTab = 'taches';
             }
-        });
-
+             // ← NEW: activity handling
+  const activiteId = params['activiteId'];
+  if (activiteId && !isNaN(+activiteId)) {
+    this.activiteIdFromRoute = +activiteId;
+    this.currentTab = 'activites';          // switch to the right tab
+  }
+ if (params['tab'] === 'activites') {
+    this.currentTab = 'activites';
+  }
+   // ← ADD THIS: handle switching back to taches tab
+    if (params['tab'] === 'taches') {
+        this.currentTab = 'taches';
+    }
+});
         this.loadAllData(userId);
 
         this.connectionSubscription = this.notificationService.connectionStatus$.subscribe({
@@ -732,9 +753,6 @@ export class MesTachesActivitesComponent implements OnInit, OnDestroy {
 
     // Add this method right after navigateToTask()
 navigateToActivity(act: ActiviteDetailDTO): void {
-    // programmeId / sprintId may be absent on the activity root object if the
-    // backend list-endpoint DTO hasn't been updated yet.
-    // Fall back to the first child tache which already carries both IDs reliably.
     const programmeId: number | undefined =
         (act as any).programmeId ||
         (act.taches?.[0] as any)?.programmeId ||
@@ -760,8 +778,6 @@ navigateToActivity(act: ActiviteDetailDTO): void {
                 tab:        'sprints',
                 sprintId:   sprintId ?? null,
                 activiteId: act.id,
-                // no tacheId — applyDeepLink() will expand sprint + activité
-                // and scroll to the activité header
             }
         }
     );
@@ -854,18 +870,38 @@ navigateToActivity(act: ActiviteDetailDTO): void {
     }
 
     private loadActivites(userId: number) {
-        this.http
-            .get<ActiviteDetailDTO[]>(`https://redboost.tn/api/backoffice/programmes/user/${userId}/activites`)
-            .subscribe({
-                next: (data) => {
-                    this.mesActivites = data;
-                    this.updateCount('activites', data.length);
-                    this.previousActiviteIds = new Set(data.map(a => a.id));
-                },
-                error: () => (this.errorMessage = 'Erreur lors du chargement des activités'),
-                complete: () => this.checkLoadingComplete(),
-            });
+  this.http
+    .get<ActiviteDetailDTO[]>(`https://redboost.tn/api/backoffice/programmes/user/${userId}/activites`)
+    .subscribe({
+      next: (data) => {
+        this.mesActivites = data;
+        this.updateCount('activites', data.length);
+        this.previousActiviteIds = new Set(data.map(a => a.id));
+
+        // ← NEW
+        if (this.activiteIdFromRoute) {
+          this.highlightAndScrollToActivity(this.activiteIdFromRoute);
+        }
+      },
+      error: () => (this.errorMessage = 'Erreur lors du chargement des activités'),
+      complete: () => this.checkLoadingComplete(),
+    });
+}
+
+private highlightAndScrollToActivity(activiteId: number): void {
+  const act = this.mesActivites.find(a => a.id === activiteId);
+  if (!act) return;
+
+  this.highlightedActiviteId = activiteId;
+
+  setTimeout(() => {
+    const element = document.getElementById(`activite-${activiteId}`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(() => { this.highlightedActiviteId = null; }, 5000);
     }
+  }, 500);
+}
 
     private highlightAndScrollToTask(taskId: number) {
         const task = this.mesTaches.find(t => t.id === taskId);
@@ -892,27 +928,36 @@ navigateToActivity(act: ActiviteDetailDTO): void {
     }
 
     get filteredTaches(): TacheDetailDTO[] {
-        return this.mesTaches.filter((tache) => {
-            if (this.searchTerm.trim()) {
-                const term = this.searchTerm.toLowerCase();
-                const matchesSearch =
-                    tache.titre.toLowerCase().includes(term) ||
-                    (tache.description || '').toLowerCase().includes(term) ||
-                    tache.activiteNom.toLowerCase().includes(term) ||
-                    tache.programmeNom.toLowerCase().includes(term);
-                if (!matchesSearch) return false;
-            }
-            if (this.selectedProgrammeId !== null) {
-                const prog = this.programmes.find(p => p.id === this.selectedProgrammeId);
-                if (prog && tache.programmeNom !== prog.nom) return false;
-            }
-            if (this.selectedStatus !== 'TOUS' && tache.status !== this.selectedStatus) return false;
-            return true;
-        });
+        return this.mesTaches
+            .filter((tache) => {
+                if (this.searchTerm.trim()) {
+                    const term = this.searchTerm.toLowerCase();
+                    const matchesSearch =
+                        tache.titre.toLowerCase().includes(term) ||
+                        (tache.description || '').toLowerCase().includes(term) ||
+                        tache.activiteNom.toLowerCase().includes(term) ||
+                        tache.programmeNom.toLowerCase().includes(term);
+                    if (!matchesSearch) return false;
+                }
+                if (this.selectedProgrammeId !== null) {
+                    const prog = this.programmes.find(p => p.id === this.selectedProgrammeId);
+                    if (prog && tache.programmeNom !== prog.nom) return false;
+                }
+                if (this.selectedStatus !== 'TOUS' && tache.status !== this.selectedStatus) return false;
+                return true;
+            })
+            .sort((a, b) => {
+                const aTerminee = a.status === 'TERMINEE' ? 1 : 0;
+                const bTerminee = b.status === 'TERMINEE' ? 1 : 0;
+                return aTerminee - bTerminee;
+            });
     }
 
     onFilterChange() {}
-
+switchToTachesTab() {
+    this.closeActivityModal();
+    this.currentTab = 'taches';
+}
     getActivityColor(index: number): string {
         return this.activityColors[index % this.activityColors.length];
     }
