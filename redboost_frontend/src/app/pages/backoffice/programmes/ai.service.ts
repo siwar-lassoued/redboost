@@ -20,7 +20,7 @@ export interface ImproveResponse {
     providedIn: 'root'
 })
 export class AiService {
-    private apiUrl = 'https://redboost.tn/api/ai';
+    private apiUrl = 'http://localhost:8087/api/ai';
 
     constructor(private http: HttpClient) {}
 

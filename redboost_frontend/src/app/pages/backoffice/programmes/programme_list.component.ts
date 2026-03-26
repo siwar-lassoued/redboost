@@ -628,7 +628,7 @@ export class ProgrammeListComponent implements OnInit {
     getLogoUrl(url: string | null | undefined): string {
         if (!url) return 'assets/images/placeholder.png';
         if (url.startsWith('http')) return url;
-        return `https://redboost.tn${url.startsWith('/') ? '' : '/'}${url}`;
+        return `http://localhost:8087${url.startsWith('/') ? '' : '/'}${url}`;
     }
 
     onImageError(event: Event): void {

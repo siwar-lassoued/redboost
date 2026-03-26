@@ -788,7 +788,7 @@ navigateToActivity(act: ActiviteDetailDTO): void {
 
     private refreshData(userId: number): void {
         this.http
-            .get<TacheDetailDTO[]>(`https://redboost.tn/api/backoffice/programmes/user/${userId}/taches`)
+            .get<TacheDetailDTO[]>(`http://localhost:8087/api/backoffice/programmes/user/${userId}/taches`)
             .subscribe({
                 next: (data) => {
                     this.detectNewAssignments(data, this.previousTacheIds, this.newTacheIds, 'tache');
@@ -800,7 +800,7 @@ navigateToActivity(act: ActiviteDetailDTO): void {
             });
 
         this.http
-            .get<ActiviteDetailDTO[]>(`https://redboost.tn/api/backoffice/programmes/user/${userId}/activites`)
+            .get<ActiviteDetailDTO[]>(`http://localhost:8087/api/backoffice/programmes/user/${userId}/activites`)
             .subscribe({
                 next: (data) => {
                     this.detectNewAssignments(data, this.previousActiviteIds, this.newActiviteIds, 'activite');
@@ -841,7 +841,7 @@ navigateToActivity(act: ActiviteDetailDTO): void {
 
     private loadProgrammes() {
         this.http
-            .get<any[]>('https://redboost.tn/api/backoffice/programmes')
+            .get<any[]>('http://localhost:8087/api/backoffice/programmes')
             .subscribe({
                 next: (data) => {
                     this.programmes = data
@@ -854,7 +854,7 @@ navigateToActivity(act: ActiviteDetailDTO): void {
 
     private loadTaches(userId: number) {
         this.http
-            .get<TacheDetailDTO[]>(`https://redboost.tn/api/backoffice/programmes/user/${userId}/taches`)
+            .get<TacheDetailDTO[]>(`http://localhost:8087/api/backoffice/programmes/user/${userId}/taches`)
             .subscribe({
                 next: (data) => {
                     this.mesTaches = data;
@@ -871,7 +871,7 @@ navigateToActivity(act: ActiviteDetailDTO): void {
 
     private loadActivites(userId: number) {
   this.http
-    .get<ActiviteDetailDTO[]>(`https://redboost.tn/api/backoffice/programmes/user/${userId}/activites`)
+    .get<ActiviteDetailDTO[]>(`http://localhost:8087/api/backoffice/programmes/user/${userId}/activites`)
     .subscribe({
       next: (data) => {
         this.mesActivites = data;
@@ -993,7 +993,7 @@ switchToTachesTab() {
 
     marquerTermine(tacheId: number) {
         this.http
-            .patch<TacheDetailDTO>(`https://redboost.tn/api/backoffice/programmes/taches/${tacheId}/terminer`, {})
+            .patch<TacheDetailDTO>(`http://localhost:8087/api/backoffice/programmes/taches/${tacheId}/terminer`, {})
             .subscribe({
                 next: (updated) => {
                     const idx = this.mesTaches.findIndex(t => t.id === tacheId);
@@ -1005,7 +1005,7 @@ switchToTachesTab() {
 
     rouvrirTache(tacheId: number) {
         this.http
-            .patch<TacheDetailDTO>(`https://redboost.tn/api/backoffice/programmes/taches/${tacheId}/rouvrir`, {})
+            .patch<TacheDetailDTO>(`http://localhost:8087/api/backoffice/programmes/taches/${tacheId}/rouvrir`, {})
             .subscribe({
                 next: (updated) => {
                     const idx = this.mesTaches.findIndex(t => t.id === tacheId);

@@ -56,7 +56,7 @@ export interface SmallStatsDTO {
   providedIn: 'root'
 })
 export class DashboardService {
-  private apiUrl = 'https://redboost.tn/api/backoffice/programmes';
+  private apiUrl = 'http://localhost:8087/api/backoffice/programmes';
 
   constructor(private http: HttpClient) {}
 
@@ -66,7 +66,7 @@ export class DashboardService {
 
   getActivityTypesCount() {
     return this.http.get<Record<string, number>>(
-      'https://redboost.tn/api/backoffice/programmes/activities/count-by-type-global'
+      'http://localhost:8087/api/backoffice/programmes/activities/count-by-type-global'
     );
   }
 }

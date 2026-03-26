@@ -8,8 +8,8 @@ import { RapportDTO, KpiLightDTO, SprintDetail, DocumentConsolide } from '../../
     providedIn: 'root'
 })
 export class RapportDataService {
-    private apiUrl = 'https://redboost.tn/api/rapports';
-    private backofficeUrl = 'https://redboost.tn/api/backoffice/programmes';
+    private apiUrl = 'http://localhost:8087/api/rapports';
+    private backofficeUrl = 'http://localhost:8087/api/backoffice/programmes';
 
     // State management
     private rapportSubject = new BehaviorSubject<RapportDTO | null>(null);

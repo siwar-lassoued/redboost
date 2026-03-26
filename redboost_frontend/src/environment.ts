@@ -1,11 +1,11 @@
 // src/environments/environment.ts
 export const environment = {
     production: false,
-    apiUploads:'https://redboost.tn/api',
-    //apiUploads:'https://redboost.tn/api',
+    apiUploads:'http://localhost:8087/api',
+    //apiUploads:'http://localhost:8087/api',
 
     //apiUrl: 'http://localhost:8087/api',
-    apiUrl: 'https://redboost.tn/api',
+    apiUrl: 'http://localhost:8087/api',
 
     firebaseConfig: {
         apiKey: 'AIzaSyBfq3z--mKyHOSGk6yZ3xbkLjAVF51vLaA',

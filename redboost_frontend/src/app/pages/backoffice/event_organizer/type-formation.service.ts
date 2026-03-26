@@ -16,7 +16,7 @@ export interface CreateTypeFormationRequest {
   providedIn: 'root'
 })
 export class TypeFormationService {
-  private apiUrl = 'https://redboost.tn/api/type-formation';
+  private apiUrl = 'http://localhost:8087/api/type-formation';
 
   constructor(private http: HttpClient) {}
 

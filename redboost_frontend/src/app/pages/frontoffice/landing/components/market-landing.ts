@@ -993,7 +993,7 @@ export class MarketLandingComponent implements AfterViewInit {
 
     fetchProjects() {
         this.loading = true;
-        const apiUrl = 'https://redboost.tn/api/projets/GetAllPublic';
+        const apiUrl = 'http://localhost:8087/api/projets/GetAllPublic';
 
         this.http.get<any[]>(apiUrl).subscribe({
             next: (response) => {
@@ -1020,7 +1020,7 @@ export class MarketLandingComponent implements AfterViewInit {
         if (logoUrl.includes('cloudinary.com') || logoUrl.startsWith('http')) {
             return logoUrl;
         }
-        return `https://redboost.tn/${logoUrl.replace(/^\/+/, '')}`;
+        return `http://localhost:8087/${logoUrl.replace(/^\/+/, '')}`;
     }
 
     handleImageError(event: Event) {

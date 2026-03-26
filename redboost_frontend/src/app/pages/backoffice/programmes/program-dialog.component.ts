@@ -448,7 +448,7 @@ export class ProgrammeDialogComponent {
 
             this.logoPreview.set(
                 this.data.logoUrl
-                    ? 'https://redboost.tn' + this.data.logoUrl
+                    ? 'http://localhost:8087' + this.data.logoUrl
                     : null,
             );
             if (this.data.secteurs?.length) {

@@ -59,7 +59,7 @@ export interface ApiResponse {
     providedIn: 'root',
 })
 export class CandidatureService {
-    private apiUrl = 'https://redboost.tn/api/candidatures';
+    private apiUrl = 'http://localhost:8087/api/candidatures';
 
     constructor(private http: HttpClient) {}
 

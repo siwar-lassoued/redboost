@@ -90,7 +90,7 @@ export class ExcelImportModalComponent {
       }); */
 
       const response = await this.http
-        .get('https://redboost.tn/api/users/entrepreneurs/template', {
+        .get('http://localhost:8087/api/users/entrepreneurs/template', {
 /*           headers,
  */          responseType: 'blob',
           observe: 'response'
@@ -142,7 +142,7 @@ export class ExcelImportModalComponent {
 
     try {
       const response: any = await this.http
-        .post('https://redboost.tn/api/users/import-entrepreneurs', formData, {
+        .post('http://localhost:8087/api/users/import-entrepreneurs', formData, {
           observe: 'response'
         })
         .pipe(

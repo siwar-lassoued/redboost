@@ -68,7 +68,7 @@ export class RapportSection5Component implements OnInit {
     }
 
     downloadDocument(doc: DocumentConsolide): void {
-        const downloadUrl = `https://redboost.tn${doc.cheminFichier}`;
+        const downloadUrl = `http://localhost:8087${doc.cheminFichier}`;
         window.open(downloadUrl, '_blank');
     }
 

@@ -16,7 +16,7 @@ import { Injectable } from '@angular/core';
     providedIn: 'root',
 })
 export class TemplateService {
-    private apiUrl = 'https://redboost.tn/api/templates';
+    private apiUrl = 'http://localhost:8087/api/templates';
 
     constructor(
         private http: HttpClient,

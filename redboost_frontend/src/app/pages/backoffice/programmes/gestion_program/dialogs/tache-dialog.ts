@@ -375,7 +375,7 @@ interface KpiCategory {
                                         <div class="doc-actions">
                                             <a
                                                 [href]="
-                                                    'https://redboost.tn' +
+                                                    'http://localhost:8087' +
                                                     doc.cheminFichier
                                                 "
                                                 target="_blank"
