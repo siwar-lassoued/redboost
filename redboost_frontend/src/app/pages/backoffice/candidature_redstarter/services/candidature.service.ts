@@ -47,10 +47,12 @@ export class CandidatureService {
 
                 if (filters?.type) {
                     if (filters.type === 'spontanees') {
-                        filtered = filtered.filter((c: any) => c.origineCandidature === 'SPONTANEE');
+                        filtered = []; // Not supported yet in this entity
+                    } else if (filters.type === 'coaches') {
+                        filtered = []; // Not supported yet in this entity
                     } else {
-                        const backendType = filters.type === 'coaches' ? 'COACH' : 'ENTREPRENEUR';
-                        filtered = filtered.filter((c: any) => c.type === backendType && c.origineCandidature !== 'SPONTANEE');
+                        // If it's entrepreneurs, keep all of them since this is the Redstarter form
+                        filtered = filtered;
                     }
                 }
                 if (filters?.statut) {
@@ -59,7 +61,7 @@ export class CandidatureService {
 
                 const mappedData: Candidature[] = filtered.map((c: any) => ({
                     id: c.id,
-                    type: c.origineCandidature === 'SPONTANEE' ? 'spontanees' : (c.type === 'COACH' ? 'coaches' : 'entrepreneurs'),
+                    type: 'entrepreneurs',
                     nom: c.nomPrenom || 'Inconnu',
                     email: c.email || 'N/A',
                     phone: c.numeroTelephone || '—',
@@ -69,7 +71,16 @@ export class CandidatureService {
                     round: '—',
                     history: [],
                     documents: (c.documents && c.documents.length > 0) ? c.documents.map((d: string) => ({ name: d.split('/').pop() || 'Document', size: '—' })) : [],
-                    formAnswers: [],
+                    formAnswers: [
+                        { questionId: 1, question: 'Nom de l\'entreprise', answer: c.nomEntreprise, type: 'text-court' as const },
+                        { questionId: 2, question: 'Secteur d\'activité', answer: c.secteurActivite, type: 'text-court' as const },
+                        { questionId: 3, question: 'Stade d\'avancement', answer: c.stadeAvancement, type: 'text-court' as const },
+                        { questionId: 4, question: 'Brève description', answer: c.breveDescription, type: 'text-long' as const },
+                        { questionId: 5, question: 'Composante innovation', answer: c.composanteInnovation, type: 'text-long' as const },
+                        { questionId: 6, question: 'Chiffre d\'affaires', answer: c.chiffreAffaires, type: 'text-court' as const },
+                        { questionId: 7, question: 'Site Web', answer: c.lienWebsite, type: 'text-court' as const },
+                        { questionId: 8, question: 'Profil LinkedIn', answer: c.lienLinkedin, type: 'text-court' as const }
+                    ].filter(a => a.answer != null && a.answer !== ''),
                     noteInterne: c.commentairesAdmin || c.noteInterne || null,
                     motifRejet: c.motifRejet || null,
                     dateEntretien: c.dateEntretien || null,
