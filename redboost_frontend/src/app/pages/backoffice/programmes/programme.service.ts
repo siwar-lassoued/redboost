@@ -146,9 +146,9 @@ export interface SprintDetail {
 
 @Injectable({ providedIn: 'root' })
 export class ProgrammeService {
-    private api = 'http://localhost:8087/api/backoffice/programmes';
-    private apikpi = 'http://localhost:8087/api/programmeskpi';
-    private userApi = 'http://localhost:8087/api/users';
+    private api = 'https://redboost.tn/api/backoffice/programmes';
+    private apikpi = 'https://redboost.tn/api/programmeskpi';
+    private userApi = 'https://redboost.tn/api/users';
 
     programmes = signal<Programme[]>([]);
     responsables = signal<UserResponsable[]>([]);
@@ -371,7 +371,7 @@ export class ProgrammeService {
 
 
     reorderSprints(sprintIds: number[]): Observable<void> {
-    return this.http.put<void>(`http://localhost:8087/api/v1/sprints/reorder`, sprintIds);
+    return this.http.put<void>(`https://redboost.tn/api/v1/sprints/reorder`, sprintIds);
 }
     // Add to ProgrammeService class
 

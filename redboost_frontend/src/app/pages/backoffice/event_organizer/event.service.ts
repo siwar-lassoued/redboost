@@ -36,7 +36,7 @@ export interface EventResponse {
   providedIn: 'root'
 })
 export class EventService {
-  private apiUrl = 'http://localhost:8087/api/events';
+  private apiUrl = 'https://redboost.tn/api/events';
 
   constructor(private http: HttpClient) {}
 

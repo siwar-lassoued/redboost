@@ -165,7 +165,7 @@ import { MatButtonModule } from '@angular/material/button';
                                         <mat-icon class="!w-6 !h-6 text-[24px] text-gray-500">description</mat-icon>
                                     </div>
                                     <div class="flex-1 min-w-0">
-                                        <a [href]="'http://localhost:8087' + doc.cheminFichier" 
+                                        <a [href]="'https://redboost.tn' + doc.cheminFichier" 
                                            target="_blank" 
                                            class="text-sm font-medium text-gray-900 hover:text-[#ea5073] truncate block transition-colors">
                                             {{ doc.nom }}
@@ -176,7 +176,7 @@ import { MatButtonModule } from '@angular/material/button';
                                             <span>{{ formatDate(doc.dateUpload) }}</span>
                                         </div>
                                     </div>
-                                    <a [href]="'http://localhost:8087' + doc.cheminFichier" 
+                                    <a [href]="'https://redboost.tn' + doc.cheminFichier" 
                                        download 
                                        class="p-2 text-gray-400 hover:text-[#2a7b8c] hover:bg-[#2a7b8c]/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
                                        title="Télécharger">

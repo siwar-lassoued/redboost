@@ -77,7 +77,7 @@ export class RapportSection4Component implements OnInit, OnChanges {
     activeResultTab: 'strengths' | 'weaknesses' | 'comparisons' | 'recommendations' | 'feedback' = 'strengths';
 
     private isInitialized = false;
-    private readonly aiApiUrl = 'http://localhost:8087/api/ai';
+    private readonly aiApiUrl = 'https://redboost.tn/api/ai';
 
     constructor(
         private rapportDataService: RapportDataService,

@@ -33,9 +33,9 @@ Redboost is a comprehensive, production-ready three-tier enterprise application 
 
 ### Default Port Configuration
 - **Frontend:** `http://localhost:4200`
-- **Backend API:** `http://localhost:8087`
+- **Backend API:** `https://redboost.tn`
 - **MySQL DB:** `3306`
-- **Swagger UI:** `http://localhost:8087/swagger-ui/index.html`
+- **Swagger UI:** `https://redboost.tn/swagger-ui/index.html`
 
 ## ⚙️ Getting Started
 

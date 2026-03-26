@@ -154,10 +154,10 @@ export class EntrepreneursManagementComponent implements OnInit {
         'Gafsa', 'Tozeur', 'Kebili', 'Gabès', 'Medenine', 'Tataouine'
     ];
 
-    private apiUrl = 'http://localhost:8087/api/users';
-    private detailsApiUrl = 'http://localhost:8087/api/backoffice/programmes/entrepreneurs-details';
-    private assignApiUrl = 'http://localhost:8087/api/backoffice/programmes';
-    private categoriesApiUrl = 'http://localhost:8087/api/backoffice/categories';
+    private apiUrl = 'https://redboost.tn/api/users';
+    private detailsApiUrl = 'https://redboost.tn/api/backoffice/programmes/entrepreneurs-details';
+    private assignApiUrl = 'https://redboost.tn/api/backoffice/programmes';
+    private categoriesApiUrl = 'https://redboost.tn/api/backoffice/categories';
 
     constructor(private http: HttpClient, private programmeService: ProgrammeService) {}
 

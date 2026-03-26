@@ -22,8 +22,8 @@ export interface AppNotification {
 })
 export class NotificationWebSocketService {
   // backend endpoints
-  private apiUrl = 'http://localhost:8087/api/notifications';
-  private wsUrl = 'http://localhost:8087/ws';
+  private apiUrl = 'https://redboost.tn/api/notifications';
+  private wsUrl = 'https://redboost.tn/ws';
 
   private stompClient: Client | null = null;
   

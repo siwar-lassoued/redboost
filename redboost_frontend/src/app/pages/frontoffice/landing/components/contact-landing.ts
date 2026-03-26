@@ -627,7 +627,7 @@ export class ContactLandingComponent implements DoCheck {
         this.isSubmitting = true;
 
         this.http
-            .post('http://localhost:8087/api/contact', this.formData)
+            .post('https://redboost.tn/api/contact', this.formData)
             .subscribe({
                 next: (response: any) => {
                     this.formData = {

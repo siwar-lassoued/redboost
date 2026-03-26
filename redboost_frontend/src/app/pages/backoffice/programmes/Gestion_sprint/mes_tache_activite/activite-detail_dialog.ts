@@ -364,7 +364,7 @@ interface ActiviteDetailDTO {
                                         <span *ngIf="doc.uploadedByName"> · {{ doc.uploadedByName }}</span>
                                     </p>
                                 </div>
-                                <a [href]="'http://localhost:8087' + doc.cheminFichier"
+                                <a [href]="'https://redboost.tn' + doc.cheminFichier"
                                     target="_blank"
                                     class="text-rose-500 hover:text-rose-700 flex-shrink-0">
                                     <span class="material-icons" style="font-size:20px;">download</span>

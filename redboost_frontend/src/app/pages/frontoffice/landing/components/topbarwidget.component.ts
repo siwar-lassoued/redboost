@@ -1410,10 +1410,10 @@ export class TopbarWidget implements OnInit, OnDestroy {
             return url;
         }
         if (url.startsWith('/uploads')) {
-            const baseUrl = 'http://localhost:8087'; // CHANGE THIS to your backend URL
+            const baseUrl = 'https://redboost.tn'; // CHANGE THIS to your backend URL
             return `${baseUrl}${url}`;
         }
-        const baseUrl = 'http://localhost:8087'; // CHANGE THIS to your backend URL
+        const baseUrl = 'https://redboost.tn'; // CHANGE THIS to your backend URL
         return `${baseUrl}/uploads/${url}`;
     }
 
