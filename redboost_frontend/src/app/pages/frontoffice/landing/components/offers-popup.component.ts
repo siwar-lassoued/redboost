@@ -59,9 +59,13 @@ import { Router } from '@angular/router';
                           [ngClass]="tpl.profileType === 'coach' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'">
                         {{ tpl.profileType === 'coach' ? 'Recherche Coach' : 'Pour Startups / Projets' }}
                     </span>
-                    <span *ngIf="tpl.deadline" class="text-xs text-surface-500 font-medium flex items-center gap-1">
-                        <i class="pi pi-calendar"></i>
-                        {{ tpl.deadline | date:'dd MMM yyyy' }}
+                    <span *ngIf="tpl.deadline" class="text-xs font-medium flex items-center gap-1"
+                          [style.color]="isExpiringSoon(tpl.deadline) ? '#ef4444' : '#6b7280'">
+                        <i class="pi pi-clock"></i>
+                        <ng-container *ngIf="getRemainingDays(tpl.deadline) !== null">
+                          {{ getRemainingDays(tpl.deadline) }} jour{{ getRemainingDays(tpl.deadline)! > 1 ? 's' : '' }} restant{{ getRemainingDays(tpl.deadline)! > 1 ? 's' : '' }}
+                        </ng-container>
+                        &middot; {{ tpl.deadline | date:'dd MMM yyyy' }}
                     </span>
                 </div>
                 
@@ -168,12 +172,10 @@ export class OffersPopupComponent implements OnInit {
       this.loading = true;
       this.formTemplateSvc.getAll().subscribe({
           next: (dtos) => {
-              // Map DTO to View model
-              this.templates = dtos.map(dto => FormTemplateService.toView(dto));
+              const all = dtos.map(dto => FormTemplateService.toView(dto));
+              // Only show templates with no deadline or whose deadline is still in the future
+              this.templates = all.filter(t => !t.deadline || !this.isExpired(t.deadline));
               this.loading = false;
-              
-              // Optionally pop it up automatically on load if there are templates
-              // if(this.templates.length > 0) setTimeout(() => this.display = true, 5000);
           },
           error: (err: any) => {
               console.error('Failed to load form templates', err);
@@ -188,7 +190,27 @@ export class OffersPopupComponent implements OnInit {
 
   apply(template: FormTemplateView) {
       this.display = false;
-      // Route to the existing submission form
       this.router.navigate(['/redstarter']);
+  }
+
+  /** Check if a deadline date string (YYYY-MM-DD) is in the past */
+  isExpired(deadline: string): boolean {
+      if (!deadline) return false;
+      const deadlineDate = new Date(deadline + 'T23:59:59');
+      return deadlineDate.getTime() < Date.now();
+  }
+
+  /** Get remaining days until deadline */
+  getRemainingDays(deadline: string | undefined): number | null {
+      if (!deadline) return null;
+      const deadlineDate = new Date(deadline + 'T23:59:59');
+      const diff = deadlineDate.getTime() - Date.now();
+      return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+  }
+
+  /** Returns true if less than 7 days remain */
+  isExpiringSoon(deadline: string | undefined): boolean {
+      const remaining = this.getRemainingDays(deadline);
+      return remaining !== null && remaining <= 7;
   }
 }

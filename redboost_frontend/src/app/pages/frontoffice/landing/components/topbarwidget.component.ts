@@ -505,7 +505,7 @@ import { User } from '../../../../models/user';
                         <ng-container *ngIf="!isLoggedIn">
                             <li>
                                 <a
-                                    routerLink="/auth/login"
+                                    routerLink="/signin"
                                     class="mobile-nav-link mobile-auth-link"
                                 >
                                     <i class="pi pi-sign-in"></i>
@@ -514,7 +514,7 @@ import { User } from '../../../../models/user';
                             </li>
                             <li>
                                 <a
-                                    routerLink="/auth/register"
+                                    routerLink="/signup"
                                     class="mobile-nav-link mobile-auth-link register"
                                 >
                                     <i class="pi pi-user-plus"></i>
@@ -1130,10 +1130,8 @@ import { User } from '../../../../models/user';
                     gap: 1rem;
                 }
 
-                .login-btn.p-button,
-                .register-btn.p-button {
-                    padding: 0.6rem 1.25rem;
-                    font-size: 0.9rem;
+                .user-actions .register-btn {
+                    display: none;
                 }
 
                 .profile-menu {
