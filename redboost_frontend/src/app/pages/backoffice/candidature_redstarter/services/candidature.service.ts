@@ -40,7 +40,10 @@ export class CandidatureService {
         if (filters?.page) params = params.set('page', filters.page.toString());
         if (filters?.limit) params = params.set('limit', filters.limit.toString());
 
-        return this.http.get<any>(`${this.baseUrl}/admin/all`, { params: { ...params.keys().reduce((acc: any, key) => ({ ...acc, [key]: params.get(key) }), {}), size: '1000' } }).pipe(
+        const size = filters?.limit?.toString() || '1000'; // Still default to 1000 if needed, but allow override
+        const allParams = { ...params.keys().reduce((acc: any, key) => ({ ...acc, [key]: params.get(key) }), {}), size };
+        
+        return this.http.get<any>(`${this.baseUrl}/admin/all`, { params: allParams }).pipe(
             map(res => {
                 let items: any[] = res.content || res.data || (Array.isArray(res) ? res : []);
                 let filtered = items;
@@ -48,11 +51,9 @@ export class CandidatureService {
                 if (filters?.type) {
                     if (filters.type === 'spontanees') {
                         filtered = []; // Not supported yet in this entity
-                    } else if (filters.type === 'coaches') {
-                        filtered = []; // Not supported yet in this entity
                     } else {
-                        // If it's entrepreneurs, keep all of them since this is the Redstarter form
-                        filtered = filtered;
+                        // Backend now handles filtering by type for coaches and entrepreneurs
+                        filtered = items;
                     }
                 }
                 if (filters?.statut) {

@@ -28,13 +28,13 @@ export class AdminHistoriqueComponent implements OnInit {
 
   orderedSteps: CandidatureStatus[] = ['EN_ATTENTE','EN_REVISION','PRESELECTIONNE','ACCEPTE'];
 
-  // KPIs — computed from ALL candidatures
-  kpiTotal       = computed(() => this.allCandidatures().length);
-  kpiEnAttente   = computed(() => this.allCandidatures().filter(c => c.statut === 'EN_ATTENTE').length);
-  kpiEnRevision  = computed(() => this.allCandidatures().filter(c => c.statut === 'EN_REVISION').length);
-  kpiPreselected = computed(() => this.allCandidatures().filter(c => c.statut === 'PRESELECTIONNE').length);
-  kpiAccepted    = computed(() => this.allCandidatures().filter(c => c.statut === 'ACCEPTE').length);
-  kpiRejected    = computed(() => this.allCandidatures().filter(c => c.statut === 'REJETE').length);
+  // KPIs — updated via statistics
+  kpiTotal       = signal(0);
+  kpiEnAttente   = signal(0);
+  kpiEnRevision  = signal(0);
+  kpiPreselected = signal(0);
+  kpiAccepted    = signal(0);
+  kpiRejected    = signal(0);
 
   filtered = computed(() => {
     return this.allCandidatures().filter(c => {
@@ -50,7 +50,21 @@ export class AdminHistoriqueComponent implements OnInit {
   }
 
   loadCandidatures(): void {
-    this.svc.getAll({}).subscribe(r => this.allCandidatures.set(r.data || []));
+    // 1. Get stats for KPIs
+    this.svc.getStatistics().subscribe(stats => {
+      this.kpiTotal.set(stats['total'] || 0);
+      this.kpiEnAttente.set(stats['en_attente'] || 0);
+      this.kpiEnRevision.set(stats['en_revision'] || 0);
+      this.kpiPreselected.set(stats['preselectionne'] || 0);
+      this.kpiAccepted.set(stats['accepte'] || 0);
+      this.kpiRejected.set(stats['rejete'] || 0);
+    });
+
+    // 2. Load list with a more reasonable size if possible, or keep 1000 but optimize backend
+    this.svc.getAll({ size: 200 }).subscribe({
+      next: r => this.allCandidatures.set(r.data || []),
+      error: () => this.allCandidatures.set([])
+    });
   }
 
   getJourneySteps(c: Candidature): JourneyStep[] {

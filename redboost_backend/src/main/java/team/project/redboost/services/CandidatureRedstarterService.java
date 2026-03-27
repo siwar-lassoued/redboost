@@ -68,7 +68,8 @@ public class CandidatureRedstarterService {
         logAction(savedCandidature.getId(), "Candidature reçue", null, CandidatureRedstarter.StatutCandidature.EN_ATTENTE.name(),
                 null, "Système", "Via formulaire en ligne");
         
-        // Notify admins
+        // Notify admins - Disabled as requested
+        /*
         try {
             List<User> admins = userRepository.findByRoleIn(Arrays.asList(Role.ADMIN, Role.SUPERADMIN));
             String message = "Nouvelle candidature soumise par " + savedCandidature.getNomPrenom() + " (" + savedCandidature.getNomEntreprise() + ")";
@@ -83,6 +84,7 @@ public class CandidatureRedstarterService {
         } catch (Exception e) {
             log.error("Failed to send notifications for new candidature", e);
         }
+        */
         
         return savedCandidature;
     }
