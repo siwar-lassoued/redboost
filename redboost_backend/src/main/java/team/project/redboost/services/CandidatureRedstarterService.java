@@ -88,8 +88,18 @@ public class CandidatureRedstarterService {
     }
     
     @Transactional(readOnly = true)
-    public Page<CandidatureRedstarter> getAllCandidatures(Pageable pageable) {
-        log.info("Fetching all candidatures with pagination");
+    public Page<CandidatureRedstarter> getAllCandidatures(Pageable pageable, String type) {
+        log.info("Fetching candidatures with pagination, type: {}", type);
+        
+        if (type != null && !type.isEmpty()) {
+            String profileType = type;
+            // Map frontend types to backend profile types
+            if (type.equalsIgnoreCase("coaches")) profileType = "COACH";
+            else if (type.equalsIgnoreCase("entrepreneurs")) profileType = "ENTREPRENEUR";
+            
+            return candidatureRepository.findByProfileType(profileType, pageable);
+        }
+        
         return candidatureRepository.findAll(pageable);
     }
     
@@ -152,7 +162,18 @@ public class CandidatureRedstarterService {
     
     @Transactional(readOnly = true)
     public long countByStatut(CandidatureRedstarter.StatutCandidature statut) {
+        if (statut == null) return candidatureRepository.count();
         return candidatureRepository.countByStatut(statut);
+    }
+    
+    @Transactional(readOnly = true)
+    public long countByType(String type) {
+        String profileType = type;
+        if (type.equalsIgnoreCase("coaches")) profileType = "COACH";
+        else if (type.equalsIgnoreCase("entrepreneurs")) profileType = "ENTREPRENEUR";
+        
+        // We'll need a new repository method for this if we want it to be efficient
+        return candidatureRepository.countByProfileType(profileType);
     }
     
     @Transactional

@@ -73,13 +73,14 @@ public class CandidatureRedstarterController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "dateCreationCandidature") String sortBy,
-            @RequestParam(defaultValue = "DESC") String sortDir) {
+            @RequestParam(defaultValue = "DESC") String sortDir,
+            @RequestParam(required = false) String type) {
         
         try {
             Sort.Direction direction = sortDir.equalsIgnoreCase("ASC") ? Sort.Direction.ASC : Sort.Direction.DESC;
             Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
             
-            Page<CandidatureRedstarter> candidatures = candidatureService.getAllCandidatures(pageable);
+            Page<CandidatureRedstarter> candidatures = candidatureService.getAllCandidatures(pageable, type);
             
             return ResponseEntity.ok(candidatures);
             
@@ -194,7 +195,11 @@ public class CandidatureRedstarterController {
     public ResponseEntity<Map<String, Long>> getStatistics() {
         try {
             Map<String, Long> stats = new HashMap<>();
-            stats.put("total", candidatureService.getAllCandidatures(Pageable.unpaged()).getTotalElements());
+            stats.put("total", candidatureService.countByStatut(null));
+            stats.put("coaches", candidatureService.countByType("coaches"));
+            stats.put("entrepreneurs", candidatureService.countByType("entrepreneurs"));
+            stats.put("spontanees", 0L); // Placeholder for now
+            
             stats.put("en_attente", candidatureService.countByStatut(CandidatureRedstarter.StatutCandidature.EN_ATTENTE));
             stats.put("en_revision", candidatureService.countByStatut(CandidatureRedstarter.StatutCandidature.EN_REVISION));
             stats.put("preselectionne", candidatureService.countByStatut(CandidatureRedstarter.StatutCandidature.PRESELECTIONNE));

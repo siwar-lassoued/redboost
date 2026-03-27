@@ -143,6 +143,10 @@ export class CandidatureService {
         return this.http.get<CandidatureLog[]>(`${this.baseUrl}/${id}/historique`);
     }
 
+    getStatistics(): Observable<Record<string, number>> {
+        return this.http.get<Record<string, number>>(`${this.baseUrl}/admin/statistics`);
+    }
+
     delete(id: string): Observable<void> {
         return this.http.delete<void>(`${this.baseUrl}/admin/${id}`);
     }

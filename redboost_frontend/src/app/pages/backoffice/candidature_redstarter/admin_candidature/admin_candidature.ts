@@ -57,14 +57,10 @@ export class AdminCandidaturesComponent implements OnInit {
   private readonly ACTIVE_STATUSES = ['EN_ATTENTE', 'EN_REVISION'];
 
   loadAll(): void {
-    this.svc.getAll({ type: 'coaches' }).subscribe(r => {
-      this.coachCount.set((r.data || []).filter(c => this.ACTIVE_STATUSES.includes(c.statut)).length);
-    });
-    this.svc.getAll({ type: 'entrepreneurs' }).subscribe(r => {
-      this.entCount.set((r.data || []).filter(c => this.ACTIVE_STATUSES.includes(c.statut)).length);
-    });
-    this.svc.getAll({ type: 'spontanees' }).subscribe(r => {
-      this.spontCount.set((r.data || []).filter(c => this.ACTIVE_STATUSES.includes(c.statut)).length);
+    this.svc.getStatistics().subscribe(stats => {
+      this.coachCount.set(stats['coaches'] || 0);
+      this.entCount.set(stats['entrepreneurs'] || 0);
+      this.spontCount.set(stats['spontanees'] || 0);
     });
     this.load();
   }

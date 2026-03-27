@@ -15,9 +15,20 @@ import java.util.List;
 @Repository
 public interface CandidatureRedstarterRepository extends JpaRepository<CandidatureRedstarter, Long> {
     
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"documents", "besoinsAccompagnement", "besoinsFormation"})
+    Page<CandidatureRedstarter> findAll(Pageable pageable);
+
     // Find by status
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"documents", "besoinsAccompagnement", "besoinsFormation"})
     Page<CandidatureRedstarter> findByStatut(CandidatureRedstarter.StatutCandidature statut, Pageable pageable);
     
+    // Find by type (via FormTemplate profile_type)
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"documents", "besoinsAccompagnement", "besoinsFormation"})
+    @Query("SELECT c FROM CandidatureRedstarter c " +
+           "JOIN FormTemplateEntity t ON c.formTemplateId = t.id " +
+           "WHERE UPPER(t.profileType) = UPPER(:type)")
+    Page<CandidatureRedstarter> findByProfileType(@Param("type") String type, Pageable pageable);
+
     // Find by email
     List<CandidatureRedstarter> findByEmail(String email);
     
@@ -40,5 +51,8 @@ public interface CandidatureRedstarterRepository extends JpaRepository<Candidatu
     Page<CandidatureRedstarter> searchByNomEntreprise(@Param("searchTerm") String searchTerm, Pageable pageable);
     
     // Find recent candidatures
-    Page<CandidatureRedstarter> findAllByOrderByDateCreationCandidatureDesc(Pageable pageable);
+    @Query("SELECT COUNT(c) FROM CandidatureRedstarter c " +
+           "JOIN FormTemplateEntity t ON c.formTemplateId = t.id " +
+           "WHERE UPPER(t.profileType) = UPPER(:type)")
+    long countByProfileType(@Param("type") String type);
 }
