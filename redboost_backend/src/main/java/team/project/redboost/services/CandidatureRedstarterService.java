@@ -40,9 +40,8 @@ public class CandidatureRedstarterService {
 
     // ── Transition rules (matching pfe-project) ──────────────────────
     private static final Map<StatutCandidature, Set<StatutCandidature>> ALLOWED_TRANSITIONS = Map.of(
-        StatutCandidature.EN_ATTENTE,      Set.of(StatutCandidature.EN_REVISION, StatutCandidature.ENTRETIEN, StatutCandidature.PRESELECTIONNE, StatutCandidature.ACCEPTE, StatutCandidature.REJETE),
-        StatutCandidature.EN_REVISION,     Set.of(StatutCandidature.ENTRETIEN, StatutCandidature.PRESELECTIONNE, StatutCandidature.ACCEPTE, StatutCandidature.REJETE),
-        StatutCandidature.ENTRETIEN,       Set.of(StatutCandidature.PRESELECTIONNE, StatutCandidature.ACCEPTE, StatutCandidature.REJETE),
+        StatutCandidature.EN_ATTENTE,      Set.of(StatutCandidature.EN_REVISION, StatutCandidature.PRESELECTIONNE, StatutCandidature.ACCEPTE, StatutCandidature.REJETE),
+        StatutCandidature.EN_REVISION,     Set.of(StatutCandidature.PRESELECTIONNE, StatutCandidature.ACCEPTE, StatutCandidature.REJETE),
         StatutCandidature.PRESELECTIONNE,  Set.of(StatutCandidature.ACCEPTE, StatutCandidature.REJETE),
         StatutCandidature.ACCEPTE,         Set.of(),
         StatutCandidature.REJETE,          Set.of(StatutCandidature.EN_REVISION)
@@ -88,16 +87,19 @@ public class CandidatureRedstarterService {
         return savedCandidature;
     }
     
+    @Transactional(readOnly = true)
     public Page<CandidatureRedstarter> getAllCandidatures(Pageable pageable) {
         log.info("Fetching all candidatures with pagination");
         return candidatureRepository.findAll(pageable);
     }
     
+    @Transactional(readOnly = true)
     public Page<CandidatureRedstarter> getCandidaturesByStatut(CandidatureRedstarter.StatutCandidature statut, Pageable pageable) {
         log.info("Fetching candidatures with status: {}", statut);
         return candidatureRepository.findByStatut(statut, pageable);
     }
     
+    @Transactional(readOnly = true)
     public CandidatureRedstarter getCandidatureById(Long id) {
         log.info("Fetching candidature with ID: {}", id);
         return candidatureRepository.findById(id)
@@ -131,7 +133,6 @@ public class CandidatureRedstarterService {
         String action;
         switch (newStatut) {
             case EN_REVISION:     action = "Dossier ouvert en révision"; break;
-            case ENTRETIEN:       action = "Entretien planifié"; break;
             case PRESELECTIONNE:  action = "Présélectionné"; break;
             case ACCEPTE:         action = "Candidature acceptée"; break;
             case REJETE:          action = "Candidature rejetée"; break;
@@ -143,11 +144,13 @@ public class CandidatureRedstarterService {
         return updated;
     }
     
+    @Transactional(readOnly = true)
     public Page<CandidatureRedstarter> searchCandidatures(String searchTerm, Pageable pageable) {
         log.info("Searching candidatures with term: {}", searchTerm);
         return candidatureRepository.searchByNomEntreprise(searchTerm, pageable);
     }
     
+    @Transactional(readOnly = true)
     public long countByStatut(CandidatureRedstarter.StatutCandidature statut) {
         return candidatureRepository.countByStatut(statut);
     }

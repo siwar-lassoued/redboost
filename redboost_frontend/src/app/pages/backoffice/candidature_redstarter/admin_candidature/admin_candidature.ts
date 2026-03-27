@@ -54,7 +54,7 @@ export class AdminCandidaturesComponent implements OnInit {
     this.loadAll();
   }
 
-  private readonly ACTIVE_STATUSES = ['EN_ATTENTE', 'EN_REVISION', 'ENTRETIEN'];
+  private readonly ACTIVE_STATUSES = ['EN_ATTENTE', 'EN_REVISION'];
 
   loadAll(): void {
     this.svc.getAll({ type: 'coaches' }).subscribe(r => {
@@ -149,7 +149,7 @@ export class AdminCandidaturesComponent implements OnInit {
   }
 
   getStatusIcon(c: Candidature): string {
-    switch (c.statut) { case 'EN_ATTENTE': return 'clock'; case 'EN_REVISION': return 'eye'; case 'ENTRETIEN': return 'users'; case 'PRESELECTIONNE': return 'star'; case 'ACCEPTE': return 'circle-check'; case 'REJETE': return 'circle-x'; default: return 'clock'; }
+    switch (c.statut) { case 'EN_ATTENTE': return 'clock'; case 'EN_REVISION': return 'eye'; case 'PRESELECTIONNE': return 'star'; case 'ACCEPTE': return 'circle-check'; case 'REJETE': return 'circle-x'; default: return 'clock'; }
   }
 
   getLogColor(statut: string): { bg: string; color: string } {

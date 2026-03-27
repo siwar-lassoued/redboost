@@ -197,7 +197,6 @@ public class CandidatureRedstarterController {
             stats.put("total", candidatureService.getAllCandidatures(Pageable.unpaged()).getTotalElements());
             stats.put("en_attente", candidatureService.countByStatut(CandidatureRedstarter.StatutCandidature.EN_ATTENTE));
             stats.put("en_revision", candidatureService.countByStatut(CandidatureRedstarter.StatutCandidature.EN_REVISION));
-            stats.put("entretien", candidatureService.countByStatut(CandidatureRedstarter.StatutCandidature.ENTRETIEN));
             stats.put("preselectionne", candidatureService.countByStatut(CandidatureRedstarter.StatutCandidature.PRESELECTIONNE));
             stats.put("accepte", candidatureService.countByStatut(CandidatureRedstarter.StatutCandidature.ACCEPTE));
             stats.put("rejete", candidatureService.countByStatut(CandidatureRedstarter.StatutCandidature.REJETE));

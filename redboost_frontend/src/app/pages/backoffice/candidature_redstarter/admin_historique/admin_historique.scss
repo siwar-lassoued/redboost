@@ -9,12 +9,11 @@
 .btn-export:hover { opacity: 0.9; }
 
 /* ── KPI ── */
-.kpi-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px; margin-bottom: 24px; }
+.kpi-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 24px; }
 .kpi-card { display: flex; align-items: center; gap: 12px; padding: 16px; border-radius: 16px; background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,0.06); border-left: 4px solid; }
 .kpi-total { border-color: #1A3A3A; }
 .kpi-attente { border-color: #6B7280; }
 .kpi-revision { border-color: #D97706; }
-.kpi-entretien { border-color: #A17DFD; }
 .kpi-preselected { border-color: #FF6F00; }
 .kpi-accepted { border-color: #22C55E; }
 .kpi-rejected { border-color: #C0392B; }
@@ -22,7 +21,6 @@
 .kpi-total .kpi-icon-wrap { background: rgba(26,58,58,0.1); color: #1A3A3A; }
 .kpi-attente .kpi-icon-wrap { background: rgba(107,114,128,0.1); color: #6B7280; }
 .kpi-revision .kpi-icon-wrap { background: rgba(217,119,6,0.1); color: #D97706; }
-.kpi-entretien .kpi-icon-wrap { background: rgba(161,125,253,0.1); color: #A17DFD; }
 .kpi-preselected .kpi-icon-wrap { background: rgba(255,111,0,0.1); color: #FF6F00; }
 .kpi-accepted .kpi-icon-wrap { background: rgba(34,197,94,0.1); color: #22C55E; }
 .kpi-rejected .kpi-icon-wrap { background: rgba(192,57,43,0.1); color: #C0392B; }

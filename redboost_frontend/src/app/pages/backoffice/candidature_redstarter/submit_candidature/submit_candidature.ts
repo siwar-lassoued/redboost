@@ -8,6 +8,7 @@ import {
 } from '@angular/forms';
 import { CandidatureService, CandidatureRedstarter } from '../candidature.service';
 import { ActivatedRoute, Router } from '@angular/router';
+import { ToastrService } from 'ngx-toastr';
 import { CommonModule } from '@angular/common';
 import { FormTemplateService, FormTemplateView } from '../services/form-template.service';
 
@@ -30,7 +31,8 @@ export class SubmitCandidatureComponent implements OnInit {
         private candidatureService: CandidatureService,
         private formTemplateService: FormTemplateService,
         private route: ActivatedRoute,
-        private router: Router
+        private router: Router,
+        private toastr: ToastrService
     ) {
         this.candidatureForm = this.fb.group({});
     }
@@ -41,7 +43,7 @@ export class SubmitCandidatureComponent implements OnInit {
                 this.templateId = params['templateId'];
                 this.loadTemplate(this.templateId!);
             } else {
-                alert('Aucun modèle de formulaire sélectionné. Redirection...');
+                this.toastr.error('Aucun modèle de formulaire sélectionné. Redirection...', 'Erreur');
                 this.router.navigate(['/']);
             }
         });
@@ -55,7 +57,7 @@ export class SubmitCandidatureComponent implements OnInit {
             },
             error: (err) => {
                 console.error('Error loading template', err);
-                alert('Erreur lors du chargement du formulaire.');
+                this.toastr.error('Erreur lors du chargement du formulaire.', 'Erreur');
                 this.router.navigate(['/']);
             },
         });
@@ -108,8 +110,9 @@ export class SubmitCandidatureComponent implements OnInit {
             }
 
             if (files.length > remainingSlots) {
-                alert(
+                this.toastr.warning(
                     `Vous ne pouvez télécharger que ${remainingSlots} fichier(s) supplémentaire(s). Maximum 8 fichiers.`,
+                    'Attention'
                 );
             }
         }
@@ -179,8 +182,9 @@ export class SubmitCandidatureComponent implements OnInit {
                 .submitCandidature(candidature, this.uploadedFiles)
                 .subscribe({
                     next: (response) => {
-                        alert(
-                            '✅ Votre candidature a été soumise avec succès! Nous vous contacterons bientôt.',
+                        this.toastr.success(
+                            'Votre candidature a été soumise avec succès! Nous vous contacterons bientôt.',
+                            'Succès'
                         );
 
                         this.candidatureForm.reset();
@@ -190,8 +194,9 @@ export class SubmitCandidatureComponent implements OnInit {
                     },
                     error: (error) => {
                         console.error('Error submitting candidature', error);
-                        alert(
-                            '❌ Erreur lors de la soumission de la candidature. Veuillez vérifier vos informations et réessayer.',
+                        this.toastr.error(
+                            'Erreur lors de la soumission de la candidature. Veuillez vérifier vos informations et réessayer.',
+                            'Erreur'
                         );
                         this.submitting = false;
                     },

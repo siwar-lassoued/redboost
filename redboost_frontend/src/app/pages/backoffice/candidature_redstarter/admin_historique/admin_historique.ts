@@ -1,5 +1,6 @@
 import { Component, OnInit, signal, computed, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ToastrService } from 'ngx-toastr';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
 import { CandidatureService } from '../services/candidature.service';
@@ -25,13 +26,12 @@ export class AdminHistoriqueComponent implements OnInit {
   showRejectModal = signal(false);
   motifRejet      = '';
 
-  orderedSteps: CandidatureStatus[] = ['EN_ATTENTE','EN_REVISION','ENTRETIEN','PRESELECTIONNE','ACCEPTE'];
+  orderedSteps: CandidatureStatus[] = ['EN_ATTENTE','EN_REVISION','PRESELECTIONNE','ACCEPTE'];
 
   // KPIs — computed from ALL candidatures
   kpiTotal       = computed(() => this.allCandidatures().length);
   kpiEnAttente   = computed(() => this.allCandidatures().filter(c => c.statut === 'EN_ATTENTE').length);
   kpiEnRevision  = computed(() => this.allCandidatures().filter(c => c.statut === 'EN_REVISION').length);
-  kpiEntretien   = computed(() => this.allCandidatures().filter(c => c.statut === 'ENTRETIEN').length);
   kpiPreselected = computed(() => this.allCandidatures().filter(c => c.statut === 'PRESELECTIONNE').length);
   kpiAccepted    = computed(() => this.allCandidatures().filter(c => c.statut === 'ACCEPTE').length);
   kpiRejected    = computed(() => this.allCandidatures().filter(c => c.statut === 'REJETE').length);
@@ -57,7 +57,6 @@ export class AdminHistoriqueComponent implements OnInit {
     const steps: JourneyStep[] = [
       { statut:'EN_ATTENTE', label:'Soumission', description:'Candidature reçue via le formulaire', reached:true, current:false, date:c.submittedAt, note:null },
       { statut:'EN_REVISION', label:'En révision', description:'Dossier examiné par l\'équipe', reached:false, current:false, date:null, note:null },
-      { statut:'ENTRETIEN', label:'Entretien', description:'Candidat convoqué pour entretien', reached:false, current:false, date:c.dateEntretien, note:c.compteRenduEntretien ?? null },
       { statut:'PRESELECTIONNE', label:'Pré-sélection', description:'Présélection pour le round suivant', reached:false, current:false, date:null, note:null },
     ];
     const idx = this.orderedSteps.indexOf(c.statut as CandidatureStatus);
@@ -87,7 +86,7 @@ export class AdminHistoriqueComponent implements OnInit {
 
   getStepColor(step: string): string {
     const m: Record<string,string> = {
-      EN_ATTENTE:'#9CA3AF', EN_REVISION:'#3AAFFF', ENTRETIEN:'#A17DFD',
+      EN_ATTENTE:'#9CA3AF', EN_REVISION:'#3AAFFF',
       PRESELECTIONNE:'#FF6F00', ACCEPTE:'#11998E', REJETE:'#C0392B'
     };
     return m[step] || '#9CA3AF';

@@ -1,7 +1,6 @@
 export type CandidatureStatus =
     | 'EN_ATTENTE'
     | 'EN_REVISION'
-    | 'ENTRETIEN'
     | 'PRESELECTIONNE'
     | 'ACCEPTE'
     | 'REJETE';
@@ -70,5 +69,5 @@ export interface FormTemplate {
 }
 
 export const CANDIDATURE_STATUTS: CandidatureStatus[] = [
-    'EN_ATTENTE', 'EN_REVISION', 'ENTRETIEN', 'PRESELECTIONNE', 'ACCEPTE', 'REJETE',
+    'EN_ATTENTE', 'EN_REVISION', 'PRESELECTIONNE', 'ACCEPTE', 'REJETE',
 ];
