@@ -145,11 +145,10 @@ export class SubmitCandidatureComponent implements OnInit {
             const derivedName = nameKeys.length ? answersObj[nameKeys[0]] : 'Candidat Anonyme';
 
             const candidature: CandidatureRedstarter = {
-                formTemplateId: this.templateId!,
+                formTemplateId: Number(this.templateId!),
                 dynamicAnswers: JSON.stringify(answersObj),
                 nomPrenom: derivedName,
                 email: derivedEmail,
-                statut: 'NOUVEAU',
             };
 
             this.candidatureService
