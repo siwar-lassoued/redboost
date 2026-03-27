@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import team.project.redboost.dto.CandidatureRedstarterDTO;
 import team.project.redboost.entities.CandidatureRedstarter;
+import team.project.redboost.entities.CandidatureRedstarter.StatutCandidature;
 import team.project.redboost.repositories.CandidatureRedstarterRepository;
 
 import java.io.IOException;
@@ -18,11 +19,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
-import java.util.UUID;
+import java.util.*;
 
 import team.project.redboost.entities.CandidatureLog;
 import team.project.redboost.entities.Role;
@@ -40,6 +37,16 @@ public class CandidatureRedstarterService {
     private final UserRepository userRepository;
     private final CandidatureLogRepository logRepository;
     private static final String UPLOAD_DIR = "uploads/candidatures/";
+
+    // ── Transition rules (matching pfe-project) ──────────────────────
+    private static final Map<StatutCandidature, Set<StatutCandidature>> ALLOWED_TRANSITIONS = Map.of(
+        StatutCandidature.EN_ATTENTE,      Set.of(StatutCandidature.EN_REVISION, StatutCandidature.ENTRETIEN, StatutCandidature.PRESELECTIONNE, StatutCandidature.ACCEPTE, StatutCandidature.REJETE),
+        StatutCandidature.EN_REVISION,     Set.of(StatutCandidature.ENTRETIEN, StatutCandidature.PRESELECTIONNE, StatutCandidature.ACCEPTE, StatutCandidature.REJETE),
+        StatutCandidature.ENTRETIEN,       Set.of(StatutCandidature.PRESELECTIONNE, StatutCandidature.ACCEPTE, StatutCandidature.REJETE),
+        StatutCandidature.PRESELECTIONNE,  Set.of(StatutCandidature.ACCEPTE, StatutCandidature.REJETE),
+        StatutCandidature.ACCEPTE,         Set.of(),
+        StatutCandidature.REJETE,          Set.of(StatutCandidature.EN_REVISION)
+    );
     
     @Transactional
     public CandidatureRedstarter submitCandidature(CandidatureRedstarterDTO dto) throws IOException {
@@ -98,11 +105,20 @@ public class CandidatureRedstarterService {
     }
     
     @Transactional
-    public CandidatureRedstarter updateStatut(Long id, CandidatureRedstarter.StatutCandidature newStatut, String commentaires) {
+    public CandidatureRedstarter updateStatut(Long id, StatutCandidature newStatut, String commentaires) {
         log.info("Updating status of candidature ID: {} to {}", id, newStatut);
         
         CandidatureRedstarter candidature = getCandidatureById(id);
-        CandidatureRedstarter.StatutCandidature oldStatut = candidature.getStatut();
+        StatutCandidature oldStatut = candidature.getStatut();
+
+        // Validate transition
+        Set<StatutCandidature> allowed = ALLOWED_TRANSITIONS.getOrDefault(oldStatut, Set.of());
+        if (!allowed.contains(newStatut)) {
+            throw new RuntimeException(
+                "Transition non autorisée : " + oldStatut + " → " + newStatut +
+                ". Transitions possibles : " + allowed);
+        }
+
         candidature.setStatut(newStatut);
         
         if (commentaires != null && !commentaires.isEmpty()) {
@@ -111,7 +127,17 @@ public class CandidatureRedstarterService {
         
         CandidatureRedstarter updated = candidatureRepository.save(candidature);
         
-        logAction(id, "Changement de statut", oldStatut.name(), newStatut.name(),
+        // Status-specific logging
+        String action;
+        switch (newStatut) {
+            case EN_REVISION:     action = "Dossier ouvert en révision"; break;
+            case ENTRETIEN:       action = "Entretien planifié"; break;
+            case PRESELECTIONNE:  action = "Présélectionné"; break;
+            case ACCEPTE:         action = "Candidature acceptée"; break;
+            case REJETE:          action = "Candidature rejetée"; break;
+            default:              action = "Changement de statut"; break;
+        }
+        logAction(id, action, oldStatut.name(), newStatut.name(),
                 null, "Admin", commentaires);
                 
         return updated;

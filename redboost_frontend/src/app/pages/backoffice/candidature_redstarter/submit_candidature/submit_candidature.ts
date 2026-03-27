@@ -149,6 +149,30 @@ export class SubmitCandidatureComponent implements OnInit {
                 dynamicAnswers: JSON.stringify(answersObj),
                 nomPrenom: derivedName,
                 email: derivedEmail,
+                // Fallback values to satisfy legacy database NOT NULL constraints
+                age: 0,
+                genre: 'Non spécifié',
+                numeroTelephone: '00000000',
+                roleEntreprise: 'Non spécifié',
+                nomEntreprise: 'Non spécifié',
+                entrepriseEst: 'Non spécifié',
+                dateCreation: new Date(),
+                regionBasee: 'Non spécifié',
+                breveDescription: 'Non spécifié',
+                labelStartupAct: false,
+                phaseMaturite: 'Non spécifié',
+                marchePersonnasCibles: 'Non spécifié',
+                composanteInnovation: 'Non spécifié',
+                impactEnvironnemental: 'Non spécifié',
+                impactSocial: 'Non spécifié',
+                viabiliteCommerciale: 'Non spécifié',
+                valeurAjoutee: 0,
+                nombreCoFondateurs: 0,
+                impliquesGestion: false,
+                nombreImpliquesGestion: 0,
+                experienceEquipeFondatrice: 'Non spécifié',
+                nombreEmploisCrees: 0,
+                beneficieAccompagnement: false
             };
 
             this.candidatureService

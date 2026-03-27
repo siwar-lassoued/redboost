@@ -196,9 +196,11 @@ public class CandidatureRedstarterController {
             Map<String, Long> stats = new HashMap<>();
             stats.put("total", candidatureService.getAllCandidatures(Pageable.unpaged()).getTotalElements());
             stats.put("en_attente", candidatureService.countByStatut(CandidatureRedstarter.StatutCandidature.EN_ATTENTE));
-            stats.put("en_cours_evaluation", candidatureService.countByStatut(CandidatureRedstarter.StatutCandidature.EN_COURS_EVALUATION));
+            stats.put("en_revision", candidatureService.countByStatut(CandidatureRedstarter.StatutCandidature.EN_REVISION));
+            stats.put("entretien", candidatureService.countByStatut(CandidatureRedstarter.StatutCandidature.ENTRETIEN));
+            stats.put("preselectionne", candidatureService.countByStatut(CandidatureRedstarter.StatutCandidature.PRESELECTIONNE));
             stats.put("accepte", candidatureService.countByStatut(CandidatureRedstarter.StatutCandidature.ACCEPTE));
-            stats.put("refuse", candidatureService.countByStatut(CandidatureRedstarter.StatutCandidature.REFUSE));
+            stats.put("rejete", candidatureService.countByStatut(CandidatureRedstarter.StatutCandidature.REJETE));
             
             return ResponseEntity.ok(stats);
             

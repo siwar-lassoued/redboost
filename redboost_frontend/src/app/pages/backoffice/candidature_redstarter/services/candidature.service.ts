@@ -121,12 +121,8 @@ export class CandidatureService {
         compteRenduEntretien?: string;
         noteEntretien?: number;
     }): Observable<Candidature> {
-        let backendStatut: string = String(body.statut).toUpperCase();
-        if (backendStatut === 'REJETE') backendStatut = 'REFUSE';
-        if (backendStatut === 'EN_REVISION') backendStatut = 'EN_COURS_EVALUATION';
-
         return this.http.put<Candidature>(`${this.baseUrl}/admin/${id}/status`, {
-            statut: backendStatut,
+            statut: body.statut,
             commentaires: body.noteInterne || body.motifRejet || ''
         });
     }
@@ -136,7 +132,7 @@ export class CandidatureService {
     }
 
     reject(id: string, note?: string): Observable<Candidature> {
-        return this.http.put<Candidature>(`${this.baseUrl}/admin/${id}/status`, { statut: 'REFUSE', commentaires: note || '' });
+        return this.http.put<Candidature>(`${this.baseUrl}/admin/${id}/status`, { statut: 'REJETE', commentaires: note || '' });
     }
 
     addNote(id: string, note: string): Observable<Candidature> {

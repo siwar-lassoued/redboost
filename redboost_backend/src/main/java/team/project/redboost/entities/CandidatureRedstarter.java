@@ -142,8 +142,10 @@ public class CandidatureRedstarter {
     
     public enum StatutCandidature {
         EN_ATTENTE,
-        EN_COURS_EVALUATION,
+        EN_REVISION,
+        ENTRETIEN,
+        PRESELECTIONNE,
         ACCEPTE,
-        REFUSE
+        REJETE
     }
 }
