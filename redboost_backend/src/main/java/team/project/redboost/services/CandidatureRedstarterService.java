@@ -42,9 +42,9 @@ public class CandidatureRedstarterService {
     private static final Map<StatutCandidature, Set<StatutCandidature>> ALLOWED_TRANSITIONS = Map.of(
         StatutCandidature.EN_ATTENTE,      Set.of(StatutCandidature.EN_REVISION, StatutCandidature.PRESELECTIONNE, StatutCandidature.ACCEPTE, StatutCandidature.REJETE),
         StatutCandidature.EN_REVISION,     Set.of(StatutCandidature.PRESELECTIONNE, StatutCandidature.ACCEPTE, StatutCandidature.REJETE),
-        StatutCandidature.PRESELECTIONNE,  Set.of(StatutCandidature.ACCEPTE, StatutCandidature.REJETE),
-        StatutCandidature.ACCEPTE,         Set.of(),
-        StatutCandidature.REJETE,          Set.of(StatutCandidature.EN_REVISION)
+        StatutCandidature.PRESELECTIONNE,  Set.of(StatutCandidature.EN_REVISION, StatutCandidature.ACCEPTE, StatutCandidature.REJETE),
+        StatutCandidature.ACCEPTE,         Set.of(StatutCandidature.EN_REVISION, StatutCandidature.PRESELECTIONNE, StatutCandidature.REJETE),
+        StatutCandidature.REJETE,          Set.of(StatutCandidature.EN_REVISION, StatutCandidature.PRESELECTIONNE, StatutCandidature.ACCEPTE)
     );
     
     @Transactional

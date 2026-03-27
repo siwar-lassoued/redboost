@@ -85,7 +85,7 @@ public class CandidatureRedstarter {
     @Column(nullable = true)
     private String valeurAjoutee;
     
-    @ElementCollection(fetch = FetchType.EAGER)
+    @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "candidature_documents", joinColumns = @JoinColumn(name = "candidature_id"))
     @Column(name = "document_path")
     private List<String> documents = new ArrayList<>();
@@ -106,7 +106,7 @@ public class CandidatureRedstarter {
     private Integer nombreEmploisCrees;
     
     // Step 5: Support Needs
-    @ElementCollection(fetch = FetchType.EAGER)
+    @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "candidature_besoins_accompagnement", joinColumns = @JoinColumn(name = "candidature_id"))
     @Column(name = "besoin")
     private List<String> besoinsAccompagnement = new ArrayList<>();
@@ -116,7 +116,7 @@ public class CandidatureRedstarter {
     
     private String detailsAccompagnement;
     
-    @ElementCollection(fetch = FetchType.EAGER)
+    @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "candidature_besoins_formation", joinColumns = @JoinColumn(name = "candidature_id"))
     @Column(name = "formation")
     private List<String> besoinsFormation = new ArrayList<>();
@@ -131,7 +131,7 @@ public class CandidatureRedstarter {
     @Column(nullable = false)
     private LocalDateTime dateCreationCandidature;
     
-    @Column(nullable = false)
+    @Column(nullable = false, length = 50)
     @Enumerated(EnumType.STRING)
     private StatutCandidature statut = StatutCandidature.EN_ATTENTE;
     

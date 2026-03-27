@@ -327,7 +327,16 @@ export class AdminFormLauncherComponent implements OnChanges {
         { id: 2, text: 'Curriculum Vitae', type: 'upload', required: true }
       ];
       this.step.set('form');
-    } else { this.step.set('form'); }
+    } else {
+      this.questions = [
+        { id: Math.random(), text: 'Nom et Prénom', type: 'text-court', required: true },
+        { id: Math.random(), text: 'Email', type: 'text-court', required: true },
+        { id: Math.random(), text: 'Numéro de Téléphone', type: 'text-court', required: true },
+        { id: Math.random(), text: 'Nom de l\'entreprise', type: 'text-court', required: true }
+      ];
+      this.step.set('form');
+    }
+
   }
 
   handleTemplateSelect(template: FormTemplate): void {
