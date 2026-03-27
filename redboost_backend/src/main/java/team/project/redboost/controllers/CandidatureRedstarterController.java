@@ -86,7 +86,8 @@ public class CandidatureRedstarterController {
             
         } catch (Exception e) {
             log.error("Error fetching candidatures", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", e.getMessage() != null ? e.getMessage() : "Unknown error", "stackTrace", e.toString()));
         }
     }
     
