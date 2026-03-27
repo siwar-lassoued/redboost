@@ -61,7 +61,7 @@ export class AdminHistoriqueComponent implements OnInit {
     });
 
     // 2. Load list with a more reasonable size if possible, or keep 1000 but optimize backend
-    this.svc.getAll({ size: 200 }).subscribe({
+    this.svc.getAll({ limit: 200 }).subscribe({
       next: r => this.allCandidatures.set(r.data || []),
       error: () => this.allCandidatures.set([])
     });

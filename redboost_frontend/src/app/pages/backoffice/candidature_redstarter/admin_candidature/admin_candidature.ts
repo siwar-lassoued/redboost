@@ -68,6 +68,7 @@ export class AdminCandidaturesComponent implements OnInit {
   load(): void {
     this.svc.getAll({
       type: this.activeTab(),
+      limit: 100,
       search: this.searchQuery || undefined,
       statut: this.statusFilter === 'ALL' ? undefined : this.statusFilter as CandidatureStatus
     }).subscribe(r => {
