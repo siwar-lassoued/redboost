@@ -69,7 +69,7 @@ public class CandidatureRedstarterController {
      * GET /api/candidatures/admin/all
      */
     @GetMapping("/admin/all")
-    public ResponseEntity<Page<CandidatureRedstarter>> getAllCandidatures(
+    public ResponseEntity<?> getAllCandidatures(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "dateCreationCandidature") String sortBy,
