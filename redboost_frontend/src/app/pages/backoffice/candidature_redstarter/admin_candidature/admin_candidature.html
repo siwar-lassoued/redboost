@@ -263,7 +263,6 @@
             <lucide-icon name="eye" [size]="14"></lucide-icon> Ouvrir révision
           </button>
         }
-        }
         @if (selected()!.statut !== 'PRESELECTIONNE' && selected()!.statut !== 'ACCEPTE' && selected()!.statut !== 'REJETE') {
           <button (click)="onChangeStatut('PRESELECTIONNE')" class="btn-action btn-amber">
             <lucide-icon name="star" [size]="14"></lucide-icon> Pré-sélectionner
