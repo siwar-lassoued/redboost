@@ -85,10 +85,9 @@ public class CandidatureRedstarter {
     @Column(nullable = true)
     private String valeurAjoutee;
     
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "candidature_documents", joinColumns = @JoinColumn(name = "candidature_id"))
     @Column(name = "document_path")
-    @Fetch(FetchMode.SUBSELECT)
     private List<String> documents = new ArrayList<>();
     
     // Step 4: Team Information
@@ -107,10 +106,9 @@ public class CandidatureRedstarter {
     private Integer nombreEmploisCrees;
     
     // Step 5: Support Needs
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "candidature_besoins_accompagnement", joinColumns = @JoinColumn(name = "candidature_id"))
     @Column(name = "besoin")
-    @Fetch(FetchMode.SUBSELECT)
     private List<String> besoinsAccompagnement = new ArrayList<>();
     
     @Column(nullable = true)
@@ -118,10 +116,9 @@ public class CandidatureRedstarter {
     
     private String detailsAccompagnement;
     
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "candidature_besoins_formation", joinColumns = @JoinColumn(name = "candidature_id"))
     @Column(name = "formation")
-    @Fetch(FetchMode.SUBSELECT)
     private List<String> besoinsFormation = new ArrayList<>();
     
     @Column(name = "form_template_id")

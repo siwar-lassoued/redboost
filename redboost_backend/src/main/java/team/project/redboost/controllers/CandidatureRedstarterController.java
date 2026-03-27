@@ -87,7 +87,11 @@ public class CandidatureRedstarterController {
         } catch (Exception e) {
             log.error("Error fetching candidatures", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", e.getMessage() != null ? e.getMessage() : "Unknown error", "stackTrace", e.toString()));
+                .body(Map.of(
+                    "success", false,
+                    "message", "Erreur lors de la récupération des candidatures",
+                    "error", e.getMessage() != null ? e.getMessage() : "Unknown error"
+                ));
         }
     }
     
@@ -160,9 +164,19 @@ public class CandidatureRedstarterController {
             return ResponseEntity.badRequest()
                 .body(Map.of("success", false, "message", "Statut invalide"));
         } catch (RuntimeException e) {
-            log.error("Error updating candidature status", e);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(Map.of("success", false, "message", "Candidature non trouvée"));
+            log.error("Error updating candidature status: {}", e.getMessage());
+            String msg = e.getMessage();
+            HttpStatus status = (msg != null && msg.contains("not found")) ? HttpStatus.NOT_FOUND : HttpStatus.BAD_REQUEST;
+            
+            return ResponseEntity.status(status)
+                .body(Map.of(
+                    "success", false, 
+                    "message", msg != null ? msg : "Erreur lors de la mise à jour du statut"
+                ));
+        } catch (Exception e) {
+            log.error("Unexpected error updating status", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("success", false, "message", "Une erreur inattendue est survenue"));
         }
     }
     
