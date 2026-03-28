@@ -44,6 +44,7 @@
       </select>
       <select [(ngModel)]="statusFilter" (ngModelChange)="load()" class="filter-select">
         <option value="ALL">Statuts actifs (Tous)</option>
+        <option value="HISTORIQUE">Tout afficher (Historique)</option>
         <option value="EN_ATTENTE">En attente</option>
         <option value="EN_REVISION">En révision</option>
       </select>

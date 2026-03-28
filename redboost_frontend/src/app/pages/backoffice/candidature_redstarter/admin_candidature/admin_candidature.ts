@@ -76,7 +76,9 @@ export class AdminCandidaturesComponent implements OnInit {
       if (this.filterProgram !== 'all') {
         data = data.filter(c => c.programme === this.filterProgram);
       }
-      data = data.filter(c => this.ACTIVE_STATUSES.includes(c.statut));
+      if (this.statusFilter !== 'HISTORIQUE') {
+        data = data.filter(c => this.ACTIVE_STATUSES.includes(c.statut));
+      }
       this.candidatures.set(data);
       const progs = [...new Set((r.data || []).map(c => c.programme).filter(Boolean))] as string[];
       this.programmes.set(progs);

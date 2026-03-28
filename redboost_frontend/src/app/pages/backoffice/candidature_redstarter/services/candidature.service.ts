@@ -38,12 +38,12 @@ export class CandidatureService {
         if (filters?.type) params = params.set('type', filters.type);
         if (filters?.search) params = params.set('search', filters.search);
         if (filters?.page) params = params.set('page', filters.page.toString());
-        if (filters?.limit) params = params.set('limit', filters.limit.toString());
-
-        const size = filters?.limit?.toString() || '1000'; // Still default to 1000 if needed, but allow override
-        const allParams = { ...params.keys().reduce((acc: any, key) => ({ ...acc, [key]: params.get(key) }), {}), size };
         
-        return this.http.get<any>(`${this.baseUrl}/admin/all`, { params: allParams }).pipe(
+        // Use 'size' as the primary pagination limit parameter for Spring Data
+        const size = filters?.limit?.toString() || '1000';
+        params = params.set('size', size);
+        
+        return this.http.get<any>(`${this.baseUrl}/admin/all`, { params }).pipe(
             map(res => {
                 let items: any[] = res.content || res.data || (Array.isArray(res) ? res : []);
                 let filtered = items;

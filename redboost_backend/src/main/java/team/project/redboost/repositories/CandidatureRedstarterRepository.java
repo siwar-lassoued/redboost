@@ -24,8 +24,7 @@ public interface CandidatureRedstarterRepository extends JpaRepository<Candidatu
     
     // Find by type (via FormTemplate profile_type)
     @Query("SELECT c FROM CandidatureRedstarter c " +
-           "JOIN FormTemplateEntity t ON c.formTemplateId = t.id " +
-           "WHERE UPPER(t.profileType) = UPPER(:type)")
+           "WHERE c.formTemplateId IN (SELECT t.id FROM FormTemplateEntity t WHERE UPPER(t.profileType) = UPPER(:type))")
     Page<CandidatureRedstarter> findByProfileType(@Param("type") String type, Pageable pageable);
 
     // Find by email

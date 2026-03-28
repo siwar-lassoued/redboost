@@ -8,6 +8,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 
@@ -88,6 +89,7 @@ public class CandidatureRedstarter {
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "candidature_documents", joinColumns = @JoinColumn(name = "candidature_id"))
     @Column(name = "document_path")
+    @BatchSize(size = 20)
     private List<String> documents = new ArrayList<>();
     
     // Step 4: Team Information
@@ -109,6 +111,7 @@ public class CandidatureRedstarter {
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "candidature_besoins_accompagnement", joinColumns = @JoinColumn(name = "candidature_id"))
     @Column(name = "besoin")
+    @BatchSize(size = 20)
     private List<String> besoinsAccompagnement = new ArrayList<>();
     
     @Column(nullable = true)
@@ -119,6 +122,7 @@ public class CandidatureRedstarter {
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "candidature_besoins_formation", joinColumns = @JoinColumn(name = "candidature_id"))
     @Column(name = "formation")
+    @BatchSize(size = 20)
     private List<String> besoinsFormation = new ArrayList<>();
     
     @Column(name = "form_template_id")

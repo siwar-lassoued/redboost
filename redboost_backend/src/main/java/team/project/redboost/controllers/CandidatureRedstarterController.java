@@ -77,21 +77,21 @@ public class CandidatureRedstarterController {
             @RequestParam(required = false) String type) {
         
         try {
+            log.info("Request to get all candidatures: type={}, page={}, size={}", type, page, size);
             Sort.Direction direction = sortDir.equalsIgnoreCase("ASC") ? Sort.Direction.ASC : Sort.Direction.DESC;
             Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
             
             Page<CandidatureRedstarter> candidatures = candidatureService.getAllCandidatures(pageable, type);
+            log.info("Fetched {} candidatures", candidatures.getTotalElements());
             
             return ResponseEntity.ok(candidatures);
-            
         } catch (Exception e) {
-            log.error("Error fetching candidatures", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of(
-                    "success", false,
-                    "message", "Erreur lors de la récupération des candidatures",
-                    "error", e.getMessage() != null ? e.getMessage() : "Unknown error"
-                ));
+            log.error("Error fetching candidatures: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body(Map.of(
+                "error", "Internal Server Error",
+                "message", e.getMessage() != null ? e.getMessage() : "Unknown error",
+                "path", "/api/candidatures/admin/all"
+            ));
         }
     }
     
