@@ -167,4 +167,8 @@ export class CandidatureService {
     cleanupAnonymous(): Observable<any> {
         return this.http.delete<any>(`${this.baseUrl}/admin/cleanup-anonymous`);
     }
+
+    migrateLegacy(): Observable<any> {
+        return this.http.post<any>(`${this.baseUrl}/admin/migrate-legacy`, {});
+    }
 }

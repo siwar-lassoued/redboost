@@ -248,6 +248,22 @@ public class CandidatureRedstarterController {
     }
 
     /**
+     * Migrate legacy statuses (Admin)
+     * POST /api/candidatures/admin/migrate-legacy
+     */
+    @PostMapping("/admin/migrate-legacy")
+    public ResponseEntity<?> migrateLegacy() {
+        try {
+            candidatureService.migrateLegacyStatuses();
+            return ResponseEntity.ok(Map.of("success", true, "message", "Migration des statuts terminée"));
+        } catch (Exception e) {
+            log.error("Error migrating legacy statuses", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("success", false, "message", "Erreur lors de la migration"));
+        }
+    }
+    
+    /**
      * Delete anonymous candidatures (Admin)
      * DELETE /api/candidatures/admin/cleanup-anonymous
      */

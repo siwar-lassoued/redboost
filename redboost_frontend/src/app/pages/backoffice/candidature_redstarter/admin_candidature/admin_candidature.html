@@ -11,6 +11,10 @@
           <lucide-icon name="fast-forward" [size]="16"></lucide-icon> Clôturer le Round
         </button>
       }
+      <button (click)="migrateLegacy()" class="btn-gradient-gray" title="Migrer les anciens statuts">
+        <lucide-icon name="refresh-cw" [size]="18"></lucide-icon>
+        <span>Migrer les statuts</span>
+      </button>
       <button (click)="onCleanupAnonymous()" class="btn-gradient-gray">
         <lucide-icon name="trash-2" [size]="16"></lucide-icon> Nettoyer les anonymes
       </button>

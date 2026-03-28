@@ -310,7 +310,12 @@ export class AdminFormLauncherComponent implements OnChanges {
   }
 
   getStepMaxWidth(): number {
-    switch (this.step()) { case 'choice': return 900; case 'templates': return 1000; case 'form': return 800; default: return 800; }
+    switch (this.step()) { 
+      case 'choice': return 800; 
+      case 'templates': return 900; 
+      case 'form': return 750; 
+      default: return 750; 
+    }
   }
 
   onClose(): void { this.closed.emit(); this.reset(); }

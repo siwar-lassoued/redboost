@@ -173,7 +173,19 @@ public class CandidatureRedstarterService {
     @Transactional(readOnly = true)
     public long countByStatut(CandidatureRedstarter.StatutCandidature statut) {
         if (statut == null) return candidatureRepository.count();
-        return candidatureRepository.countByStatut(statut);
+        
+        long count = candidatureRepository.countByStatut(statut);
+        
+        // Aggregate legacy counts
+        if (statut == CandidatureRedstarter.StatutCandidature.REJETE) {
+            count += candidatureRepository.countByStatut(CandidatureRedstarter.StatutCandidature.REFUSE);
+        } else if (statut == CandidatureRedstarter.StatutCandidature.EN_COURS_EVALUATION) {
+            count += candidatureRepository.countByStatut(CandidatureRedstarter.StatutCandidature.EN_REVISION);
+        } else if (statut == CandidatureRedstarter.StatutCandidature.PRE_SELECTIONNE) {
+            count += candidatureRepository.countByStatut(CandidatureRedstarter.StatutCandidature.PRESELECTIONNE);
+        }
+        
+        return count;
     }
     
     @Transactional(readOnly = true)
@@ -214,6 +226,32 @@ public class CandidatureRedstarterService {
     }
 
     @Transactional
+    public void migrateLegacyStatuses() {
+        log.info("Starting migration of legacy candidature statuses");
+        
+        List<CandidatureRedstarter> all = candidatureRepository.findAll();
+        int migratedCount = 0;
+        
+        for (CandidatureRedstarter c : all) {
+            StatutCandidature current = c.getStatut();
+            StatutCandidature target = null;
+            
+            if (current == StatutCandidature.REFUSE) target = StatutCandidature.REJETE;
+            else if (current == StatutCandidature.EN_REVISION) target = StatutCandidature.EN_COURS_EVALUATION;
+            else if (current == StatutCandidature.PRESELECTIONNE) target = StatutCandidature.PRE_SELECTIONNE;
+            
+            if (target != null) {
+                log.info("Migrating candidature {} from {} to {}", c.getId(), current, target);
+                c.setStatut(target);
+                candidatureRepository.save(c);
+                migratedCount++;
+            }
+        }
+        
+        log.info("Migration finished. Total migrated: {}", migratedCount);
+    }
+
+    @Transactional
     public void cleanupAnonymousCandidatures() {
         log.info("Cleaning up anonymous candidatures");
         candidatureRepository.deleteAnonymous();
@@ -228,6 +266,15 @@ public class CandidatureRedstarterService {
         if (entity.getDocuments() != null) entity.getDocuments().size();
         if (entity.getBesoinsAccompagnement() != null) entity.getBesoinsAccompagnement().size();
         if (entity.getBesoinsFormation() != null) entity.getBesoinsFormation().size();
+
+        CandidatureRedstarter.StatutCandidature currentStatut = entity.getStatut();
+        // Map legacy statuses to new ones for the UI
+        if (currentStatut == CandidatureRedstarter.StatutCandidature.REFUSE) 
+            currentStatut = CandidatureRedstarter.StatutCandidature.REJETE;
+        else if (currentStatut == CandidatureRedstarter.StatutCandidature.EN_REVISION) 
+            currentStatut = CandidatureRedstarter.StatutCandidature.EN_COURS_EVALUATION;
+        else if (currentStatut == CandidatureRedstarter.StatutCandidature.PRESELECTIONNE) 
+            currentStatut = CandidatureRedstarter.StatutCandidature.PRE_SELECTIONNE;
         
         return team.project.redboost.dto.CandidatureRedstarterResponseDTO.builder()
             .id(entity.getId())
@@ -265,7 +312,7 @@ public class CandidatureRedstarterService {
             .formTemplateId(entity.getFormTemplateId())
             .dynamicAnswers(entity.getDynamicAnswers())
             .dateCreationCandidature(entity.getDateCreationCandidature())
-            .statut(entity.getStatut() != null ? entity.getStatut().name() : null)
+            .statut(currentStatut != null ? currentStatut.name() : null)
             .commentairesAdmin(entity.getCommentairesAdmin())
             .build();
     }

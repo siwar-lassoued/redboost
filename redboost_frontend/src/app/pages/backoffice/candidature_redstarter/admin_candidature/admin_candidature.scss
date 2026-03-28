@@ -104,7 +104,7 @@
 /* ── Modal ── */
 .modal-overlay { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(0,0,0,0.5); }
 .modal-box {
-  background: #fff; border-radius: 20px; width: 100%; max-width: 900px; max-height: 90vh;
+  background: #fff; border-radius: 20px; width: 100%; max-width: 800px; max-height: 90vh;
   overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.2); display: flex; flex-direction: column;
 }
 .modal-header { padding: 20px 24px; border-bottom: 1px solid #F3F4F6; background: linear-gradient(to right, #F9FAFB, #fff); display: flex; align-items: flex-start; justify-content: space-between; }
@@ -174,24 +174,18 @@
 .log-meta { font-size: 12px; color: #9CA3AF; margin-top: 4px; }
 
 .modal-footer {
-  padding: 16px 24px; border-top: 1px solid #F3F4F6; background: #F9FAFB;
-  display: flex; align-items: center; gap: 12px; border-radius: 0 0 20px 20px; flex-wrap: wrap;
+  padding: 20px 24px; border-top: 1px solid #F3F4F6; background: #fff;
+  display: flex; align-items: center; gap: 12px; border-radius: 0 0 20px 20px;
 }
 .btn-action {
-  display: flex; align-items: center; gap: 6px; padding: 8px 16px;
-  border-radius: 12px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; color: #fff; transition: all .2s;
+  display: flex; align-items: center; gap: 8px; padding: 10px 20px;
+  border-radius: 12px; font-size: 14px; font-weight: 600; border: none; cursor: pointer; color: #fff; transition: all .2s;
+  box-shadow: 0 4px 12px rgba(0, 210, 255, 0.2);
 }
-.btn-blue { background: linear-gradient(135deg, #00d2ff, #3aafff); }
-.btn-blue:hover { opacity: 0.9; }
-.btn-purple { background: linear-gradient(135deg, #00d2ff, #3aafff); }
-.btn-purple:hover { opacity: 0.9; }
-.btn-amber { background: linear-gradient(135deg, #00d2ff, #3aafff); }
-.btn-amber:hover { opacity: 0.9; }
-.btn-green { background: linear-gradient(135deg, #00d2ff, #3aafff); }
-.btn-green:hover { opacity: 0.9; }
-.btn-green:disabled { opacity: 0.5; cursor: not-allowed; }
-.btn-outline-reject { background: linear-gradient(135deg, #00d2ff, #3aafff); color: #fff; border: none; }
-.btn-outline-reject:hover { opacity: 0.9; }
+.btn-blue, .btn-purple, .btn-amber, .btn-green, .btn-outline-reject { 
+  background: linear-gradient(135deg, #00d2ff, #3aafff); 
+}
+.btn-action:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0, 210, 255, 0.3); }
 .btn-close-modal { margin-left: auto; padding: 8px 16px; border-radius: 12px; font-size: 14px; font-weight: 500; color: #6B7280; background: none; border: none; cursor: pointer; transition: all .2s; }
 .btn-close-modal:hover { background: #E5E7EB; }
 

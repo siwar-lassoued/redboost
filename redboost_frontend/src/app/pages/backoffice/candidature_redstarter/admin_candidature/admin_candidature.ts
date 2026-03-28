@@ -142,6 +142,21 @@ export class AdminCandidaturesComponent implements OnInit {
     }
   }
 
+  migrateLegacy(): void {
+    if (confirm('Voulez-vous migrer tous les anciens statuts (REFUSE, REVISION...) vers les nouveaux statuts standardisés ?')) {
+      this.svc.migrateLegacy().subscribe({
+        next: (res) => {
+          alert(res.message || 'Migration des statuts terminée avec succès');
+          this.loadAll();
+        },
+        error: (err) => {
+          console.error('Migration failed:', err);
+          alert('Erreur lors de la migration des statuts');
+        }
+      });
+    }
+  }
+
   loadHistorique(): void {
     const id = this.selected()?.id;
     if (!id) return;
