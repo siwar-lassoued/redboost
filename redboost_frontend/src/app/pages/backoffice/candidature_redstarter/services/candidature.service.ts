@@ -122,7 +122,7 @@ export class CandidatureService {
     }
 
     create(data: Partial<Candidature>): Observable<Candidature> {
-        return this.http.post<Candidature>(this.baseUrl, data);
+        return this.http.post<Candidature>(`${this.baseUrl}/submit`, data);
     }
 
     updateStatut(id: string, body: {
@@ -148,7 +148,8 @@ export class CandidatureService {
     }
 
     addNote(id: string, note: string): Observable<Candidature> {
-        return this.http.put<Candidature>(`${this.baseUrl}/${id}/notes`, { note });
+       
+        return this.http.put<Candidature>(`${this.baseUrl}/admin/${id}/status`, { commentaires: note });
     }
 
     getHistorique(id: string): Observable<CandidatureLog[]> {
