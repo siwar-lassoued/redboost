@@ -115,20 +115,22 @@ public class ProgrammeController {
         return service.getKpisWithStatus(id);
     }
 
-    // Get all OPTIONNEL KPIs (for activity modal)
+    // Get all OPTIONNEL and global KPIs for a specific programme (from its attached KPIs)
     @GetMapping("/{programmeId}/kpis/optionnels")
     public ResponseEntity<List<KpiWithCategory>> getOptionnelKpisForProgramme(@PathVariable Long programmeId) {
-        List<BackofficeKpi> optionnelKpis = kpiRepository.findByTypeIn(List.of("OPTIONNEL", "GLOBAL"));
+        List<BackofficeKpi> programmeKpis = service.getKpisDuProgramme(programmeId);
 
-        List<KpiWithCategory> result = optionnelKpis.stream().map(kpi -> new KpiWithCategory(
-                kpi.getId(),
-                kpi.getNom(),
-                kpi.getDescription(),
-                kpi.getUniteMesure(),
-                kpi.getCategory() != null ?
-                        new CategoryInfo(kpi.getCategory().getNom(), kpi.getCategory().getCouleur()) :
-                        new CategoryInfo("Général", "#94a3b8")
-        )).toList();
+        List<KpiWithCategory> result = programmeKpis.stream()
+                .filter(kpi -> "OPTIONNEL".equalsIgnoreCase(kpi.getType()) || "GLOBAL".equalsIgnoreCase(kpi.getType()))
+                .map(kpi -> new KpiWithCategory(
+                        kpi.getId(),
+                        kpi.getNom(),
+                        kpi.getDescription(),
+                        kpi.getUniteMesure(),
+                        kpi.getCategory() != null ?
+                                new CategoryInfo(kpi.getCategory().getNom(), kpi.getCategory().getCouleur()) :
+                                new CategoryInfo("Général", "#94a3b8")
+                )).toList();
 
         return ResponseEntity.ok(result);
     }
@@ -677,6 +679,8 @@ public class ProgrammeController {
         StatisticsDTO stats = activiteService.getGlobalStatistics();
         return ResponseEntity.ok(stats);
     }
+
+
 
     // ==================== REQUEST DTOs ====================
     public record ActiviteCreateRequest(Activite activite, List<Long> kpiIds) {}
