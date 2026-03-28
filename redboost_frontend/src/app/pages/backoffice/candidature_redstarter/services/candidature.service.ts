@@ -50,9 +50,10 @@ export class CandidatureService {
 
                 if (filters?.type) {
                     if (filters.type === 'spontanees') {
-                        filtered = []; // Not supported yet in this entity
+                        // Backend now handles filtering for spontaneous (formTemplateId is null)
+                        filtered = items;
                     } else {
-                        // Backend now handles filtering by type for coaches and entrepreneurs
+                        // Backend handles filtering by type for coaches and entrepreneurs
                         filtered = items;
                     }
                 }
@@ -62,7 +63,7 @@ export class CandidatureService {
 
                 const mappedData: Candidature[] = filtered.map((c: any) => ({
                     id: c.id,
-                    type: 'entrepreneurs',
+                    type: filters?.type || 'entrepreneurs',
                     nom: c.nomPrenom || 'Inconnu',
                     email: c.email || 'N/A',
                     phone: c.numeroTelephone || '—',
@@ -150,5 +151,9 @@ export class CandidatureService {
 
     delete(id: string): Observable<void> {
         return this.http.delete<void>(`${this.baseUrl}/admin/${id}`);
+    }
+
+    cleanupAnonymous(): Observable<any> {
+        return this.http.delete<any>(`${this.baseUrl}/admin/cleanup-anonymous`);
     }
 }

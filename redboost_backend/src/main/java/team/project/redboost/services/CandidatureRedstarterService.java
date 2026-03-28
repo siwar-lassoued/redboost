@@ -98,6 +98,7 @@ public class CandidatureRedstarterService {
             // Map frontend types to backend profile types
             if (type.equalsIgnoreCase("coaches")) profileType = "COACH";
             else if (type.equalsIgnoreCase("entrepreneurs")) profileType = "ENTREPRENEUR";
+            else if (type.equalsIgnoreCase("spontanees")) return candidatureRepository.findSpontanees(pageable);
             
             return candidatureRepository.findByProfileType(profileType, pageable);
         }
@@ -192,6 +193,12 @@ public class CandidatureRedstarterService {
         logRepository.deleteAll(logs);
         
         candidatureRepository.deleteById(id);
+    }
+
+    @Transactional
+    public void cleanupAnonymousCandidatures() {
+        log.info("Cleaning up anonymous candidatures");
+        candidatureRepository.deleteAnonymous();
     }
     
     public List<CandidatureLog> getHistorique(Long candidatureId) {

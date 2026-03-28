@@ -246,6 +246,22 @@ public class CandidatureRedstarterController {
                 .body(Map.of("success", false, "message", "Candidature non trouvée"));
         }
     }
+
+    /**
+     * Delete anonymous candidatures (Admin)
+     * DELETE /api/candidatures/admin/cleanup-anonymous
+     */
+    @DeleteMapping("/admin/cleanup-anonymous")
+    public ResponseEntity<?> cleanupAnonymous() {
+        try {
+            candidatureService.cleanupAnonymousCandidatures();
+            return ResponseEntity.ok(Map.of("success", true, "message", "Nettoyage des candidatures anonymes terminé"));
+        } catch (Exception e) {
+            log.error("Error cleaning up anonymous candidatures", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("success", false, "message", "Erreur lors du nettoyage"));
+        }
+    }
     
     /**
      * Get candidature historique logs (Admin)

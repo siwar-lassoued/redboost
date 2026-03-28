@@ -125,6 +125,21 @@ export class AdminCandidaturesComponent implements OnInit {
     });
   }
 
+  onCleanupAnonymous(): void {
+    if (confirm('Êtes-vous sûr de vouloir supprimer définitivement toutes les candidatures anonymes (sans nom ou sans email) ?')) {
+      this.svc.cleanupAnonymous().subscribe({
+        next: (res) => {
+          alert(res.message || 'Nettoyage terminé avec succès');
+          this.loadAll();
+        },
+        error: (err) => {
+          console.error('Cleanup failed:', err);
+          alert('Erreur: ' + (err.error?.message || err.message || 'Échec du nettoyage'));
+        }
+      });
+    }
+  }
+
   loadHistorique(): void {
     const id = this.selected()?.id;
     if (!id) return;

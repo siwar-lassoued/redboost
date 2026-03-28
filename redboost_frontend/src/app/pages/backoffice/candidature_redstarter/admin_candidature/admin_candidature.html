@@ -11,6 +11,9 @@
           <lucide-icon name="fast-forward" [size]="16"></lucide-icon> Clôturer le Round
         </button>
       }
+      <button (click)="onCleanupAnonymous()" class="btn-gradient-gray">
+        <lucide-icon name="trash-2" [size]="16"></lucide-icon> Nettoyer les anonymes
+      </button>
       <button (click)="showFormLauncher.set(true)" class="btn-gradient-pink">
         <lucide-icon name="plus" [size]="18"></lucide-icon> Lancer un formulaire
       </button>

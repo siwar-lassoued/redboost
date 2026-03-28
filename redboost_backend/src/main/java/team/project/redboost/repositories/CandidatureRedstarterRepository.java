@@ -4,9 +4,11 @@ package team.project.redboost.repositories;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 import team.project.redboost.entities.CandidatureRedstarter;
 
 import java.time.LocalDateTime;
@@ -52,4 +54,12 @@ public interface CandidatureRedstarterRepository extends JpaRepository<Candidatu
            "JOIN FormTemplateEntity t ON c.formTemplateId = t.id " +
            "WHERE UPPER(t.profileType) = UPPER(:type)")
     long countByProfileType(@Param("type") String type);
+
+    @Transactional
+    @Modifying
+    @Query("DELETE FROM CandidatureRedstarter c WHERE c.nomPrenom IS NULL OR c.nomPrenom = '' OR c.email IS NULL OR c.email = ''")
+    void deleteAnonymous();
+
+    @Query("SELECT c FROM CandidatureRedstarter c WHERE c.formTemplateId IS NULL")
+    Page<CandidatureRedstarter> findSpontanees(Pageable pageable);
 }

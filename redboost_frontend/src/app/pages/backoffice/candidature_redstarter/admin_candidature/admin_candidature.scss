@@ -24,13 +24,15 @@
 }
 .btn-gradient-pink:hover { opacity: 0.9; }
 
-.btn-gradient-blue {
+.btn-gradient-blue:hover { opacity: 0.9; }
+
+.btn-gradient-gray {
   display: flex; align-items: center; gap: 8px; padding: 10px 20px;
   border-radius: 12px; font-size: 14px; font-weight: 600; color: #fff;
-  background: linear-gradient(135deg, #00d2ff, #3aafff); border: none; cursor: pointer;
-  transition: all .2s; box-shadow: 0 4px 12px rgba(0, 210, 255, 0.3);
+  background: linear-gradient(135deg, #9ca3af, #6b7280); border: none; cursor: pointer;
+  transition: all .2s; box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
 }
-.btn-gradient-blue:hover { opacity: 0.9; }
+.btn-gradient-gray:hover { opacity: 0.9; }
 
 .btn-outline-sm {
   display: flex; align-items: center; gap: 8px; padding: 10px 16px;
