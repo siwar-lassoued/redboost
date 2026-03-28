@@ -40,11 +40,11 @@ public class CandidatureRedstarterService {
 
     // ── Transition rules (matching pfe-project) ──────────────────────
     private static final Map<StatutCandidature, Set<StatutCandidature>> ALLOWED_TRANSITIONS = Map.of(
-        StatutCandidature.EN_ATTENTE,      Set.of(StatutCandidature.EN_REVISION, StatutCandidature.PRESELECTIONNE, StatutCandidature.ACCEPTE, StatutCandidature.REJETE),
-        StatutCandidature.EN_REVISION,     Set.of(StatutCandidature.PRESELECTIONNE, StatutCandidature.ACCEPTE, StatutCandidature.REJETE),
-        StatutCandidature.PRESELECTIONNE,  Set.of(StatutCandidature.EN_REVISION, StatutCandidature.ACCEPTE, StatutCandidature.REJETE),
-        StatutCandidature.ACCEPTE,         Set.of(StatutCandidature.EN_REVISION, StatutCandidature.PRESELECTIONNE, StatutCandidature.REJETE),
-        StatutCandidature.REJETE,          Set.of(StatutCandidature.EN_REVISION, StatutCandidature.PRESELECTIONNE, StatutCandidature.ACCEPTE)
+        StatutCandidature.EN_ATTENTE,      Set.of(StatutCandidature.EN_ATTENTE, StatutCandidature.EN_REVISION, StatutCandidature.PRESELECTIONNE, StatutCandidature.ACCEPTE, StatutCandidature.REJETE),
+        StatutCandidature.EN_REVISION,     Set.of(StatutCandidature.EN_REVISION, StatutCandidature.PRESELECTIONNE, StatutCandidature.ACCEPTE, StatutCandidature.REJETE),
+        StatutCandidature.PRESELECTIONNE,  Set.of(StatutCandidature.PRESELECTIONNE, StatutCandidature.EN_REVISION, StatutCandidature.ACCEPTE, StatutCandidature.REJETE),
+        StatutCandidature.ACCEPTE,         Set.of(StatutCandidature.ACCEPTE, StatutCandidature.EN_REVISION, StatutCandidature.PRESELECTIONNE, StatutCandidature.REJETE),
+        StatutCandidature.REJETE,          Set.of(StatutCandidature.REJETE, StatutCandidature.EN_REVISION, StatutCandidature.PRESELECTIONNE, StatutCandidature.ACCEPTE)
     );
     
     @Transactional
@@ -90,40 +90,43 @@ public class CandidatureRedstarterService {
     }
     
     @Transactional(readOnly = true)
-    public Page<CandidatureRedstarter> getAllCandidatures(Pageable pageable, String type) {
+    public Page<team.project.redboost.dto.CandidatureRedstarterResponseDTO> getAllCandidatures(Pageable pageable, String type) {
         log.info("Fetching candidatures with pagination, type: {}", type);
         
+        Page<CandidatureRedstarter> entities;
         if (type != null && !type.isEmpty()) {
             String profileType = type;
-            // Map frontend types to backend profile types
             if (type.equalsIgnoreCase("coaches")) profileType = "COACH";
             else if (type.equalsIgnoreCase("entrepreneurs")) profileType = "ENTREPRENEUR";
-            else if (type.equalsIgnoreCase("spontanees")) return candidatureRepository.findSpontanees(pageable);
-            
-            return candidatureRepository.findByProfileType(profileType, pageable);
+            else if (type.equalsIgnoreCase("spontanees")) entities = candidatureRepository.findSpontanees(pageable);
+            else entities = candidatureRepository.findByProfileType(profileType, pageable);
+        } else {
+            entities = candidatureRepository.findAll(pageable);
         }
         
-        return candidatureRepository.findAll(pageable);
+        return entities.map(this::mapToResponseDto);
     }
     
     @Transactional(readOnly = true)
-    public Page<CandidatureRedstarter> getCandidaturesByStatut(CandidatureRedstarter.StatutCandidature statut, Pageable pageable) {
+    public Page<team.project.redboost.dto.CandidatureRedstarterResponseDTO> getCandidaturesByStatut(CandidatureRedstarter.StatutCandidature statut, Pageable pageable) {
         log.info("Fetching candidatures with status: {}", statut);
-        return candidatureRepository.findByStatut(statut, pageable);
+        return candidatureRepository.findByStatut(statut, pageable).map(this::mapToResponseDto);
     }
     
     @Transactional(readOnly = true)
-    public CandidatureRedstarter getCandidatureById(Long id) {
+    public team.project.redboost.dto.CandidatureRedstarterResponseDTO getCandidatureById(Long id) {
         log.info("Fetching candidature with ID: {}", id);
-        return candidatureRepository.findById(id)
+        CandidatureRedstarter candidature = candidatureRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Candidature not found with ID: " + id));
+        return mapToResponseDto(candidature);
     }
     
     @Transactional
-    public CandidatureRedstarter updateStatut(Long id, StatutCandidature newStatut, String commentaires) {
+    public team.project.redboost.dto.CandidatureRedstarterResponseDTO updateStatut(Long id, StatutCandidature newStatut, String commentaires) {
         log.info("Updating status of candidature ID: {} to {}", id, newStatut);
         
-        CandidatureRedstarter candidature = getCandidatureById(id);
+        CandidatureRedstarter candidature = candidatureRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Candidature not found with ID: " + id));
         StatutCandidature oldStatut = candidature.getStatut();
 
         // Validate transition
@@ -154,13 +157,13 @@ public class CandidatureRedstarterService {
         logAction(id, action, oldStatut.name(), newStatut.name(),
                 null, "Admin", commentaires);
                 
-        return updated;
+        return mapToResponseDto(updated);
     }
     
     @Transactional(readOnly = true)
-    public Page<CandidatureRedstarter> searchCandidatures(String searchTerm, Pageable pageable) {
+    public Page<team.project.redboost.dto.CandidatureRedstarterResponseDTO> searchCandidatures(String searchTerm, Pageable pageable) {
         log.info("Searching candidatures with term: {}", searchTerm);
-        return candidatureRepository.searchByNomEntreprise(searchTerm, pageable);
+        return candidatureRepository.searchByNomEntreprise(searchTerm, pageable).map(this::mapToResponseDto);
     }
     
     @Transactional(readOnly = true)
@@ -182,7 +185,8 @@ public class CandidatureRedstarterService {
     @Transactional
     public void deleteCandidature(Long id) {
         log.info("Deleting candidature with ID: {}", id);
-        CandidatureRedstarter candidature = getCandidatureById(id);
+        CandidatureRedstarter candidature = candidatureRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Candidature not found with ID: " + id));
         
         // Delete associated documents
         if (candidature.getDocuments() != null) {
@@ -203,6 +207,53 @@ public class CandidatureRedstarterService {
     
     public List<CandidatureLog> getHistorique(Long candidatureId) {
         return logRepository.findByCandidatureIdOrderByCreatedAtDesc(candidatureId);
+    }
+    
+    private team.project.redboost.dto.CandidatureRedstarterResponseDTO mapToResponseDto(CandidatureRedstarter entity) {
+        // Explicitly initialize lazy collections while in transaction
+        if (entity.getDocuments() != null) entity.getDocuments().size();
+        if (entity.getBesoinsAccompagnement() != null) entity.getBesoinsAccompagnement().size();
+        if (entity.getBesoinsFormation() != null) entity.getBesoinsFormation().size();
+        
+        return team.project.redboost.dto.CandidatureRedstarterResponseDTO.builder()
+            .id(entity.getId())
+            .nomPrenom(entity.getNomPrenom())
+            .genre(entity.getGenre())
+            .age(entity.getAge())
+            .numeroTelephone(entity.getNumeroTelephone())
+            .email(entity.getEmail())
+            .roleEntreprise(entity.getRoleEntreprise())
+            .nomEntreprise(entity.getNomEntreprise())
+            .entrepriseEst(entity.getEntrepriseEst())
+            .dateCreation(entity.getDateCreation())
+            .regionBasee(entity.getRegionBasee())
+            .breveDescription(entity.getBreveDescription())
+            .lienReseauxSociaux(entity.getLienReseauxSociaux())
+            .labelStartupAct(entity.getLabelStartupAct())
+            .dateObtentionLabel(entity.getDateObtentionLabel())
+            .phaseMaturite(entity.getPhaseMaturite())
+            .marchePersonnasCibles(entity.getMarchePersonnasCibles())
+            .composanteInnovation(entity.getComposanteInnovation())
+            .impactEnvironnemental(entity.getImpactEnvironnemental())
+            .impactSocial(entity.getImpactSocial())
+            .viabiliteCommerciale(entity.getViabiliteCommerciale())
+            .valeurAjoutee(entity.getValeurAjoutee())
+            .documents(new ArrayList<>(entity.getDocuments()))
+            .nombreCoFondateurs(entity.getNombreCoFondateurs())
+            .impliquesGestion(entity.getImpliquesGestion())
+            .nombreImpliquesGestion(entity.getNombreImpliquesGestion())
+            .experienceEquipeFondatrice(entity.getExperienceEquipeFondatrice())
+            .nombreEmploisCrees(entity.getNombreEmploisCrees())
+            .besoinsAccompagnement(new ArrayList<>(entity.getBesoinsAccompagnement()))
+            .beneficieAccompagnement(entity.getBeneficieAccompagnement())
+            .detailsAccompagnement(entity.getDetailsAccompagnement())
+            .besoinsFormation(new ArrayList<>(entity.getBesoinsFormation()))
+            .formTemplateId(entity.getFormTemplateId())
+            .dynamicAnswers(entity.getDynamicAnswers())
+            .dateCreationCandidature(entity.getDateCreationCandidature())
+            .statut(entity.getStatut() != null ? entity.getStatut().name() : null)
+            .commentairesAdmin(entity.getCommentairesAdmin())
+            .build();
     }
     
     private void logAction(Long candidatureId, String action, String statutAvant,

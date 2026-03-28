@@ -62,9 +62,10 @@ export interface ApiResponse {
     providedIn: 'root',
 })
 export class CandidatureService {
-    private apiUrl = 'http://localhost:8082/api/candidatures';
+    private apiUrl = 'https://redboost.tn/api/candidatures';
 
-    constructor(private http: HttpClient) {}
+
+    constructor(private http: HttpClient) { }
 
     /**
      * Submit a new candidature

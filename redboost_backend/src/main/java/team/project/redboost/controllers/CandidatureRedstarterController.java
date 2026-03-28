@@ -81,7 +81,7 @@ public class CandidatureRedstarterController {
             Sort.Direction direction = sortDir.equalsIgnoreCase("ASC") ? Sort.Direction.ASC : Sort.Direction.DESC;
             Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
             
-            Page<CandidatureRedstarter> candidatures = candidatureService.getAllCandidatures(pageable, type);
+            Page<team.project.redboost.dto.CandidatureRedstarterResponseDTO> candidatures = candidatureService.getAllCandidatures(pageable, type);
             log.info("Fetched {} candidatures", candidatures.getTotalElements());
             
             return ResponseEntity.ok(candidatures);
@@ -102,7 +102,7 @@ public class CandidatureRedstarterController {
     @GetMapping("/admin/{id}")
     public ResponseEntity<?> getCandidatureById(@PathVariable Long id) {
         try {
-            CandidatureRedstarter candidature = candidatureService.getCandidatureById(id);
+            team.project.redboost.dto.CandidatureRedstarterResponseDTO candidature = candidatureService.getCandidatureById(id);
             return ResponseEntity.ok(candidature);
         } catch (RuntimeException e) {
             log.error("Candidature not found: {}", id);
@@ -116,7 +116,7 @@ public class CandidatureRedstarterController {
      * GET /api/candidatures/admin/status/{statut}
      */
     @GetMapping("/admin/status/{statut}")
-    public ResponseEntity<Page<CandidatureRedstarter>> getCandidaturesByStatut(
+    public ResponseEntity<Page<team.project.redboost.dto.CandidatureRedstarterResponseDTO>> getCandidaturesByStatut(
             @PathVariable String statut,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
@@ -125,7 +125,7 @@ public class CandidatureRedstarterController {
             CandidatureRedstarter.StatutCandidature statutEnum = CandidatureRedstarter.StatutCandidature.valueOf(statut.toUpperCase());
             Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "dateCreationCandidature"));
             
-            Page<CandidatureRedstarter> candidatures = candidatureService.getCandidaturesByStatut(statutEnum, pageable);
+            Page<team.project.redboost.dto.CandidatureRedstarterResponseDTO> candidatures = candidatureService.getCandidaturesByStatut(statutEnum, pageable);
             
             return ResponseEntity.ok(candidatures);
             
@@ -150,7 +150,7 @@ public class CandidatureRedstarterController {
             
             CandidatureRedstarter.StatutCandidature newStatut = CandidatureRedstarter.StatutCandidature.valueOf(statutStr.toUpperCase());
             
-            CandidatureRedstarter updatedCandidature = candidatureService.updateStatut(id, newStatut, commentaires);
+            team.project.redboost.dto.CandidatureRedstarterResponseDTO updatedCandidature = candidatureService.updateStatut(id, newStatut, commentaires);
             
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
@@ -185,14 +185,14 @@ public class CandidatureRedstarterController {
      * GET /api/candidatures/admin/search
      */
     @GetMapping("/admin/search")
-    public ResponseEntity<Page<CandidatureRedstarter>> searchCandidatures(
+    public ResponseEntity<Page<team.project.redboost.dto.CandidatureRedstarterResponseDTO>> searchCandidatures(
             @RequestParam String query,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         
         try {
             Pageable pageable = PageRequest.of(page, size);
-            Page<CandidatureRedstarter> candidatures = candidatureService.searchCandidatures(query, pageable);
+            Page<team.project.redboost.dto.CandidatureRedstarterResponseDTO> candidatures = candidatureService.searchCandidatures(query, pageable);
             
             return ResponseEntity.ok(candidatures);
             
