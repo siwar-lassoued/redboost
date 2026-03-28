@@ -48,6 +48,14 @@ export class FormTemplateService {
         return this.http.post<FormTemplateDTO>(this.baseUrl, template);
     }
 
+    delete(id: string | number): Observable<void> {
+        return this.http.delete<void>(`${this.baseUrl}/${id}`);
+    }
+
+    getById(id: string | number): Observable<FormTemplateDTO> {
+        return this.http.get<FormTemplateDTO>(`${this.baseUrl}/${id}`);
+    }
+
     static toView(dto: FormTemplateDTO): FormTemplateView {
         let sectors: string[] = [];
         try { sectors = JSON.parse(dto.sectors || '[]'); } catch { sectors = []; }

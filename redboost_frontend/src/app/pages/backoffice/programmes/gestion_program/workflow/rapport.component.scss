@@ -1,3 +1,4 @@
+@use "sass:color";
 // rapport-redaction.component.scss
 // Color Palette based on Screenshot
 $color-teal: #155e75;       // Dark Teal for buttons/text
@@ -459,7 +460,7 @@ $bg-white: #FFFFFF;
   transition: all 0.2s;
 
   &:hover {
-    background: darken($primary-color, 10%);
+    background: color.adjust($primary-color, $lightness: -10%);
     transform: translateY(-1px);
   }
 }
@@ -478,7 +479,7 @@ $bg-white: #FFFFFF;
   transition: all 0.2s;
 
   &:hover {
-    background: darken($primary-color, 10%);
+    background: color.adjust($primary-color, $lightness: -10%);
   }
 }
 

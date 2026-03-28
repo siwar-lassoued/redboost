@@ -69,23 +69,29 @@ public class CandidatureRedstarterController {
      * GET /api/candidatures/admin/all
      */
     @GetMapping("/admin/all")
-    public ResponseEntity<Page<CandidatureRedstarter>> getAllCandidatures(
+    public ResponseEntity<?> getAllCandidatures(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "dateCreationCandidature") String sortBy,
-            @RequestParam(defaultValue = "DESC") String sortDir) {
+            @RequestParam(defaultValue = "DESC") String sortDir,
+            @RequestParam(required = false) String type) {
         
         try {
+            log.info("Request to get all candidatures: type={}, page={}, size={}", type, page, size);
             Sort.Direction direction = sortDir.equalsIgnoreCase("ASC") ? Sort.Direction.ASC : Sort.Direction.DESC;
             Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
             
-            Page<CandidatureRedstarter> candidatures = candidatureService.getAllCandidatures(pageable);
+            Page<team.project.redboost.dto.CandidatureRedstarterResponseDTO> candidatures = candidatureService.getAllCandidatures(pageable, type);
+            log.info("Fetched {} candidatures", candidatures.getTotalElements());
             
             return ResponseEntity.ok(candidatures);
-            
         } catch (Exception e) {
-            log.error("Error fetching candidatures", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            log.error("Error fetching candidatures: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body(Map.of(
+                "error", "Internal Server Error",
+                "message", e.getMessage() != null ? e.getMessage() : "Unknown error",
+                "path", "/api/candidatures/admin/all"
+            ));
         }
     }
     
@@ -96,7 +102,7 @@ public class CandidatureRedstarterController {
     @GetMapping("/admin/{id}")
     public ResponseEntity<?> getCandidatureById(@PathVariable Long id) {
         try {
-            CandidatureRedstarter candidature = candidatureService.getCandidatureById(id);
+            team.project.redboost.dto.CandidatureRedstarterResponseDTO candidature = candidatureService.getCandidatureById(id);
             return ResponseEntity.ok(candidature);
         } catch (RuntimeException e) {
             log.error("Candidature not found: {}", id);
@@ -110,7 +116,7 @@ public class CandidatureRedstarterController {
      * GET /api/candidatures/admin/status/{statut}
      */
     @GetMapping("/admin/status/{statut}")
-    public ResponseEntity<Page<CandidatureRedstarter>> getCandidaturesByStatut(
+    public ResponseEntity<Page<team.project.redboost.dto.CandidatureRedstarterResponseDTO>> getCandidaturesByStatut(
             @PathVariable String statut,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
@@ -119,7 +125,7 @@ public class CandidatureRedstarterController {
             CandidatureRedstarter.StatutCandidature statutEnum = CandidatureRedstarter.StatutCandidature.valueOf(statut.toUpperCase());
             Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "dateCreationCandidature"));
             
-            Page<CandidatureRedstarter> candidatures = candidatureService.getCandidaturesByStatut(statutEnum, pageable);
+            Page<team.project.redboost.dto.CandidatureRedstarterResponseDTO> candidatures = candidatureService.getCandidaturesByStatut(statutEnum, pageable);
             
             return ResponseEntity.ok(candidatures);
             
@@ -144,7 +150,7 @@ public class CandidatureRedstarterController {
             
             CandidatureRedstarter.StatutCandidature newStatut = CandidatureRedstarter.StatutCandidature.valueOf(statutStr.toUpperCase());
             
-            CandidatureRedstarter updatedCandidature = candidatureService.updateStatut(id, newStatut, commentaires);
+            team.project.redboost.dto.CandidatureRedstarterResponseDTO updatedCandidature = candidatureService.updateStatut(id, newStatut, commentaires);
             
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
@@ -158,9 +164,19 @@ public class CandidatureRedstarterController {
             return ResponseEntity.badRequest()
                 .body(Map.of("success", false, "message", "Statut invalide"));
         } catch (RuntimeException e) {
-            log.error("Error updating candidature status", e);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(Map.of("success", false, "message", "Candidature non trouvée"));
+            log.error("Error updating candidature status: {}", e.getMessage());
+            String msg = e.getMessage();
+            HttpStatus status = (msg != null && msg.contains("not found")) ? HttpStatus.NOT_FOUND : HttpStatus.BAD_REQUEST;
+            
+            return ResponseEntity.status(status)
+                .body(Map.of(
+                    "success", false, 
+                    "message", msg != null ? msg : "Erreur lors de la mise à jour du statut"
+                ));
+        } catch (Exception e) {
+            log.error("Unexpected error updating status", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("success", false, "message", "Une erreur inattendue est survenue"));
         }
     }
     
@@ -169,14 +185,14 @@ public class CandidatureRedstarterController {
      * GET /api/candidatures/admin/search
      */
     @GetMapping("/admin/search")
-    public ResponseEntity<Page<CandidatureRedstarter>> searchCandidatures(
+    public ResponseEntity<Page<team.project.redboost.dto.CandidatureRedstarterResponseDTO>> searchCandidatures(
             @RequestParam String query,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         
         try {
             Pageable pageable = PageRequest.of(page, size);
-            Page<CandidatureRedstarter> candidatures = candidatureService.searchCandidatures(query, pageable);
+            Page<team.project.redboost.dto.CandidatureRedstarterResponseDTO> candidatures = candidatureService.searchCandidatures(query, pageable);
             
             return ResponseEntity.ok(candidatures);
             
@@ -194,11 +210,16 @@ public class CandidatureRedstarterController {
     public ResponseEntity<Map<String, Long>> getStatistics() {
         try {
             Map<String, Long> stats = new HashMap<>();
-            stats.put("total", candidatureService.getAllCandidatures(Pageable.unpaged()).getTotalElements());
+            stats.put("total", candidatureService.countByType(null));
+            stats.put("coaches", candidatureService.countByType("coaches"));
+            stats.put("entrepreneurs", candidatureService.countByType("entrepreneurs"));
+            stats.put("spontanees", candidatureService.countByType("spontanees"));
+            
             stats.put("en_attente", candidatureService.countByStatut(CandidatureRedstarter.StatutCandidature.EN_ATTENTE));
             stats.put("en_cours_evaluation", candidatureService.countByStatut(CandidatureRedstarter.StatutCandidature.EN_COURS_EVALUATION));
+            stats.put("pre_selectionne", candidatureService.countByStatut(CandidatureRedstarter.StatutCandidature.PRE_SELECTIONNE));
             stats.put("accepte", candidatureService.countByStatut(CandidatureRedstarter.StatutCandidature.ACCEPTE));
-            stats.put("refuse", candidatureService.countByStatut(CandidatureRedstarter.StatutCandidature.REFUSE));
+            stats.put("rejete", candidatureService.countByStatut(CandidatureRedstarter.StatutCandidature.REJETE));
             
             return ResponseEntity.ok(stats);
             
@@ -223,6 +244,38 @@ public class CandidatureRedstarterController {
             log.error("Error deleting candidature", e);
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(Map.of("success", false, "message", "Candidature non trouvée"));
+        }
+    }
+
+    /**
+     * Migrate legacy statuses (Admin)
+     * POST /api/candidatures/admin/migrate-legacy
+     */
+    @PostMapping("/admin/migrate-legacy")
+    public ResponseEntity<?> migrateLegacy() {
+        try {
+            candidatureService.migrateLegacyStatuses();
+            return ResponseEntity.ok(Map.of("success", true, "message", "Migration des statuts terminée"));
+        } catch (Exception e) {
+            log.error("Error migrating legacy statuses", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("success", false, "message", "Erreur lors de la migration"));
+        }
+    }
+    
+    /**
+     * Delete anonymous candidatures (Admin)
+     * DELETE /api/candidatures/admin/cleanup-anonymous
+     */
+    @DeleteMapping("/admin/cleanup-anonymous")
+    public ResponseEntity<?> cleanupAnonymous() {
+        try {
+            candidatureService.cleanupAnonymousCandidatures();
+            return ResponseEntity.ok(Map.of("success", true, "message", "Nettoyage des candidatures anonymes terminé"));
+        } catch (Exception e) {
+            log.error("Error cleaning up anonymous candidatures", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("success", false, "message", "Erreur lors du nettoyage"));
         }
     }
     

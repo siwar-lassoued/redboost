@@ -54,17 +54,13 @@ export class AdminCandidaturesComponent implements OnInit {
     this.loadAll();
   }
 
-  private readonly ACTIVE_STATUSES = ['EN_ATTENTE', 'EN_REVISION', 'ENTRETIEN'];
+  private readonly ACTIVE_STATUSES = ['EN_ATTENTE', 'EN_COURS_EVALUATION', 'PRE_SELECTIONNE'];
 
   loadAll(): void {
-    this.svc.getAll({ type: 'coaches' }).subscribe(r => {
-      this.coachCount.set((r.data || []).filter(c => this.ACTIVE_STATUSES.includes(c.statut)).length);
-    });
-    this.svc.getAll({ type: 'entrepreneurs' }).subscribe(r => {
-      this.entCount.set((r.data || []).filter(c => this.ACTIVE_STATUSES.includes(c.statut)).length);
-    });
-    this.svc.getAll({ type: 'spontanees' }).subscribe(r => {
-      this.spontCount.set((r.data || []).filter(c => this.ACTIVE_STATUSES.includes(c.statut)).length);
+    this.svc.getStatistics().subscribe(stats => {
+      this.coachCount.set(stats['coaches'] || 0);
+      this.entCount.set(stats['entrepreneurs'] || 0);
+      this.spontCount.set(stats['spontanees'] || 0);
     });
     this.load();
   }
@@ -72,6 +68,7 @@ export class AdminCandidaturesComponent implements OnInit {
   load(): void {
     this.svc.getAll({
       type: this.activeTab(),
+      limit: 100,
       search: this.searchQuery || undefined,
       statut: this.statusFilter === 'ALL' ? undefined : this.statusFilter as CandidatureStatus
     }).subscribe(r => {
@@ -79,7 +76,9 @@ export class AdminCandidaturesComponent implements OnInit {
       if (this.filterProgram !== 'all') {
         data = data.filter(c => c.programme === this.filterProgram);
       }
-      data = data.filter(c => this.ACTIVE_STATUSES.includes(c.statut));
+      if (this.statusFilter !== 'HISTORIQUE') {
+        data = data.filter(c => this.ACTIVE_STATUSES.includes(c.statut));
+      }
       this.candidatures.set(data);
       const progs = [...new Set((r.data || []).map(c => c.programme).filter(Boolean))] as string[];
       this.programmes.set(progs);
@@ -128,6 +127,36 @@ export class AdminCandidaturesComponent implements OnInit {
     });
   }
 
+  onCleanupAnonymous(): void {
+    if (confirm('Êtes-vous sûr de vouloir supprimer définitivement toutes les candidatures anonymes (sans nom ou sans email) ?')) {
+      this.svc.cleanupAnonymous().subscribe({
+        next: (res) => {
+          alert(res.message || 'Nettoyage terminé avec succès');
+          this.loadAll();
+        },
+        error: (err) => {
+          console.error('Cleanup failed:', err);
+          alert('Erreur: ' + (err.error?.message || err.message || 'Échec du nettoyage'));
+        }
+      });
+    }
+  }
+
+  migrateLegacy(): void {
+    if (confirm('Voulez-vous migrer tous les anciens statuts (REFUSE, REVISION...) vers les nouveaux statuts standardisés ?')) {
+      this.svc.migrateLegacy().subscribe({
+        next: (res) => {
+          alert(res.message || 'Migration des statuts terminée avec succès');
+          this.loadAll();
+        },
+        error: (err) => {
+          console.error('Migration failed:', err);
+          alert('Erreur lors de la migration des statuts');
+        }
+      });
+    }
+  }
+
   loadHistorique(): void {
     const id = this.selected()?.id;
     if (!id) return;
@@ -149,7 +178,14 @@ export class AdminCandidaturesComponent implements OnInit {
   }
 
   getStatusIcon(c: Candidature): string {
-    switch (c.statut) { case 'EN_ATTENTE': return 'clock'; case 'EN_REVISION': return 'eye'; case 'ENTRETIEN': return 'users'; case 'PRESELECTIONNE': return 'star'; case 'ACCEPTE': return 'circle-check'; case 'REJETE': return 'circle-x'; default: return 'clock'; }
+    switch (c.statut) { 
+      case 'EN_ATTENTE': return 'clock'; 
+      case 'EN_COURS_EVALUATION': return 'eye'; 
+      case 'PRE_SELECTIONNE': return 'star'; 
+      case 'ACCEPTE': return 'circle-check'; 
+      case 'REJETE': return 'circle-x'; 
+      default: return 'clock'; 
+    }
   }
 
   getLogColor(statut: string): { bg: string; color: string } {

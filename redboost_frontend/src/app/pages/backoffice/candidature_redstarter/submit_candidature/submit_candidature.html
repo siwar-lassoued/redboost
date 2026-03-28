@@ -1,810 +1,156 @@
-<div class="candidature-container">
-    <div class="form-header">
-        <h1>DEVENEZ REDSTARTER EN REMPLISSANT CE FORMULAIRE !</h1>
-        <p class="header-description">
-            Contactez l'équipe de RedStart Tunisie pour bénéficier d'un
-            accompagnement opérationnel et personnalisé
-        </p>
-        <p class="header-note">
-            *Nos Redstarters sont sélectionnés en fonction de l'engagement de
-            l'entrepreneur et sa forte volonté à se faire accompagner, du
-            caractère innovant du projet, du potentiel de croissance de
-            l'entreprise et de son potentiel de création d'emplois
-        </p>
-        <p class="header-note">
-            *Les femmes et les entreprises implantées dans les régions sont
-            bonifiés
-        </p>
-    </div>
-
-    <!-- Progress Bar -->
-    <div class="progress-section">
-        <div class="progress-label">
-            Étape {{ currentStep }} sur {{ totalSteps }}
-        </div>
-        <div class="progress-bar">
-            <div
-                class="progress-fill"
-                [style.width.%]="(currentStep / totalSteps) * 100"
-            ></div>
-        </div>
-    </div>
-
-    <form [formGroup]="candidatureForm" (ngSubmit)="submitCandidature()">
-        <!-- Step 1: Personal Information -->
-        <div class="form-step" *ngIf="currentStep === 1">
-            <div class="form-group">
-                <label for="nomPrenom"
-                    >Nom et Prénom <span class="required">*</span></label
-                >
-                <input
-                    type="text"
-                    id="nomPrenom"
-                    formControlName="nomPrenom"
-                    class="form-control"
-                    [class.error]="isFieldInvalid('nomPrenom')"
-                />
-                <span class="error-message" *ngIf="isFieldInvalid('nomPrenom')"
-                    >Ce champ est nécessaire</span
-                >
-            </div>
-
-            <div class="form-group">
-                <label>Genre <span class="required">*</span></label>
-                <div class="radio-group">
-                    <label class="radio-label">
-                        <input
-                            type="radio"
-                            formControlName="genre"
-                            value="Homme"
-                        />
-                        Homme
-                    </label>
-                    <label class="radio-label">
-                        <input
-                            type="radio"
-                            formControlName="genre"
-                            value="Femme"
-                        />
-                        Femme
-                    </label>
-                </div>
-                <span class="error-message" *ngIf="isFieldInvalid('genre')"
-                    >Ce champ est nécessaire</span
-                >
-            </div>
-
-            <div class="form-group">
-                <label for="age">Age <span class="required">*</span></label>
-                <input
-                    type="number"
-                    id="age"
-                    formControlName="age"
-                    class="form-control"
-                    [class.error]="isFieldInvalid('age')"
-                />
-                <span class="error-message" *ngIf="isFieldInvalid('age')"
-                    >Ce champ est nécessaire</span
-                >
-            </div>
-
-            <div class="form-group">
-                <label for="numeroTelephone"
-                    >Numéro de téléphone <span class="required">*</span></label
-                >
-                <input
-                    type="tel"
-                    id="numeroTelephone"
-                    formControlName="numeroTelephone"
-                    class="form-control"
-                    [class.error]="isFieldInvalid('numeroTelephone')"
-                />
-                <span
-                    class="error-message"
-                    *ngIf="isFieldInvalid('numeroTelephone')"
-                    >Ce champ est nécessaire</span
-                >
-            </div>
-
-            <div class="form-group">
-                <label for="email"
-                    >E-mail <span class="required">*</span></label
-                >
-                <input
-                    type="email"
-                    id="email"
-                    formControlName="email"
-                    class="form-control"
-                    [class.error]="isFieldInvalid('email')"
-                />
-                <span class="error-message" *ngIf="isFieldInvalid('email')"
-                    >Ce champ est nécessaire</span
-                >
-            </div>
-
-            <div class="form-group">
-                <label for="roleEntreprise"
-                    >Quel est votre rôle au sein de l'entreprise
-                    <span class="required">*</span></label
-                >
-                <input
-                    type="text"
-                    id="roleEntreprise"
-                    formControlName="roleEntreprise"
-                    class="form-control"
-                    [class.error]="isFieldInvalid('roleEntreprise')"
-                />
-                <span
-                    class="error-message"
-                    *ngIf="isFieldInvalid('roleEntreprise')"
-                    >Ce champ est nécessaire</span
-                >
-            </div>
-
-            <button type="button" class="btn btn-next" (click)="nextStep()">
-                Suivant
-            </button>
+<div class="min-h-screen flex flex-col relative bg-white page-bg">
+    <section class="hero-section">
+        <div class="decorative-bg">
+            <div class="bird" style="top: 10%; left: 5%; animation-duration: 12s; animation-delay: 0s;"></div>
+            <div class="bird" style="top: 20%; right: 10%; animation-duration: 14s; animation-delay: 2s;"></div>
+            <div class="bird" style="top: 50%; left: 15%; animation-duration: 13s; animation-delay: 1s;"></div>
+            <div class="bird" style="bottom: 15%; right: 20%; animation-duration: 15s; animation-delay: 3s;"></div>
+            <div class="bird" style="bottom: 5%; left: 25%; animation-duration: 11s; animation-delay: 4s;"></div>
+            <div class="star" style="top: 10%; left: 15%; animation-duration: 5s; animation-delay: 0s;"></div>
+            <div class="star" style="top: 30%; right: 15%; animation-duration: 4s; animation-delay: 1s;"></div>
+            <div class="star" style="top: 60%; left: 20%; animation-duration: 6s; animation-delay: 2s;"></div>
         </div>
 
-        <!-- Step 2: Company Information -->
-        <div class="form-step" *ngIf="currentStep === 2">
-            <div class="form-group">
-                <label for="nomEntreprise"
-                    >Nom de votre entreprise
-                    <span class="required">*</span></label
-                >
-                <input
-                    type="text"
-                    id="nomEntreprise"
-                    formControlName="nomEntreprise"
-                    class="form-control"
-                    [class.error]="isFieldInvalid('nomEntreprise')"
-                />
-            </div>
-
-            <div class="form-group">
-                <label for="entrepriseEst"
-                    >Votre entreprise est <span class="required">*</span></label
-                >
-                <select
-                    id="entrepriseEst"
-                    formControlName="entrepriseEst"
-                    class="form-control"
-                    [class.error]="isFieldInvalid('entrepriseEst')"
-                >
-                    <option value="">Sélectionner</option>
-                    <option value="Créée">Créée</option>
-                    <option value="En cours de création">
-                        En cours de création
-                    </option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="dateCreation">Date de création</label>
-                <input
-                    type="date"
-                    id="dateCreation"
-                    formControlName="dateCreation"
-                    class="form-control"
-                />
-            </div>
-
-            <div class="form-group">
-                <label for="regionBasee"
-                    >Dans quelle région est-elle basée ?
-                    <span class="required">*</span></label
-                >
-                <select
-                    id="regionBasee"
-                    formControlName="regionBasee"
-                    class="form-control"
-                    [class.error]="isFieldInvalid('regionBasee')"
-                >
-                    <option value="">Sélectionner</option>
-                    <option value="Tunis">Tunis</option>
-                    <option value="Ariana">Ariana</option>
-                    <option value="Ben Arous">Ben Arous</option>
-                    <option value="Manouba">Manouba</option>
-                    <option value="Nabeul">Nabeul</option>
-                    <option value="Zaghouan">Zaghouan</option>
-                    <option value="Bizerte">Bizerte</option>
-                    <option value="Béja">Béja</option>
-                    <option value="Jendouba">Jendouba</option>
-                    <option value="Le Kef">Le Kef</option>
-                    <option value="Siliana">Siliana</option>
-                    <option value="Sousse">Sousse</option>
-                    <option value="Monastir">Monastir</option>
-                    <option value="Mahdia">Mahdia</option>
-                    <option value="Sfax">Sfax</option>
-                    <option value="Kairouan">Kairouan</option>
-                    <option value="Kasserine">Kasserine</option>
-                    <option value="Sidi Bouzid">Sidi Bouzid</option>
-                    <option value="Gabès">Gabès</option>
-                    <option value="Medenine">Medenine</option>
-                    <option value="Tataouine">Tataouine</option>
-                    <option value="Gafsa">Gafsa</option>
-                    <option value="Tozeur">Tozeur</option>
-                    <option value="Kebili">Kebili</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="breveDescription"
-                    >Brève description de votre activité/Services/produits (en
-                    150 caractères au maximum)
-                    <span class="required">*</span></label
-                >
-                <textarea
-                    id="breveDescription"
-                    formControlName="breveDescription"
-                    class="form-control"
-                    rows="4"
-                    maxlength="150"
-                    [class.error]="isFieldInvalid('breveDescription')"
-                ></textarea>
-                <div class="char-count">
-                    {{ candidatureForm.get('breveDescription')?.value?.length ||
-                    0 }}/150
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label for="lienReseauxSociaux"
-                    >Lien de votre entreprise sur les réseaux sociaux (siteweb,
-                    Facebook, ou bien Linkedin...)</label
-                >
-                <input
-                    type="text"
-                    id="lienReseauxSociaux"
-                    formControlName="lienReseauxSociaux"
-                    class="form-control"
-                />
-            </div>
-
-            <div class="form-group">
-                <label
-                    >Avez-vous le label startupAct
-                    <span class="required">*</span></label
-                >
-                <div class="radio-group">
-                    <label class="radio-label">
-                        <input
-                            type="radio"
-                            formControlName="labelStartupAct"
-                            [value]="true"
-                        />
-                        Oui
-                    </label>
-                    <label class="radio-label">
-                        <input
-                            type="radio"
-                            formControlName="labelStartupAct"
-                            [value]="false"
-                        />
-                        Non
-                    </label>
-                </div>
-            </div>
-
-            <div
-                class="form-group"
-                *ngIf="candidatureForm.get('labelStartupAct')?.value === true"
-            >
-                <label for="dateObtentionLabel">Date obtention du Label</label>
-                <input
-                    type="date"
-                    id="dateObtentionLabel"
-                    formControlName="dateObtentionLabel"
-                    class="form-control"
-                />
-            </div>
-
-            <div class="button-group">
-                <button
-                    type="button"
-                    class="btn btn-previous"
-                    (click)="previousStep()"
-                >
-                    Précédent
-                </button>
-                <button type="button" class="btn btn-next" (click)="nextStep()">
-                    Suivant
-                </button>
-            </div>
-        </div>
-
-        <!-- Step 3: Startup Details -->
-        <div class="form-step" *ngIf="currentStep === 3">
-            <div class="form-group">
-                <label
-                    >Phase de maturité de la Startup
-                    <span class="required">*</span></label
-                >
-                <div class="radio-group-vertical">
-                    <label class="radio-label">
-                        <input
-                            type="radio"
-                            formControlName="phaseMaturite"
-                            value="MVP"
-                        />
-                        MVP : Produit en développement, Une version beta avec
-                        quelques testeurs, Pas encore une mise sur le marché,
-                        pas encore de levés de fonds...
-                    </label>
-                    <label class="radio-label">
-                        <input
-                            type="radio"
-                            formControlName="phaseMaturite"
-                            value="Early Sales"
-                        />
-                        Early Sales : Produit sur le marché, Quelques clients
-                        payants, Seed funding...
-                    </label>
-                    <label class="radio-label">
-                        <input
-                            type="radio"
-                            formControlName="phaseMaturite"
-                            value="Growth"
-                        />
-                        Growth : Plusieurs clients payants, Ayant levé des
-                        fonds...
-                    </label>
-                    <label class="radio-label">
-                        <input
-                            type="radio"
-                            formControlName="phaseMaturite"
-                            value="Autre"
-                        />
-                        Autre
-                    </label>
-                </div>
-                <span
-                    class="error-message"
-                    *ngIf="isFieldInvalid('phaseMaturite')"
-                    >Ce champ est nécessaire</span
-                >
-            </div>
-
-            <div class="form-group">
-                <label for="marchePersonnasCibles"
-                    >Quel est votre marché & Personnas ciblés
-                    <span class="required">*</span></label
-                >
-                <input
-                    type="text"
-                    id="marchePersonnasCibles"
-                    formControlName="marchePersonnasCibles"
-                    class="form-control"
-                    [class.error]="isFieldInvalid('marchePersonnasCibles')"
-                />
-            </div>
-
-            <div class="form-group">
-                <label for="composanteInnovation"
-                    >Quelle est la composante "Innovation" dans votre startup ?
-                    (en 250 caractères au maximum)
-                    <span class="required">*</span></label
-                >
-                <textarea
-                    id="composanteInnovation"
-                    formControlName="composanteInnovation"
-                    class="form-control"
-                    rows="6"
-                    maxlength="250"
-                    [class.error]="isFieldInvalid('composanteInnovation')"
-                ></textarea>
-                <div class="char-count">
-                    {{
-                    candidatureForm.get('composanteInnovation')?.value?.length
-                    || 0 }}/250
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label for="impactEnvironnemental"
-                    >Impact Environnemental du projet
-                    <span class="required">*</span></label
-                >
-                <textarea
-                    id="impactEnvironnemental"
-                    formControlName="impactEnvironnemental"
-                    class="form-control"
-                    rows="6"
-                    [class.error]="isFieldInvalid('impactEnvironnemental')"
-                ></textarea>
-            </div>
-
-            <div class="form-group">
-                <label for="impactSocial"
-                    >Impact Social du projet
-                    <span class="required">*</span></label
-                >
-                <textarea
-                    id="impactSocial"
-                    formControlName="impactSocial"
-                    class="form-control"
-                    rows="6"
-                    [class.error]="isFieldInvalid('impactSocial')"
-                ></textarea>
-            </div>
-
-            <div class="form-group">
-                <label for="viabiliteCommerciale"
-                    >Comment est assurée la Viabilité commerciale de votre
-                    entreprise? Votre Business Model (modèle d'affaires)
-                    <span class="required">*</span></label
-                >
-                <textarea
-                    id="viabiliteCommerciale"
-                    formControlName="viabiliteCommerciale"
-                    class="form-control"
-                    rows="6"
-                    [class.error]="isFieldInvalid('viabiliteCommerciale')"
-                ></textarea>
-            </div>
-
-            <div class="form-group">
-                <label for="valeurAjoutee"
-                    >Valeur ajoutée du projet
-                    <span class="required">*</span></label
-                >
-                <input
-                    type="number"
-                    id="valeurAjoutee"
-                    formControlName="valeurAjoutee"
-                    class="form-control"
-                    [class.error]="isFieldInvalid('valeurAjoutee')"
-                />
-            </div>
-
-            <div class="form-group">
-                <label
-                    >Veuillez télécharger tout document qui peut nous aider à en
-                    savoir plus sur votre startup (exemple : présentation, Pitch
-                    Deck, plan d'affaires, ect.)</label
-                >
-                <div class="file-upload-area" (click)="fileInput.click()">
-                    <div class="upload-icon">📁</div>
-                    <p>
-                        Cliquez ou déplacez des fichiers dans cette zone pour
-                        les téléverser.
+        <div class="container mx-auto px-4 z-10" *ngIf="template">
+            <div class="form-wrapper flex flex-col lg:flex-row gap-12 bg-white/95 rounded-3xl p-8 lg:p-12 shadow-[0_15px_40px_rgba(0,0,0,0.1)] relative">
+                
+                <div class="form-section flex-1 min-w-0">
+                    <h2 class="title text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-[#db1e37] to-[#0a4955] mb-4 text-center">
+                        {{ template.title }}
+                    </h2>
+                    <p class="subtitle text-lg text-gray-600 mb-8 text-center">
+                        {{ template.description }}
                     </p>
-                    <p class="file-limit">
-                        Vous pouvez téléverser jusqu'à 8 fichiers.
-                    </p>
-                </div>
-                <input
-                    #fileInput
-                    type="file"
-                    (change)="onFilesSelected($event)"
-                    multiple
-                    accept=".pdf,.doc,.docx,.ppt,.pptx"
-                    style="display: none"
-                />
 
-                <div class="uploaded-files" *ngIf="uploadedFiles.length > 0">
-                    <div
-                        class="file-item"
-                        *ngFor="let file of uploadedFiles; let i = index"
-                    >
-                        <span>{{ file.name }}</span>
-                        <button
-                            type="button"
-                            class="btn-remove"
-                            (click)="removeFile(i)"
-                        >
-                            ×
-                        </button>
+                    <form [formGroup]="candidatureForm" (ngSubmit)="submitCandidature()" class="space-y-6" enctype="multipart/form-data">
+                        <div class="form-card bg-white/90 rounded-2xl p-6 lg:p-8 shadow-sm hover:shadow-md transition-shadow duration-300">
+                            <ng-container *ngFor="let question of template.questions">
+                                <!-- Text-court -->
+                                <div class="input-group mb-6" *ngIf="question.type === 'text-court'">
+                                    <label [for]="getQuestionKey(question.id)" class="block font-semibold text-[#0a4955] mb-2">
+                                        {{ question.text }}
+                                        <span class="required text-[#db1e37]" *ngIf="question.required">*</span>
+                                    </label>
+                                    <input [id]="getQuestionKey(question.id)" type="text"
+                                           [formControlName]="getQuestionKey(question.id)"
+                                           class="input-field w-full p-3 border-2 border-gray-200 rounded-xl focus:border-[#db1e37] focus:ring-4 focus:ring-[#db1e37]/15 transition-all outline-none"
+                                           [class.border-red-500]="isFieldInvalid(question.id)">
+                                    <span class="error-message text-red-500 text-sm mt-1 block" *ngIf="isFieldInvalid(question.id)">Ce champ est requis</span>
+                                </div>
+
+                                <!-- Text-long -->
+                                <div class="input-group mb-6" *ngIf="question.type === 'text-long'">
+                                    <label [for]="getQuestionKey(question.id)" class="block font-semibold text-[#0a4955] mb-2">
+                                        {{ question.text }}
+                                        <span class="required text-[#db1e37]" *ngIf="question.required">*</span>
+                                    </label>
+                                    <textarea [id]="getQuestionKey(question.id)"
+                                              [formControlName]="getQuestionKey(question.id)"
+                                              class="input-field w-full p-3 border-2 border-gray-200 rounded-xl min-h-[120px] focus:border-[#db1e37] focus:ring-4 focus:ring-[#db1e37]/15 transition-all outline-none resize-y"
+                                              [class.border-red-500]="isFieldInvalid(question.id)"></textarea>
+                                    <span class="error-message text-red-500 text-sm mt-1 block" *ngIf="isFieldInvalid(question.id)">Ce champ est requis</span>
+                                </div>
+
+                                <!-- QCU -->
+                                <div class="input-group mb-6" *ngIf="question.type === 'qcu'">
+                                    <label class="block font-semibold text-[#0a4955] mb-2">
+                                        {{ question.text }}
+                                        <span class="required text-[#db1e37]" *ngIf="question.required">*</span>
+                                    </label>
+                                    <div class="flex flex-col gap-3 mt-2">
+                                        <label class="flex items-center cursor-pointer p-3 border border-gray-200 rounded-lg hover:border-[#0a4955] hover:bg-gray-50 transition-all" *ngFor="let opt of question.options">
+                                            <input type="radio" [formControlName]="getQuestionKey(question.id)" [value]="opt" class="mr-3 w-5 h-5 accent-[#db1e37] cursor-pointer">
+                                            <span class="text-gray-700">{{ opt }}</span>
+                                        </label>
+                                    </div>
+                                    <span class="error-message text-red-500 text-sm mt-1 block" *ngIf="isFieldInvalid(question.id)">Veuillez choisir une option</span>
+                                </div>
+
+                                <!-- QCM -->
+                                <div class="input-group mb-6" *ngIf="question.type === 'qcm'">
+                                    <label class="block font-semibold text-[#0a4955] mb-2">
+                                        {{ question.text }}
+                                        <span class="required text-[#db1e37]" *ngIf="question.required">*</span>
+                                    </label>
+                                    <div class="flex flex-col gap-3 mt-2">
+                                        <label class="flex items-center cursor-pointer p-3 border border-gray-200 rounded-lg hover:border-[#0a4955] hover:bg-gray-50 transition-all" *ngFor="let opt of question.options">
+                                            <input type="checkbox"
+                                                   (change)="onCheckboxChange(question.id, opt, $event)"
+                                                   class="mr-3 w-5 h-5 accent-[#db1e37] cursor-pointer">
+                                            <span class="text-gray-700">{{ opt }}</span>
+                                        </label>
+                                    </div>
+                                    <span class="error-message text-red-500 text-sm mt-1 block" *ngIf="isFieldInvalid(question.id)">Sélection requise</span>
+                                </div>
+
+                                <!-- Upload -->
+                                <div class="input-group mb-6" *ngIf="question.type === 'upload'">
+                                    <label class="block font-semibold text-[#0a4955] mb-2">
+                                        {{ question.text }}
+                                        <span class="required text-[#db1e37]" *ngIf="question.required">*</span>
+                                    </label>
+                                    <div class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-[#0a4955] hover:bg-gray-50 transition-all cursor-pointer" onclick="document.getElementById('file-upload').click()">
+                                        <div class="text-4xl mb-2">📁</div>
+                                        <p class="text-gray-600">Cliquez ou déplacez des fichiers dans cette zone</p>
+                                        <p class="text-sm text-gray-400 mt-1">Vous pouvez téléverser jusqu'à 8 fichiers annexes (.pdf, .doc, .ppt...)</p>
+                                    </div>
+                                    <input id="file-upload" type="file" (change)="onFilesSelected($event)" class="hidden" multiple accept=".pdf,.doc,.docx,.ppt,.pptx">
+                                    
+                                    <div class="uploaded-files mt-4 flex flex-col gap-2" *ngIf="uploadedFiles.length > 0">
+                                        <div class="flex items-center justify-between p-3 bg-teal-50 border border-teal-200 rounded-lg" *ngFor="let f of uploadedFiles; let i = index">
+                                            <span class="text-sm text-gray-800 truncate flex-1">{{ f.name }}</span>
+                                            <button type="button" class="text-red-500 hover:text-red-700 font-bold ml-4 text-xl leading-none" (click)="removeFile(i)">&times;</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </ng-container>
+                        </div>
+
+                        <div class="pagination mt-10 flex justify-center">
+                            <button type="submit" [disabled]="submitting" 
+                                class="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-[#db1e37] to-[#0a4955] text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                                {{ submitting ? 'Soumission en cours...' : 'Soumettre ma candidature' }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Info Section Mimicking Coach Request -->
+                <div class="info-section hidden lg:block flex-none w-[320px] bg-white/70 backdrop-blur-md border border-red-50 rounded-2xl p-8 shadow-[0_6px_25px_rgba(0,0,0,0.1)] relative overflow-hidden self-start sticky top-24">
+                    <div class="absolute -top-1/2 -left-1/2 w-[200%] h-[200%] bg-[radial-gradient(circle,rgba(219,30,55,0.1),transparent_70%)] animate-[glow_10s_infinite]"></div>
+                    <div class="relative z-10">
+                        <h3 class="text-2xl font-bold text-[#0a4955] mb-6 text-center">Postulez maintenant avec RedBoost</h3>
+                        <p class="text-lg text-gray-600 mb-6 text-center">Rejoignez notre programme pour accélérer et structurer votre croissance.</p>
+                        <ul class="space-y-4 mb-6">
+                            <li class="relative pl-8 text-gray-700 text-md">
+                                <span class="absolute left-0 text-[#db1e37] font-bold text-lg">✓</span>
+                                Accompagnement opérationnel et personnalisé par des experts
+                            </li>
+                            <li class="relative pl-8 text-gray-700 text-md">
+                                <span class="absolute left-0 text-[#db1e37] font-bold text-lg">✓</span>
+                                Accès à un vaste réseau mondial d'entrepreneurs
+                            </li>
+                            <li class="relative pl-8 text-gray-700 text-md">
+                                <span class="absolute left-0 text-[#db1e37] font-bold text-lg">✓</span>
+                                Opportunités de levée de fonds et de financement
+                            </li>
+                            <li class="relative pl-8 text-gray-700 text-md">
+                                <span class="absolute left-0 text-[#db1e37] font-bold text-lg">✓</span>
+                                Visibilité améliorée de votre entreprise
+                            </li>
+                        </ul>
+                        <p class="text-lg text-center text-gray-600 font-semibold italic">Nous avons hâte de découvrir votre projet !</p>
                     </div>
                 </div>
             </div>
-
-            <div class="button-group">
-                <button
-                    type="button"
-                    class="btn btn-previous"
-                    (click)="previousStep()"
-                >
-                    Précédent
-                </button>
-                <button type="button" class="btn btn-next" (click)="nextStep()">
-                    Suivant
-                </button>
-            </div>
         </div>
 
-        <!-- Step 4: Team Information -->
-        <div class="form-step" *ngIf="currentStep === 4">
-            <div class="form-group">
-                <label for="nombreCoFondateurs"
-                    >Combien y a-t-il de co-fondateurs / associés ?
-                    <span class="required">*</span></label
-                >
-                <input
-                    type="number"
-                    id="nombreCoFondateurs"
-                    formControlName="nombreCoFondateurs"
-                    class="form-control"
-                    [class.error]="isFieldInvalid('nombreCoFondateurs')"
-                />
-            </div>
-
-            <div class="form-group">
-                <label
-                    >Sont-ils impliqués dans la gestion du projet ?
-                    <span class="required">*</span></label
-                >
-                <div class="radio-group">
-                    <label class="radio-label">
-                        <input
-                            type="radio"
-                            formControlName="impliquesGestion"
-                            [value]="true"
-                        />
-                        Oui
-                    </label>
-                    <label class="radio-label">
-                        <input
-                            type="radio"
-                            formControlName="impliquesGestion"
-                            [value]="false"
-                        />
-                        Non
-                    </label>
-                </div>
-            </div>
-
-            <div
-                class="form-group"
-                *ngIf="candidatureForm.get('impliquesGestion')?.value === true"
-            >
-                <label for="nombreImpliquesGestion"
-                    >Si oui -combien d'entre eux</label
-                >
-                <input
-                    type="number"
-                    id="nombreImpliquesGestion"
-                    formControlName="nombreImpliquesGestion"
-                    class="form-control"
-                />
-            </div>
-
-            <div class="form-group">
-                <label for="experienceEquipeFondatrice"
-                    >L'expérience de l'équipe fondatrice du projet
-                    <span class="required">*</span></label
-                >
-                <textarea
-                    id="experienceEquipeFondatrice"
-                    formControlName="experienceEquipeFondatrice"
-                    class="form-control"
-                    rows="6"
-                    [class.error]="isFieldInvalid('experienceEquipeFondatrice')"
-                ></textarea>
-            </div>
-
-            <div class="form-group">
-                <label for="nombreEmploisCrees"
-                    >Nombre d'emplois créés
-                    <span class="required">*</span></label
-                >
-                <input
-                    type="number"
-                    id="nombreEmploisCrees"
-                    formControlName="nombreEmploisCrees"
-                    class="form-control"
-                    [class.error]="isFieldInvalid('nombreEmploisCrees')"
-                />
-            </div>
-
-            <div class="button-group">
-                <button
-                    type="button"
-                    class="btn btn-previous"
-                    (click)="previousStep()"
-                >
-                    Précédent
-                </button>
-                <button type="button" class="btn btn-next" (click)="nextStep()">
-                    Suivant
-                </button>
+        <!-- Loading state -->
+        <div class="container mx-auto px-4 z-10 flex justify-center py-32" *ngIf="!template">
+            <div class="bg-white/90 p-12 rounded-2xl shadow-lg flex flex-col items-center">
+                <div class="w-16 h-16 border-4 border-gray-200 border-t-[#db1e37] rounded-full animate-spin mb-4"></div>
+                <div class="text-xl font-semibold text-[#0a4955]">Chargement du formulaire...</div>
             </div>
         </div>
-
-        <!-- Step 5: Support Needs -->
-        <div class="form-step" *ngIf="currentStep === 5">
-            <div class="form-group">
-                <label
-                    >Quels sont les besoins de votre structure en matière
-                    d'accompagnement? <span class="required">*</span></label
-                >
-                <div class="checkbox-group">
-                    <label class="checkbox-label">
-                        <input
-                            type="checkbox"
-                            (change)="onBesoinsAccompagnementChange('Développement de votre entreprise', $event)"
-                        />
-                        Développement de votre entreprise
-                    </label>
-                    <label class="checkbox-label">
-                        <input
-                            type="checkbox"
-                            (change)="onBesoinsAccompagnementChange('Accès au financement', $event)"
-                        />
-                        Accès au financement
-                    </label>
-                    <label class="checkbox-label">
-                        <input
-                            type="checkbox"
-                            (change)="onBesoinsAccompagnementChange('Lancement de votre projet', $event)"
-                        />
-                        Lancement de votre projet
-                    </label>
-                    <label class="checkbox-label">
-                        <input
-                            type="checkbox"
-                            (change)="onBesoinsAccompagnementChange('Accès à la technologie', $event)"
-                        />
-                        Accès à la technologie
-                    </label>
-                    <label class="checkbox-label">
-                        <input
-                            type="checkbox"
-                            (change)="onBesoinsAccompagnementChange('Accès aux marchés', $event)"
-                        />
-                        Accès aux marchés
-                    </label>
-                </div>
-                <span
-                    class="error-message"
-                    *ngIf="isFieldInvalid('besoinsAccompagnement')"
-                    >Ce champ est nécessaire</span
-                >
-            </div>
-
-            <div class="form-group">
-                <label
-                    >Avez-vous déjà bénéficié d'un accompagnement pour votre
-                    startup? (exemple : coaching, mentoring, incubation,
-                    accélération...) <span class="required">*</span></label
-                >
-                <div class="radio-group">
-                    <label class="radio-label">
-                        <input
-                            type="radio"
-                            formControlName="beneficieAccompagnement"
-                            [value]="true"
-                        />
-                        Oui
-                    </label>
-                    <label class="radio-label">
-                        <input
-                            type="radio"
-                            formControlName="beneficieAccompagnement"
-                            [value]="false"
-                        />
-                        Non
-                    </label>
-                </div>
-            </div>
-
-            <div
-                class="form-group"
-                *ngIf="candidatureForm.get('beneficieAccompagnement')?.value === true"
-            >
-                <label for="detailsAccompagnement"
-                    >Si oui, précisez lequel (nature, organisme et durée de cet
-                    accompagnement) .</label
-                >
-                <textarea
-                    id="detailsAccompagnement"
-                    formControlName="detailsAccompagnement"
-                    class="form-control"
-                    rows="4"
-                ></textarea>
-            </div>
-
-            <div class="form-group">
-                <label>Vos besoins en formation</label>
-                <div class="checkbox-group">
-                    <label class="checkbox-label">
-                        <input
-                            type="checkbox"
-                            (change)="onBesoinsFormationChange('Formation Commercial Marketing Vente', $event)"
-                        />
-                        Formation Commercial Marketing Vente
-                    </label>
-                    <label class="checkbox-label">
-                        <input
-                            type="checkbox"
-                            (change)="onBesoinsFormationChange('Formation Comptabilite Gestion Finance Paie', $event)"
-                        />
-                        Formation Comptabilite Gestion Finance Paie
-                    </label>
-                    <label class="checkbox-label">
-                        <input
-                            type="checkbox"
-                            (change)="onBesoinsFormationChange('Formation Developpement personnel Coaching', $event)"
-                        />
-                        Formation Developpement personnel Coaching
-                    </label>
-                    <label class="checkbox-label">
-                        <input
-                            type="checkbox"
-                            (change)="onBesoinsFormationChange('Formation Gestion de Projet', $event)"
-                        />
-                        Formation Gestion de Projet
-                    </label>
-                    <label class="checkbox-label">
-                        <input
-                            type="checkbox"
-                            (change)="onBesoinsFormationChange('Formation Grande Distribution Commerce', $event)"
-                        />
-                        Formation Grande Distribution Commerce
-                    </label>
-                    <label class="checkbox-label">
-                        <input
-                            type="checkbox"
-                            (change)="onBesoinsFormationChange('Formation Management Direction', $event)"
-                        />
-                        Formation Management Direction
-                    </label>
-                    <label class="checkbox-label">
-                        <input
-                            type="checkbox"
-                            (change)="onBesoinsFormationChange('Formation Qualite Organisation', $event)"
-                        />
-                        Formation Qualite Organisation
-                    </label>
-                    <label class="checkbox-label">
-                        <input
-                            type="checkbox"
-                            (change)="onBesoinsFormationChange('Formation Ressources humaines / Gestion du personnel', $event)"
-                        />
-                        Formation Ressources humaines / Gestion du personnel
-                    </label>
-                    <label class="checkbox-label">
-                        <input
-                            type="checkbox"
-                            (change)="onBesoinsFormationChange('Formation Achat Approvisionnement Logistique', $event)"
-                        />
-                        Formation Achat Approvisionnement Logistique
-                    </label>
-                    <label class="checkbox-label">
-                        <input
-                            type="checkbox"
-                            (change)="onBesoinsFormationChange('Formation Agro alimentaire Agriculture', $event)"
-                        />
-                        Formation Agro alimentaire Agriculture
-                    </label>
-                    <label class="checkbox-label">
-                        <input
-                            type="checkbox"
-                            (change)="onBesoinsFormationChange('Formation Environnement', $event)"
-                        />
-                        Formation Environnement
-                    </label>
-                </div>
-            </div>
-
-            <div class="button-group">
-                <button
-                    type="button"
-                    class="btn btn-previous"
-                    (click)="previousStep()"
-                >
-                    Précédent
-                </button>
-                <button
-                    type="submit"
-                    class="btn btn-submit"
-                    [disabled]="submitting"
-                >
-                    {{ submitting ? 'Envoi en cours...' : 'Envoyer ma
-                    candidature' }}
-                </button>
-            </div>
-        </div>
-    </form>
+    </section>
 </div>

@@ -444,9 +444,8 @@ import { User } from '../../../../models/user';
                     <ul class="mobile-nav-list">
                         <ng-container
                             *ngFor="let item of menuItems; let i = index"
-                            [@navItemAnimation]="i * 100"
                         >
-                            <li *ngIf="item.subItems">
+                            <li *ngIf="item.subItems" [@navItemAnimation]="i * 100">
                                 <a
                                     class="mobile-nav-link"
                                     (click)="toggleMobileSubMenu(item)"
@@ -483,7 +482,7 @@ import { User } from '../../../../models/user';
                                     </li>
                                 </ul>
                             </li>
-                            <li *ngIf="!item.subItems">
+                            <li *ngIf="!item.subItems" [@navItemAnimation]="i * 100">
                                 <a
                                     (click)="navigateTo(item.route)"
                                     class="mobile-nav-link"

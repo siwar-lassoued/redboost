@@ -4,40 +4,43 @@ import { Observable } from 'rxjs';
 
 export interface CandidatureRedstarter {
     id?: number;
-    nomPrenom: string;
-    genre: string;
-    age: number;
-    numeroTelephone: string;
-    email: string;
-    roleEntreprise: string;
-    nomEntreprise: string;
-    entrepriseEst: string;
+    nomPrenom?: string;
+    genre?: string;
+    age?: number;
+    numeroTelephone?: string;
+    email?: string;
+    roleEntreprise?: string;
+    nomEntreprise?: string;
+    entrepriseEst?: string;
     dateCreation?: Date;
-    regionBasee: string;
-    breveDescription: string;
+    regionBasee?: string;
+    breveDescription?: string;
     lienReseauxSociaux?: string;
-    labelStartupAct: boolean;
+    labelStartupAct?: boolean;
     dateObtentionLabel?: Date;
-    phaseMaturite: string;
-    marchePersonnasCibles: string;
-    composanteInnovation: string;
-    impactEnvironnemental: string;
-    impactSocial: string;
-    viabiliteCommerciale: string;
-    valeurAjoutee: number;
-    nombreCoFondateurs: number;
-    impliquesGestion: boolean;
+    phaseMaturite?: string;
+    marchePersonnasCibles?: string;
+    composanteInnovation?: string;
+    impactEnvironnemental?: string;
+    impactSocial?: string;
+    viabiliteCommerciale?: string;
+    valeurAjoutee?: number;
+    nombreCoFondateurs?: number;
+    impliquesGestion?: boolean;
     nombreImpliquesGestion?: number;
-    experienceEquipeFondatrice: string;
-    nombreEmploisCrees: number;
-    besoinsAccompagnement: string[];
-    beneficieAccompagnement: boolean;
+    experienceEquipeFondatrice?: string;
+    nombreEmploisCrees?: number;
+    besoinsAccompagnement?: string[];
+    beneficieAccompagnement?: boolean;
     detailsAccompagnement?: string;
     besoinsFormation?: string[];
     documents?: File[];
     statut?: string;
     dateCreationCandidature?: Date;
     commentairesAdmin?: string;
+
+    formTemplateId?: string | number;
+    dynamicAnswers?: string;
 }
 
 export interface PageResponse<T> {
@@ -60,8 +63,10 @@ export interface ApiResponse {
 })
 export class CandidatureService {
     private apiUrl = 'https://redboost.tn/api/candidatures';
+    //private apiUrl = 'http://localhost:8082/api/candidatures';
 
-    constructor(private http: HttpClient) {}
+
+    constructor(private http: HttpClient) { }
 
     /**
      * Submit a new candidature

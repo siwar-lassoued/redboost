@@ -1,10 +1,9 @@
 import { Component, OnInit, signal, computed, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ToastrService } from 'ngx-toastr';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
 import { CandidatureService } from '../services/candidature.service';
-import { ProgrammeService } from '../services/programme.service';
-import { SelectionRoundService } from '../services/selection-round.service';
 import { Candidature, CandidatureStatus } from '../models/candidature.model';
 import { STATUS_CONFIG } from '../constants/colors.constants';
 
@@ -17,82 +16,62 @@ import { STATUS_CONFIG } from '../constants/colors.constants';
   styleUrls: ['./admin_historique.scss'],
 })
 export class AdminHistoriqueComponent implements OnInit {
-  private svc      = inject(CandidatureService);
-  private progSvc  = inject(ProgrammeService);
-  private roundSvc = inject(SelectionRoundService);
+  private svc = inject(CandidatureService);
 
   searchTerm    = signal('');
-  filterProgram = signal('all');
   filterStatus  = signal('all');
-  filterProfile = signal<'coaches'|'entrepreneurs'>('coaches');
-  activeRound   = signal(0);
 
   allCandidatures = signal<Candidature[]>([]);
-  programs        = signal<any[]>([]);
-  roundNumbers    = signal<number[]>([1, 2, 3]);
   selected        = signal<Candidature|null>(null);
   showRejectModal = signal(false);
   motifRejet      = '';
 
-  private readonly HISTORIQUE_STATUSES = ['PRESELECTIONNE','ACCEPTE','REJETE'];
-  orderedSteps: CandidatureStatus[] = ['EN_ATTENTE','EN_REVISION','ENTRETIEN','PRESELECTIONNE','ACCEPTE'];
+  orderedSteps: CandidatureStatus[] = ['EN_ATTENTE', 'EN_COURS_EVALUATION', 'PRE_SELECTIONNE', 'ACCEPTE'];
 
-  allHistorique = computed(() =>
-    this.allCandidatures().filter(c => this.HISTORIQUE_STATUSES.includes(c.statut))
-  );
-
-  kpiTotal       = computed(() => this.allHistorique().length);
-  kpiAccepted    = computed(() => this.allHistorique().filter(c => c.statut==='ACCEPTE').length);
-  kpiPreselected = computed(() => this.allHistorique().filter(c => c.statut==='PRESELECTIONNE').length);
-  kpiRejected    = computed(() => this.allHistorique().filter(c => c.statut==='REJETE').length);
+  // KPIs — updated via statistics
+  kpiTotal       = signal(0);
+  kpiEnAttente   = signal(0);
+  kpiEnEvaluation = signal(0);
+  kpiPreselected  = signal(0);
+  kpiAccepted    = signal(0);
+  kpiRejected    = signal(0);
 
   filtered = computed(() => {
-    return this.allHistorique().filter(c => {
+    return this.allCandidatures().filter(c => {
       const q = this.searchTerm().toLowerCase();
       if (q && !c.nom.toLowerCase().includes(q) && !c.email.toLowerCase().includes(q)) return false;
-      if (this.filterStatus()!=='all' && c.statut!==this.filterStatus()) return false;
-      if (c.type!==this.filterProfile()) return false;
-      if (this.filterProgram()!=='all' && c.programme!==this.filterProgram()) return false;
-      if (this.activeRound() > 0) {
-        const stepIdx = this.orderedSteps.indexOf(c.statut as CandidatureStatus);
-        const candidateRound = c.statut === 'REJETE' ? 1 : (stepIdx >= 0 ? stepIdx + 1 : 1);
-        if (candidateRound < this.activeRound()) return false;
-      }
+      if (this.filterStatus() !== 'all' && c.statut !== this.filterStatus()) return false;
       return true;
     });
   });
 
   ngOnInit(): void {
-    this.progSvc.getAll().subscribe((r: any) => this.programs.set(r.data || []));
     this.loadCandidatures();
-    this.loadRounds();
   }
 
   loadCandidatures(): void {
-    this.svc.getAll({}).subscribe(r => this.allCandidatures.set(r.data || []));
-  }
+    // 1. Get stats for KPIs
+    this.svc.getStatistics().subscribe(stats => {
+      this.kpiTotal.set(stats['total'] || 0);
+      this.kpiEnAttente.set(stats['en_attente'] || 0);
+      this.kpiEnEvaluation.set(stats['en_cours_evaluation'] || 0);
+      this.kpiPreselected.set(stats['pre_selectionne'] || 0);
+      this.kpiAccepted.set(stats['accepte'] || 0);
+      this.kpiRejected.set(stats['rejete'] || 0);
+    });
 
-  loadRounds(): void {
-    const progs = this.programs();
-    if (progs.length > 0) {
-      this.roundSvc.getRoundsForProgramme(progs[0].id).subscribe({
-        next: (rounds) => {
-          if (rounds.length > 0) {
-            const nums = [...new Set(rounds.map(r => r.roundNumber))].sort();
-            this.roundNumbers.set(nums);
-          }
-        },
-        error: () => {}
-      });
-    }
+    // 2. Load list with a more reasonable size if possible, or keep 1000 but optimize backend
+    this.svc.getAll({ limit: 200 }).subscribe({
+      next: r => this.allCandidatures.set(r.data || []),
+      error: () => this.allCandidatures.set([])
+    });
   }
 
   getJourneySteps(c: Candidature): JourneyStep[] {
     const steps: JourneyStep[] = [
       { statut:'EN_ATTENTE', label:'Soumission', description:'Candidature reçue via le formulaire', reached:true, current:false, date:c.submittedAt, note:null },
-      { statut:'EN_REVISION', label:'En révision', description:'Dossier examiné par l\'équipe', reached:false, current:false, date:null, note:null },
-      { statut:'ENTRETIEN', label:'Entretien', description:'Candidat convoqué pour entretien', reached:false, current:false, date:c.dateEntretien, note:c.compteRenduEntretien ?? null },
-      { statut:'PRESELECTIONNE', label:'Pré-sélection', description:'Présélection pour le round suivant', reached:false, current:false, date:null, note:null },
+      { statut:'EN_COURS_EVALUATION', label:'En évaluation', description:'Dossier examiné par l\'équipe', reached:false, current:false, date:null, note:null },
+      { statut:'PRE_SELECTIONNE', label:'Pré-sélection', description:'Présélection pour le round suivant', reached:false, current:false, date:null, note:null },
     ];
     const idx = this.orderedSteps.indexOf(c.statut as CandidatureStatus);
     for (let i = 0; i < steps.length; i++) {
@@ -101,7 +80,7 @@ export class AdminHistoriqueComponent implements OnInit {
       steps[i].current = steps[i].statut === c.statut;
     }
     if (c.statut === 'ACCEPTE') {
-      steps.push({ statut:'ACCEPTE', label:'Acceptée ✅', description:'Compte utilisateur créé', reached:true, current:true, date:c.dateAcceptation, note:c.noteInterne ?? null });
+      steps.push({ statut:'ACCEPTE', label:'Acceptée ✅', description:'Candidature acceptée', reached:true, current:true, date:c.dateAcceptation, note:c.noteInterne ?? null });
     } else if (c.statut === 'REJETE') {
       steps.push({ statut:'REJETE', label:'Rejetée ❌', description:'Candidature non retenue', reached:true, current:true, date:null, note:c.motifRejet ?? null });
     }
@@ -121,8 +100,8 @@ export class AdminHistoriqueComponent implements OnInit {
 
   getStepColor(step: string): string {
     const m: Record<string,string> = {
-      EN_ATTENTE:'#9CA3AF', EN_REVISION:'#3AAFFF', ENTRETIEN:'#A17DFD',
-      PRESELECTIONNE:'#FF6F00', ACCEPTE:'#11998E', REJETE:'#C0392B'
+      EN_ATTENTE:'#9CA3AF', EN_COURS_EVALUATION:'#3AAFFF',
+      PRE_SELECTIONNE:'#FF6F00', ACCEPTE:'#11998E', REJETE:'#C0392B'
     };
     return m[step] || '#9CA3AF';
   }
@@ -156,10 +135,19 @@ export class AdminHistoriqueComponent implements OnInit {
     });
   }
 
+  onChangeStatut(newStatut: CandidatureStatus): void {
+    const s = this.selected();
+    if (!s) return;
+    this.svc.updateStatut(s.id, { statut: newStatut }).subscribe({
+      next: () => { this.loadCandidatures(); this.selected.set(null); },
+      error: (err) => alert('Erreur: ' + (err.error?.message || err.message || 'Transition non autorisée'))
+    });
+  }
+
   exportExcel(): void {
     const rows = this.filtered();
-    const csv = 'Nom,Email,Profil,Programme,Statut,Date\n' +
-      rows.map(c => `"${c.nom}","${c.email}","${c.type}","${c.programme||''}","${c.statut}","${c.submittedAt||''}"`).join('\n');
+    const csv = 'Nom,Email,Statut,Date\n' +
+      rows.map(c => `"${c.nom}","${c.email}","${c.statut}","${c.submittedAt||''}"`).join('\n');
     const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);

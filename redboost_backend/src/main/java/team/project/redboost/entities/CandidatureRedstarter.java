@@ -8,6 +8,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import org.hibernate.annotations.BatchSize;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 
 @Entity
 @Table(name = "candidature_redstarter")
@@ -21,109 +24,118 @@ public class CandidatureRedstarter {
     private Long id;
     
     // Step 1: Personal Information
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String nomPrenom;
     
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String genre;
     
-    @Column(nullable = false)
+    @Column(nullable = true)
     private Integer age;
     
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String numeroTelephone;
     
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String email;
     
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String roleEntreprise;
     
     // Step 2: Company Information
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String nomEntreprise;
     
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String entrepriseEst;
     
     private LocalDate dateCreation;
     
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String regionBasee;
     
-    @Column(length = 150, nullable = false)
+    @Column(length = 150, nullable = true)
     private String breveDescription;
     
     private String lienReseauxSociaux;
     
-    @Column(nullable = false)
+    @Column(nullable = true)
     private Boolean labelStartupAct;
     
     private LocalDate dateObtentionLabel;
     
     // Step 3: Startup Details
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String phaseMaturite;
     
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String marchePersonnasCibles;
     
-    @Column(length = 250, nullable = false)
+    @Column(length = 250, nullable = true)
     private String composanteInnovation;
     
-    @Column(columnDefinition = "TEXT", nullable = false)
+    @Column(columnDefinition = "TEXT", nullable = true)
     private String impactEnvironnemental;
     
-    @Column(columnDefinition = "TEXT", nullable = false)
+    @Column(columnDefinition = "TEXT", nullable = true)
     private String impactSocial;
     
-    @Column(columnDefinition = "TEXT", nullable = false)
+    @Column(columnDefinition = "TEXT", nullable = true)
     private String viabiliteCommerciale;
     
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String valeurAjoutee;
     
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "candidature_documents", joinColumns = @JoinColumn(name = "candidature_id"))
     @Column(name = "document_path")
+    @BatchSize(size = 20)
     private List<String> documents = new ArrayList<>();
     
     // Step 4: Team Information
-    @Column(nullable = false)
+    @Column(nullable = true)
     private Integer nombreCoFondateurs;
     
-    @Column(nullable = false)
+    @Column(nullable = true)
     private Boolean impliquesGestion;
     
     private Integer nombreImpliquesGestion;
     
-    @Column(columnDefinition = "TEXT", nullable = false)
+    @Column(columnDefinition = "TEXT", nullable = true)
     private String experienceEquipeFondatrice;
     
-    @Column(nullable = false)
+    @Column(nullable = true)
     private Integer nombreEmploisCrees;
     
     // Step 5: Support Needs
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "candidature_besoins_accompagnement", joinColumns = @JoinColumn(name = "candidature_id"))
     @Column(name = "besoin")
+    @BatchSize(size = 20)
     private List<String> besoinsAccompagnement = new ArrayList<>();
     
-    @Column(nullable = false)
+    @Column(nullable = true)
     private Boolean beneficieAccompagnement;
     
     private String detailsAccompagnement;
     
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "candidature_besoins_formation", joinColumns = @JoinColumn(name = "candidature_id"))
     @Column(name = "formation")
+    @BatchSize(size = 20)
     private List<String> besoinsFormation = new ArrayList<>();
+    
+    @Column(name = "form_template_id")
+    private Long formTemplateId;
+
+    @Column(name = "dynamic_answers", columnDefinition = "TEXT")
+    private String dynamicAnswers;
     
     // Metadata
     @Column(nullable = false)
     private LocalDateTime dateCreationCandidature;
     
-    @Column(nullable = false)
+    @Column(nullable = false, length = 50)
     @Enumerated(EnumType.STRING)
     private StatutCandidature statut = StatutCandidature.EN_ATTENTE;
     
@@ -137,7 +149,12 @@ public class CandidatureRedstarter {
     public enum StatutCandidature {
         EN_ATTENTE,
         EN_COURS_EVALUATION,
+        PRE_SELECTIONNE,
         ACCEPTE,
+        REJETE,
+        // Legacy support to prevent 500 errors with existing data
+        EN_REVISION,
+        PRESELECTIONNE,
         REFUSE
     }
 }

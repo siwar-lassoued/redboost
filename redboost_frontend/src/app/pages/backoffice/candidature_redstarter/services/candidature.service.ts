@@ -38,69 +38,81 @@ export class CandidatureService {
         if (filters?.type) params = params.set('type', filters.type);
         if (filters?.search) params = params.set('search', filters.search);
         if (filters?.page) params = params.set('page', filters.page.toString());
-        if (filters?.limit) params = params.set('limit', filters.limit.toString());
-
-        return this.http.get<any>(`${this.baseUrl}/admin/all`, { params: { ...params.keys().reduce((acc: any, key) => ({ ...acc, [key]: params.get(key) }), {}), size: '1000' } }).pipe(
+        
+        // Use 'size' as the primary pagination limit parameter for Spring Data
+        const size = filters?.limit?.toString() || '1000';
+        params = params.set('size', size);
+        
+        return this.http.get<any>(`${this.baseUrl}/admin/all`, { params }).pipe(
             map(res => {
                 let items: any[] = res.content || res.data || (Array.isArray(res) ? res : []);
                 let filtered = items;
 
                 if (filters?.type) {
                     if (filters.type === 'spontanees') {
-                        filtered = []; // Not supported yet in this entity
-                    } else if (filters.type === 'coaches') {
-                        filtered = []; // Not supported yet in this entity
+                        // Backend now handles filtering for spontaneous (formTemplateId is null)
+                        filtered = items;
                     } else {
-                        // If it's entrepreneurs, keep all of them since this is the Redstarter form
-                        filtered = filtered;
+                        // Backend handles filtering by type for coaches and entrepreneurs
+                        filtered = items;
                     }
                 }
                 if (filters?.statut) {
                     filtered = filtered.filter((c: any) => c.statut === filters.statut);
                 }
 
-                const mappedData: Candidature[] = filtered.map((c: any) => ({
-                    id: c.id,
-                    type: 'entrepreneurs',
-                    nom: c.nomPrenom || 'Inconnu',
-                    email: c.email || 'N/A',
-                    phone: c.numeroTelephone || '—',
-                    statut: c.statut,
-                    submittedAt: c.dateCreationCandidature || c.dateSoumission || null,
-                    programme: c.programme?.nom || null,
-                    round: '—',
-                    history: [],
-                    documents: (c.documents && c.documents.length > 0) ? c.documents.map((d: string) => ({ name: d.split('/').pop() || 'Document', size: '—' })) : [],
-                    formAnswers: [
-                        { questionId: 1, question: 'Nom de l\'entreprise', answer: c.nomEntreprise, type: 'text-court' as const },
-                        { questionId: 2, question: 'Secteur d\'activité', answer: c.secteurActivite, type: 'text-court' as const },
-                        { questionId: 3, question: 'Stade d\'avancement', answer: c.stadeAvancement, type: 'text-court' as const },
-                        { questionId: 4, question: 'Brève description', answer: c.breveDescription, type: 'text-long' as const },
-                        { questionId: 5, question: 'Composante innovation', answer: c.composanteInnovation, type: 'text-long' as const },
-                        { questionId: 6, question: 'Chiffre d\'affaires', answer: c.chiffreAffaires, type: 'text-court' as const },
-                        { questionId: 7, question: 'Site Web', answer: c.lienWebsite, type: 'text-court' as const },
-                        { questionId: 8, question: 'Profil LinkedIn', answer: c.lienLinkedin, type: 'text-court' as const }
-                    ].filter(a => a.answer != null && a.answer !== ''),
-                    noteInterne: c.commentairesAdmin || c.noteInterne || null,
-                    motifRejet: c.motifRejet || null,
-                    dateEntretien: c.dateEntretien || null,
-                    compteRenduEntretien: c.compteRenduEntretien || null,
-                    noteEntretien: c.noteEntretien || null,
-                    dateAcceptation: c.dateAcceptation || null,
-                    cvUrl: c.cvUrl || null,
-                    lettreUrl: c.lettreUrl || null,
-                }));
+                const mappedData: Candidature[] = items.map((c: any) => {
+                    let formAnswers: any[] = [];
+                    try {
+                        if (c.dynamicAnswers) {
+                            const parsed = JSON.parse(c.dynamicAnswers);
+                            formAnswers = Object.entries(parsed).map(([q, a], idx) => ({
+                                questionId: idx,
+                                question: q,
+                                answer: a,
+                                type: (Array.isArray(a) ? 'qcm' : typeof a === 'string' && a.length > 50 ? 'text-long' : 'text-court') as any
+                            }));
+                        }
+                    } catch (e) {
+                         console.error('Error parsing dynamicAnswers', e);
+                    }
 
-                if (filters?.search) {
-                    const s = filters.search.toLowerCase();
+                    // Fallback to legacy fields if dynamicAnswers is empty
+                    if (formAnswers.length === 0) {
+                        formAnswers = [
+                            { questionId: 1, question: 'Nom de l\'entreprise', answer: c.nomEntreprise, type: 'text-court' as const },
+                            { questionId: 2, question: 'Brève description', answer: c.breveDescription, type: 'text-long' as const },
+                            { questionId: 3, question: 'Phase de maturité', answer: c.phaseMaturite, type: 'text-court' as const },
+                            { questionId: 4, question: 'Impact Social', answer: c.impactSocial, type: 'text-long' as const }
+                        ].filter(a => !!a.answer);
+                    }
+
                     return {
-                        data: mappedData.filter(c =>
-                            c.nom.toLowerCase().includes(s) ||
-                            c.email.toLowerCase().includes(s)
-                        )
+                        id: c.id,
+                        type: c.formTemplateId ? (c.statut === 'COACH' ? 'coaches' : 'entrepreneurs') : 'spontanees', // Basic logic, refined below
+                        nom: c.nomPrenom || 'Inconnu',
+                        email: c.email || 'N/A',
+                        phone: c.numeroTelephone || '—',
+                        statut: c.statut,
+                        submittedAt: c.dateCreationCandidature || c.dateSoumission || null,
+                        programme: c.nomEntreprise || '—',
+                        round: '—',
+                        history: [],
+                        documents: (c.documents && c.documents.length > 0) ? c.documents.map((d: string) => ({ name: d.split('/').pop() || 'Document', size: '—' })) : [],
+                        formAnswers,
+                        noteInterne: c.commentairesAdmin || null,
+                        motifRejet: c.motifRejet || null,
+                        cvUrl: c.cvUrl || null
                     };
-                }
-                return { data: mappedData };
+                });
+
+              
+                const finalData = mappedData.map(c => {
+                   if (filters?.type) c.type = filters.type;
+                   return c;
+                });
+
+                return { data: finalData };
             })
         );
     }
@@ -110,7 +122,7 @@ export class CandidatureService {
     }
 
     create(data: Partial<Candidature>): Observable<Candidature> {
-        return this.http.post<Candidature>(this.baseUrl, data);
+        return this.http.post<Candidature>(`${this.baseUrl}/submit`, data);
     }
 
     updateStatut(id: string, body: {
@@ -121,12 +133,8 @@ export class CandidatureService {
         compteRenduEntretien?: string;
         noteEntretien?: number;
     }): Observable<Candidature> {
-        let backendStatut: string = String(body.statut).toUpperCase();
-        if (backendStatut === 'REJETE') backendStatut = 'REFUSE';
-        if (backendStatut === 'EN_REVISION') backendStatut = 'EN_COURS_EVALUATION';
-
         return this.http.put<Candidature>(`${this.baseUrl}/admin/${id}/status`, {
-            statut: backendStatut,
+            statut: body.statut,
             commentaires: body.noteInterne || body.motifRejet || ''
         });
     }
@@ -136,18 +144,31 @@ export class CandidatureService {
     }
 
     reject(id: string, note?: string): Observable<Candidature> {
-        return this.http.put<Candidature>(`${this.baseUrl}/admin/${id}/status`, { statut: 'REFUSE', commentaires: note || '' });
+        return this.http.put<Candidature>(`${this.baseUrl}/admin/${id}/status`, { statut: 'REJETE', commentaires: note || '' });
     }
 
     addNote(id: string, note: string): Observable<Candidature> {
-        return this.http.put<Candidature>(`${this.baseUrl}/${id}/notes`, { note });
+       
+        return this.http.put<Candidature>(`${this.baseUrl}/admin/${id}/status`, { commentaires: note });
     }
 
     getHistorique(id: string): Observable<CandidatureLog[]> {
         return this.http.get<CandidatureLog[]>(`${this.baseUrl}/${id}/historique`);
     }
 
+    getStatistics(): Observable<Record<string, number>> {
+        return this.http.get<Record<string, number>>(`${this.baseUrl}/admin/statistics`);
+    }
+
     delete(id: string): Observable<void> {
         return this.http.delete<void>(`${this.baseUrl}/admin/${id}`);
+    }
+
+    cleanupAnonymous(): Observable<any> {
+        return this.http.delete<any>(`${this.baseUrl}/admin/cleanup-anonymous`);
+    }
+
+    migrateLegacy(): Observable<any> {
+        return this.http.post<any>(`${this.baseUrl}/admin/migrate-legacy`, {});
     }
 }

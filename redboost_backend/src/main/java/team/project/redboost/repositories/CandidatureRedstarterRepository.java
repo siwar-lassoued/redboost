@@ -4,9 +4,11 @@ package team.project.redboost.repositories;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 import team.project.redboost.entities.CandidatureRedstarter;
 
 import java.time.LocalDateTime;
@@ -15,9 +17,16 @@ import java.util.List;
 @Repository
 public interface CandidatureRedstarterRepository extends JpaRepository<CandidatureRedstarter, Long> {
     
+    Page<CandidatureRedstarter> findAll(Pageable pageable);
+
     // Find by status
     Page<CandidatureRedstarter> findByStatut(CandidatureRedstarter.StatutCandidature statut, Pageable pageable);
     
+    // Find by type (via FormTemplate profile_type)
+    @Query("SELECT c FROM CandidatureRedstarter c " +
+           "WHERE c.formTemplateId IN (SELECT t.id FROM FormTemplateEntity t WHERE UPPER(t.profileType) = UPPER(:type))")
+    Page<CandidatureRedstarter> findByProfileType(@Param("type") String type, Pageable pageable);
+
     // Find by email
     List<CandidatureRedstarter> findByEmail(String email);
     
@@ -39,6 +48,20 @@ public interface CandidatureRedstarterRepository extends JpaRepository<Candidatu
     @Query("SELECT c FROM CandidatureRedstarter c WHERE LOWER(c.nomEntreprise) LIKE LOWER(CONCAT('%', :searchTerm, '%'))")
     Page<CandidatureRedstarter> searchByNomEntreprise(@Param("searchTerm") String searchTerm, Pageable pageable);
     
-    // Find recent candidatures
-    Page<CandidatureRedstarter> findAllByOrderByDateCreationCandidatureDesc(Pageable pageable);
+    // Count by profile type (via FormTemplate profile_type)
+    @Query("SELECT COUNT(c) FROM CandidatureRedstarter c " +
+           "WHERE c.formTemplateId IN (SELECT t.id FROM FormTemplateEntity t WHERE UPPER(t.profileType) = UPPER(:type))")
+    long countByProfileType(@Param("type") String type);
+    
+    // Count spontaneous (template id is null)
+    @Query("SELECT COUNT(c) FROM CandidatureRedstarter c WHERE c.formTemplateId IS NULL")
+    long countSpontanees();
+
+    @Transactional
+    @Modifying
+    @Query("DELETE FROM CandidatureRedstarter c WHERE c.nomPrenom IS NULL OR c.nomPrenom = '' OR c.email IS NULL OR c.email = ''")
+    void deleteAnonymous();
+
+    @Query("SELECT c FROM CandidatureRedstarter c WHERE c.formTemplateId IS NULL")
+    Page<CandidatureRedstarter> findSpontanees(Pageable pageable);
 }

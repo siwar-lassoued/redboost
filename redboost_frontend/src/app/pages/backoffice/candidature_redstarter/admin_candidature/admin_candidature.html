@@ -11,6 +11,13 @@
           <lucide-icon name="fast-forward" [size]="16"></lucide-icon> Clôturer le Round
         </button>
       }
+      <button (click)="migrateLegacy()" class="btn-gradient-gray" title="Migrer les anciens statuts">
+        <lucide-icon name="refresh-cw" [size]="18"></lucide-icon>
+        <span>Migrer les statuts</span>
+      </button>
+      <button (click)="onCleanupAnonymous()" class="btn-gradient-gray">
+        <lucide-icon name="trash-2" [size]="16"></lucide-icon> Nettoyer les anonymes
+      </button>
       <button (click)="showFormLauncher.set(true)" class="btn-gradient-pink">
         <lucide-icon name="plus" [size]="18"></lucide-icon> Lancer un formulaire
       </button>
@@ -41,9 +48,10 @@
       </select>
       <select [(ngModel)]="statusFilter" (ngModelChange)="load()" class="filter-select">
         <option value="ALL">Statuts actifs (Tous)</option>
+        <option value="HISTORIQUE">Tout afficher (Historique)</option>
         <option value="EN_ATTENTE">En attente</option>
-        <option value="EN_REVISION">En révision</option>
-        <option value="ENTRETIEN">Entretien planifié</option>
+        <option value="EN_COURS_EVALUATION">En évaluation</option>
+        <option value="PRE_SELECTIONNE">Présélectionné</option>
       </select>
     </div>
   </div>
@@ -260,17 +268,12 @@
       <!-- Footer Actions -->
       <div class="modal-footer">
         @if (selected()!.statut === 'EN_ATTENTE') {
-          <button (click)="onChangeStatut('EN_REVISION')" class="btn-action btn-blue">
-            <lucide-icon name="eye" [size]="14"></lucide-icon> Ouvrir révision
+          <button (click)="onChangeStatut('EN_COURS_EVALUATION')" class="btn-action btn-blue">
+            <lucide-icon name="eye" [size]="14"></lucide-icon> Évaluer le dossier
           </button>
         }
-        @if (selected()!.statut === 'EN_ATTENTE' || selected()!.statut === 'EN_REVISION') {
-          <button (click)="onChangeStatut('ENTRETIEN')" class="btn-action btn-purple">
-            <lucide-icon name="users" [size]="14"></lucide-icon> Planifier entretien
-          </button>
-        }
-        @if (selected()!.statut !== 'PRESELECTIONNE' && selected()!.statut !== 'ACCEPTE' && selected()!.statut !== 'REJETE') {
-          <button (click)="onChangeStatut('PRESELECTIONNE')" class="btn-action btn-amber">
+        @if (selected()!.statut !== 'PRE_SELECTIONNE' && selected()!.statut !== 'ACCEPTE' && selected()!.statut !== 'REJETE') {
+          <button (click)="onChangeStatut('PRE_SELECTIONNE')" class="btn-action btn-amber">
             <lucide-icon name="star" [size]="14"></lucide-icon> Pré-sélectionner
           </button>
         }

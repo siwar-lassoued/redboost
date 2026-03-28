@@ -1,12 +1,7 @@
-// src/environments/environment.ts
 export const environment = {
     production: false,
-    apiUploads:'https://redboost.tn/api',
-    //apiUploads:'https://redboost.tn/api',
-
-    //apiUrl: 'https://redboost.tn/api',
     apiUrl: 'https://redboost.tn/api',
-
+    apiUploads: 'https://redboost.tn/api',
     firebaseConfig: {
         apiKey: 'AIzaSyBfq3z--mKyHOSGk6yZ3xbkLjAVF51vLaA',
         authDomain: 'redstart-53910.firebaseapp.com',

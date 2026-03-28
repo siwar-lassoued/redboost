@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import team.project.redboost.dto.CandidatureRedstarterDTO;
 import team.project.redboost.entities.CandidatureRedstarter;
+import team.project.redboost.entities.CandidatureRedstarter.StatutCandidature;
 import team.project.redboost.repositories.CandidatureRedstarterRepository;
 
 import java.io.IOException;
@@ -18,11 +19,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
-import java.util.UUID;
+import java.util.*;
 
 import team.project.redboost.entities.CandidatureLog;
 import team.project.redboost.entities.Role;
@@ -40,6 +37,15 @@ public class CandidatureRedstarterService {
     private final UserRepository userRepository;
     private final CandidatureLogRepository logRepository;
     private static final String UPLOAD_DIR = "uploads/candidatures/";
+
+    // ── Transition rules (matching pfe-project) ──────────────────────
+    private static final Map<StatutCandidature, Set<StatutCandidature>> ALLOWED_TRANSITIONS = Map.of(
+        StatutCandidature.EN_ATTENTE,          Set.of(StatutCandidature.EN_ATTENTE, StatutCandidature.EN_COURS_EVALUATION, StatutCandidature.PRE_SELECTIONNE, StatutCandidature.ACCEPTE, StatutCandidature.REJETE),
+        StatutCandidature.EN_COURS_EVALUATION, Set.of(StatutCandidature.EN_COURS_EVALUATION, StatutCandidature.PRE_SELECTIONNE, StatutCandidature.ACCEPTE, StatutCandidature.REJETE),
+        StatutCandidature.PRE_SELECTIONNE,      Set.of(StatutCandidature.PRE_SELECTIONNE, StatutCandidature.EN_COURS_EVALUATION, StatutCandidature.ACCEPTE, StatutCandidature.REJETE),
+        StatutCandidature.ACCEPTE,             Set.of(StatutCandidature.ACCEPTE, StatutCandidature.EN_COURS_EVALUATION, StatutCandidature.PRE_SELECTIONNE, StatutCandidature.REJETE),
+        StatutCandidature.REJETE,              Set.of(StatutCandidature.REJETE, StatutCandidature.EN_COURS_EVALUATION, StatutCandidature.PRE_SELECTIONNE, StatutCandidature.ACCEPTE)
+    );
     
     @Transactional
     public CandidatureRedstarter submitCandidature(CandidatureRedstarterDTO dto) throws IOException {
@@ -62,7 +68,8 @@ public class CandidatureRedstarterService {
         logAction(savedCandidature.getId(), "Candidature reçue", null, CandidatureRedstarter.StatutCandidature.EN_ATTENTE.name(),
                 null, "Système", "Via formulaire en ligne");
         
-        // Notify admins
+        // Notify admins - Disabled as requested
+        /*
         try {
             List<User> admins = userRepository.findByRoleIn(Arrays.asList(Role.ADMIN, Role.SUPERADMIN));
             String message = "Nouvelle candidature soumise par " + savedCandidature.getNomPrenom() + " (" + savedCandidature.getNomEntreprise() + ")";
@@ -77,32 +84,63 @@ public class CandidatureRedstarterService {
         } catch (Exception e) {
             log.error("Failed to send notifications for new candidature", e);
         }
+        */
         
         return savedCandidature;
     }
     
-    public Page<CandidatureRedstarter> getAllCandidatures(Pageable pageable) {
-        log.info("Fetching all candidatures with pagination");
-        return candidatureRepository.findAll(pageable);
+    @Transactional(readOnly = true)
+    public Page<team.project.redboost.dto.CandidatureRedstarterResponseDTO> getAllCandidatures(Pageable pageable, String type) {
+        log.info("Fetching candidatures with pagination, type: {}", type);
+        
+        Page<CandidatureRedstarter> entities;
+        if (type != null && !type.isEmpty()) {
+            if (type.equalsIgnoreCase("spontanees")) {
+                entities = candidatureRepository.findSpontanees(pageable);
+            } else {
+                String profileType = type;
+                if (type.equalsIgnoreCase("coaches")) profileType = "COACH";
+                else if (type.equalsIgnoreCase("entrepreneurs")) profileType = "ENTREPRENEUR";
+                
+                entities = candidatureRepository.findByProfileType(profileType, pageable);
+            }
+        } else {
+            entities = candidatureRepository.findAll(pageable);
+        }
+        
+        return entities.map(this::mapToResponseDto);
     }
     
-    public Page<CandidatureRedstarter> getCandidaturesByStatut(CandidatureRedstarter.StatutCandidature statut, Pageable pageable) {
+    @Transactional(readOnly = true)
+    public Page<team.project.redboost.dto.CandidatureRedstarterResponseDTO> getCandidaturesByStatut(CandidatureRedstarter.StatutCandidature statut, Pageable pageable) {
         log.info("Fetching candidatures with status: {}", statut);
-        return candidatureRepository.findByStatut(statut, pageable);
+        return candidatureRepository.findByStatut(statut, pageable).map(this::mapToResponseDto);
     }
     
-    public CandidatureRedstarter getCandidatureById(Long id) {
+    @Transactional(readOnly = true)
+    public team.project.redboost.dto.CandidatureRedstarterResponseDTO getCandidatureById(Long id) {
         log.info("Fetching candidature with ID: {}", id);
-        return candidatureRepository.findById(id)
+        CandidatureRedstarter candidature = candidatureRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Candidature not found with ID: " + id));
+        return mapToResponseDto(candidature);
     }
     
     @Transactional
-    public CandidatureRedstarter updateStatut(Long id, CandidatureRedstarter.StatutCandidature newStatut, String commentaires) {
+    public team.project.redboost.dto.CandidatureRedstarterResponseDTO updateStatut(Long id, StatutCandidature newStatut, String commentaires) {
         log.info("Updating status of candidature ID: {} to {}", id, newStatut);
         
-        CandidatureRedstarter candidature = getCandidatureById(id);
-        CandidatureRedstarter.StatutCandidature oldStatut = candidature.getStatut();
+        CandidatureRedstarter candidature = candidatureRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Candidature not found with ID: " + id));
+        StatutCandidature oldStatut = candidature.getStatut();
+
+        // Validate transition
+        Set<StatutCandidature> allowed = ALLOWED_TRANSITIONS.getOrDefault(oldStatut, Set.of());
+        if (!allowed.contains(newStatut)) {
+            throw new RuntimeException(
+                "Transition non autorisée : " + oldStatut + " → " + newStatut +
+                ". Transitions possibles : " + allowed);
+        }
+
         candidature.setStatut(newStatut);
         
         if (commentaires != null && !commentaires.isEmpty()) {
@@ -111,25 +149,70 @@ public class CandidatureRedstarterService {
         
         CandidatureRedstarter updated = candidatureRepository.save(candidature);
         
-        logAction(id, "Changement de statut", oldStatut.name(), newStatut.name(),
+        // Status-specific logging
+        String action;
+        switch (newStatut) {
+            case EN_COURS_EVALUATION: action = "En cours d'évaluation"; break;
+            case PRE_SELECTIONNE:      action = "Présélectionné"; break;
+            case ACCEPTE:             action = "Candidature acceptée"; break;
+            case REJETE:              action = "Candidature rejetée"; break;
+            default:                  action = "Changement de statut"; break;
+        }
+        logAction(id, action, oldStatut.name(), newStatut.name(),
                 null, "Admin", commentaires);
                 
-        return updated;
+        return mapToResponseDto(updated);
     }
     
-    public Page<CandidatureRedstarter> searchCandidatures(String searchTerm, Pageable pageable) {
+    @Transactional(readOnly = true)
+    public Page<team.project.redboost.dto.CandidatureRedstarterResponseDTO> searchCandidatures(String searchTerm, Pageable pageable) {
         log.info("Searching candidatures with term: {}", searchTerm);
-        return candidatureRepository.searchByNomEntreprise(searchTerm, pageable);
+        return candidatureRepository.searchByNomEntreprise(searchTerm, pageable).map(this::mapToResponseDto);
     }
     
+    @Transactional(readOnly = true)
     public long countByStatut(CandidatureRedstarter.StatutCandidature statut) {
-        return candidatureRepository.countByStatut(statut);
+        if (statut == null) return candidatureRepository.count();
+        
+        long count = candidatureRepository.countByStatut(statut);
+        
+        // Aggregate legacy counts
+        if (statut == CandidatureRedstarter.StatutCandidature.REJETE) {
+            count += candidatureRepository.countByStatut(CandidatureRedstarter.StatutCandidature.REFUSE);
+        } else if (statut == CandidatureRedstarter.StatutCandidature.EN_COURS_EVALUATION) {
+            count += candidatureRepository.countByStatut(CandidatureRedstarter.StatutCandidature.EN_REVISION);
+        } else if (statut == CandidatureRedstarter.StatutCandidature.PRE_SELECTIONNE) {
+            count += candidatureRepository.countByStatut(CandidatureRedstarter.StatutCandidature.PRESELECTIONNE);
+        }
+        
+        return count;
+    }
+    
+    @Transactional(readOnly = true)
+    public long countByType(String type) {
+        if (type == null) return candidatureRepository.count();
+        
+        if (type.equalsIgnoreCase("spontanees")) {
+            return candidatureRepository.countSpontanees();
+        }
+        
+        String profileType = type;
+        if (type.equalsIgnoreCase("coaches")) profileType = "COACH";
+        else if (type.equalsIgnoreCase("entrepreneurs")) profileType = "ENTREPRENEUR";
+        
+        return candidatureRepository.countByProfileType(profileType);
+    }
+    
+    @Transactional(readOnly = true)
+    public long countSpontanees() {
+        return candidatureRepository.countSpontanees();
     }
     
     @Transactional
     public void deleteCandidature(Long id) {
         log.info("Deleting candidature with ID: {}", id);
-        CandidatureRedstarter candidature = getCandidatureById(id);
+        CandidatureRedstarter candidature = candidatureRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Candidature not found with ID: " + id));
         
         // Delete associated documents
         if (candidature.getDocuments() != null) {
@@ -141,9 +224,97 @@ public class CandidatureRedstarterService {
         
         candidatureRepository.deleteById(id);
     }
+
+    @Transactional
+    public void migrateLegacyStatuses() {
+        log.info("Starting migration of legacy candidature statuses");
+        
+        List<CandidatureRedstarter> all = candidatureRepository.findAll();
+        int migratedCount = 0;
+        
+        for (CandidatureRedstarter c : all) {
+            StatutCandidature current = c.getStatut();
+            StatutCandidature target = null;
+            
+            if (current == StatutCandidature.REFUSE) target = StatutCandidature.REJETE;
+            else if (current == StatutCandidature.EN_REVISION) target = StatutCandidature.EN_COURS_EVALUATION;
+            else if (current == StatutCandidature.PRESELECTIONNE) target = StatutCandidature.PRE_SELECTIONNE;
+            
+            if (target != null) {
+                log.info("Migrating candidature {} from {} to {}", c.getId(), current, target);
+                c.setStatut(target);
+                candidatureRepository.save(c);
+                migratedCount++;
+            }
+        }
+        
+        log.info("Migration finished. Total migrated: {}", migratedCount);
+    }
+
+    @Transactional
+    public void cleanupAnonymousCandidatures() {
+        log.info("Cleaning up anonymous candidatures");
+        candidatureRepository.deleteAnonymous();
+    }
     
     public List<CandidatureLog> getHistorique(Long candidatureId) {
         return logRepository.findByCandidatureIdOrderByCreatedAtDesc(candidatureId);
+    }
+    
+    private team.project.redboost.dto.CandidatureRedstarterResponseDTO mapToResponseDto(CandidatureRedstarter entity) {
+        // Explicitly initialize lazy collections while in transaction
+        if (entity.getDocuments() != null) entity.getDocuments().size();
+        if (entity.getBesoinsAccompagnement() != null) entity.getBesoinsAccompagnement().size();
+        if (entity.getBesoinsFormation() != null) entity.getBesoinsFormation().size();
+
+        CandidatureRedstarter.StatutCandidature currentStatut = entity.getStatut();
+        // Map legacy statuses to new ones for the UI
+        if (currentStatut == CandidatureRedstarter.StatutCandidature.REFUSE) 
+            currentStatut = CandidatureRedstarter.StatutCandidature.REJETE;
+        else if (currentStatut == CandidatureRedstarter.StatutCandidature.EN_REVISION) 
+            currentStatut = CandidatureRedstarter.StatutCandidature.EN_COURS_EVALUATION;
+        else if (currentStatut == CandidatureRedstarter.StatutCandidature.PRESELECTIONNE) 
+            currentStatut = CandidatureRedstarter.StatutCandidature.PRE_SELECTIONNE;
+        
+        return team.project.redboost.dto.CandidatureRedstarterResponseDTO.builder()
+            .id(entity.getId())
+            .nomPrenom(entity.getNomPrenom())
+            .genre(entity.getGenre())
+            .age(entity.getAge())
+            .numeroTelephone(entity.getNumeroTelephone())
+            .email(entity.getEmail())
+            .roleEntreprise(entity.getRoleEntreprise())
+            .nomEntreprise(entity.getNomEntreprise())
+            .entrepriseEst(entity.getEntrepriseEst())
+            .dateCreation(entity.getDateCreation())
+            .regionBasee(entity.getRegionBasee())
+            .breveDescription(entity.getBreveDescription())
+            .lienReseauxSociaux(entity.getLienReseauxSociaux())
+            .labelStartupAct(entity.getLabelStartupAct())
+            .dateObtentionLabel(entity.getDateObtentionLabel())
+            .phaseMaturite(entity.getPhaseMaturite())
+            .marchePersonnasCibles(entity.getMarchePersonnasCibles())
+            .composanteInnovation(entity.getComposanteInnovation())
+            .impactEnvironnemental(entity.getImpactEnvironnemental())
+            .impactSocial(entity.getImpactSocial())
+            .viabiliteCommerciale(entity.getViabiliteCommerciale())
+            .valeurAjoutee(entity.getValeurAjoutee())
+            .documents(new ArrayList<>(entity.getDocuments()))
+            .nombreCoFondateurs(entity.getNombreCoFondateurs())
+            .impliquesGestion(entity.getImpliquesGestion())
+            .nombreImpliquesGestion(entity.getNombreImpliquesGestion())
+            .experienceEquipeFondatrice(entity.getExperienceEquipeFondatrice())
+            .nombreEmploisCrees(entity.getNombreEmploisCrees())
+            .besoinsAccompagnement(new ArrayList<>(entity.getBesoinsAccompagnement()))
+            .beneficieAccompagnement(entity.getBeneficieAccompagnement())
+            .detailsAccompagnement(entity.getDetailsAccompagnement())
+            .besoinsFormation(new ArrayList<>(entity.getBesoinsFormation()))
+            .formTemplateId(entity.getFormTemplateId())
+            .dynamicAnswers(entity.getDynamicAnswers())
+            .dateCreationCandidature(entity.getDateCreationCandidature())
+            .statut(currentStatut != null ? currentStatut.name() : null)
+            .commentairesAdmin(entity.getCommentairesAdmin())
+            .build();
     }
     
     private void logAction(Long candidatureId, String action, String statutAvant,
@@ -199,10 +370,14 @@ public class CandidatureRedstarterService {
         candidature.setNombreEmploisCrees(dto.getNombreEmploisCrees());
         
         // Step 5
-        candidature.setBesoinsAccompagnement(dto.getBesoinsAccompagnement());
+        candidature.setBesoinsAccompagnement(dto.getBesoinsAccompagnement() != null ? dto.getBesoinsAccompagnement() : new ArrayList<>());
         candidature.setBeneficieAccompagnement(dto.getBeneficieAccompagnement());
         candidature.setDetailsAccompagnement(dto.getDetailsAccompagnement());
         candidature.setBesoinsFormation(dto.getBesoinsFormation() != null ? dto.getBesoinsFormation() : new ArrayList<>());
+        
+        // Dynamic Fields
+        candidature.setFormTemplateId(dto.getFormTemplateId());
+        candidature.setDynamicAnswers(dto.getDynamicAnswers());
         
         return candidature;
     }
