@@ -26,13 +26,13 @@ export class AdminHistoriqueComponent implements OnInit {
   showRejectModal = signal(false);
   motifRejet      = '';
 
-  orderedSteps: CandidatureStatus[] = ['EN_ATTENTE','EN_REVISION','PRESELECTIONNE','ACCEPTE'];
+  orderedSteps: CandidatureStatus[] = ['EN_ATTENTE', 'EN_COURS_EVALUATION', 'PRE_SELECTIONNE', 'ACCEPTE'];
 
   // KPIs — updated via statistics
   kpiTotal       = signal(0);
   kpiEnAttente   = signal(0);
-  kpiEnRevision  = signal(0);
-  kpiPreselected = signal(0);
+  kpiEnEvaluation = signal(0);
+  kpiPreselected  = signal(0);
   kpiAccepted    = signal(0);
   kpiRejected    = signal(0);
 
@@ -54,8 +54,8 @@ export class AdminHistoriqueComponent implements OnInit {
     this.svc.getStatistics().subscribe(stats => {
       this.kpiTotal.set(stats['total'] || 0);
       this.kpiEnAttente.set(stats['en_attente'] || 0);
-      this.kpiEnRevision.set(stats['en_revision'] || 0);
-      this.kpiPreselected.set(stats['preselectionne'] || 0);
+      this.kpiEnEvaluation.set(stats['en_cours_evaluation'] || 0);
+      this.kpiPreselected.set(stats['pre_selectionne'] || 0);
       this.kpiAccepted.set(stats['accepte'] || 0);
       this.kpiRejected.set(stats['rejete'] || 0);
     });
@@ -70,8 +70,8 @@ export class AdminHistoriqueComponent implements OnInit {
   getJourneySteps(c: Candidature): JourneyStep[] {
     const steps: JourneyStep[] = [
       { statut:'EN_ATTENTE', label:'Soumission', description:'Candidature reçue via le formulaire', reached:true, current:false, date:c.submittedAt, note:null },
-      { statut:'EN_REVISION', label:'En révision', description:'Dossier examiné par l\'équipe', reached:false, current:false, date:null, note:null },
-      { statut:'PRESELECTIONNE', label:'Pré-sélection', description:'Présélection pour le round suivant', reached:false, current:false, date:null, note:null },
+      { statut:'EN_COURS_EVALUATION', label:'En évaluation', description:'Dossier examiné par l\'équipe', reached:false, current:false, date:null, note:null },
+      { statut:'PRE_SELECTIONNE', label:'Pré-sélection', description:'Présélection pour le round suivant', reached:false, current:false, date:null, note:null },
     ];
     const idx = this.orderedSteps.indexOf(c.statut as CandidatureStatus);
     for (let i = 0; i < steps.length; i++) {
@@ -100,8 +100,8 @@ export class AdminHistoriqueComponent implements OnInit {
 
   getStepColor(step: string): string {
     const m: Record<string,string> = {
-      EN_ATTENTE:'#9CA3AF', EN_REVISION:'#3AAFFF',
-      PRESELECTIONNE:'#FF6F00', ACCEPTE:'#11998E', REJETE:'#C0392B'
+      EN_ATTENTE:'#9CA3AF', EN_COURS_EVALUATION:'#3AAFFF',
+      PRE_SELECTIONNE:'#FF6F00', ACCEPTE:'#11998E', REJETE:'#C0392B'
     };
     return m[step] || '#9CA3AF';
   }

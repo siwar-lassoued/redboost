@@ -40,11 +40,11 @@ public class CandidatureRedstarterService {
 
     // ── Transition rules (matching pfe-project) ──────────────────────
     private static final Map<StatutCandidature, Set<StatutCandidature>> ALLOWED_TRANSITIONS = Map.of(
-        StatutCandidature.EN_ATTENTE,      Set.of(StatutCandidature.EN_ATTENTE, StatutCandidature.EN_REVISION, StatutCandidature.PRESELECTIONNE, StatutCandidature.ACCEPTE, StatutCandidature.REJETE),
-        StatutCandidature.EN_REVISION,     Set.of(StatutCandidature.EN_REVISION, StatutCandidature.PRESELECTIONNE, StatutCandidature.ACCEPTE, StatutCandidature.REJETE),
-        StatutCandidature.PRESELECTIONNE,  Set.of(StatutCandidature.PRESELECTIONNE, StatutCandidature.EN_REVISION, StatutCandidature.ACCEPTE, StatutCandidature.REJETE),
-        StatutCandidature.ACCEPTE,         Set.of(StatutCandidature.ACCEPTE, StatutCandidature.EN_REVISION, StatutCandidature.PRESELECTIONNE, StatutCandidature.REJETE),
-        StatutCandidature.REJETE,          Set.of(StatutCandidature.REJETE, StatutCandidature.EN_REVISION, StatutCandidature.PRESELECTIONNE, StatutCandidature.ACCEPTE)
+        StatutCandidature.EN_ATTENTE,          Set.of(StatutCandidature.EN_ATTENTE, StatutCandidature.EN_COURS_EVALUATION, StatutCandidature.PRE_SELECTIONNE, StatutCandidature.ACCEPTE, StatutCandidature.REJETE),
+        StatutCandidature.EN_COURS_EVALUATION, Set.of(StatutCandidature.EN_COURS_EVALUATION, StatutCandidature.PRE_SELECTIONNE, StatutCandidature.ACCEPTE, StatutCandidature.REJETE),
+        StatutCandidature.PRE_SELECTIONNE,      Set.of(StatutCandidature.PRE_SELECTIONNE, StatutCandidature.EN_COURS_EVALUATION, StatutCandidature.ACCEPTE, StatutCandidature.REJETE),
+        StatutCandidature.ACCEPTE,             Set.of(StatutCandidature.ACCEPTE, StatutCandidature.EN_COURS_EVALUATION, StatutCandidature.PRE_SELECTIONNE, StatutCandidature.REJETE),
+        StatutCandidature.REJETE,              Set.of(StatutCandidature.REJETE, StatutCandidature.EN_COURS_EVALUATION, StatutCandidature.PRE_SELECTIONNE, StatutCandidature.ACCEPTE)
     );
     
     @Transactional
@@ -152,11 +152,11 @@ public class CandidatureRedstarterService {
         // Status-specific logging
         String action;
         switch (newStatut) {
-            case EN_REVISION:     action = "Dossier ouvert en révision"; break;
-            case PRESELECTIONNE:  action = "Présélectionné"; break;
-            case ACCEPTE:         action = "Candidature acceptée"; break;
-            case REJETE:          action = "Candidature rejetée"; break;
-            default:              action = "Changement de statut"; break;
+            case EN_COURS_EVALUATION: action = "En cours d'évaluation"; break;
+            case PRE_SELECTIONNE:      action = "Présélectionné"; break;
+            case ACCEPTE:             action = "Candidature acceptée"; break;
+            case REJETE:              action = "Candidature rejetée"; break;
+            default:                  action = "Changement de statut"; break;
         }
         logAction(id, action, oldStatut.name(), newStatut.name(),
                 null, "Admin", commentaires);
