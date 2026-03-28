@@ -95,11 +95,15 @@ public class CandidatureRedstarterService {
         
         Page<CandidatureRedstarter> entities;
         if (type != null && !type.isEmpty()) {
-            String profileType = type;
-            if (type.equalsIgnoreCase("coaches")) profileType = "COACH";
-            else if (type.equalsIgnoreCase("entrepreneurs")) profileType = "ENTREPRENEUR";
-            else if (type.equalsIgnoreCase("spontanees")) entities = candidatureRepository.findSpontanees(pageable);
-            else entities = candidatureRepository.findByProfileType(profileType, pageable);
+            if (type.equalsIgnoreCase("spontanees")) {
+                entities = candidatureRepository.findSpontanees(pageable);
+            } else {
+                String profileType = type;
+                if (type.equalsIgnoreCase("coaches")) profileType = "COACH";
+                else if (type.equalsIgnoreCase("entrepreneurs")) profileType = "ENTREPRENEUR";
+                
+                entities = candidatureRepository.findByProfileType(profileType, pageable);
+            }
         } else {
             entities = candidatureRepository.findAll(pageable);
         }
@@ -174,12 +178,22 @@ public class CandidatureRedstarterService {
     
     @Transactional(readOnly = true)
     public long countByType(String type) {
+        if (type == null) return candidatureRepository.count();
+        
+        if (type.equalsIgnoreCase("spontanees")) {
+            return candidatureRepository.countSpontanees();
+        }
+        
         String profileType = type;
         if (type.equalsIgnoreCase("coaches")) profileType = "COACH";
         else if (type.equalsIgnoreCase("entrepreneurs")) profileType = "ENTREPRENEUR";
         
-        // We'll need a new repository method for this if we want it to be efficient
         return candidatureRepository.countByProfileType(profileType);
+    }
+    
+    @Transactional(readOnly = true)
+    public long countSpontanees() {
+        return candidatureRepository.countSpontanees();
     }
     
     @Transactional

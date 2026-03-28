@@ -48,11 +48,14 @@ public interface CandidatureRedstarterRepository extends JpaRepository<Candidatu
     @Query("SELECT c FROM CandidatureRedstarter c WHERE LOWER(c.nomEntreprise) LIKE LOWER(CONCAT('%', :searchTerm, '%'))")
     Page<CandidatureRedstarter> searchByNomEntreprise(@Param("searchTerm") String searchTerm, Pageable pageable);
     
-    // Find recent candidatures
+    // Count by profile type (via FormTemplate profile_type)
     @Query("SELECT COUNT(c) FROM CandidatureRedstarter c " +
-           "JOIN FormTemplateEntity t ON c.formTemplateId = t.id " +
-           "WHERE UPPER(t.profileType) = UPPER(:type)")
+           "WHERE c.formTemplateId IN (SELECT t.id FROM FormTemplateEntity t WHERE UPPER(t.profileType) = UPPER(:type))")
     long countByProfileType(@Param("type") String type);
+    
+    // Count spontaneous (template id is null)
+    @Query("SELECT COUNT(c) FROM CandidatureRedstarter c WHERE c.formTemplateId IS NULL")
+    long countSpontanees();
 
     @Transactional
     @Modifying

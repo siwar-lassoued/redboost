@@ -210,10 +210,10 @@ public class CandidatureRedstarterController {
     public ResponseEntity<Map<String, Long>> getStatistics() {
         try {
             Map<String, Long> stats = new HashMap<>();
-            stats.put("total", candidatureService.countByStatut(null));
+            stats.put("total", candidatureService.countByType(null));
             stats.put("coaches", candidatureService.countByType("coaches"));
             stats.put("entrepreneurs", candidatureService.countByType("entrepreneurs"));
-            stats.put("spontanees", 0L); // Placeholder for now
+            stats.put("spontanees", candidatureService.countByType("spontanees"));
             
             stats.put("en_attente", candidatureService.countByStatut(CandidatureRedstarter.StatutCandidature.EN_ATTENTE));
             stats.put("en_revision", candidatureService.countByStatut(CandidatureRedstarter.StatutCandidature.EN_REVISION));

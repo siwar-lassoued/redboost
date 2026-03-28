@@ -61,48 +61,58 @@ export class CandidatureService {
                     filtered = filtered.filter((c: any) => c.statut === filters.statut);
                 }
 
-                const mappedData: Candidature[] = filtered.map((c: any) => ({
-                    id: c.id,
-                    type: filters?.type || 'entrepreneurs',
-                    nom: c.nomPrenom || 'Inconnu',
-                    email: c.email || 'N/A',
-                    phone: c.numeroTelephone || '—',
-                    statut: c.statut,
-                    submittedAt: c.dateCreationCandidature || c.dateSoumission || null,
-                    programme: c.programme?.nom || null,
-                    round: '—',
-                    history: [],
-                    documents: (c.documents && c.documents.length > 0) ? c.documents.map((d: string) => ({ name: d.split('/').pop() || 'Document', size: '—' })) : [],
-                    formAnswers: [
-                        { questionId: 1, question: 'Nom de l\'entreprise', answer: c.nomEntreprise, type: 'text-court' as const },
-                        { questionId: 2, question: 'Secteur d\'activité', answer: c.secteurActivite, type: 'text-court' as const },
-                        { questionId: 3, question: 'Stade d\'avancement', answer: c.stadeAvancement, type: 'text-court' as const },
-                        { questionId: 4, question: 'Brève description', answer: c.breveDescription, type: 'text-long' as const },
-                        { questionId: 5, question: 'Composante innovation', answer: c.composanteInnovation, type: 'text-long' as const },
-                        { questionId: 6, question: 'Chiffre d\'affaires', answer: c.chiffreAffaires, type: 'text-court' as const },
-                        { questionId: 7, question: 'Site Web', answer: c.lienWebsite, type: 'text-court' as const },
-                        { questionId: 8, question: 'Profil LinkedIn', answer: c.lienLinkedin, type: 'text-court' as const }
-                    ].filter(a => a.answer != null && a.answer !== ''),
-                    noteInterne: c.commentairesAdmin || c.noteInterne || null,
-                    motifRejet: c.motifRejet || null,
-                    dateEntretien: c.dateEntretien || null,
-                    compteRenduEntretien: c.compteRenduEntretien || null,
-                    noteEntretien: c.noteEntretien || null,
-                    dateAcceptation: c.dateAcceptation || null,
-                    cvUrl: c.cvUrl || null,
-                    lettreUrl: c.lettreUrl || null,
-                }));
+                const mappedData: Candidature[] = items.map((c: any) => {
+                    let formAnswers: any[] = [];
+                    try {
+                        if (c.dynamicAnswers) {
+                            const parsed = JSON.parse(c.dynamicAnswers);
+                            formAnswers = Object.entries(parsed).map(([q, a], idx) => ({
+                                questionId: idx,
+                                question: q,
+                                answer: a,
+                                type: (Array.isArray(a) ? 'qcm' : typeof a === 'string' && a.length > 50 ? 'text-long' : 'text-court') as any
+                            }));
+                        }
+                    } catch (e) {
+                         console.error('Error parsing dynamicAnswers', e);
+                    }
 
-                if (filters?.search) {
-                    const s = filters.search.toLowerCase();
+                    // Fallback to legacy fields if dynamicAnswers is empty
+                    if (formAnswers.length === 0) {
+                        formAnswers = [
+                            { questionId: 1, question: 'Nom de l\'entreprise', answer: c.nomEntreprise, type: 'text-court' as const },
+                            { questionId: 2, question: 'Brève description', answer: c.breveDescription, type: 'text-long' as const },
+                            { questionId: 3, question: 'Phase de maturité', answer: c.phaseMaturite, type: 'text-court' as const },
+                            { questionId: 4, question: 'Impact Social', answer: c.impactSocial, type: 'text-long' as const }
+                        ].filter(a => !!a.answer);
+                    }
+
                     return {
-                        data: mappedData.filter(c =>
-                            c.nom.toLowerCase().includes(s) ||
-                            c.email.toLowerCase().includes(s)
-                        )
+                        id: c.id,
+                        type: c.formTemplateId ? (c.statut === 'COACH' ? 'coaches' : 'entrepreneurs') : 'spontanees', // Basic logic, refined below
+                        nom: c.nomPrenom || 'Inconnu',
+                        email: c.email || 'N/A',
+                        phone: c.numeroTelephone || '—',
+                        statut: c.statut,
+                        submittedAt: c.dateCreationCandidature || c.dateSoumission || null,
+                        programme: c.nomEntreprise || '—',
+                        round: '—',
+                        history: [],
+                        documents: (c.documents && c.documents.length > 0) ? c.documents.map((d: string) => ({ name: d.split('/').pop() || 'Document', size: '—' })) : [],
+                        formAnswers,
+                        noteInterne: c.commentairesAdmin || null,
+                        motifRejet: c.motifRejet || null,
+                        cvUrl: c.cvUrl || null
                     };
-                }
-                return { data: mappedData };
+                });
+
+              
+                const finalData = mappedData.map(c => {
+                   if (filters?.type) c.type = filters.type;
+                   return c;
+                });
+
+                return { data: finalData };
             })
         );
     }

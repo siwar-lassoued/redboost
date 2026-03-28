@@ -54,7 +54,7 @@ export class AdminCandidaturesComponent implements OnInit {
     this.loadAll();
   }
 
-  private readonly ACTIVE_STATUSES = ['EN_ATTENTE', 'EN_REVISION'];
+  private readonly ACTIVE_STATUSES = ['EN_ATTENTE', 'EN_REVISION', 'PRESELECTIONNE'];
 
   loadAll(): void {
     this.svc.getStatistics().subscribe(stats => {
