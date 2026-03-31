@@ -42,7 +42,8 @@ public interface ProgrammeKpiRepository extends JpaRepository<ProgrammeKpi, Long
 
     // In ProgrammeKpiRepository
     @Query("SELECT pk FROM ProgrammeKpi pk " +
-            "LEFT JOIN FETCH pk.kpi " +
+            "JOIN FETCH pk.kpi k " +
+            "LEFT JOIN FETCH k.category " +
             "WHERE pk.programmeId = :programmeId")
     List<ProgrammeKpi> findByProgrammeIdWithKpi(@Param("programmeId") Long programmeId);
 }

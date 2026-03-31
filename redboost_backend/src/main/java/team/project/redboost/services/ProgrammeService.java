@@ -265,8 +265,9 @@ public class ProgrammeService {
 
 
     public List<BackofficeKpi> getKpisDuProgramme(Long programmeId) {
-        return programmeKpiRepository.findByProgrammeId(programmeId).stream()
-                .map(pk -> kpiRepo.findById(pk.getKpiId()).orElse(null))
+        return programmeKpiRepository.findByProgrammeIdWithKpi(programmeId).stream()
+                .map(ProgrammeKpi::getKpi)
+                .filter(Objects::nonNull)
                 .toList();
     }
 

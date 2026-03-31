@@ -461,8 +461,7 @@ interface ProgrammeSimple {
 
                     <!-- in the *ngFor loop for mesActivites -->
 <div
-  *ngFor="let act of mesActivites; let i = index"
-  [id]="'activite-' + act.id"                          
+*ngFor="let act of filteredActivites; trackBy: trackByActiviteId; let i = index"  [id]="'activite-' + act.id"                          
   class="bg-white rounded-2xl shadow-sm border-t-4 overflow-hidden hover:shadow-lg transition-all"
   [style.border-top-color]="getActivityColor(i)"
   [class.ring-4]="act.id === highlightedActiviteId"   
@@ -750,7 +749,9 @@ private activiteIdFromRoute: number | null = null;
         );
     }
 
-
+trackByActiviteId(index: number, act: ActiviteDetailDTO): number {
+    return act.id;
+}
     // Add this method right after navigateToTask()
 navigateToActivity(act: ActiviteDetailDTO): void {
     const programmeId: number | undefined =
@@ -980,6 +981,17 @@ switchToTachesTab() {
              : status === 'EN_COURS' ? 'text-blue-500'
              : 'text-gray-400';
     }
+
+
+    get filteredActivites(): ActiviteDetailDTO[] {
+    return [...this.mesActivites].sort((a, b) => {
+        const dateA = a.dateDebut ? new Date(a.dateDebut).getTime() : 0;
+        const dateB = b.dateDebut ? new Date(b.dateDebut).getTime() : 0;
+        return dateB - dateA; // most recent first
+    });
+}
+
+
 
     getStatusLabel(status: string) {
         const labels: Record<string, string> = {
