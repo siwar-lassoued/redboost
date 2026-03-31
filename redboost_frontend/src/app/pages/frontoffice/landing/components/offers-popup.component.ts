@@ -30,46 +30,46 @@ import { Router } from '@angular/router';
       [(visible)]="display" 
       [modal]="true" 
       [breakpoints]="{ '960px': '75vw', '640px': '95vw' }" 
-      [style]="{ width: '50vw' }" 
+      [style]="{ width: '45vw', minWidth: '320px' }" 
       [draggable]="false" 
       [resizable]="false"
+      [dismissableMask]="true"
       styleClass="offers-dialog">
       
-      <div class="p-4" *ngIf="loading">
-        <div class="text-center py-8">
-            <i class="pi pi-spin pi-spinner text-4xl text-primary"></i>
-            <p class="mt-4 text-surface-500">Chargement des offres...</p>
+      <div class="p-6" *ngIf="loading">
+        <div class="text-center py-10">
+            <i class="pi pi-spin pi-spinner text-4xl text-primary" style="color: #ea5073"></i>
+            <p class="mt-4 text-surface-500 font-medium tracking-wide">Chargement des offres en cours...</p>
         </div>
       </div>
 
-      <div class="p-2" *ngIf="!loading && templates.length === 0">
-        <div class="bg-surface-50 dark:bg-surface-800 p-8 text-center rounded-xl border border-surface-200 dark:border-surface-700">
-            <i class="pi pi-inbox text-5xl text-surface-400 mb-4"></i>
-            <h3 class="text-xl font-bold text-surface-900 dark:text-surface-0 mb-2">Aucun appel en cours</h3>
-            <p class="text-surface-600 dark:text-surface-400">Revenez plus tard pour découvrir nos prochains programmes d'accompagnement.</p>
+      <div class="p-6" *ngIf="!loading && templates.length === 0">
+        <div class="bg-white dark:bg-surface-800 p-10 text-center rounded-2xl border border-surface-200 dark:border-surface-700 shadow-sm">
+            <i class="pi pi-inbox text-5xl text-surface-300 mb-5"></i>
+            <h3 class="text-xl font-black text-[#0a4955] dark:text-surface-0 mb-3 tracking-tight">Aucun appel en cours</h3>
+            <p class="text-surface-600 dark:text-surface-400 font-medium">Revenez plus tard pour découvrir nos prochains programmes d'accompagnement ou inscrivez-vous à notre newsletter.</p>
         </div>
       </div>
 
-      <div class="flex flex-col gap-6 p-2" *ngIf="!loading && templates.length > 0">
+      <div class="flex flex-col gap-5 p-2 md:p-4" *ngIf="!loading && templates.length > 0">
         <div *ngFor="let tpl of templates" 
-             class="offer-card group relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center p-6 border-2 rounded-2xl transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer"
-             [ngClass]="tpl.profileType === 'coach' ? 'bg-gradient-to-br from-blue-50 to-white border-blue-200 hover:border-blue-400' : 'bg-gradient-to-br from-emerald-50 to-white border-emerald-200 hover:border-emerald-400'"
+             class="offer-card relative bg-white dark:bg-surface-800 flex flex-col md:flex-row justify-between items-start md:items-center p-6 sm:p-8 border border-surface-200 dark:border-surface-700 rounded-2xl transition-all duration-300 cursor-pointer shadow-sm"
+             [style.--hover-color]="tpl.profileType === 'coach' ? '#0a4955' : (tpl.profileType === 'spontanee' ? '#475569' : '#ea5073')"
              (click)="apply(tpl)">
             
-            <!-- Hover overlay -->
-            <div class="absolute inset-0 opacity-0 group-hover:opacity-5 transition-opacity duration-500 pointer-events-none"
-                 [ngClass]="tpl.profileType === 'coach' ? 'bg-blue-500' : 'bg-emerald-500'"></div>
-
             <div class="flex-1 mb-6 md:mb-0 relative z-10 w-full md:pr-8">
                 <!-- Badges -->
                 <div class="flex flex-wrap items-center gap-3 mb-4">
-                    <span class="px-4 py-1.5 text-xs font-black rounded-full uppercase tracking-wider shadow-sm flex items-center gap-1.5" 
-                          [ngClass]="tpl.profileType === 'coach' ? 'bg-blue-600 text-white border border-blue-700' : 'bg-emerald-600 text-white border border-emerald-700'">
-                        <i class="pi text-sm" [ngClass]="tpl.profileType === 'coach' ? 'pi-user' : 'pi-briefcase'"></i>
-                        {{ tpl.profileType === 'coach' ? 'Recherche Coach' : 'Smart capital / Financement' }}
+                    <span class="px-4 py-1.5 text-xs font-black rounded-full uppercase tracking-wider flex items-center gap-2" 
+                          [ngStyle]="{
+                              'background-color': tpl.profileType === 'coach' ? '#0a4955' : (tpl.profileType === 'spontanee' ? '#475569' : '#ea5073'),
+                              'color': '#ffffff'
+                          }">
+                        <i class="pi text-sm" [ngClass]="tpl.profileType === 'coach' ? 'pi-user' : (tpl.profileType === 'spontanee' ? 'pi-send' : 'pi-briefcase')"></i>
+                        {{ tpl.profileType === 'coach' ? 'Recherche Coach' : (tpl.profileType === 'spontanee' ? 'Candidature Spontanée' : 'Smart capital / Financement') }}
                     </span>
-                    <span *ngIf="tpl.deadline" class="px-3 py-1.5 text-xs font-bold rounded-full border flex items-center gap-1.5 shadow-sm bg-white"
-                          [ngClass]="isExpiringSoon(tpl.deadline) ? 'border-red-300 text-red-700' : 'border-surface-200 text-surface-700'">
+                    <span *ngIf="tpl.deadline" class="px-3 py-1.5 text-xs font-bold rounded-full border flex items-center gap-1.5 bg-surface-50 dark:bg-surface-800"
+                          [ngClass]="isExpiringSoon(tpl.deadline) ? 'border-red-300 text-red-600' : 'border-surface-200 text-surface-600'">
                         <i class="pi pi-clock" [ngClass]="{'animate-pulse text-red-500': isExpiringSoon(tpl.deadline)}"></i>
                         <ng-container *ngIf="getRemainingDays(tpl.deadline) !== null">
                           {{ getRemainingDays(tpl.deadline) }} jour{{ getRemainingDays(tpl.deadline)! > 1 ? 's' : '' }} restant{{ getRemainingDays(tpl.deadline)! > 1 ? 's' : '' }}
@@ -78,30 +78,29 @@ import { Router } from '@angular/router';
                 </div>
                 
                 <!-- Texts -->
-                <h3 class="text-2xl md:text-3xl font-black mb-3 tracking-tight transition-colors duration-300"
-                    [ngClass]="tpl.profileType === 'coach' ? 'text-blue-950 group-hover:text-blue-700' : 'text-emerald-950 group-hover:text-emerald-700'">
+                <h3 class="text-2xl font-black mb-3 tracking-tight text-surface-900 dark:text-white transition-colors title-hover">
                     {{ tpl.title }}
                 </h3>
-                <p class="text-sm md:text-base line-clamp-2 leading-relaxed font-medium"
-                   [ngClass]="tpl.profileType === 'coach' ? 'text-blue-800/80' : 'text-emerald-800/80'">
+                <p class="text-sm line-clamp-2 leading-relaxed font-medium text-surface-500 dark:text-surface-400">
                     {{ tpl.description }}
                 </p>
                 
                 <!-- Program Tag -->
-                <div *ngIf="tpl.program" class="mt-5 flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-lg inline-flex bg-white/60 backdrop-blur-sm border shadow-sm"
-                     [ngClass]="tpl.profileType === 'coach' ? 'text-blue-900 border-blue-100' : 'text-emerald-900 border-emerald-100'">
-                   <i class="pi pi-box mb-[2px]" [ngClass]="tpl.profileType === 'coach' ? 'text-blue-500' : 'text-emerald-500'"></i> 
+                <div *ngIf="tpl.program" class="mt-5 flex items-center gap-2 text-[11px] font-black px-3 py-1.5 rounded bg-surface-100 dark:bg-surface-700 text-surface-600 dark:text-surface-300 uppercase tracking-widest inline-flex">
+                   <i class="pi pi-box"></i> 
                    {{ tpl.program }}
                 </div>
             </div>
 
             <!-- Action Button -->
             <div class="relative z-10 w-full md:w-auto flex justify-end">
-               <button class="w-full md:w-auto px-6 py-3.5 rounded-xl font-bold text-sm text-white shadow-lg transition-all duration-200 flex items-center justify-center gap-2 group/btn"
-                       [ngClass]="tpl.profileType === 'coach' ? 'bg-blue-600 hover:bg-blue-700 hover:shadow-blue-500/40' : 'bg-emerald-600 hover:bg-emerald-700 hover:shadow-emerald-500/40'"
+               <button class="w-full md:w-auto px-6 py-3.5 rounded-xl font-bold text-sm text-white shadow-md transition-all duration-200 flex items-center justify-center gap-2 btn-apply"
+                       [ngStyle]="{
+                           'background-color': tpl.profileType === 'coach' ? '#0a4955' : (tpl.profileType === 'spontanee' ? '#475569' : '#ea5073')
+                       }"
                        (click)="apply(tpl); $event.stopPropagation()">
-                  Postuler maintenant 
-                  <i class="pi pi-arrow-right group-hover/btn:translate-x-1 transition-transform"></i>
+                  Postuler 
+                  <i class="pi pi-arrow-right icon-arrow transition-transform"></i>
                </button>
             </div>
         </div>
@@ -114,23 +113,23 @@ import { Router } from '@angular/router';
         bottom: 2rem;
         right: 2rem;
         z-index: 1000;
-        padding: 0.75rem 1.5rem;
-        border-radius: 2rem;
-        background: var(--primary-color, #ea5073);
+        padding: 0.75rem 1.75rem;
+        border-radius: 3rem;
+        background: #ea5073;
         border: none;
         color: white;
-        transition: transform 0.2s, box-shadow 0.2s;
+        transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s;
+        box-shadow: 0 8px 20px -4px rgba(234, 80, 115, 0.5);
     }
     
     .offers-fab:hover {
-        transform: translateY(-2px) scale(1.05);
-        box-shadow: 0 10px 25px -5px rgba(234, 80, 115, 0.4);
-        background: var(--primary-color, #ea5073);
-        color: white;
+        transform: translateY(-4px) scale(1.02);
+        box-shadow: 0 12px 25px -5px rgba(234, 80, 115, 0.6);
+        background: #db1e37;
     }
 
     .pulse-animation {
-        animation: pulse-ring 2s infinite;
+        animation: pulse-ring 2.5s infinite cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     @keyframes pulse-ring {
@@ -141,58 +140,85 @@ import { Router } from '@angular/router';
 
     .badge-count {
         background: white;
-        color: var(--primary-color, #ea5073);
+        color: #0a4955;
         border-radius: 50%;
-        width: 22px;
-        height: 22px;
+        width: 24px;
+        height: 24px;
         display: flex;
         align-items: center;
         justify-content: center;
         font-size: 0.75rem;
-        font-weight: bold;
-        margin-left: 0.25rem;
+        font-weight: 900;
+        margin-left: 0.5rem;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
 
+    ::ng-deep .offers-dialog .p-dialog {
+        border-radius: 1.5rem;
+        overflow: hidden;
+        border: none;
+        box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.3);
+    }
     ::ng-deep .offers-dialog .p-dialog-header {
         border-bottom: 1px solid var(--surface-200);
-        padding: 1.5rem 2rem;
+        padding: 1.75rem 2.5rem;
         background: #ffffff;
-        border-radius: 1.5rem 1.5rem 0 0;
     }
     ::ng-deep .offers-dialog .p-dialog-title {
-        font-weight: 800;
+        font-weight: 900;
         font-size: 1.5rem;
-        color: var(--surface-900);
+        color: #0a4955;
+        letter-spacing: -0.02em;
+    }
+    ::ng-deep .offers-dialog .p-dialog-header .p-dialog-header-icon {
+        background: #f1f5f9;
+        color: #64748b;
+        border-radius: 50%;
+        width: 2.5rem;
+        height: 2.5rem;
+        transition: all 0.2s;
+    }
+    ::ng-deep .offers-dialog .p-dialog-header .p-dialog-header-icon:hover {
+        background: #e2e8f0;
+        color: #0f172a;
     }
     ::ng-deep .offers-dialog .p-dialog-content {
-        padding: 2rem;
-        background-color: var(--surface-50);
-        border-radius: 0 0 1.5rem 1.5rem;
-    }
-    .dark ::ng-deep .offers-dialog .p-dialog-content {
-        background-color: var(--surface-900);
+        padding: 2rem 1.5rem;
+        background-color: #f8fafc;
     }
     
-    .styled-apply-btn {
-        background: var(--primary-color, #ea5073);
-        color: white;
-        padding: 0.75rem 1.75rem;
-        border-radius: 12px;
-        font-weight: 700;
-        font-size: 0.875rem;
-        border: none;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 4px 14px -2px rgba(234, 80, 115, 0.4);
-        transition: all 0.2s ease;
-        white-space: nowrap;
+    .offer-card {
+        border-left: 5px solid transparent;
     }
-    .styled-apply-btn:hover {
-        background: #d4476a;
-        box-shadow: 0 6px 20px -2px rgba(234, 80, 115, 0.5);
-        transform: translateY(-2px);
+    .offer-card:hover {
+        border-color: var(--hover-color);
+        box-shadow: 0 12px 30px -8px rgba(0,0,0,0.12);
+        transform: translateY(-3px);
+    }
+    .offer-card:hover .title-hover {
+        color: var(--hover-color);
+    }
+    .offer-card:hover .icon-arrow {
+        transform: translateX(4px);
+    }
+    .btn-apply:hover {
+        filter: brightness(0.9);
+        box-shadow: 0 8px 15px -3px rgba(0,0,0,0.2);
+    }
+
+    .dark ::ng-deep .offers-dialog .p-dialog-header {
+        background: #1e293b;
+        border-bottom-color: #334155;
+    }
+    .dark ::ng-deep .offers-dialog .p-dialog-header .p-dialog-header-icon {
+        background: #334155;
+        color: #cbd5e1;
+    }
+    .dark ::ng-deep .offers-dialog .p-dialog-title {
+        color: #f8fafc;
+    }
+    .dark ::ng-deep .offers-dialog .p-dialog-content {
+        background-color: #0f172a;
     }
     
     @media (max-width: 768px) {
@@ -205,8 +231,10 @@ import { Router } from '@angular/router';
             display: flex;
             justify-content: center;
         }
-        .offers-fab .pi { margin: 0; }
+        .offers-fab .pi { margin: 0; font-size: 1.25rem; }
         ::ng-deep .offers-dialog .p-dialog { border-radius: 1.5rem 1.5rem 0 0; margin-bottom: 0; align-self: flex-end; }
+        ::ng-deep .offers-dialog .p-dialog-header { padding: 1.5rem; }
+        ::ng-deep .offers-dialog .p-dialog-content { padding: 1.5rem 1rem; }
     }
   `]
 })

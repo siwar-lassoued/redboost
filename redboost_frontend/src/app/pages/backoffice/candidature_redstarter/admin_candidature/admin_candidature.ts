@@ -27,6 +27,7 @@ export class AdminCandidaturesComponent implements OnInit {
   searchQuery = '';
   statusFilter = 'ALL';
   filterProgram = 'all';
+  profileFilter = 'all';
   modalTab = signal<'detail' | 'historique'>('detail');
 
   tabs = [
@@ -87,6 +88,15 @@ export class AdminCandidaturesComponent implements OnInit {
       if (this.statusFilter !== 'HISTORIQUE') {
         data = data.filter(c => this.ACTIVE_STATUSES.includes(c.statut));
       }
+      // Profile filter for Spontanées tab
+      if (this.activeTab() === 'spontanees' && this.profileFilter !== 'all') {
+        data = data.filter(c => {
+          const profileAnswer = c.formAnswers?.find((a: any) =>
+            a.question?.toLowerCase().includes('coach') && a.question?.toLowerCase().includes('entrepreneur')
+          );
+          return profileAnswer?.answer === this.profileFilter;
+        });
+      }
       this.candidatures.set(data);
       const progs = [...new Set((r.data || []).map(c => c.programme).filter(Boolean))] as string[];
       this.programmes.set(progs);
@@ -98,6 +108,7 @@ export class AdminCandidaturesComponent implements OnInit {
     this.searchQuery = '';
     this.statusFilter = 'ALL';
     this.filterProgram = 'all';
+    this.profileFilter = 'all';
     this.load();
   }
 

@@ -53,8 +53,8 @@ public interface CandidatureRedstarterRepository extends JpaRepository<Candidatu
            "WHERE c.formTemplateId IN (SELECT t.id FROM FormTemplateEntity t WHERE UPPER(t.profileType) = UPPER(:type))")
     long countByProfileType(@Param("type") String type);
     
-    // Count spontaneous (template id is null)
-    @Query("SELECT COUNT(c) FROM CandidatureRedstarter c WHERE c.formTemplateId IS NULL")
+    // Count spontaneous (template id is null or template is SPONTANEE)
+    @Query("SELECT COUNT(c) FROM CandidatureRedstarter c WHERE c.formTemplateId IS NULL OR c.formTemplateId IN (SELECT t.id FROM FormTemplateEntity t WHERE UPPER(t.profileType) = 'SPONTANEE')")
     long countSpontanees();
 
     @Transactional
@@ -62,6 +62,6 @@ public interface CandidatureRedstarterRepository extends JpaRepository<Candidatu
     @Query("DELETE FROM CandidatureRedstarter c WHERE c.nomPrenom IS NULL OR c.nomPrenom = '' OR c.email IS NULL OR c.email = ''")
     void deleteAnonymous();
 
-    @Query("SELECT c FROM CandidatureRedstarter c WHERE c.formTemplateId IS NULL")
+    @Query("SELECT c FROM CandidatureRedstarter c WHERE c.formTemplateId IS NULL OR c.formTemplateId IN (SELECT t.id FROM FormTemplateEntity t WHERE UPPER(t.profileType) = 'SPONTANEE')")
     Page<CandidatureRedstarter> findSpontanees(Pageable pageable);
 }

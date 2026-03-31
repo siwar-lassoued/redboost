@@ -116,7 +116,7 @@ type Step = 'choice' | 'templates' | 'form';
               <label><input type="radio" name="profileType" [value]="'entrepreneur'" [(ngModel)]="profileType"> Entrepreneur</label>
             </div>
           </div>
-          <div class="fl-form-field">
+          <div class="fl-form-field" *ngIf="templateMode !== 'spontaneous'">
             <label>Date limite de candidature</label>
             <input type="date" [(ngModel)]="deadline">
           </div>
@@ -313,7 +313,7 @@ export class AdminFormLauncherComponent implements OnChanges {
   successMessage = '';
   formTitle = '';
   formDescription = '';
-  profileType: 'coach' | 'entrepreneur' = 'coach';
+  profileType: 'coach' | 'entrepreneur' | 'spontanee' = 'coach';
   deadline = '';
   program = '';
   questions: FormQuestion[] = [];
@@ -411,7 +411,7 @@ export class AdminFormLauncherComponent implements OnChanges {
     const dto = FormTemplateService.toDTO({ 
       title: this.formTitle, 
       description: this.formDescription, 
-      profileType: this.templateMode === 'spontaneous' ? 'entrepreneur' : this.profileType, // Default saving type 
+      profileType: this.templateMode === 'spontaneous' ? 'spontanee' : this.profileType, // Default saving type 
       questions: this.questions, 
       deadline: this.deadline,
       program: this.templateMode === 'spontaneous' ? 'Spontanée' : this.program

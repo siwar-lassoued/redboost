@@ -15,7 +15,7 @@ export interface FormTemplateDTO {
     id?: string;
     title: string;
     description: string;
-    profileType: 'COACH' | 'ENTREPRENEUR';
+    profileType: 'COACH' | 'ENTREPRENEUR' | 'SPONTANEE';
     program?: string;
     sectors?: string;
     questionsJson?: string;
@@ -27,7 +27,7 @@ export interface FormTemplateView {
     id: string;
     title: string;
     description: string;
-    profileType: 'coach' | 'entrepreneur';
+    profileType: 'coach' | 'entrepreneur' | 'spontanee';
     program: string;
     sectors: string[];
     questions: FormQuestionDTO[];
@@ -65,7 +65,7 @@ export class FormTemplateService {
             id: dto.id || '',
             title: dto.title,
             description: dto.description,
-            profileType: dto.profileType?.toLowerCase() as 'coach' | 'entrepreneur',
+            profileType: dto.profileType?.toLowerCase() as 'coach' | 'entrepreneur' | 'spontanee',
             program: dto.program || '',
             sectors,
             questions,
@@ -77,7 +77,7 @@ export class FormTemplateService {
     static toDTO(view: {
         title: string;
         description: string;
-        profileType: 'coach' | 'entrepreneur';
+        profileType: 'coach' | 'entrepreneur' | 'spontanee';
         questions: FormQuestionDTO[];
         deadline?: string;
         program?: string;
@@ -85,7 +85,7 @@ export class FormTemplateService {
         return {
             title: view.title,
             description: view.description,
-            profileType: view.profileType.toUpperCase() as 'COACH' | 'ENTREPRENEUR',
+            profileType: view.profileType.toUpperCase() as 'COACH' | 'ENTREPRENEUR' | 'SPONTANEE',
             questionsJson: JSON.stringify(view.questions),
             deadline: view.deadline,
             program: view.program

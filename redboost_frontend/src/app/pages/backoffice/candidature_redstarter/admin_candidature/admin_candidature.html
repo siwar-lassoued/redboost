@@ -35,6 +35,13 @@
         [(ngModel)]="searchQuery" (ngModelChange)="load()" class="search-input">
     </div>
     <div class="filter-selects">
+      @if (activeTab() === 'spontanees') {
+        <select [(ngModel)]="profileFilter" (ngModelChange)="load()" class="filter-select">
+          <option value="all">Tous les profils</option>
+          <option value="Coach">Coach</option>
+          <option value="Entrepreneur">Entrepreneur</option>
+        </select>
+      }
       <select [(ngModel)]="filterProgram" (ngModelChange)="load()" class="filter-select">
         <option value="all">Tous les programmes</option>
         @for (p of programmes(); track p) { <option [value]="p">{{ p }}</option> }

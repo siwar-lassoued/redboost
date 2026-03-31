@@ -62,7 +62,7 @@ export interface FormTemplate {
     id: string | number;
     title: string;
     description: string;
-    profileType: 'coach' | 'entrepreneur';
+    profileType: 'coach' | 'entrepreneur' | 'spontanee';
     sectors: string[];
     program: string;
     questions: FormQuestion[];
