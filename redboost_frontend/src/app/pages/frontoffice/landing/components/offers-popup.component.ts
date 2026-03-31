@@ -50,19 +50,26 @@ import { Router } from '@angular/router';
         </div>
       </div>
 
-      <div class="flex flex-col gap-4 p-2" *ngIf="!loading && templates.length > 0">
-        <div *ngFor="let tpl of templates" class="offer-card group relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center p-6 bg-white dark:bg-surface-800 border-2 border-surface-100 dark:border-surface-700 rounded-2xl hover:border-primary/40 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer" (click)="apply(tpl)">
+      <div class="flex flex-col gap-6 p-2" *ngIf="!loading && templates.length > 0">
+        <div *ngFor="let tpl of templates" 
+             class="offer-card group relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center p-6 border-2 rounded-2xl transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer"
+             [ngClass]="tpl.profileType === 'coach' ? 'bg-gradient-to-br from-blue-50 to-white border-blue-200 hover:border-blue-400' : 'bg-gradient-to-br from-emerald-50 to-white border-emerald-200 hover:border-emerald-400'"
+             (click)="apply(tpl)">
             
-            <div class="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+            <!-- Hover overlay -->
+            <div class="absolute inset-0 opacity-0 group-hover:opacity-5 transition-opacity duration-500 pointer-events-none"
+                 [ngClass]="tpl.profileType === 'coach' ? 'bg-blue-500' : 'bg-emerald-500'"></div>
 
             <div class="flex-1 mb-6 md:mb-0 relative z-10 w-full md:pr-8">
-                <div class="flex flex-wrap items-center gap-2 mb-3">
-                    <span class="px-3 py-1.5 text-xs font-bold rounded-full uppercase tracking-wider shadow-sm" 
-                          [ngClass]="tpl.profileType === 'coach' ? 'bg-blue-100 text-blue-800 border border-blue-200' : 'bg-emerald-100 text-emerald-800 border border-emerald-200'">
+                <!-- Badges -->
+                <div class="flex flex-wrap items-center gap-3 mb-4">
+                    <span class="px-4 py-1.5 text-xs font-black rounded-full uppercase tracking-wider shadow-sm flex items-center gap-1.5" 
+                          [ngClass]="tpl.profileType === 'coach' ? 'bg-blue-600 text-white border border-blue-700' : 'bg-emerald-600 text-white border border-emerald-700'">
+                        <i class="pi text-sm" [ngClass]="tpl.profileType === 'coach' ? 'pi-user' : 'pi-briefcase'"></i>
                         {{ tpl.profileType === 'coach' ? 'Recherche Coach' : 'Smart capital / Financement' }}
                     </span>
-                    <span *ngIf="tpl.deadline" class="px-3 py-1.5 text-xs font-semibold rounded-full border bg-surface-50 text-surface-600 flex items-center gap-1.5 shadow-sm"
-                          [ngClass]="isExpiringSoon(tpl.deadline) ? 'border-red-200 text-red-700 bg-red-50' : 'border-surface-200 text-surface-600'">
+                    <span *ngIf="tpl.deadline" class="px-3 py-1.5 text-xs font-bold rounded-full border flex items-center gap-1.5 shadow-sm bg-white"
+                          [ngClass]="isExpiringSoon(tpl.deadline) ? 'border-red-300 text-red-700' : 'border-surface-200 text-surface-700'">
                         <i class="pi pi-clock" [ngClass]="{'animate-pulse text-red-500': isExpiringSoon(tpl.deadline)}"></i>
                         <ng-container *ngIf="getRemainingDays(tpl.deadline) !== null">
                           {{ getRemainingDays(tpl.deadline) }} jour{{ getRemainingDays(tpl.deadline)! > 1 ? 's' : '' }} restant{{ getRemainingDays(tpl.deadline)! > 1 ? 's' : '' }}
@@ -70,17 +77,31 @@ import { Router } from '@angular/router';
                     </span>
                 </div>
                 
-                <h3 class="text-xl md:text-2xl font-black text-surface-900 dark:text-surface-0 mb-2 tracking-tight group-hover:text-primary transition-colors duration-300">{{ tpl.title }}</h3>
-                <p class="text-sm md:text-base text-surface-600 dark:text-surface-400 line-clamp-2 leading-relaxed">{{ tpl.description }}</p>
+                <!-- Texts -->
+                <h3 class="text-2xl md:text-3xl font-black mb-3 tracking-tight transition-colors duration-300"
+                    [ngClass]="tpl.profileType === 'coach' ? 'text-blue-950 group-hover:text-blue-700' : 'text-emerald-950 group-hover:text-emerald-700'">
+                    {{ tpl.title }}
+                </h3>
+                <p class="text-sm md:text-base line-clamp-2 leading-relaxed font-medium"
+                   [ngClass]="tpl.profileType === 'coach' ? 'text-blue-800/80' : 'text-emerald-800/80'">
+                    {{ tpl.description }}
+                </p>
                 
-                <div *ngIf="tpl.program" class="mt-4 flex items-center gap-2 text-xs text-surface-500 font-semibold px-3 py-2 bg-surface-50 rounded-lg inline-flex">
-                   <i class="pi pi-box text-primary"></i> {{ tpl.program }}
+                <!-- Program Tag -->
+                <div *ngIf="tpl.program" class="mt-5 flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-lg inline-flex bg-white/60 backdrop-blur-sm border shadow-sm"
+                     [ngClass]="tpl.profileType === 'coach' ? 'text-blue-900 border-blue-100' : 'text-emerald-900 border-emerald-100'">
+                   <i class="pi pi-box mb-[2px]" [ngClass]="tpl.profileType === 'coach' ? 'text-blue-500' : 'text-emerald-500'"></i> 
+                   {{ tpl.program }}
                 </div>
             </div>
 
+            <!-- Action Button -->
             <div class="relative z-10 w-full md:w-auto flex justify-end">
-               <button class="styled-apply-btn w-full md:w-auto" (click)="apply(tpl); $event.stopPropagation()">
-                  Postuler maintenant <i class="pi pi-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+               <button class="w-full md:w-auto px-6 py-3.5 rounded-xl font-bold text-sm text-white shadow-lg transition-all duration-200 flex items-center justify-center gap-2 group/btn"
+                       [ngClass]="tpl.profileType === 'coach' ? 'bg-blue-600 hover:bg-blue-700 hover:shadow-blue-500/40' : 'bg-emerald-600 hover:bg-emerald-700 hover:shadow-emerald-500/40'"
+                       (click)="apply(tpl); $event.stopPropagation()">
+                  Postuler maintenant 
+                  <i class="pi pi-arrow-right group-hover/btn:translate-x-1 transition-transform"></i>
                </button>
             </div>
         </div>

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
 import { FormTemplate, FormQuestion } from '../../models/candidature.model';
 import { FormTemplateService, FormTemplateDTO } from '../../services/form-template.service';
+import { ProgrammeService } from '../../../programmes/programme.service';
 
 type Step = 'choice' | 'templates' | 'form';
 
@@ -108,7 +109,7 @@ type Step = 'choice' | 'templates' | 'form';
             <label>Description *</label>
             <textarea [(ngModel)]="formDescription" placeholder="Décrivez l'objectif du programme..." rows="3"></textarea>
           </div>
-          <div class="fl-form-field">
+          <div class="fl-form-field" *ngIf="templateMode !== 'spontaneous'">
             <label>Type de profil recherché *</label>
             <div class="fl-radio-group">
               <label><input type="radio" name="profileType" [value]="'coach'" [(ngModel)]="profileType"> Coach</label>
@@ -119,9 +120,12 @@ type Step = 'choice' | 'templates' | 'form';
             <label>Date limite de candidature</label>
             <input type="date" [(ngModel)]="deadline">
           </div>
-          <div class="fl-form-field">
+          <div class="fl-form-field" *ngIf="templateMode !== 'spontaneous'">
             <label>Programme associé *</label>
-            <input type="text" [(ngModel)]="program" placeholder="Ex: Redstart 2025, Women In Tech...">
+            <select [(ngModel)]="program" class="fl-select">
+              <option value="" disabled selected>Sélectionnez un programme existant</option>
+              <option *ngFor="let p of activeProgrammes()" [value]="p.nom">{{ p.nom }}</option>
+            </select>
           </div>
 
           <div class="fl-form-field">
@@ -164,7 +168,7 @@ type Step = 'choice' | 'templates' | 'form';
         <!-- Footer -->
         <div *ngIf="step() === 'form'" class="fl-footer">
           <button (click)="onBack()" class="fl-btn-text">Retour</button>
-          <button (click)="handlePublish()" [disabled]="!formTitle || !formDescription || !program || publishing" class="fl-btn-primary">
+          <button (click)="handlePublish()" [disabled]="!isFormValid() || publishing" class="fl-btn-primary">
             <lucide-icon *ngIf="publishing" name="loader" [size]="16" class="animate-spin"></lucide-icon>
             {{ publishing ? 'Publication...' : "Publier le formulaire" }}
           </button>
@@ -182,7 +186,7 @@ type Step = 'choice' | 'templates' | 'form';
   `,
   styles: [`
     :host { display: block; font-family: 'Poppins', sans-serif; }
-    .fl-overlay { position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center; padding:16px; background:rgba(0,0,0,0.5); backdrop-filter:blur(4px); }
+    .fl-overlay { position:fixed; inset:0; z-index:99999; display:flex; align-items:center; justify-content:center; padding:16px; background:rgba(0,0,0,0.5); backdrop-filter:blur(4px); }
     .fl-box { background:#fff; width:100%; max-height:90vh; overflow-y:auto; border-radius:20px; box-shadow:0 20px 60px rgba(0,0,0,0.2); position:relative; }
     .fl-header { padding:24px 28px; border-bottom:1px solid #F3F4F6; position:sticky; top:0; background:#fff; z-index:10; display:flex; align-items:center; justify-content:space-between; border-radius:20px 20px 0 0; }
     .fl-title { font-size:1.5rem; font-weight:700; color:#0f172a; margin:0 0 4px 0; }
@@ -224,8 +228,9 @@ type Step = 'choice' | 'templates' | 'form';
     .fl-btn-text:hover { background:#f8fafc; border-color:#94a3b8; color: #0f172a; }
     .fl-form-body { display:flex; flex-direction:column; gap:28px; }
     .fl-form-field label { display:block; font-size:0.875rem; font-weight:700; color:#1e293b; margin-bottom:10px; }
-    .fl-form-field input[type="text"], .fl-form-field input[type="date"], .fl-form-field textarea { width:100%; padding:14px 18px; border:2px solid #e2e8f0; border-radius:12px; font-size:0.875rem; outline:none; color:#0f172a; transition:all .2s; box-sizing:border-box; font-family:inherit; background: #f8fafc; }
-    .fl-form-field input[type="text"]:focus, .fl-form-field input[type="date"]:focus, .fl-form-field textarea:focus { border-color:#ea5073; background: #ffffff; box-shadow:0 0 0 4px rgba(234,80,115,0.1); }
+    .fl-form-field input[type="text"], .fl-form-field input[type="date"], .fl-form-field textarea, .fl-form-field select { width:100%; padding:14px 18px; border:2px solid #e2e8f0; border-radius:12px; font-size:0.875rem; outline:none; color:#0f172a; transition:all .2s; box-sizing:border-box; font-family:inherit; background: #f8fafc; }
+    .fl-form-field input[type="text"]:focus, .fl-form-field input[type="date"]:focus, .fl-form-field textarea:focus, .fl-form-field select:focus { border-color:#ea5073; background: #ffffff; box-shadow:0 0 0 4px rgba(234,80,115,0.1); }
+    .fl-select { cursor: pointer; appearance: auto; }
     .fl-form-field textarea { resize:vertical; min-height: 100px; }
     .fl-radio-group { display:flex; gap:24px; }
     .fl-radio-group label { display:flex; align-items:center; gap:8px; font-size:0.875rem; color:#475569; font-weight:600; cursor:pointer; padding: 12px 20px; border: 2px solid #e2e8f0; border-radius: 12px; transition: all 0.2s; background: #f8fafc; }
@@ -298,6 +303,8 @@ export class AdminFormLauncherComponent implements OnChanges {
   @Output() closed = new EventEmitter<void>();
 
   private formTemplateSvc = inject(FormTemplateService);
+  private programmeSvc = inject(ProgrammeService);
+  activeProgrammes = this.programmeSvc.programmes;
 
   step = signal<Step>('choice');
   templateMode: 'new' | 'existing' | 'spontaneous' | null = null;
@@ -314,6 +321,7 @@ export class AdminFormLauncherComponent implements OnChanges {
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['open']?.currentValue === true) {
       this.loadTemplates();
+      this.programmeSvc.loadAll();
     }
   }
 
@@ -343,8 +351,11 @@ export class AdminFormLauncherComponent implements OnChanges {
       this.formTitle = 'Candidature Spontanée';
       this.formDescription = 'Utilisez ce formulaire pour postuler librement en dehors des appels spécifiques.';
       this.questions = [
-        { id: 1, text: 'Pourquoi souhaitez-vous nous rejoindre ?', type: 'text-long', required: true },
-        { id: 2, text: 'Curriculum Vitae', type: 'upload', required: true }
+        { id: Math.random(), text: 'Nom et Prénom', type: 'text-court', required: true, isLocked: true },
+        { id: Math.random(), text: 'Email', type: 'text-court', required: true, isLocked: true },
+        { id: Math.random(), text: 'Numéro de téléphone', type: 'text-court', required: true, isLocked: true },
+        { id: Math.random(), text: 'Nom de la startup (si applicable)', type: 'text-court', required: false, isLocked: true },
+        { id: Math.random(), text: 'Êtes-vous un Coach ou un Entrepreneur ?', type: 'qcu', options: ['Coach', 'Entrepreneur'], required: true, isLocked: true }
       ];
       this.step.set('form');
     } else {
@@ -356,7 +367,6 @@ export class AdminFormLauncherComponent implements OnChanges {
       ];
       this.step.set('form');
     }
-
   }
 
   handleTemplateSelect(template: FormTemplate): void {
@@ -389,16 +399,22 @@ export class AdminFormLauncherComponent implements OnChanges {
   addOption(q: FormQuestion): void { if (!q.options) q.options = []; q.options = [...q.options, `Option ${q.options.length + 1}`]; }
   removeOption(q: FormQuestion, idx: number): void { if (q.options) { q.options = q.options.filter((_, i) => i !== idx); } }
 
+  isFormValid(): boolean {
+    if (!this.formTitle || !this.formDescription) return false;
+    if (this.templateMode !== 'spontaneous' && !this.program) return false;
+    return true;
+  }
+
   handlePublish(): void {
-    if (this.publishing) return;
+    if (this.publishing || !this.isFormValid()) return;
     this.publishing = true;
     const dto = FormTemplateService.toDTO({ 
       title: this.formTitle, 
       description: this.formDescription, 
-      profileType: this.profileType, 
+      profileType: this.templateMode === 'spontaneous' ? 'entrepreneur' : this.profileType, // Default saving type 
       questions: this.questions, 
       deadline: this.deadline,
-      program: this.program
+      program: this.templateMode === 'spontaneous' ? 'Spontanée' : this.program
     });
     this.formTemplateSvc.create(dto).subscribe({
       next: () => { this.publishing = false; this.successMessage = `Formulaire "${this.formTitle}" publié avec succès !`; setTimeout(() => { this.successMessage = ''; this.onClose(); }, 1800); },
