@@ -91,10 +91,10 @@ export class AdminCandidaturesComponent implements OnInit {
       // Profile filter for Spontanées tab
       if (this.activeTab() === 'spontanees' && this.profileFilter !== 'all') {
         data = data.filter(c => {
-          const profileAnswer = c.formAnswers?.find((a: any) =>
-            a.question?.toLowerCase().includes('coach') && a.question?.toLowerCase().includes('entrepreneur')
-          );
-          return profileAnswer?.answer === this.profileFilter;
+          const profile = this.getDeductedProfile(c);
+          if (this.profileFilter === 'Coach') return profile === 'coaches';
+          if (this.profileFilter === 'Entrepreneur') return profile === 'entrepreneurs';
+          return true;
         });
       }
       this.candidatures.set(data);
@@ -218,7 +218,25 @@ export class AdminCandidaturesComponent implements OnInit {
     });
   }
 
-  isCoach(c: Candidature): boolean { return c.type === 'coaches'; }
+  getDeductedProfile(c: Candidature): 'coaches' | 'entrepreneurs' | 'spontanees' {
+    if (c.type === 'coaches') return 'coaches';
+    if (c.type === 'entrepreneurs') return 'entrepreneurs';
+    
+    const profileAnswer = c.formAnswers?.find((a: any) =>
+      a.question && a.question.toLowerCase().includes('coach') && a.question.toLowerCase().includes('entrepreneur')
+    );
+    if (profileAnswer) {
+        let val = profileAnswer.answer;
+        if (Array.isArray(val)) val = val[0];
+        if (typeof val === 'string') {
+           if (val.toLowerCase().includes('coach')) return 'coaches';
+           if (val.toLowerCase().includes('entrepreneur')) return 'entrepreneurs';
+        }
+    }
+    return c.type as any || 'spontanees';
+  }
+
+  isCoach(c: Candidature): boolean { return this.getDeductedProfile(c) === 'coaches'; }
   getInitials(c: Candidature): string { if (!c?.nom) return '??'; return c.nom.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase(); }
 
   getAnswerIcon(type: string): string {

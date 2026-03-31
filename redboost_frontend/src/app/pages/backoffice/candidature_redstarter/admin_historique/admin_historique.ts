@@ -55,8 +55,9 @@ export class AdminHistoriqueComponent implements OnInit {
       if (q && !c.nom.toLowerCase().includes(q) && !c.email.toLowerCase().includes(q)) return false;
       if (this.filterStatus() !== 'all' && c.statut !== this.filterStatus()) return false;
       if (this.filterType() !== 'all') {
-          if (this.filterType() === 'coaches' && c.type !== 'coaches') return false;
-          if (this.filterType() === 'entrepreneurs' && c.type !== 'entrepreneurs') return false;
+          const profile = this.getDeductedProfile(c);
+          if (this.filterType() === 'coaches' && profile !== 'coaches') return false;
+          if (this.filterType() === 'entrepreneurs' && profile !== 'entrepreneurs') return false;
       }
       return true;
     });
@@ -228,6 +229,24 @@ export class AdminHistoriqueComponent implements OnInit {
     a.href = URL.createObjectURL(blob);
     a.download = 'historique_candidatures.csv';
     a.click();
+  }
+
+  getDeductedProfile(c: Candidature): 'coaches' | 'entrepreneurs' | 'spontanees' {
+    if (c.type === 'coaches') return 'coaches';
+    if (c.type === 'entrepreneurs') return 'entrepreneurs';
+    
+    const profileAnswer = c.formAnswers?.find((a: any) =>
+      a.question && a.question.toLowerCase().includes('coach') && a.question.toLowerCase().includes('entrepreneur')
+    );
+    if (profileAnswer) {
+        let val = profileAnswer.answer;
+        if (Array.isArray(val)) val = val[0];
+        if (typeof val === 'string') {
+           if (val.toLowerCase().includes('coach')) return 'coaches';
+           if (val.toLowerCase().includes('entrepreneur')) return 'entrepreneurs';
+        }
+    }
+    return c.type as any || 'spontanees';
   }
 }
 
