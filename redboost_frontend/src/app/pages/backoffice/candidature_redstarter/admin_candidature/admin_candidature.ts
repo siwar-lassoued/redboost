@@ -41,6 +41,7 @@ export class AdminCandidaturesComponent implements OnInit {
   selected = signal<Candidature | null>(null);
   showDetail = signal(false);
   showFormLauncher = signal(false);
+  formLauncherStartStep = signal<'choice' | 'templates'>('choice');
   statuts = CANDIDATURE_STATUTS;
   programmes = signal<string[]>([]);
   historiqueLogs = signal<CandidatureLog[]>([]);
@@ -110,6 +111,11 @@ export class AdminCandidaturesComponent implements OnInit {
     this.filterProgram = 'all';
     this.profileFilter = 'all';
     this.load();
+  }
+
+  openFormLauncher(step: 'choice' | 'templates'): void {
+    this.formLauncherStartStep.set(step);
+    this.showFormLauncher.set(true);
   }
 
   onViewDetail(c: Candidature): void {

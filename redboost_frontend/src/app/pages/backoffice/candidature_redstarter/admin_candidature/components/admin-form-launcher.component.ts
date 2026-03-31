@@ -1,4 +1,5 @@
 import { Component, Input, Output, EventEmitter, signal, inject, OnChanges, SimpleChanges } from '@angular/core';
+import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
@@ -11,7 +12,7 @@ type Step = 'choice' | 'templates' | 'form';
 @Component({
   selector: 'rb-admin-form-launcher',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule],
+  imports: [CommonModule, FormsModule, LucideAngularModule, DragDropModule],
   template: `
     <div *ngIf="open" class="fl-overlay">
       <div class="fl-box" [style.max-width.px]="getStepMaxWidth()">
@@ -40,13 +41,6 @@ type Step = 'choice' | 'templates' | 'form';
               <h4>Créer un nouveau formulaire</h4>
               <p>Construisez un formulaire personnalisé de A à Z avec vos propres questions.</p>
             </button>
-            <button (click)="handleChoiceSelect('existing')" class="fl-choice-card">
-              <div class="fl-choice-icon" style="background: linear-gradient(to right, #6d3345, #2a5f6f);">
-                <lucide-icon name="file-text" [size]="24" class="text-white"></lucide-icon>
-              </div>
-              <h4>Utiliser un template existant</h4>
-              <p>Réutilisez un ancien formulaire et modifiez les questions si besoin.</p>
-            </button>
             <button (click)="handleChoiceSelect('spontaneous')" class="fl-choice-card">
               <div class="fl-choice-icon" style="background: linear-gradient(to right, #2a7b8c, #1a4d5c);">
                 <lucide-icon name="mail" [size]="24" class="text-white"></lucide-icon>
@@ -59,9 +53,6 @@ type Step = 'choice' | 'templates' | 'form';
 
         <!-- STEP 2: Templates -->
         <div *ngIf="step() === 'templates'" class="fl-body">
-          <button (click)="step.set('choice')" class="fl-back-btn">
-            <lucide-icon name="chevron-left" [size]="16"></lucide-icon> Retour
-          </button>
           <div class="fl-templates-grid">
             <div *ngFor="let template of templates" class="fl-template-card">
               <div class="fl-template-header">
@@ -80,14 +71,23 @@ type Step = 'choice' | 'templates' | 'form';
                   [style.color]="template.profileType === 'coach' ? '#1a4d5c' : '#bd3b5a'">{{ template.profileType }}</span>
               </div>
               <div class="fl-template-meta">
+                <span class="fl-meta-label">Statut:</span>
+                <span class="fl-meta-badge" [ngStyle]="getStatusStyle(template)">
+                  {{ getStatusLabel(template) }}
+                </span>
+              </div>
+              <div class="fl-template-meta">
                 <span class="fl-meta-label">Questions:</span>
                 <span class="fl-meta-count">{{ template.questions.length }}</span>
               </div>
               <div class="fl-template-actions">
                 <button (click)="handleTemplateSelect(template)" class="fl-btn-primary">
-                  <lucide-icon name="check" [size]="14"></lucide-icon> Éditer
+                  <lucide-icon name="edit-2" [size]="14"></lucide-icon> Éditer
                 </button>
-                <button (click)="handleTemplateDelete(template)" class="fl-btn-outline fl-btn-danger">
+                <button (click)="handleTemplateDuplicate(template)" class="fl-btn-outline" title="Dupliquer">
+                  <lucide-icon name="copy" [size]="14"></lucide-icon>
+                </button>
+                <button (click)="handleTemplateDelete(template)" class="fl-btn-outline fl-btn-danger" title="Supprimer">
                   <lucide-icon name="trash-2" [size]="14"></lucide-icon>
                 </button>
               </div>
@@ -101,6 +101,13 @@ type Step = 'choice' | 'templates' | 'form';
 
         <!-- STEP 3: Form Builder -->
         <div *ngIf="step() === 'form'" class="fl-body fl-form-body">
+          <div class="fl-form-field" *ngIf="templateMode !== 'spontaneous'">
+            <label>Type de profil recherché *</label>
+            <div class="fl-radio-group">
+              <label><input type="radio" name="profileType" [value]="'coach'" [(ngModel)]="profileType"> Coach</label>
+              <label><input type="radio" name="profileType" [value]="'entrepreneur'" [(ngModel)]="profileType"> Entrepreneur</label>
+            </div>
+          </div>
           <div class="fl-form-field">
             <label>Titre du formulaire *</label>
             <input type="text" [(ngModel)]="formTitle" placeholder="Ex: Appel à candidatures - Programme 2025">
@@ -108,13 +115,6 @@ type Step = 'choice' | 'templates' | 'form';
           <div class="fl-form-field">
             <label>Description *</label>
             <textarea [(ngModel)]="formDescription" placeholder="Décrivez l'objectif du programme..." rows="3"></textarea>
-          </div>
-          <div class="fl-form-field" *ngIf="templateMode !== 'spontaneous'">
-            <label>Type de profil recherché *</label>
-            <div class="fl-radio-group">
-              <label><input type="radio" name="profileType" [value]="'coach'" [(ngModel)]="profileType"> Coach</label>
-              <label><input type="radio" name="profileType" [value]="'entrepreneur'" [(ngModel)]="profileType"> Entrepreneur</label>
-            </div>
           </div>
           <div class="fl-form-field" *ngIf="templateMode !== 'spontaneous'">
             <label>Date limite de candidature</label>
@@ -130,9 +130,12 @@ type Step = 'choice' | 'templates' | 'form';
 
           <div class="fl-form-field">
             <label>Questions personnalisées</label>
-            <div class="fl-questions-list">
-              <div *ngFor="let q of questions; let i = index" class="fl-question-item">
+            <div class="fl-questions-list" cdkDropList (cdkDropListDropped)="onDropQuestion($event)">
+              <div *ngFor="let q of questions; let i = index" class="fl-question-item" cdkDrag>
                 <div class="fl-question-row">
+                  <div class="fl-drag-handle" cdkDragHandle>
+                    <lucide-icon name="grip-vertical" [size]="18"></lucide-icon>
+                  </div>
                   <span class="fl-q-badge">Q{{ i + 1 }}</span>
                   <input [(ngModel)]="q.text" [placeholder]="q.isLocked ? '' : 'Saisissez votre question...'" [disabled]="!!q.isLocked">
                   <button *ngIf="!q.isLocked" (click)="removeQuestion(q.id)" class="fl-q-delete">
@@ -194,7 +197,7 @@ type Step = 'choice' | 'templates' | 'form';
     .fl-close-btn { padding:8px; border-radius:12px; border:none; background:none; cursor:pointer; color:#9CA3AF; transition:all .2s; }
     .fl-close-btn:hover { background:#F3F4F6; color:#333; }
     .fl-body { padding:28px; }
-    .fl-choice-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+    .fl-choice-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:20px; }
     .fl-choice-card { padding:28px 20px; border-radius:20px; border:2px solid #E5E7EB; background:#fff; cursor:pointer; transition:all .25s ease; text-align:center; }
     .fl-choice-card:hover { transform:translateY(-3px); box-shadow:0 12px 28px rgba(234,80,115,0.12); border-color:#ea5073; }
     .fl-choice-card h4 { font-weight:700; color:#0f172a; margin:0 0 8px; font-size:0.875rem; }
@@ -246,6 +249,18 @@ type Step = 'choice' | 'templates' | 'form';
     .fl-q-badge { background:#fce7f3; color:#e11d48; padding:6px 12px; border-radius:8px; font-size:0.75rem; font-weight:700; line-height:1; white-space:nowrap; }
     .fl-q-delete, .fl-q-delete-sm { padding:8px; border-radius:8px; border:none; background:none; cursor:pointer; color:#9CA3AF; transition:all .2s; }
     .fl-q-delete:hover, .fl-q-delete-sm:hover { color:#ea5073; background:#FEF2F2; }
+    .fl-drag-handle { cursor:grab; color:#94a3b8; display:flex; align-items:center; }
+    .fl-drag-handle:active { cursor:grabbing; }
+    .cdk-drag-preview {
+      box-sizing: border-box;
+      border-radius: 16px;
+      box-shadow: 0 5px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      border: 2px solid #ea5073;
+      background: #fff;
+    }
+    .cdk-drag-placeholder { opacity: 0; }
+    .cdk-drag-animating { transition: transform 250ms cubic-bezier(0, 0, 0.2, 1); }
+    .fl-questions-list.cdk-drop-list-dragging .fl-question-item:not(.cdk-drag-placeholder) { transition: transform 250ms cubic-bezier(0, 0, 0.2, 1); }
     .fl-type-row { display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin-bottom:8px; }
     .fl-type-row label { display:flex; align-items:center; gap:6px; font-size:0.75rem; font-weight:500; color:#475569; cursor:pointer; }
     .fl-type-row input[type="radio"], .fl-type-row input[type="checkbox"] { accent-color:#ea5073; cursor:pointer; margin:0; }
@@ -300,6 +315,7 @@ type Step = 'choice' | 'templates' | 'form';
 })
 export class AdminFormLauncherComponent implements OnChanges {
   @Input() open = false;
+  @Input() startStep: 'choice' | 'templates' = 'choice';
   @Output() closed = new EventEmitter<void>();
 
   private formTemplateSvc = inject(FormTemplateService);
@@ -308,6 +324,7 @@ export class AdminFormLauncherComponent implements OnChanges {
 
   step = signal<Step>('choice');
   templateMode: 'new' | 'existing' | 'spontaneous' | null = null;
+  editingTemplateId: string | number | null = null;
   templates: FormTemplate[] = [];
   publishing = false;
   successMessage = '';
@@ -320,6 +337,7 @@ export class AdminFormLauncherComponent implements OnChanges {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['open']?.currentValue === true) {
+      this.step.set(this.startStep);
       this.loadTemplates();
       this.programmeSvc.loadAll();
     }
@@ -342,10 +360,11 @@ export class AdminFormLauncherComponent implements OnChanges {
   }
 
   onClose(): void { this.closed.emit(); this.reset(); }
-  reset(): void { this.step.set('choice'); this.templateMode = null; this.formTitle = ''; this.formDescription = ''; this.profileType = 'coach'; this.deadline = ''; this.program = ''; this.questions = []; }
+  reset(): void { this.step.set('choice'); this.templateMode = null; this.editingTemplateId = null; this.formTitle = ''; this.formDescription = ''; this.profileType = 'coach'; this.deadline = ''; this.program = ''; this.questions = []; }
 
   handleChoiceSelect(mode: 'new' | 'existing' | 'spontaneous'): void {
     this.templateMode = mode;
+    this.editingTemplateId = null;
     if (mode === 'existing') { this.step.set('templates'); }
     else if (mode === 'spontaneous') {
       this.formTitle = 'Candidature Spontanée';
@@ -370,8 +389,16 @@ export class AdminFormLauncherComponent implements OnChanges {
   }
 
   handleTemplateSelect(template: FormTemplate): void {
-    this.formTitle = template.title; this.formDescription = template.description; this.profileType = template.profileType; this.program = template.program;
-    this.questions = template.questions.map(q => ({ ...q, id: Math.random() })); this.step.set('form');
+    this.editingTemplateId = template.id;
+    this.formTitle = template.title; this.formDescription = template.description; this.profileType = template.profileType; this.program = template.program || ''; this.deadline = template.deadline || '';
+    this.questions = template.questions.map(q => ({ ...q })); this.step.set('form');
+  }
+
+  handleTemplateDuplicate(template: FormTemplate): void {
+    this.handleTemplateSelect(template);
+    this.editingTemplateId = null; // Forces new form
+    this.formTitle = template.title + ' (Copie)';
+    this.questions = this.questions.map(q => ({...q, id: Math.random()}));
   }
 
   handleTemplateDelete(template: FormTemplate): void {
@@ -388,8 +415,7 @@ export class AdminFormLauncherComponent implements OnChanges {
   }
 
   onBack(): void {
-    if (this.step() === 'choice') { this.onClose(); }
-    else if (this.step() === 'templates') { this.step.set('choice'); }
+    if (this.step() === 'choice' || this.step() === 'templates') { this.onClose(); }
     else { this.step.set(this.templateMode === 'existing' ? 'templates' : 'choice'); }
   }
 
@@ -398,6 +424,24 @@ export class AdminFormLauncherComponent implements OnChanges {
   onTypeChange(q: FormQuestion): void { if ((q.type === 'qcm' || q.type === 'qcu') && (!q.options || q.options.length === 0)) { q.options = ['Option 1', 'Option 2']; } }
   addOption(q: FormQuestion): void { if (!q.options) q.options = []; q.options = [...q.options, `Option ${q.options.length + 1}`]; }
   removeOption(q: FormQuestion, idx: number): void { if (q.options) { q.options = q.options.filter((_, i) => i !== idx); } }
+
+  onDropQuestion(event: CdkDragDrop<FormQuestion[]>): void {
+    moveItemInArray(this.questions, event.previousIndex, event.currentIndex);
+  }
+
+  getStatusLabel(template: FormTemplate): string {
+    if (!template.deadline) return 'Sans limite';
+    const deadlineDate = new Date(template.deadline + 'T23:59:59');
+    return deadlineDate.getTime() < Date.now() ? 'Expiré' : 'Actif';
+  }
+
+  getStatusStyle(template: FormTemplate): any {
+    if (!template.deadline) return { background: '#e2e8f0', color: '#475569' };
+    const deadlineDate = new Date(template.deadline + 'T23:59:59');
+    return deadlineDate.getTime() < Date.now() 
+      ? { background: '#fee2e2', color: '#b91c1c' } 
+      : { background: '#dcfce7', color: '#166534' };
+  }
 
   isFormValid(): boolean {
     if (!this.formTitle || !this.formDescription) return false;
@@ -416,9 +460,14 @@ export class AdminFormLauncherComponent implements OnChanges {
       deadline: this.deadline,
       program: this.templateMode === 'spontaneous' ? 'Spontanée' : this.program
     });
-    this.formTemplateSvc.create(dto).subscribe({
-      next: () => { this.publishing = false; this.successMessage = `Formulaire "${this.formTitle}" publié avec succès !`; setTimeout(() => { this.successMessage = ''; this.onClose(); }, 1800); },
-      error: (err) => { this.publishing = false; console.error('Failed to publish form:', err); alert('Erreur lors de la publication du formulaire.'); }
+    
+    const operation = this.editingTemplateId 
+       ? this.formTemplateSvc.update(this.editingTemplateId, dto)
+       : this.formTemplateSvc.create(dto);
+       
+    operation.subscribe({
+      next: () => { this.publishing = false; this.successMessage = `Formulaire "${this.formTitle}" ${this.editingTemplateId ? 'mis à jour' : 'publié'} avec succès !`; setTimeout(() => { this.successMessage = ''; this.onClose(); this.loadTemplates(); }, 1800); },
+      error: (err) => { this.publishing = false; console.error('Failed to publish form:', err); alert('Erreur lors de la sauvegarde du formulaire.'); }
     });
   }
 

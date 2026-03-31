@@ -257,14 +257,7 @@ export class OffersPopupComponent implements OnInit {
               const all = dtos.map(dto => FormTemplateService.toView(dto));
               const valid = all.filter(t => !t.deadline || !this.isExpired(t.deadline));
               
-              // Group by profileType and get the latest
-              const latestMap = new Map<string, FormTemplateView>();
-              // dtos are usually returned in insertion order. Let's assume the last one is the latest.
-              valid.forEach(t => {
-                  latestMap.set(t.profileType, t);
-              });
-              
-              this.templates = Array.from(latestMap.values());
+              this.templates = valid;
               this.loading = false;
           },
           error: (err: any) => {

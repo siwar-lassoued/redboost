@@ -11,7 +11,10 @@
           <lucide-icon name="fast-forward" [size]="16"></lucide-icon> Clôturer le Round
         </button>
       }
-      <button (click)="showFormLauncher.set(true)" class="btn-gradient">
+      <button (click)="openFormLauncher('templates')" class="btn-gradient-blue">
+        <lucide-icon name="list" [size]="18"></lucide-icon> Formulaires lancés
+      </button>
+      <button (click)="openFormLauncher('choice')" class="btn-gradient">
         <lucide-icon name="plus" [size]="18"></lucide-icon> Lancer un formulaire
       </button>
     </div>
@@ -115,7 +118,7 @@
 </div>
 
 <!-- FORM LAUNCHER MODAL -->
-<rb-admin-form-launcher [open]="showFormLauncher()" (closed)="showFormLauncher.set(false)"></rb-admin-form-launcher>
+<rb-admin-form-launcher [open]="showFormLauncher()" [startStep]="formLauncherStartStep()" (closed)="showFormLauncher.set(false)"></rb-admin-form-launcher>
 
 <!-- DETAIL MODAL -->
 @if (showDetail() && selected()) {

@@ -56,6 +56,10 @@ export class FormTemplateService {
         return this.http.get<FormTemplateDTO>(`${this.baseUrl}/${id}`);
     }
 
+    update(id: string | number, template: FormTemplateDTO): Observable<FormTemplateDTO> {
+        return this.http.put<FormTemplateDTO>(`${this.baseUrl}/${id}`, template);
+    }
+
     static toView(dto: FormTemplateDTO): FormTemplateView {
         let sectors: string[] = [];
         try { sectors = JSON.parse(dto.sectors || '[]'); } catch { sectors = []; }

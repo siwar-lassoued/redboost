@@ -67,6 +67,7 @@ export interface FormTemplate {
     program: string;
     questions: FormQuestion[];
     createdAt: string;
+    deadline?: string;
 }
 
 export const CANDIDATURE_STATUTS: CandidatureStatus[] = [
