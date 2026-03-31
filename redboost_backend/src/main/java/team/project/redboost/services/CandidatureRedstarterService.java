@@ -41,6 +41,18 @@ public class CandidatureRedstarterService {
     private final FormTemplateRepository formTemplateRepository;
     private final EmailService emailService;
     private static final String UPLOAD_DIR = "uploads/candidatures/";
+    private static final com.fasterxml.jackson.databind.ObjectMapper MAPPER = new com.fasterxml.jackson.databind.ObjectMapper();
+
+    private Map<String, Object> getDynamicAnswersMap(CandidatureRedstarter candidature) {
+        if (candidature.getDynamicAnswers() == null || candidature.getDynamicAnswers().isEmpty()) return null;
+        try {
+            Map<String, Object> rootMap = MAPPER.readValue(candidature.getDynamicAnswers(), new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
+            return (Map<String, Object>) rootMap.get("answers");
+        } catch (Exception e) {
+            log.warn("Failed to parse dynamicAnswers JSON", e);
+            return null;
+        }
+    }
 
     // ── Transition rules (matching pfe-project) ──────────────────────
     private static final Map<StatutCandidature, Set<StatutCandidature>> ALLOWED_TRANSITIONS = Map.of(
@@ -191,14 +203,12 @@ public class CandidatureRedstarterService {
             
             // Try to pull email from dynamicAnswers if null
             if (emailToUse == null || emailToUse.isEmpty()) {
-                if (candidature.getDynamicAnswers() != null) {
-                    Map<String, Object> answers = (Map<String, Object>) candidature.getDynamicAnswers().get("answers");
-                    if (answers != null) {
-                        for (Map.Entry<String, Object> entry : answers.entrySet()) {
-                            if (entry.getKey().toLowerCase().contains("email")) {
-                                emailToUse = entry.getValue().toString();
-                                break;
-                            }
+                Map<String, Object> answers = getDynamicAnswersMap(candidature);
+                if (answers != null) {
+                    for (Map.Entry<String, Object> entry : answers.entrySet()) {
+                        if (entry.getKey().toLowerCase().contains("email")) {
+                            emailToUse = entry.getValue().toString();
+                            break;
                         }
                     }
                 }
@@ -212,15 +222,13 @@ public class CandidatureRedstarterService {
                 String phone = candidature.getNumeroTelephone();
                 String startup = candidature.getNomEntreprise();
                 
-                if (candidature.getDynamicAnswers() != null) {
-                    Map<String, Object> answers = (Map<String, Object>) candidature.getDynamicAnswers().get("answers");
-                    if (answers != null) {
-                        for (Map.Entry<String, Object> entry : answers.entrySet()) {
-                            String key = entry.getKey().toLowerCase();
-                            if (nomPrenom == null && (key.contains("nom et prénom") || key.contains("nom complet"))) nomPrenom = entry.getValue().toString();
-                            if (phone == null && (key.contains("téléphone") || key.contains("phone") || key.contains("numéro"))) phone = entry.getValue().toString();
-                            if (startup == null && (key.contains("startup") || key.contains("entreprise"))) startup = entry.getValue().toString();
-                        }
+                Map<String, Object> answers = getDynamicAnswersMap(candidature);
+                if (answers != null) {
+                    for (Map.Entry<String, Object> entry : answers.entrySet()) {
+                        String key = entry.getKey().toLowerCase();
+                        if (nomPrenom == null && (key.contains("nom et prénom") || key.contains("nom complet"))) nomPrenom = entry.getValue().toString();
+                        if (phone == null && (key.contains("téléphone") || key.contains("phone") || key.contains("numéro"))) phone = entry.getValue().toString();
+                        if (startup == null && (key.contains("startup") || key.contains("entreprise"))) startup = entry.getValue().toString();
                     }
                 }
                 
@@ -270,14 +278,12 @@ public class CandidatureRedstarterService {
         if (emailContent != null && !emailContent.isEmpty()) {
             String targetEmail = candidature.getEmail();
             if (targetEmail == null || targetEmail.isEmpty()) {
-                if (candidature.getDynamicAnswers() != null) {
-                    Map<String, Object> answers = (Map<String, Object>) candidature.getDynamicAnswers().get("answers");
-                    if (answers != null) {
-                        for (Map.Entry<String, Object> entry : answers.entrySet()) {
-                            if (entry.getKey().toLowerCase().contains("email")) {
-                                targetEmail = entry.getValue().toString();
-                                break;
-                            }
+                Map<String, Object> answers = getDynamicAnswersMap(candidature);
+                if (answers != null) {
+                    for (Map.Entry<String, Object> entry : answers.entrySet()) {
+                        if (entry.getKey().toLowerCase().contains("email")) {
+                            targetEmail = entry.getValue().toString();
+                            break;
                         }
                     }
                 }
