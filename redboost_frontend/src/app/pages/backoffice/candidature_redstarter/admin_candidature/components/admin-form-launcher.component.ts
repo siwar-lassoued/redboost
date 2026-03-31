@@ -84,15 +84,15 @@ type Step = 'choice' | 'templates' | 'form';
               </div>
               <div class="fl-template-actions">
                 <button (click)="handleTemplateSelect(template)" class="fl-btn-primary">
-                  <lucide-icon name="check" [size]="14"></lucide-icon> Éditer / Utiliser
+                  <lucide-icon name="check" [size]="14"></lucide-icon> Éditer
                 </button>
-                <button (click)="handleTemplateDelete(template)" class="fl-btn-outline" style="color:#DC2626; border-color:#DC2626;">
-                  <lucide-icon name="trash-2" [size]="14"></lucide-icon> Supprimer
+                <button (click)="handleTemplateDelete(template)" class="fl-btn-outline fl-btn-danger">
+                  <lucide-icon name="trash-2" [size]="14"></lucide-icon>
                 </button>
               </div>
-              <div class="fl-template-link" style="margin-top: 12px; font-size: 0.75rem; color: #6b7280; word-break: break-all; background: #f8fafc; padding: 8px; border-radius: 8px; border: 1px dashed #cbd5e1;">
-                <strong>Lien public direct :</strong> <br/>
-                <a [href]="'/redstarter?templateId=' + template.id" target="_blank" style="color: #ea5073; text-decoration: none;">https://redboost.tn/redstarter?templateId={{ template.id }}</a>
+              <div class="fl-template-link">
+                <lucide-icon name="link" [size]="14" style="flex-shrink:0;"></lucide-icon>
+                <a [href]="'/redstarter?templateId=' + template.id" target="_blank">Lien direct</a>
               </div>
             </div>
           </div>
@@ -209,23 +209,29 @@ type Step = 'choice' | 'templates' | 'form';
     .fl-meta-label { font-size:0.75rem; color:#6b7280; }
     .fl-meta-badge { font-size:0.75rem; font-weight:600; padding:3px 12px; border-radius:20px; text-transform:capitalize; }
     .fl-meta-count { font-size:0.75rem; font-weight:700; color:#e11d48; }
-    .fl-template-actions { display:flex; flex-direction:column; gap:8px; margin-top:12px; }
-    .fl-btn-primary { display:flex; align-items:center; justify-content:center; gap:8px; padding:12px 32px; border-radius:12px; font-size:0.875rem; font-weight:700; color:#fff; border:none; cursor:pointer; transition:all .25s ease; background:#ea5073; box-shadow:0 4px 14px rgba(234,80,115,0.3); }
-    .fl-btn-primary:hover { background:#d4476a; box-shadow:0 6px 20px rgba(234,80,115,0.4); transform:translateY(-1px); }
-    .fl-btn-primary:disabled { opacity:0.5; cursor:not-allowed; transform:none; box-shadow:none; }
-    .fl-btn-outline { display:flex; align-items:center; justify-content:center; gap:8px; padding:10px 24px; border-radius:12px; font-size:0.875rem; font-weight:600; color:#ea5073; border:2px solid #ea5073; background:none; cursor:pointer; transition:all .2s; }
+    .fl-template-actions { display:flex; gap:8px; margin-top:16px; margin-bottom: 12px; }
+    .fl-btn-primary { flex: 1; display:flex; align-items:center; justify-content:center; gap:8px; padding:10px 20px; border-radius:10px; font-size:0.875rem; font-weight:600; color:#fff; border:none; cursor:pointer; transition:all .2s ease; background:#ea5073; }
+    .fl-btn-primary:hover { background:#d4476a; transform:translateY(-1px); }
+    .fl-btn-primary:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+    .fl-btn-outline { display:flex; align-items:center; justify-content:center; gap:8px; padding:10px; border-radius:10px; font-size:0.875rem; font-weight:600; color:#ea5073; border:2px solid #ea5073; background:none; cursor:pointer; transition:all .2s; }
     .fl-btn-outline:hover { background:#fdf2f8; }
-    .fl-btn-text { padding:12px 24px; border-radius:12px; border:2px solid #cbd5e1; background:none; cursor:pointer; font-size:0.875rem; font-weight:500; color:#475569; transition:all .2s; }
-    .fl-btn-text:hover { background:#f8fafc; border-color:#94a3b8; }
-    .fl-form-body { display:flex; flex-direction:column; gap:24px; }
-    .fl-form-field label { display:block; font-size:0.875rem; font-weight:600; color:#334155; margin-bottom:8px; }
-    .fl-form-field input[type="text"], .fl-form-field input[type="date"], .fl-form-field textarea { width:100%; padding:12px 16px; border:2px solid #cbd5e1; border-radius:10px; font-size:0.875rem; outline:none; color:#1e293b; transition:all .2s; box-sizing:border-box; font-family:inherit; }
-    .fl-form-field input[type="text"]:focus, .fl-form-field input[type="date"]:focus, .fl-form-field textarea:focus { border-color:#ea5073; box-shadow:0 0 0 4px rgba(234,80,115,0.1); }
-    .fl-form-field textarea { resize:none; }
-    .fl-radio-group { display:flex; gap:20px; }
-    .fl-radio-group label { display:flex; align-items:center; gap:8px; font-size:0.875rem; color:#334155; font-weight:500; cursor:pointer; }
-    .fl-radio-group input[type="radio"] { accent-color:#ea5073; cursor:pointer; transform:scale(1.15); margin:0; }
-    .fl-questions-list { display:flex; flex-direction:column; gap:16px; }
+    .fl-btn-danger { color: #ef4444; border-color: #fca5a5; }
+    .fl-btn-danger:hover { background: #fef2f2; border-color: #ef4444; }
+    .fl-template-link { display:flex; align-items:center; gap:8px; padding: 8px 12px; background:#f8fafc; border-radius:8px; font-size:0.75rem; font-weight:500; color:#64748b; border: 1px solid #e2e8f0; }
+    .fl-template-link a { color:#0ea5e9; text-decoration:none; transition: color 0.15s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; flex: 1; }
+    .fl-template-link a:hover { color:#0284c7; text-decoration:underline; }
+    .fl-btn-text { padding:12px 24px; border-radius:12px; border:2px solid #cbd5e1; background:none; cursor:pointer; font-size:0.875rem; font-weight:600; color:#475569; transition:all .2s; }
+    .fl-btn-text:hover { background:#f8fafc; border-color:#94a3b8; color: #0f172a; }
+    .fl-form-body { display:flex; flex-direction:column; gap:28px; }
+    .fl-form-field label { display:block; font-size:0.875rem; font-weight:700; color:#1e293b; margin-bottom:10px; }
+    .fl-form-field input[type="text"], .fl-form-field input[type="date"], .fl-form-field textarea { width:100%; padding:14px 18px; border:2px solid #e2e8f0; border-radius:12px; font-size:0.875rem; outline:none; color:#0f172a; transition:all .2s; box-sizing:border-box; font-family:inherit; background: #f8fafc; }
+    .fl-form-field input[type="text"]:focus, .fl-form-field input[type="date"]:focus, .fl-form-field textarea:focus { border-color:#ea5073; background: #ffffff; box-shadow:0 0 0 4px rgba(234,80,115,0.1); }
+    .fl-form-field textarea { resize:vertical; min-height: 100px; }
+    .fl-radio-group { display:flex; gap:24px; }
+    .fl-radio-group label { display:flex; align-items:center; gap:8px; font-size:0.875rem; color:#475569; font-weight:600; cursor:pointer; padding: 12px 20px; border: 2px solid #e2e8f0; border-radius: 12px; transition: all 0.2s; background: #f8fafc; }
+    .fl-radio-group label:has(input:checked) { border-color: #ea5073; background: #fff1f2; color: #ea5073; }
+    .fl-radio-group input[type="radio"] { accent-color:#ea5073; cursor:pointer; transform:scale(1.2); margin:0; }
+    .fl-questions-list { display:flex; flex-direction:column; gap:20px; }
     .fl-question-item { border:2px solid #E5E7EB; border-radius:16px; padding:20px; background:#fff; transition:all .2s; }
     .fl-question-item:hover { border-color:#ea5073; box-shadow:0 4px 12px rgba(234,80,115,0.06); }
     .fl-question-row { display:flex; align-items:center; gap:12px; margin-bottom:16px; }

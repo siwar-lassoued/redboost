@@ -62,6 +62,13 @@
       <lucide-icon name="search" [size]="16" class="search-icon"></lucide-icon>
       <input type="text" placeholder="Rechercher par nom ou email..." [value]="searchTerm()" (input)="searchTerm.set($any($event.target).value)" class="search-input">
     </div>
+    
+    <select [value]="filterType()" (change)="filterType.set($any($event.target).value)" class="filter-select">
+      <option value="all">Tous les profils</option>
+      <option value="entrepreneurs">Entrepreneurs / Startups</option>
+      <option value="coaches">Coachs / Mentors</option>
+    </select>
+
     <select [value]="filterStatus()" (change)="filterStatus.set($any($event.target).value)" class="filter-select">
       <option value="all">Tous les statuts</option>
       <option value="EN_ATTENTE">En attente</option>

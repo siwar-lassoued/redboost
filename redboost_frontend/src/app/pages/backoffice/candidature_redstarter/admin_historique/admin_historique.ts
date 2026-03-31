@@ -21,6 +21,7 @@ export class AdminHistoriqueComponent implements OnInit {
 
   searchTerm    = signal('');
   filterStatus  = signal('all');
+  filterType    = signal('all');
 
   allCandidatures = signal<Candidature[]>([]);
   selected        = signal<Candidature|null>(null);
@@ -53,6 +54,10 @@ export class AdminHistoriqueComponent implements OnInit {
       const q = this.searchTerm().toLowerCase();
       if (q && !c.nom.toLowerCase().includes(q) && !c.email.toLowerCase().includes(q)) return false;
       if (this.filterStatus() !== 'all' && c.statut !== this.filterStatus()) return false;
+      if (this.filterType() !== 'all') {
+          if (this.filterType() === 'coaches' && c.type !== 'coaches') return false;
+          if (this.filterType() === 'entrepreneurs' && c.type !== 'entrepreneurs') return false;
+      }
       return true;
     });
   });

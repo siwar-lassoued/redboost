@@ -51,35 +51,38 @@ import { Router } from '@angular/router';
       </div>
 
       <div class="flex flex-col gap-4 p-2" *ngIf="!loading && templates.length > 0">
-        <div *ngFor="let tpl of templates" class="offer-card group flex flex-col md:flex-row justify-between items-start md:items-center p-5 bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-xl hover:border-primary transition-all hover:shadow-md">
+        <div *ngFor="let tpl of templates" class="offer-card group relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center p-6 bg-white dark:bg-surface-800 border-2 border-surface-100 dark:border-surface-700 rounded-2xl hover:border-primary/40 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer" (click)="apply(tpl)">
             
-            <div class="flex-1 mb-4 md:mb-0">
-                <div class="flex items-center gap-2 mb-2">
-                    <span class="px-3 py-1 text-xs font-semibold rounded-full" 
-                          [ngClass]="tpl.profileType === 'coach' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'">
-                        {{ tpl.profileType === 'coach' ? 'Recherche Coach' : 'Pour Startups / Projets' }}
+            <div class="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+
+            <div class="flex-1 mb-6 md:mb-0 relative z-10 w-full md:pr-8">
+                <div class="flex flex-wrap items-center gap-2 mb-3">
+                    <span class="px-3 py-1.5 text-xs font-bold rounded-full uppercase tracking-wider shadow-sm" 
+                          [ngClass]="tpl.profileType === 'coach' ? 'bg-blue-100 text-blue-800 border border-blue-200' : 'bg-emerald-100 text-emerald-800 border border-emerald-200'">
+                        {{ tpl.profileType === 'coach' ? 'Recherche Coach' : 'Smart capital / Financement' }}
                     </span>
-                    <span *ngIf="tpl.deadline" class="text-xs font-medium flex items-center gap-1"
-                          [style.color]="isExpiringSoon(tpl.deadline) ? '#ef4444' : '#6b7280'">
-                        <i class="pi pi-clock"></i>
+                    <span *ngIf="tpl.deadline" class="px-3 py-1.5 text-xs font-semibold rounded-full border bg-surface-50 text-surface-600 flex items-center gap-1.5 shadow-sm"
+                          [ngClass]="isExpiringSoon(tpl.deadline) ? 'border-red-200 text-red-700 bg-red-50' : 'border-surface-200 text-surface-600'">
+                        <i class="pi pi-clock" [ngClass]="{'animate-pulse text-red-500': isExpiringSoon(tpl.deadline)}"></i>
                         <ng-container *ngIf="getRemainingDays(tpl.deadline) !== null">
                           {{ getRemainingDays(tpl.deadline) }} jour{{ getRemainingDays(tpl.deadline)! > 1 ? 's' : '' }} restant{{ getRemainingDays(tpl.deadline)! > 1 ? 's' : '' }}
                         </ng-container>
-                        &middot; {{ tpl.deadline | date:'dd MMM yyyy' }}
                     </span>
                 </div>
                 
-                <h3 class="text-lg font-bold text-surface-900 dark:text-surface-0 mb-1 group-hover:text-primary transition-colors">{{ tpl.title }}</h3>
-                <p class="text-sm text-surface-600 dark:text-surface-400 line-clamp-2 md:pr-6">{{ tpl.description }}</p>
+                <h3 class="text-xl md:text-2xl font-black text-surface-900 dark:text-surface-0 mb-2 tracking-tight group-hover:text-primary transition-colors duration-300">{{ tpl.title }}</h3>
+                <p class="text-sm md:text-base text-surface-600 dark:text-surface-400 line-clamp-2 leading-relaxed">{{ tpl.description }}</p>
                 
-                <div *ngIf="tpl.program" class="mt-3 text-xs text-surface-500 font-medium border-t border-surface-100 dark:border-surface-700 pt-3">
-                   <strong>Programme :</strong> {{ tpl.program }}
+                <div *ngIf="tpl.program" class="mt-4 flex items-center gap-2 text-xs text-surface-500 font-semibold px-3 py-2 bg-surface-50 rounded-lg inline-flex">
+                   <i class="pi pi-box text-primary"></i> {{ tpl.program }}
                 </div>
             </div>
 
-            <button pButton label="Postuler" icon="pi pi-arrow-right" iconPos="right" 
-                    class="p-button-outlined w-full md:w-auto p-button-sm md:ml-4 whitespace-nowrap"
-                    (click)="apply(tpl)"></button>
+            <div class="relative z-10 w-full md:w-auto flex justify-end">
+               <button class="styled-apply-btn w-full md:w-auto" (click)="apply(tpl); $event.stopPropagation()">
+                  Postuler maintenant <i class="pi pi-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+               </button>
+            </div>
         </div>
       </div>
     </p-dialog>
@@ -130,15 +133,45 @@ import { Router } from '@angular/router';
     }
 
     ::ng-deep .offers-dialog .p-dialog-header {
-        border-bottom: 1px solid var(--surface-border);
-        padding: 1.5rem;
+        border-bottom: 1px solid var(--surface-200);
+        padding: 1.5rem 2rem;
+        background: #ffffff;
+        border-radius: 1.5rem 1.5rem 0 0;
+    }
+    ::ng-deep .offers-dialog .p-dialog-title {
+        font-weight: 800;
+        font-size: 1.5rem;
+        color: var(--surface-900);
     }
     ::ng-deep .offers-dialog .p-dialog-content {
-        padding: 1rem 1.5rem 2rem 1.5rem;
+        padding: 2rem;
         background-color: var(--surface-50);
+        border-radius: 0 0 1.5rem 1.5rem;
     }
     .dark ::ng-deep .offers-dialog .p-dialog-content {
         background-color: var(--surface-900);
+    }
+    
+    .styled-apply-btn {
+        background: var(--primary-color, #ea5073);
+        color: white;
+        padding: 0.75rem 1.75rem;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 0.875rem;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 14px -2px rgba(234, 80, 115, 0.4);
+        transition: all 0.2s ease;
+        white-space: nowrap;
+    }
+    .styled-apply-btn:hover {
+        background: #d4476a;
+        box-shadow: 0 6px 20px -2px rgba(234, 80, 115, 0.5);
+        transform: translateY(-2px);
     }
     
     @media (max-width: 768px) {
