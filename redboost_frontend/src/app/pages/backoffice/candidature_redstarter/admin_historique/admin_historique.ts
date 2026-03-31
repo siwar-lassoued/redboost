@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
 import { CandidatureService } from '../services/candidature.service';
 import { Candidature, CandidatureStatus } from '../models/candidature.model';
+import { CandidatureLog } from '../services/candidature.service';
 import { STATUS_CONFIG } from '../constants/colors.constants';
 
 @Component({
@@ -27,6 +28,17 @@ export class AdminHistoriqueComponent implements OnInit {
   motifRejet      = '';
 
   orderedSteps: CandidatureStatus[] = ['EN_ATTENTE', 'EN_COURS_EVALUATION', 'PRE_SELECTIONNE', 'ACCEPTE'];
+
+  modalTab = signal<'detail' | 'historique'>('detail');
+  historiqueLogs = signal<CandidatureLog[]>([]);
+
+  // Email & User Generation Process Modal
+  showProcessModal = signal(false);
+  processAction = signal<'ACCEPTE' | 'REJETE'>('ACCEPTE');
+  processEmailContent = signal('');
+  processSubject = signal('');
+  createAccount = signal(true);
+  processLoading = signal(false);
 
   // KPIs — updated via statistics
   kpiTotal       = signal(0);
@@ -115,23 +127,81 @@ export class AdminHistoriqueComponent implements OnInit {
     return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
   }
 
-  openDetail(c: Candidature): void { this.selected.set(c); }
+  openDetail(c: Candidature): void {
+    this.selected.set(c);
+    this.modalTab.set('detail');
+  }
 
-  onAccept(): void {
-    const s = this.selected();
-    if (!s) return;
-    this.svc.accept(s.id).subscribe({
-      next: () => { this.loadCandidatures(); this.selected.set(null); },
-      error: (err) => alert('Erreur: ' + (err.error?.message || err.message || 'Echec'))
+  loadHistorique(): void {
+    const id = this.selected()?.id;
+    if (!id) return;
+    this.svc.getHistorique(id).subscribe({
+      next: (logs) => this.historiqueLogs.set(logs),
+      error: () => this.historiqueLogs.set([])
     });
   }
 
-  onReject(): void {
+  getAnswerIcon(type: string): string {
+    switch (type) {
+      case 'text-court': return 'file-text';
+      case 'text-long':  return 'file-text';
+      case 'qcm':        return 'check-circle';
+      case 'qcu':        return 'check-circle';
+      case 'upload':     return 'download';
+      default:           return 'clipboard-list';
+    }
+  }
+
+  isObject(val: any): boolean { return typeof val === 'object' && val !== null && !Array.isArray(val); }
+  isArray(val: any): boolean { return Array.isArray(val); }
+  asFile(val: any): { name: string; size: string } { return val as { name: string; size: string }; }
+  asArray(val: any): string[] { return val as string[]; }
+  getNote(): string | null { return (this.selected() as any)?.noteInterne || null; }
+  getMotif(): string | null { return (this.selected() as any)?.motifRejet || null; }
+  
+  getLogColor(statut: string): { bg: string; color: string } {
+    const cfg = (STATUS_CONFIG.candidature as any)[statut];
+    return cfg || { bg: '#F3F4F6', color: '#6B7280' };
+  }
+
+  openProcessModal(action: 'ACCEPTE' | 'REJETE'): void {
+    this.processAction.set(action);
+    const c = this.selected();
+    const name = c?.nom || 'Candidat';
+    const program = c?.programme || 'notre programme';
+
+    if (action === 'ACCEPTE') {
+        this.processSubject.set('Félicitations ! Votre candidature est acceptée');
+        this.processEmailContent.set(`Bonjour ${name},\n\nNous avons le plaisir de vous informer que votre candidature au programme ${program} a été acceptée avec succès !\n\nL'équipe Redboost.`);
+        this.createAccount.set(true);
+    } else {
+        this.processSubject.set('Mise à jour concernant votre candidature');
+        this.processEmailContent.set(`Bonjour ${name},\n\nNous vous remercions pour l'intérêt que vous avez porté au programme ${program}. Malheureusement, suite à une sélection très compétitive, nous ne pouvons retenir votre candidature pour cette édition.\n\nNous vous souhaitons une très bonne continuation dans vos projets.\n\nL'équipe Redboost.`);
+        this.createAccount.set(false);
+    }
+    this.showProcessModal.set(true);
+  }
+
+  closeProcessModal(): void {
+    this.showProcessModal.set(false);
+  }
+
+  confirmProcessStatus(): void {
     const s = this.selected();
-    if (!s || !this.motifRejet.trim()) return;
-    this.svc.reject(s.id, this.motifRejet.trim()).subscribe({
-      next: () => { this.loadCandidatures(); this.selected.set(null); this.showRejectModal.set(false); this.motifRejet = ''; },
-      error: (err) => alert('Erreur: ' + (err.error?.message || err.message || 'Echec'))
+    if (!s) return;
+    this.processLoading.set(true);
+    this.svc.processStatus(s.id, this.processAction(), this.processEmailContent(), this.processSubject(), this.createAccount()).subscribe({
+        next: () => {
+            this.processLoading.set(false);
+            this.showProcessModal.set(false);
+            this.selected.set(null);
+            this.loadCandidatures();
+        },
+        error: (err) => {
+            this.processLoading.set(false);
+            console.error('Process error:', err);
+            alert('Erreur: ' + (err.error?.message || err.message));
+        }
     });
   }
 

@@ -66,4 +66,6 @@ public class CandidatureRedstarterResponseDTO {
     private LocalDateTime dateCreationCandidature;
     private String statut;
     private String commentairesAdmin;
+    private String programme;
+    private String profileType;
 }

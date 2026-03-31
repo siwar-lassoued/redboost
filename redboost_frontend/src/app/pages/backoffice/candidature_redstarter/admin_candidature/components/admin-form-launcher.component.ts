@@ -119,6 +119,10 @@ type Step = 'choice' | 'templates' | 'form';
             <label>Date limite de candidature</label>
             <input type="date" [(ngModel)]="deadline">
           </div>
+          <div class="fl-form-field">
+            <label>Programme associé *</label>
+            <input type="text" [(ngModel)]="program" placeholder="Ex: Redstart 2025, Women In Tech...">
+          </div>
 
           <div class="fl-form-field">
             <label>Questions personnalisées</label>
@@ -126,18 +130,18 @@ type Step = 'choice' | 'templates' | 'form';
               <div *ngFor="let q of questions; let i = index" class="fl-question-item">
                 <div class="fl-question-row">
                   <span class="fl-q-badge">Q{{ i + 1 }}</span>
-                  <input [(ngModel)]="q.text" placeholder="Saisissez votre question...">
-                  <button (click)="removeQuestion(q.id)" class="fl-q-delete">
+                  <input [(ngModel)]="q.text" [placeholder]="q.isLocked ? '' : 'Saisissez votre question...'" [disabled]="!!q.isLocked">
+                  <button *ngIf="!q.isLocked" (click)="removeQuestion(q.id)" class="fl-q-delete">
                     <lucide-icon name="trash-2" [size]="14"></lucide-icon>
                   </button>
                 </div>
                 <div class="fl-type-row">
-                  <label><input type="radio" [name]="'type-' + q.id" [value]="'text-court'" [(ngModel)]="q.type" (change)="onTypeChange(q)"> Texte court</label>
-                  <label><input type="radio" [name]="'type-' + q.id" [value]="'text-long'" [(ngModel)]="q.type" (change)="onTypeChange(q)"> Texte long</label>
-                  <label><input type="radio" [name]="'type-' + q.id" [value]="'qcm'" [(ngModel)]="q.type" (change)="onTypeChange(q)"> QCM</label>
-                  <label><input type="radio" [name]="'type-' + q.id" [value]="'qcu'" [(ngModel)]="q.type" (change)="onTypeChange(q)"> QCU</label>
-                  <label><input type="radio" [name]="'type-' + q.id" [value]="'upload'" [(ngModel)]="q.type" (change)="onTypeChange(q)"> Upload</label>
-                  <label class="fl-required-check"><input type="checkbox" [(ngModel)]="q.required"> Obligatoire</label>
+                  <label><input type="radio" [name]="'type-' + q.id" [value]="'text-court'" [(ngModel)]="q.type" [disabled]="!!q.isLocked" (change)="onTypeChange(q)"> Texte court</label>
+                  <label><input type="radio" [name]="'type-' + q.id" [value]="'text-long'" [(ngModel)]="q.type" [disabled]="!!q.isLocked" (change)="onTypeChange(q)"> Texte long</label>
+                  <label><input type="radio" [name]="'type-' + q.id" [value]="'qcm'" [(ngModel)]="q.type" [disabled]="!!q.isLocked" (change)="onTypeChange(q)"> QCM</label>
+                  <label><input type="radio" [name]="'type-' + q.id" [value]="'qcu'" [(ngModel)]="q.type" [disabled]="!!q.isLocked" (change)="onTypeChange(q)"> QCU</label>
+                  <label><input type="radio" [name]="'type-' + q.id" [value]="'upload'" [(ngModel)]="q.type" [disabled]="!!q.isLocked" (change)="onTypeChange(q)"> Upload</label>
+                  <label class="fl-required-check"><input type="checkbox" [(ngModel)]="q.required" [disabled]="!!q.isLocked"> Obligatoire</label>
                 </div>
                 <div *ngIf="q.type === 'qcm' || q.type === 'qcu'" class="fl-options">
                   <p class="fl-options-label">Options</p>
@@ -160,7 +164,7 @@ type Step = 'choice' | 'templates' | 'form';
         <!-- Footer -->
         <div *ngIf="step() === 'form'" class="fl-footer">
           <button (click)="onBack()" class="fl-btn-text">Retour</button>
-          <button (click)="handlePublish()" [disabled]="!formTitle || !formDescription || publishing" class="fl-btn-primary">
+          <button (click)="handlePublish()" [disabled]="!formTitle || !formDescription || !program || publishing" class="fl-btn-primary">
             <lucide-icon *ngIf="publishing" name="loader" [size]="16" class="animate-spin"></lucide-icon>
             {{ publishing ? 'Publication...' : "Publier le formulaire" }}
           </button>
@@ -226,7 +230,8 @@ type Step = 'choice' | 'templates' | 'form';
     .fl-question-item:hover { border-color:#ea5073; box-shadow:0 4px 12px rgba(234,80,115,0.06); }
     .fl-question-row { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
     .fl-question-row input { flex:1; padding:10px 16px; border:2px solid #cbd5e1; border-radius:10px; font-size:0.875rem; outline:none; color:#1e293b; transition:all .2s; font-family:inherit; }
-    .fl-question-row input:focus { border-color:#ea5073; box-shadow:0 0 0 4px rgba(234,80,115,0.1); }
+    .fl-question-row input:focus:not(:disabled) { border-color:#ea5073; box-shadow:0 0 0 4px rgba(234,80,115,0.1); }
+    .fl-question-row input:disabled { background:#F3F4F6; cursor:not-allowed; color:#6b7280; font-weight:600; border-color:#E5E7EB; }
     .fl-q-badge { background:#fce7f3; color:#e11d48; padding:6px 12px; border-radius:8px; font-size:0.75rem; font-weight:700; line-height:1; white-space:nowrap; }
     .fl-q-delete, .fl-q-delete-sm { padding:8px; border-radius:8px; border:none; background:none; cursor:pointer; color:#9CA3AF; transition:all .2s; }
     .fl-q-delete:hover, .fl-q-delete-sm:hover { color:#ea5073; background:#FEF2F2; }
@@ -251,6 +256,9 @@ type Step = 'choice' | 'templates' | 'form';
     .text-white { color:#fff; }
     .animate-spin { animation: spin 1s linear infinite; }
     @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    @media(max-width:1024px) {
+      .fl-choice-grid { grid-template-columns:1fr 1fr; }
+    }
     @media(max-width:768px) {
       .fl-overlay { padding:0; align-items:flex-end; }
       .fl-box { max-height:95vh; border-radius:20px 20px 0 0; }
@@ -294,6 +302,7 @@ export class AdminFormLauncherComponent implements OnChanges {
   formDescription = '';
   profileType: 'coach' | 'entrepreneur' = 'coach';
   deadline = '';
+  program = '';
   questions: FormQuestion[] = [];
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -319,7 +328,7 @@ export class AdminFormLauncherComponent implements OnChanges {
   }
 
   onClose(): void { this.closed.emit(); this.reset(); }
-  reset(): void { this.step.set('choice'); this.templateMode = null; this.formTitle = ''; this.formDescription = ''; this.profileType = 'coach'; this.deadline = ''; this.questions = []; }
+  reset(): void { this.step.set('choice'); this.templateMode = null; this.formTitle = ''; this.formDescription = ''; this.profileType = 'coach'; this.deadline = ''; this.program = ''; this.questions = []; }
 
   handleChoiceSelect(mode: 'new' | 'existing' | 'spontaneous'): void {
     this.templateMode = mode;
@@ -334,10 +343,10 @@ export class AdminFormLauncherComponent implements OnChanges {
       this.step.set('form');
     } else {
       this.questions = [
-        { id: Math.random(), text: 'Nom et Prénom', type: 'text-court', required: true },
-        { id: Math.random(), text: 'Email', type: 'text-court', required: true },
-        { id: Math.random(), text: 'Numéro de Téléphone', type: 'text-court', required: true },
-        { id: Math.random(), text: 'Nom de l\'entreprise', type: 'text-court', required: true }
+        { id: Math.random(), text: 'Nom et Prénom', type: 'text-court', required: true, isLocked: true },
+        { id: Math.random(), text: 'Email', type: 'text-court', required: true, isLocked: true },
+        { id: Math.random(), text: 'Numéro de téléphone', type: 'text-court', required: true, isLocked: true },
+        { id: Math.random(), text: 'Nom de la startup (si applicable)', type: 'text-court', required: false, isLocked: true }
       ];
       this.step.set('form');
     }
@@ -345,7 +354,7 @@ export class AdminFormLauncherComponent implements OnChanges {
   }
 
   handleTemplateSelect(template: FormTemplate): void {
-    this.formTitle = template.title; this.formDescription = template.description; this.profileType = template.profileType;
+    this.formTitle = template.title; this.formDescription = template.description; this.profileType = template.profileType; this.program = template.program;
     this.questions = template.questions.map(q => ({ ...q, id: Math.random() })); this.step.set('form');
   }
 
@@ -377,7 +386,14 @@ export class AdminFormLauncherComponent implements OnChanges {
   handlePublish(): void {
     if (this.publishing) return;
     this.publishing = true;
-    const dto = FormTemplateService.toDTO({ title: this.formTitle, description: this.formDescription, profileType: this.profileType, questions: this.questions, deadline: this.deadline });
+    const dto = FormTemplateService.toDTO({ 
+      title: this.formTitle, 
+      description: this.formDescription, 
+      profileType: this.profileType, 
+      questions: this.questions, 
+      deadline: this.deadline,
+      program: this.program
+    });
     this.formTemplateSvc.create(dto).subscribe({
       next: () => { this.publishing = false; this.successMessage = `Formulaire "${this.formTitle}" publié avec succès !`; setTimeout(() => { this.successMessage = ''; this.onClose(); }, 1800); },
       error: (err) => { this.publishing = false; console.error('Failed to publish form:', err); alert('Erreur lors de la publication du formulaire.'); }

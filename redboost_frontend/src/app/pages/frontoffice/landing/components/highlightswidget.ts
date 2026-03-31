@@ -126,10 +126,6 @@ import VanillaTilt from 'vanilla-tilt';
     `,
     styles: [
         `
-            @import 'tailwindcss/base';
-            @import 'tailwindcss/components';
-            @import 'tailwindcss/utilities';
-
             .highlights-section {
                 position: relative;
                 font-family: 'Inter', sans-serif;

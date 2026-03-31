@@ -98,7 +98,11 @@ export class CandidatureService {
                         programme: c.nomEntreprise || '—',
                         round: '—',
                         history: [],
-                        documents: (c.documents && c.documents.length > 0) ? c.documents.map((d: string) => ({ name: d.split('/').pop() || 'Document', size: '—' })) : [],
+                        documents: (c.documents && c.documents.length > 0) ? c.documents.map((d: string) => ({ 
+                            name: d.split('/').pop() || 'Document', 
+                            size: '—',
+                            url: `${environment.apiUrl.replace('/api', '')}/uploads/candidatures/${d}`
+                        })) : [],
                         formAnswers,
                         noteInterne: c.commentairesAdmin || null,
                         motifRejet: c.motifRejet || null,
@@ -145,6 +149,13 @@ export class CandidatureService {
 
     reject(id: string, note?: string): Observable<Candidature> {
         return this.http.put<Candidature>(`${this.baseUrl}/admin/${id}/status`, { statut: 'REJETE', commentaires: note || '' });
+    }
+
+    processStatus(id: string | number, status: CandidatureStatus, emailContent: string, subject: string, createAccount: boolean): Observable<{ success: boolean; message: string; candidature: any }> {
+        return this.http.post<{ success: boolean; message: string; candidature: any }>(
+            `${this.baseUrl}/admin/${id}/process-status`,
+            { statut: status, emailContent, subject, createAccount }
+        );
     }
 
     addNote(id: string, note: string): Observable<Candidature> {

@@ -80,13 +80,15 @@ export class FormTemplateService {
         profileType: 'coach' | 'entrepreneur';
         questions: FormQuestionDTO[];
         deadline?: string;
+        program?: string;
     }): FormTemplateDTO {
         return {
             title: view.title,
             description: view.description,
             profileType: view.profileType.toUpperCase() as 'COACH' | 'ENTREPRENEUR',
             questionsJson: JSON.stringify(view.questions),
-            deadline: view.deadline
+            deadline: view.deadline,
+            program: view.program
         };
     }
 }

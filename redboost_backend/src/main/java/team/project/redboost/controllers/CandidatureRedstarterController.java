@@ -181,6 +181,43 @@ public class CandidatureRedstarterController {
     }
     
     /**
+     * Process candidature status with email and account generation
+     * POST /api/candidatures/admin/{id}/process-status
+     */
+    @PostMapping("/admin/{id}/process-status")
+    public ResponseEntity<?> processCandidatureStatus(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> request) {
+        
+        try {
+            String statutStr = (String) request.get("statut");
+            String emailContent = (String) request.get("emailContent");
+            String subject = (String) request.get("subject");
+            Boolean createAccount = (Boolean) request.get("createAccount");
+            
+            CandidatureRedstarter.StatutCandidature newStatut = CandidatureRedstarter.StatutCandidature.valueOf(statutStr.toUpperCase());
+            
+            team.project.redboost.dto.CandidatureRedstarterResponseDTO updatedCandidature = candidatureService.processStatutWithEmail(id, newStatut, emailContent, subject, createAccount);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Statut traité, e-mail envoyé" + (Boolean.TRUE.equals(createAccount) ? " et compte créé" : ""));
+            response.put("candidature", updatedCandidature);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid status value");
+            return ResponseEntity.badRequest()
+                .body(Map.of("success", false, "message", "Statut invalide"));
+        } catch (Exception e) {
+            log.error("Unexpected error processing status", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+    
+    /**
      * Search candidatures (Admin)
      * GET /api/candidatures/admin/search
      */

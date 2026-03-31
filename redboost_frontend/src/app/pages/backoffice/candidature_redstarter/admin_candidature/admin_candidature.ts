@@ -48,6 +48,14 @@ export class AdminCandidaturesComponent implements OnInit {
   entCount = signal(0);
   spontCount = signal(0);
 
+  // Email & User Generation Process Modal
+  showProcessModal = signal(false);
+  processAction = signal<'ACCEPTE' | 'REJETE'>('ACCEPTE');
+  processEmailContent = signal('');
+  processSubject = signal('');
+  createAccount = signal(true);
+  processLoading = signal(false);
+
   acceptingIds = new Set<string>();
 
   ngOnInit(): void {
@@ -118,12 +126,45 @@ export class AdminCandidaturesComponent implements OnInit {
     });
   }
 
-  onAccept(id: string): void {
-    if (this.acceptingIds.has(id)) return;
-    this.acceptingIds.add(id);
-    this.svc.accept(id).subscribe({
-      next: () => { this.acceptingIds.delete(id); this.showDetail.set(false); this.loadAll(); },
-      error: (err) => { this.acceptingIds.delete(id); console.error('Acceptation failed:', err); alert('Erreur: ' + (err.error?.message || err.message || 'Echec acceptation')); }
+  openProcessModal(action: 'ACCEPTE' | 'REJETE'): void {
+    this.processAction.set(action);
+    const c = this.selected();
+    const name = c?.nom || 'Candidat';
+    const program = c?.programme || 'notre programme';
+
+    if (action === 'ACCEPTE') {
+        this.processSubject.set('Félicitations ! Votre candidature est acceptée');
+        this.processEmailContent.set(`Bonjour ${name},\n\nNous avons le plaisir de vous informer que votre candidature au programme ${program} a été acceptée avec succès !\n\nL'équipe Redboost.`);
+        this.createAccount.set(true);
+    } else {
+        this.processSubject.set('Mise à jour concernant votre candidature');
+        this.processEmailContent.set(`Bonjour ${name},\n\nNous vous remercions pour l'intérêt que vous avez porté au programme ${program}. Malheureusement, suite à une sélection très compétitive, nous ne pouvons retenir votre candidature pour cette édition.\n\nNous vous souhaitons une très bonne continuation dans vos projets.\n\nL'équipe Redboost.`);
+        this.createAccount.set(false);
+    }
+    this.showProcessModal.set(true);
+  }
+
+  closeProcessModal(): void {
+    this.showProcessModal.set(false);
+  }
+
+  confirmProcessStatus(): void {
+    const id = this.selected()?.id;
+    if (!id) return;
+    this.processLoading.set(true);
+    this.svc.processStatus(id, this.processAction(), this.processEmailContent(), this.processSubject(), this.createAccount()).subscribe({
+        next: () => {
+            this.processLoading.set(false);
+            this.showProcessModal.set(false);
+            this.showDetail.set(false);
+            this.loadAll();
+            // Optional: you can add a toast notification here
+        },
+        error: (err) => {
+            this.processLoading.set(false);
+            console.error('Process error:', err);
+            alert('Erreur: ' + (err.error?.message || err.message));
+        }
     });
   }
 

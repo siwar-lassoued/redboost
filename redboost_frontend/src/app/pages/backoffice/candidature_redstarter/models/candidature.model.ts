@@ -37,7 +37,7 @@ export interface Candidature {
     programme: string | null;
     round: string | number;
     history: CandidatureStep[];
-    documents: { name: string; size: string }[];
+    documents: { name: string; size: string; url?: string }[];
     formAnswers: FormAnswer[];
     noteInterne?: string | null;
     motifRejet?: string | null;
@@ -55,6 +55,7 @@ export interface FormQuestion {
     type: 'text-court' | 'text-long' | 'qcm' | 'qcu' | 'upload';
     options?: string[];
     required?: boolean;
+    isLocked?: boolean;
 }
 
 export interface FormTemplate {

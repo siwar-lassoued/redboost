@@ -11,18 +11,10 @@
 .btn-gradient {
   display: flex; align-items: center; gap: 8px; padding: 10px 20px;
   border-radius: 12px; font-size: 14px; font-weight: 600; color: #fff;
-  background: #C0392B; border: none; cursor: pointer;
-  transition: all .2s; box-shadow: 0 4px 12px rgba(192,57,43,0.3);
+  background: #ea5073; border: none; cursor: pointer;
+  transition: all .2s; box-shadow: 0 4px 12px rgba(234, 80, 115, 0.3);
 }
-.btn-gradient:hover { opacity: 0.9; }
-
-.btn-gradient-pink {
-  display: flex; align-items: center; gap: 8px; padding: 10px 20px;
-  border-radius: 12px; font-size: 14px; font-weight: 600; color: #fff;
-  background: #ff3d91; border: none; cursor: pointer;
-  transition: all .2s; box-shadow: 0 4px 12px rgba(255, 61, 145, 0.3);
-}
-.btn-gradient-pink:hover { opacity: 0.9; }
+.btn-gradient:hover { background: #d4476a; transform: translateY(-1px); }
 
 .btn-gradient-blue:hover { opacity: 0.9; }
 
@@ -47,7 +39,7 @@
   padding: 10px 20px; border-radius: 12px; font-size: 14px; font-weight: 600;
   border: none; cursor: pointer; transition: all .2s; background: #F3F4F6; color: #6B7280; white-space: nowrap;
 }
-.cand-tab.active { background: linear-gradient(135deg, #00d2ff, #3aafff); color: #fff; }
+.cand-tab.active { background: #ea5073; color: #fff; }
 
 /* ── Filters ── */
 .cand-filters { display: flex; align-items: stretch; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
@@ -182,10 +174,12 @@
   border-radius: 12px; font-size: 14px; font-weight: 600; border: none; cursor: pointer; color: #fff; transition: all .2s;
   box-shadow: 0 4px 12px rgba(0, 210, 255, 0.2);
 }
-.btn-blue, .btn-purple, .btn-amber, .btn-green, .btn-outline-reject { 
-  background: linear-gradient(135deg, #00d2ff, #3aafff); 
-}
-.btn-action:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0, 210, 255, 0.3); }
+.btn-blue { background: #2a7b8c; }
+.btn-purple { background: #2a5f6f; }
+.btn-amber { background: #F59E0B; }
+.btn-green { background: #16a34a; }
+.btn-outline-reject { background: #fff; color: #ea5073; border: 1px solid #ea5073; }
+.btn-action:hover { transform: translateY(-1px); opacity: 0.9; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1); }
 .btn-close-modal { margin-left: auto; padding: 8px 16px; border-radius: 12px; font-size: 14px; font-weight: 500; color: #6B7280; background: none; border: none; cursor: pointer; transition: all .2s; }
 .btn-close-modal:hover { background: #E5E7EB; }
 

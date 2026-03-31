@@ -25,6 +25,7 @@ import team.project.redboost.entities.CandidatureLog;
 import team.project.redboost.entities.Role;
 import team.project.redboost.entities.User;
 import team.project.redboost.repositories.CandidatureLogRepository;
+import team.project.redboost.repositories.FormTemplateRepository;
 import team.project.redboost.repositories.UserRepository;
 
 @Service
@@ -35,7 +36,10 @@ public class CandidatureRedstarterService {
     private final CandidatureRedstarterRepository candidatureRepository;
     private final NotificationService notificationService;
     private final UserRepository userRepository;
+    private final UserService userService;
     private final CandidatureLogRepository logRepository;
+    private final FormTemplateRepository formTemplateRepository;
+    private final EmailService emailService;
     private static final String UPLOAD_DIR = "uploads/candidatures/";
 
     // ── Transition rules (matching pfe-project) ──────────────────────
@@ -164,6 +168,130 @@ public class CandidatureRedstarterService {
         return mapToResponseDto(updated);
     }
     
+    @Transactional
+    public team.project.redboost.dto.CandidatureRedstarterResponseDTO processStatutWithEmail(Long id, StatutCandidature newStatut, String emailContent, String subject, Boolean createAccount) throws Exception {
+        log.info("Processing status with email for candidature ID: {}", id);
+        
+        CandidatureRedstarter candidature = candidatureRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Candidature not found with ID: " + id));
+        StatutCandidature oldStatut = candidature.getStatut();
+
+        // Validate transition
+        Set<StatutCandidature> allowed = ALLOWED_TRANSITIONS.getOrDefault(oldStatut, Set.of());
+        if (!allowed.contains(newStatut)) {
+            throw new RuntimeException("Transition non autorisée : " + oldStatut + " → " + newStatut);
+        }
+
+        candidature.setStatut(newStatut);
+        CandidatureRedstarter updated = candidatureRepository.save(candidature);
+
+        // Auto Create Account
+        if (Boolean.TRUE.equals(createAccount) && newStatut == StatutCandidature.ACCEPTE) {
+            String emailToUse = candidature.getEmail();
+            
+            // Try to pull email from dynamicAnswers if null
+            if (emailToUse == null || emailToUse.isEmpty()) {
+                if (candidature.getDynamicAnswers() != null) {
+                    Map<String, Object> answers = (Map<String, Object>) candidature.getDynamicAnswers().get("answers");
+                    if (answers != null) {
+                        for (Map.Entry<String, Object> entry : answers.entrySet()) {
+                            if (entry.getKey().toLowerCase().contains("email")) {
+                                emailToUse = entry.getValue().toString();
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (emailToUse != null && userRepository.findByEmail(emailToUse) == null) {
+                User user = new User();
+                user.setEmail(emailToUse);
+                
+                String nomPrenom = candidature.getNomPrenom();
+                String phone = candidature.getNumeroTelephone();
+                String startup = candidature.getNomEntreprise();
+                
+                if (candidature.getDynamicAnswers() != null) {
+                    Map<String, Object> answers = (Map<String, Object>) candidature.getDynamicAnswers().get("answers");
+                    if (answers != null) {
+                        for (Map.Entry<String, Object> entry : answers.entrySet()) {
+                            String key = entry.getKey().toLowerCase();
+                            if (nomPrenom == null && (key.contains("nom et prénom") || key.contains("nom complet"))) nomPrenom = entry.getValue().toString();
+                            if (phone == null && (key.contains("téléphone") || key.contains("phone") || key.contains("numéro"))) phone = entry.getValue().toString();
+                            if (startup == null && (key.contains("startup") || key.contains("entreprise"))) startup = entry.getValue().toString();
+                        }
+                    }
+                }
+                
+                if (nomPrenom != null && nomPrenom.contains(" ")) {
+                    int firstSpace = nomPrenom.indexOf(" ");
+                    user.setFirstName(nomPrenom.substring(0, firstSpace));
+                    user.setLastName(nomPrenom.substring(firstSpace + 1));
+                } else {
+                    user.setFirstName(nomPrenom != null ? nomPrenom : "Candidat");
+                    user.setLastName("Redboost");
+                }
+                
+                user.setPhoneNumber(phone != null ? phone : "00000000");
+                user.setActive(true);
+                
+                // Determine Role
+                Role[] roleRef = new Role[]{Role.ENTREPRENEUR};
+                if (candidature.getFormTemplateId() != null) {
+                    formTemplateRepository.findById(candidature.getFormTemplateId()).ifPresent(t -> {
+                         if ("coach".equalsIgnoreCase(t.getProfileType())) {
+                           roleRef[0] = Role.COACH;
+                         }
+                    });
+                } else if ("coaches".equals(candidature.getRoleEntreprise())) {
+                    roleRef[0] = Role.COACH;
+                }
+                user.setRole(roleRef[0]);
+                
+                if (roleRef[0] == Role.ENTREPRENEUR) {
+                    user.setStartupName(startup != null ? startup : "Startup");
+                } else {
+                    user.setExpertise(startup); // fallback for coach
+                }
+                
+                String tempPassword = UUID.randomUUID().toString().substring(0, 8);
+                user.setPassword(tempPassword); 
+                
+                userService.addUser(user); 
+                
+                if (!emailContent.contains(tempPassword)) {
+                    emailContent += "\n\n=== Accès Plateforme ===\nEmail: " + user.getEmail() + "\nMot de passe temporaire: " + tempPassword + "\n\nMerci de le modifier lors de votre première connexion.";
+                }
+            }
+        }
+        
+        // Send Email
+        if (emailContent != null && !emailContent.isEmpty()) {
+            String targetEmail = candidature.getEmail();
+            if (targetEmail == null || targetEmail.isEmpty()) {
+                if (candidature.getDynamicAnswers() != null) {
+                    Map<String, Object> answers = (Map<String, Object>) candidature.getDynamicAnswers().get("answers");
+                    if (answers != null) {
+                        for (Map.Entry<String, Object> entry : answers.entrySet()) {
+                            if (entry.getKey().toLowerCase().contains("email")) {
+                                targetEmail = entry.getValue().toString();
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            if (targetEmail != null) {
+                emailService.sendEmail(targetEmail, subject != null ? subject : "Mise à jour de votre candidature", emailContent);
+            }
+        }
+
+        logAction(id, "Validation & Email", oldStatut.name(), newStatut.name(), null, "Admin", "Email envoyé");
+        
+        return mapToResponseDto(updated);
+    }
+    
     @Transactional(readOnly = true)
     public Page<team.project.redboost.dto.CandidatureRedstarterResponseDTO> searchCandidatures(String searchTerm, Pageable pageable) {
         log.info("Searching candidatures with term: {}", searchTerm);
@@ -276,7 +404,7 @@ public class CandidatureRedstarterService {
         else if (currentStatut == CandidatureRedstarter.StatutCandidature.PRESELECTIONNE) 
             currentStatut = CandidatureRedstarter.StatutCandidature.PRE_SELECTIONNE;
         
-        return team.project.redboost.dto.CandidatureRedstarterResponseDTO.builder()
+        team.project.redboost.dto.CandidatureRedstarterResponseDTO dto = team.project.redboost.dto.CandidatureRedstarterResponseDTO.builder()
             .id(entity.getId())
             .nomPrenom(entity.getNomPrenom())
             .genre(entity.getGenre())
@@ -312,9 +440,23 @@ public class CandidatureRedstarterService {
             .formTemplateId(entity.getFormTemplateId())
             .dynamicAnswers(entity.getDynamicAnswers())
             .dateCreationCandidature(entity.getDateCreationCandidature())
-            .statut(currentStatut != null ? currentStatut.name() : null)
-            .commentairesAdmin(entity.getCommentairesAdmin())
             .build();
+            
+        dto.setStatut(currentStatut != null ? currentStatut.name() : null);
+        dto.setCommentairesAdmin(entity.getCommentairesAdmin());
+        
+        // Populate program and profile type information
+        if (entity.getFormTemplateId() != null) {
+            formTemplateRepository.findById(entity.getFormTemplateId()).ifPresent(t -> {
+                dto.setProgramme(t.getProgram());
+                dto.setProfileType(t.getProfileType());
+            });
+        } else {
+            dto.setProgramme("Candidature Spontanée");
+            dto.setProfileType("SPONTANEE");
+        }
+        
+        return dto;
     }
     
     private void logAction(Long candidatureId, String action, String statutAvant,

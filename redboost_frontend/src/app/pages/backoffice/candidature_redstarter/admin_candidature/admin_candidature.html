@@ -11,14 +11,7 @@
           <lucide-icon name="fast-forward" [size]="16"></lucide-icon> Clôturer le Round
         </button>
       }
-      <button (click)="migrateLegacy()" class="btn-gradient-gray" title="Migrer les anciens statuts">
-        <lucide-icon name="refresh-cw" [size]="18"></lucide-icon>
-        <span>Migrer les statuts</span>
-      </button>
-      <button (click)="onCleanupAnonymous()" class="btn-gradient-gray">
-        <lucide-icon name="trash-2" [size]="16"></lucide-icon> Nettoyer les anonymes
-      </button>
-      <button (click)="showFormLauncher.set(true)" class="btn-gradient-pink">
+      <button (click)="showFormLauncher.set(true)" class="btn-gradient">
         <lucide-icon name="plus" [size]="18"></lucide-icon> Lancer un formulaire
       </button>
     </div>
@@ -29,7 +22,7 @@
     @for (tab of tabs; track tab.id) {
       <button (click)="onTabChange(tab.id)" class="cand-tab"
         [class.active]="activeTab() === tab.id">
-        {{ tab.label }} ({{ tab.id === 'coaches' ? coachCount() : tab.id === 'entrepreneurs' ? entCount() : spontCount() }})
+        {{ tab.label }}
       </button>
     }
   </div>
@@ -66,7 +59,6 @@
         <table class="cand-table">
           <thead>
             <tr>
-              <th>Avatar</th>
               <th>Nom</th>
               <th>Type</th>
               <th>Programme</th>
@@ -78,12 +70,6 @@
           <tbody>
             @for (c of candidatures(); track c.id) {
               <tr class="table-row" (click)="onViewDetail(c)">
-                <td>
-                  <div class="avatar"
-                    [style.background]="isCoach(c) ? 'linear-gradient(135deg, #00d2ff, #3aafff)' : 'linear-gradient(135deg, #ff758c, #ea5073)'">
-                    {{ getInitials(c) }}
-                  </div>
-                </td>
                 <td>
                   <div class="name-cell">
                     <span class="name-text">{{ c.nom }}</span>
@@ -131,10 +117,6 @@
       <!-- Header -->
       <div class="modal-header">
         <div class="modal-header-left">
-          <div class="modal-avatar"
-            [style.background]="isCoach(selected()!) ? 'linear-gradient(135deg, #00d2ff, #3aafff)' : 'linear-gradient(135deg, #ff758c, #ea5073)'">
-            {{ getInitials(selected()!) }}
-          </div>
           <div class="modal-header-info">
             <h3 class="modal-name">{{ selected()!.nom }}</h3>
             <div class="modal-badges">
@@ -175,13 +157,23 @@
 
         <!-- Tab: Detail -->
         @if (modalTab() === 'detail') {
-          @if (selected()!.cvUrl) {
+          @if (selected()!.cvUrl || (selected()!.documents && selected()!.documents!.length > 0)) {
             <div class="docs-section">
               <h4 class="section-title"><lucide-icon name="file-text" [size]="14"></lucide-icon> Documents joints</h4>
-              <a [href]="selected()!.cvUrl" target="_blank" class="doc-link">
-                <span>📎</span> CV_{{ selected()!.nom }}.pdf
-                <span class="doc-badge">PDF Distant</span>
-              </a>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                @if (selected()!.cvUrl) {
+                  <a [href]="selected()!.cvUrl" target="_blank" class="doc-link">
+                    <span>📎</span> CV_{{ selected()!.nom.replace(' ', '_') }}.pdf
+                    <span class="doc-badge">PDF Distant</span>
+                  </a>
+                }
+                @for (doc of selected()!.documents; track doc.url) {
+                  <a [href]="doc.url" target="_blank" class="doc-link">
+                    <span>📎</span> Document_Attaché
+                    <span class="doc-badge">Fichier uploadé</span>
+                  </a>
+                }
+              </div>
             </div>
           }
           <h4 class="section-title"><lucide-icon name="file-text" [size]="14"></lucide-icon> Réponses au formulaire</h4>
@@ -278,17 +270,62 @@
           </button>
         }
         @if (selected()!.statut !== 'ACCEPTE' && selected()!.statut !== 'REJETE') {
-          <button (click)="onAccept(selected()!.id)" [disabled]="acceptingIds.has(selected()!.id)" class="btn-action btn-green">
-            <lucide-icon name="check" [size]="14"></lucide-icon>
-            {{ acceptingIds.has(selected()!.id) ? 'Création...' : 'Accepter' }}
+          <button (click)="openProcessModal('ACCEPTE')" class="btn-action btn-green">
+            <lucide-icon name="check" [size]="14"></lucide-icon> Accepter
           </button>
         }
         @if (selected()!.statut !== 'REJETE' && selected()!.statut !== 'ACCEPTE') {
-          <button (click)="onChangeStatut('REJETE')" class="btn-action btn-outline-reject">
+          <button (click)="openProcessModal('REJETE')" class="btn-action btn-outline-reject">
             <lucide-icon name="x" [size]="14"></lucide-icon> Rejeter
           </button>
         }
         <button (click)="showDetail.set(false)" class="btn-close-modal">Fermer</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- PROCESS STATUS MODAL (EMAIL & ACCOUNT GENERATION) -->
+@if (showProcessModal()) {
+  <div class="modal-overlay" style="z-index: 9999;">
+    <div class="modal-box" style="max-width: 600px; border-radius: 12px; overflow: hidden; background: white; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
+      <div class="modal-header" style="padding: 16px 24px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="margin: 0; font-size: 1.25rem; font-weight: 600;" [style.color]="processAction() === 'ACCEPTE' ? '#10B981' : '#EF4444'">
+          {{ processAction() === 'ACCEPTE' ? 'Accepter et Notifier' : 'Rejeter et Notifier' }}
+        </h3>
+        <button (click)="closeProcessModal()" style="background: none; border: none; cursor: pointer; color: #9CA3AF;"><lucide-icon name="x" [size]="20"></lucide-icon></button>
+      </div>
+      <div class="modal-body" style="padding: 24px; display: flex; flex-direction: column; gap: 16px;">
+        <p style="margin: 0; font-size: 0.875rem; color: #6B7280;">Vérifiez et personnalisez l'e-mail qui sera envoyé au candidat.</p>
+        
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <label style="font-size: 0.875rem; font-weight: 600; color: #374151;">Sujet de l'e-mail</label>
+          <input type="text" [ngModel]="processSubject()" (ngModelChange)="processSubject.set($event)" style="width: 100%; padding: 10px; border: 1px solid #D1D5DB; border-radius: 6px; font-size: 0.875rem; outline: none;">
+        </div>
+        
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <label style="font-size: 0.875rem; font-weight: 600; color: #374151;">Contenu de l'e-mail</label>
+          <textarea [ngModel]="processEmailContent()" (ngModelChange)="processEmailContent.set($event)" rows="8" style="width: 100%; padding: 10px; border: 1px solid #D1D5DB; border-radius: 6px; font-size: 0.875rem; font-family: inherit; resize: vertical; outline: none;"></textarea>
+        </div>
+        
+        @if (processAction() === 'ACCEPTE') {
+          <div style="display: flex; align-items: center; gap: 12px; background: #ECFDF5; padding: 12px 16px; border-radius: 8px; border: 1px solid #A7F3D0; margin-top: 8px;">
+            <input type="checkbox" id="createAccountCheck" [ngModel]="createAccount()" (ngModelChange)="createAccount.set($event)" style="width: 18px; height: 18px; cursor: pointer; accent-color: #10B981;">
+            <label for="createAccountCheck" style="margin: 0; font-size: 0.875rem; font-weight: 600; color: #065F46; cursor: pointer;">
+              Générer automatiquement un compte utilisateur
+              <span style="display:block; font-size: 0.75rem; font-weight: 400; color: #047857;">Les identifiants seront ajoutés à la fin de l'e-mail.</span>
+            </label>
+          </div>
+        }
+      </div>
+      <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 12px; background: #F9FAFB;">
+        <button (click)="closeProcessModal()" [disabled]="processLoading()" style="padding: 8px 16px; border: 1px solid #D1D5DB; border-radius: 6px; background: white; color: #374151; font-weight: 500; cursor: pointer;">Annuler</button>
+        <button (click)="confirmProcessStatus()" [disabled]="processLoading()" 
+                style="padding: 8px 16px; border: none; border-radius: 6px; color: white; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px;"
+                [style.background]="processAction() === 'ACCEPTE' ? '#10B981' : '#EF4444'">
+          @if (processLoading()) { <lucide-icon name="loader" [size]="14" class="spin-animation"></lucide-icon> }
+          {{ processLoading() ? 'Envoi en cours...' : 'Confirmer et Envoyer' }}
+        </button>
       </div>
     </div>
   </div>

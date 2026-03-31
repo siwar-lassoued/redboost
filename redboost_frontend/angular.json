@@ -39,7 +39,7 @@
               "node_modules/ngx-toastr/toastr.css"
             ],
             "scripts": [],
-            "allowedCommonJsDependencies": ["sweetalert2"] 
+            "allowedCommonJsDependencies": ["sweetalert2", "vanilla-tilt", "@stomp/stompjs"] 
           },
           "configurations": {
             "production": {
