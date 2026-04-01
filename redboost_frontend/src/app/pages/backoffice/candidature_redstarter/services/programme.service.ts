@@ -5,8 +5,8 @@ import { environment } from '../../../../../environment';
 
 @Injectable({ providedIn: 'root' })
 export class ProgrammeService {
+    private readonly baseUrl = `${environment.apiUrl}/backoffice/programmes`;
     private readonly http = inject(HttpClient);
-    private readonly baseUrl = `${environment.apiUrl}/programmes`;
 
     getAll(filters?: any): Observable<any> {
         let params = new HttpParams();

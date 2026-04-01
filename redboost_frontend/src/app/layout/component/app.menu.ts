@@ -198,12 +198,12 @@ export class AppMenu implements OnInit {
                         icon: 'pi pi-fw pi-history',
                         routerLink: ['/admin_historique'],
                     },
-                    {
-                        label: 'Matching IA',
-                        icon: 'pi pi-fw pi-bolt',
-                        routerLink: ['/admin_matching'],
-                    },
                 ],
+            },
+            {
+                label: 'MATCHING IA',
+                icon: 'pi pi-fw pi-bolt',
+                routerLink: ['/admin_matching'],
             },
         ];
     }

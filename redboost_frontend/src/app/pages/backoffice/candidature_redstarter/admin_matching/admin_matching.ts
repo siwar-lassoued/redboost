@@ -18,15 +18,15 @@ interface CoachUser { id: number; firstName: string; lastName: string; expertise
       <!-- ── Header ─────────────────────── -->
       <div class="matching-header">
         <div>
-          <h1 class="matching-title">🧠 Matching IA Coach / Entrepreneur</h1>
+          <h1 class="matching-title">Matching IA Coach / Entrepreneur</h1>
           <p class="matching-subtitle">Sélectionnez un programme, configurez les thématiques et lancez l'analyse IA</p>
         </div>
         <div class="header-actions" *ngIf="currentSession">
           <div class="ia-badge">
-            <span>⚡</span> IA RedBoost Activée
+            <i class="pi pi-bolt"></i> IA RedBoost Activée
           </div>
           <button class="btn-validate-all" (click)="validateSession()" [disabled]="bulkLoading">
-            {{ bulkLoading ? '⏳ Validation...' : '✅ Valider tous les matchings (' + results.length + ')' }}
+            {{ bulkLoading ? 'Validation...' : 'Valider tous les matchings (' + results.length + ')' }}
           </button>
         </div>
       </div>
@@ -34,13 +34,13 @@ interface CoachUser { id: number; firstName: string; lastName: string; expertise
       <!-- ── Tabs ─────────────────────── -->
       <div class="matching-tabs">
         <button class="tab-btn" [class.active]="activeTab === 'nouveau'" (click)="activeTab = 'nouveau'">
-          🔄 Nouveau Matching
+          Nouveau Matching
         </button>
         <button class="tab-btn" [class.active]="activeTab === 'thematiques'" (click)="activeTab = 'thematiques'">
-          📋 Thématiques
+          Thématiques
         </button>
         <button class="tab-btn" [class.active]="activeTab === 'historique'" (click)="setTab('historique')">
-          📁 Historique
+          Historique
         </button>
       </div>
 
@@ -50,7 +50,7 @@ interface CoachUser { id: number; firstName: string; lastName: string; expertise
       <div *ngIf="activeTab === 'nouveau'" class="tab-content">
         <div class="card">
           <div class="card-header-row">
-            <div class="card-icon">⚡</div>
+            <div class="card-icon"><i class="pi pi-bolt"></i></div>
             <h2 class="card-title">Lancer le Matching IA</h2>
           </div>
 
@@ -80,21 +80,21 @@ interface CoachUser { id: number; firstName: string; lastName: string; expertise
           <!-- Stats -->
           <div *ngIf="selectedProgId && stats" class="stats-row">
             <span class="stat-badge stat-warning">
-              ⏳ En attente : {{ stats.unmatchedCount }}
+              En attente : {{ stats.unmatchedCount }}
             </span>
             <span class="stat-badge stat-success">
-              ✅ Matchés actifs : {{ stats.activeCount }}
+              Matchés actifs : {{ stats.activeCount }}
             </span>
           </div>
 
           <!-- Launch button -->
           <div *ngIf="selectedProgId" class="launch-section">
             <div *ngIf="stats && stats.unmatchedCount === 0" class="empty-state-inline">
-              <p>🎉 <strong>Félicitations !</strong> Tous les entrepreneurs ont déjà un coaching actif.</p>
+              <p><strong>Félicitations !</strong> Tous les entrepreneurs ont déjà un coaching actif.</p>
             </div>
             <button *ngIf="!stats || stats.unmatchedCount > 0"
               class="btn-launch" (click)="runMatching()" [disabled]="isLoading">
-              {{ isLoading ? '🔄 L\'IA analyse les profils...' : '⚡ Lancer le matching IA' }}
+              {{ isLoading ? 'L\'IA analyse les profils...' : 'Lancer le matching IA' }}
             </button>
             <p class="hint" *ngIf="!stats || stats.unmatchedCount > 0">
               L'IA propose le meilleur coach pour chaque entrepreneur du programme.
@@ -110,7 +110,7 @@ interface CoachUser { id: number; firstName: string; lastName: string; expertise
               <p class="results-meta">Session #{{ currentSession.id }} • {{ results.length }} matchings générés</p>
             </div>
             <button class="btn-validate-all" (click)="validateSession()" [disabled]="bulkLoading">
-              ✅ Tout Valider
+              Tout Valider
             </button>
           </div>
 
@@ -125,7 +125,7 @@ interface CoachUser { id: number; firstName: string; lastName: string; expertise
               </div>
 
               <div class="mc-arrow">
-                <span class="arrow-icon">→</span>
+                <span class="arrow-icon"><i class="pi pi-arrow-right"></i></span>
                 <span class="score-text" [style.color]="scoreColor(m.scoreIa)">{{ m.scoreIa }}%</span>
               </div>
 
@@ -142,13 +142,13 @@ interface CoachUser { id: number; firstName: string; lastName: string; expertise
 
               <div class="mc-actions">
                 <button class="btn-action-validate" (click)="validateSingle(m.matchingId)" [disabled]="singleLoading[m.matchingId]">
-                  {{ singleLoading[m.matchingId] ? '⏳' : '✅ Valider' }}
+                  {{ singleLoading[m.matchingId] ? '...' : 'Valider' }}
                 </button>
               </div>
             </div>
 
             <div class="mc-ia-box" *ngIf="m.justification">
-              <span class="ia-label">🧠 Analyse IA : </span>{{ m.justification }}
+              <span class="ia-label">Analyse IA : </span>{{ m.justification }}
             </div>
           </div>
         </div>
@@ -160,7 +160,7 @@ interface CoachUser { id: number; firstName: string; lastName: string; expertise
       <div *ngIf="activeTab === 'thematiques'" class="tab-content">
         <div class="card">
           <div class="card-header-row">
-            <div class="card-icon">📋</div>
+            <div class="card-icon"><i class="pi pi-list"></i></div>
             <h2 class="card-title">Gestion des Thématiques de Coaching</h2>
           </div>
 
@@ -175,7 +175,7 @@ interface CoachUser { id: number; firstName: string; lastName: string; expertise
 
           <!-- Add Thematique Form -->
           <div *ngIf="selectedProgId" class="thematique-form">
-            <h4>{{ editingThematique ? '✏️ Modifier la thématique' : '➕ Nouvelle thématique' }}</h4>
+            <h4>{{ editingThematique ? 'Modifier la thématique' : 'Nouvelle thématique' }}</h4>
             <div class="form-grid-3">
               <div class="form-group">
                 <label>Nom *</label>
@@ -196,7 +196,7 @@ interface CoachUser { id: number; firstName: string; lastName: string; expertise
             </div>
             <div class="form-actions">
               <button class="btn-launch" (click)="saveThematique()">
-                {{ editingThematique ? '💾 Mettre à jour' : '➕ Ajouter' }}
+                {{ editingThematique ? 'Mettre à jour' : 'Ajouter' }}
               </button>
               <button *ngIf="editingThematique" class="btn-cancel" (click)="cancelEditThematique()">Annuler</button>
             </div>
@@ -207,7 +207,7 @@ interface CoachUser { id: number; firstName: string; lastName: string; expertise
             <div *ngFor="let t of thematiques" class="thematique-card">
               <div class="tc-info">
                 <div class="tc-name">{{ t.nom }}</div>
-                <div class="tc-dates">📅 {{ t.dateDebut }} → {{ t.dateFin }}</div>
+                <div class="tc-dates">{{ t.dateDebut }} - {{ t.dateFin }}</div>
                 <div class="tc-desc" *ngIf="t.description">{{ t.description }}</div>
               </div>
               <div class="tc-right">
@@ -215,8 +215,8 @@ interface CoachUser { id: number; firstName: string; lastName: string; expertise
                   {{ t.statut }}
                 </span>
                 <div class="tc-actions">
-                  <button class="btn-sm" (click)="editThematique(t)">✏️</button>
-                  <button class="btn-sm btn-sm-danger" (click)="deleteThematique(t.id!)">🗑️</button>
+                  <button class="btn-sm" (click)="editThematique(t)"><i class="pi pi-pencil"></i></button>
+                  <button class="btn-sm btn-sm-danger" (click)="deleteThematique(t.id!)"><i class="pi pi-trash"></i></button>
                 </div>
               </div>
             </div>
@@ -234,7 +234,7 @@ interface CoachUser { id: number; firstName: string; lastName: string; expertise
       <div *ngIf="activeTab === 'historique'" class="tab-content">
         <div class="card">
           <div class="card-header-row">
-            <div class="card-icon">📁</div>
+            <div class="card-icon"><i class="pi pi-clock"></i></div>
             <h2 class="card-title">Historique des Matchings</h2>
           </div>
 
@@ -247,11 +247,11 @@ interface CoachUser { id: number; firstName: string; lastName: string; expertise
           </div>
 
           <div *ngIf="historyLoading" class="loading-box">
-            🔄 Chargement de l'historique...
+            Chargement de l'historique...
           </div>
 
           <div *ngIf="!historyLoading && history.length === 0 && selectedProgId" class="empty-state-inline">
-            <p>📭 Aucun matching validé dans l'historique.</p>
+            <p>Aucun matching validé dans l'historique.</p>
           </div>
 
           <div *ngFor="let m of history" class="history-card">
@@ -263,7 +263,7 @@ interface CoachUser { id: number; firstName: string; lastName: string; expertise
                   <p class="hc-name">{{ m.entrepreneur?.nom || 'N/A' }}</p>
                 </div>
               </div>
-              <div class="hc-arrow">→</div>
+              <div class="hc-arrow"><i class="pi pi-arrow-right"></i></div>
               <div class="hc-pair">
                 <div class="avatar avatar-coach">{{ m.coach?.prenom?.[0] || 'C' }}</div>
                 <div>
@@ -515,7 +515,7 @@ export class AdminMatchingComponent implements OnInit {
     ) {}
 
     ngOnInit(): void {
-        this.http.get<Programme[]>(`${environment.apiUrl}/programmes`).subscribe({
+        this.http.get<Programme[]>(`${environment.apiUrl}/backoffice/programmes`).subscribe({
             next: (data) => this.programmes = data,
             error: (e) => console.error('Failed to load programmes', e)
         });
