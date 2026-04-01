@@ -92,9 +92,13 @@ interface CoachUser { id: number; firstName: string; lastName: string; expertise
             <div *ngIf="stats && stats.unmatchedCount === 0" class="empty-state-inline">
               <p><strong>Félicitations !</strong> Tous les entrepreneurs ont déjà un coaching actif.</p>
             </div>
+            <div *ngIf="errorMessage" style="margin-bottom: 15px; padding: 10px; background: #fee; border-left: 4px solid #f44336; border-radius: 4px;">
+              <p style="margin: 0; color: #d32f2f;"><strong>🚨 Erreur IA Backend :</strong> {{ errorMessage }}</p>
+            </div>
+
             <button *ngIf="!stats || stats.unmatchedCount > 0"
               class="btn-launch" (click)="runMatching()" [disabled]="isLoading">
-              {{ isLoading ? 'L\'IA analyse les profils...' : 'Lancer le matching IA' }}
+              {{ isLoading ? loadingText : launchText }}
             </button>
             <p class="hint" *ngIf="!stats || stats.unmatchedCount > 0">
               L'IA propose le meilleur coach pour chaque entrepreneur du programme.
@@ -557,6 +561,7 @@ export class AdminMatchingComponent implements OnInit {
     runMatching(): void {
         if (!this.selectedProgId) return;
         this.isLoading = true;
+        this.errorMessage = null;
         const thId = this.selectedThematiqueId || undefined;
         this.matchingSvc.runMatchingIA(this.selectedProgId, thId).subscribe({
             next: (session) => {
@@ -572,7 +577,15 @@ export class AdminMatchingComponent implements OnInit {
             error: (e) => {
                 console.error('Matching failed', e);
                 this.isLoading = false;
-                alert('Erreur lors du matching IA: ' + (e.error?.message || e.message || 'Erreur inconnue'));
+                if (typeof e.error === 'string') {
+                    this.errorMessage = e.error.substring(0, 200) + '...';
+                } else if (e.error && e.error.message) {
+                    this.errorMessage = e.error.message;
+                } else if (!e.ok && e.status === 500) {
+                    this.errorMessage = "Le serveur redboost.tn a crashé ou n'arrive pas à contacter le service Python local (localhost:8000).";
+                } else {
+                    this.errorMessage = "Erreur serveur : " + e.message;
+                }
             }
         });
     }
