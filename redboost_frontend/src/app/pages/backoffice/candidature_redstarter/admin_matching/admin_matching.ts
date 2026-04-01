@@ -495,6 +495,9 @@ export class AdminMatchingComponent implements OnInit {
     thematiques: ThematiqueCoaching[] = [];
 
     isLoading = false;
+    errorMessage: string | null = null;
+    loadingText = "L'IA analyse les profils...";
+    launchText = 'Lancer le matching';
     bulkLoading = false;
     historyLoading = false;
     singleLoading: Record<number, boolean> = {};
@@ -661,7 +664,6 @@ export class AdminMatchingComponent implements OnInit {
         });
     }
 
-    // ─── Helpers ─────────────────────────────────────
     buildResultView(m: MatchingItem): any {
         // Find coach and entrepreneur names from available data
         const coach = this.getCoachById(m.coachId);
