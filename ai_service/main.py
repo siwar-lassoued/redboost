@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routes import writing_assistance, program_analysis
+from routes import writing_assistance, program_analysis, matching
 import os
 from dotenv import load_dotenv
 
@@ -24,6 +24,7 @@ app.add_middleware(
 # Include routers
 app.include_router(writing_assistance.router, prefix="/api/writing", tags=["Writing Assistance"])
 app.include_router(program_analysis.router, prefix="/api/analysis", tags=["Program Analysis"])
+app.include_router(matching.router, prefix="/api/matching", tags=["AI Matching"])
 
 @app.get("/")
 async def root():

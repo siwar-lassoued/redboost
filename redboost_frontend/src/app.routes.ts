@@ -37,6 +37,7 @@ import { EntrepreneursManagementComponent } from './app/pages/backoffice/program
 import { SubmitCandidatureComponent } from './app/pages/backoffice/candidature_redstarter/submit_candidature/submit_candidature';
 import { AdminCandidaturesComponent } from './app/pages/backoffice/candidature_redstarter/admin_candidature/admin_candidature';
 import { AdminHistoriqueComponent } from './app/pages/backoffice/candidature_redstarter/admin_historique/admin_historique';
+import { AdminMatchingComponent } from './app/pages/backoffice/candidature_redstarter/admin_matching/admin_matching';
 import { TemplateListComponent } from './app/pages/backoffice/database_management/template/suivitemplate';
 import { InsertDataComponent } from './app/pages/backoffice/database_management/insertion_data/template_list/insertion_donnees';
 import { TemplateDataManagementComponent } from './app/pages/backoffice/database_management/insertion_data/data_view/data_management';
@@ -91,6 +92,7 @@ export const appRoutes: Routes = [
             { path: 'suivitemplate', component: TemplateListComponent },
             { path: 'admin_redstarter', component: AdminCandidaturesComponent },
             { path: 'admin_historique', component: AdminHistoriqueComponent },
+            { path: 'admin_matching', component: AdminMatchingComponent },
             {path: 'gestion-entrepreneur',component: EntrepreneursManagementComponent},
             { path: 'workflow', component: RapportRedactionComponent },
            // { path: 'sprintdash', component: SprintDashboardComponent },

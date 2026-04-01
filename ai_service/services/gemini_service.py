@@ -75,6 +75,100 @@ class GeminiService:
         response = self.model.generate_content(prompt)
         return self._parse_json_response(response.text)
 
+    async def run_matching(self, coaches: List[Dict], entrepreneurs: List[Dict], 
+                           programme: Dict, thematique: Dict = None) -> Dict[str, Any]:
+        """
+        Run AI-powered coach-entrepreneur matching.
+        The thématique (if provided) influences the scoring — coaches whose expertise 
+        matches the thématique get higher scores.
+        """
+        
+        thematique_context = ""
+        if thematique:
+            thematique_context = f"""
+THÉMATIQUE DE COACHING : {thematique.get('nom', 'Non spécifiée')}
+Description : {thematique.get('description', '')}
+Période : {thematique.get('dateDebut', '')} → {thematique.get('dateFin', '')}
+
+Le matching doit PRIORISER les coaches dont l'expertise correspond directement 
+à cette thématique. Le critère "Alignement thématique" vaut 30% du score."""
+        
+        system_prompt = f"""Tu es un expert RH et coach de startups. Tu effectues le matching entre
+des coachs et des entrepreneurs dans le cadre d'un programme d'accompagnement.
+
+{thematique_context}
+
+Tu calcules un score de compatibilité 0-100 selon 5 critères pondérés :
+
+1. Alignement thématique (30%) :
+   L'expertise du coach correspond-elle à la thématique demandée ?
+   Si pas de thématique spécifique, évaluer l'alignement général des compétences.
+
+2. Alignement sectoriel (25%) :
+   Le secteur du coach ↔ secteur de l'entrepreneur ↔ secteurs du programme.
+   Les 3 doivent s'aligner pour un score maximal.
+
+3. Compétences complémentaires (20%) :
+   Les besoins d'accompagnement de l'entrepreneur sont-ils couverts 
+   par les skills/expertise du coach ?
+
+4. Stade de maturité (15%) :
+   La phase de maturité de l'entrepreneur (idée/MVP/croissance/scale) 
+   est-elle compatible avec l'expérience du coach ?
+
+5. Charge coach (10%) :
+   Score = (1 - nb_entrepreneurs_actifs/5) * 100
+   Un coach avec 0 entrepreneur actif score 100%.
+   Un coach avec 5+ est en surcharge → alerte.
+
+Propose LE MEILLEUR coach pour chaque entrepreneur.
+Base ta justification sur des éléments CONCRETS des profils.
+Si score < 40 → alerte SCORE_FAIBLE.
+Si coach nb_entrepreneurs_actifs >= 5 → alerte COACH_SURCHARGE.
+
+RÈGLE ABSOLUE : JSON valide UNIQUEMENT. Zéro texte avant ou après le JSON."""
+        
+        # Truncate data to fit context window
+        coaches_str = json.dumps(coaches[:20], ensure_ascii=False, default=str)[:8000]
+        entrepreneurs_str = json.dumps(entrepreneurs[:20], ensure_ascii=False, default=str)[:8000]
+        
+        user_prompt = f"""Programme : {programme.get('nom', 'N/A')}
+Description : {programme.get('description', 'N/A')[:500]}
+Période : {programme.get('dateDebut', 'N/A')} - {programme.get('dateFin', 'N/A')}
+
+COACHES DISPONIBLES :
+{coaches_str}
+
+ENTREPRENEURS À MATCHER :
+{entrepreneurs_str}
+
+Schéma JSON attendu :
+{{
+  "matchings": [
+    {{
+      "entrepreneur_id": 0,
+      "coach_id": 0,
+      "score_final": 0,
+      "scores_detail": {{
+        "alignement_thematique": 0,
+        "alignement_sectoriel": 0,
+        "competences_complementaires": 0,
+        "stade_maturite": 0,
+        "charge_coach": 0
+      }},
+      "justification": "...",
+      "points_forts": ["..."],
+      "points_attention": ["..."],
+      "recommandation_session_1": "..."
+    }}
+  ],
+  "alertes": []
+}}"""
+
+        full_prompt = f"{system_prompt}\n\n{user_prompt}"
+        response = self.model.generate_content(full_prompt)
+        return self._parse_json_response(response.text)
+
     def _parse_json_response(self, response_text: str) -> Dict[str, Any]:
         try:
             # Clean up potential markdown formatting

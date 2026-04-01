@@ -64,4 +64,8 @@ public interface CandidatureRedstarterRepository extends JpaRepository<Candidatu
 
     @Query("SELECT c FROM CandidatureRedstarter c WHERE c.formTemplateId IS NULL OR c.formTemplateId IN (SELECT t.id FROM FormTemplateEntity t WHERE UPPER(t.profileType) = 'SPONTANEE')")
     Page<CandidatureRedstarter> findSpontanees(Pageable pageable);
+
+    // For matching: find accepted candidatures with a form template
+    @Query("SELECT c FROM CandidatureRedstarter c WHERE c.formTemplateId IS NOT NULL AND c.statut = :statut")
+    List<CandidatureRedstarter> findByFormTemplateIdNotNullAndStatut(@Param("statut") CandidatureRedstarter.StatutCandidature statut);
 }

@@ -1,0 +1,66 @@
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { environment } from '../../../../../environment';
+
+export interface MatchingSession {
+    id: number;
+    programmeId: number;
+    thematiqueId?: number;
+    statut: 'EN_ATTENTE' | 'VALIDE' | 'ARCHIVE';
+    nbMatchings: number;
+    dateMatching: string;
+    dateValidation?: string;
+    valideParId?: number;
+    alertesJson?: string;
+    matchings?: MatchingItem[];
+}
+
+export interface MatchingItem {
+    id: number;
+    coachId: number;
+    entrepreneurId: number;
+    programmeId: number;
+    thematiqueId?: number;
+    scoreIa: number;
+    scoresDetail?: string;
+    justification: string;
+    pointsForts?: string;
+    pointsAttention?: string;
+    recommandationSession1?: string;
+    statut: 'PROPOSE' | 'VALIDE' | 'TERMINE' | 'LIBERE';
+    dateValidation?: string;
+}
+
+@Injectable({ providedIn: 'root' })
+export class MatchingService {
+    private readonly baseUrl = `${environment.apiUrl}/matching`;
+
+    constructor(private http: HttpClient) {}
+
+    runMatchingIA(programmeId: number, thematiqueId?: number): Observable<MatchingSession> {
+        const params: any = {};
+        if (thematiqueId) params.thematiqueId = thematiqueId;
+        return this.http.post<MatchingSession>(`${this.baseUrl}/run/${programmeId}`, {}, { params });
+    }
+
+    validateSession(sessionId: number, adminId: number): Observable<void> {
+        return this.http.post<void>(`${this.baseUrl}/session/${sessionId}/validate`, null, {
+            params: { adminId }
+        });
+    }
+
+    validateSingle(matchingId: number, adminId: number): Observable<void> {
+        return this.http.post<void>(`${this.baseUrl}/validate/single/${matchingId}`, null, {
+            params: { adminId }
+        });
+    }
+
+    getHistory(programmeId: number): Observable<any[]> {
+        return this.http.get<any[]>(`${this.baseUrl}/history/${programmeId}`);
+    }
+
+    getMatchingStats(programmeId: number): Observable<{ activeCount: number, unmatchedCount: number }> {
+        return this.http.get<{ activeCount: number, unmatchedCount: number }>(`${this.baseUrl}/stats/${programmeId}`);
+    }
+}
