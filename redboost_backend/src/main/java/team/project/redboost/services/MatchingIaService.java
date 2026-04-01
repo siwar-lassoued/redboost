@@ -170,7 +170,7 @@ public class MatchingIaService {
             headers.setContentType(MediaType.APPLICATION_JSON);
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(geminiRequest, headers);
 
-            String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=" + geminiApiKey;
+            String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=" + geminiApiKey;
             ResponseEntity<Map> response = restTemplate.postForEntity(url, entity, Map.class);
             
             Map<String, Object> body = response.getBody();

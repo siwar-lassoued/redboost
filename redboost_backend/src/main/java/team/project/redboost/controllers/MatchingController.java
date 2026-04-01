@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.*;
 import team.project.redboost.entities.MatchingSession;
 import team.project.redboost.services.MatchingIaService;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -47,5 +48,10 @@ public class MatchingController {
     @GetMapping("/stats/{programmeId}")
     public ResponseEntity<Map<String, Integer>> getMatchingStats(@PathVariable Long programmeId) {
         return ResponseEntity.ok(matchingService.getMatchingStats(programmeId));
+    }
+
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<Map<String, String>> handleRuntimeException(RuntimeException ex) {
+        return ResponseEntity.badRequest().body(Collections.singletonMap("message", ex.getMessage()));
     }
 }
