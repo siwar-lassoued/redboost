@@ -32,6 +32,9 @@ public class MatchingIaService {
     @Value("${ai.service.base-url}")
     private String aiServiceUrl;
 
+    @Value("${gemini.api.key:unconfigured}")
+    private String geminiApiKey;
+
     // ─── Run Matching IA ──────────────────────────────────────────
 
     @Transactional
@@ -113,25 +116,77 @@ public class MatchingIaService {
             thematiqueData.put("dateFin", thematique.getDateFin().toString());
         }
 
-        // 4. Call Python AI Service
-        Map<String, Object> requestBody = new LinkedHashMap<>();
-        requestBody.put("coaches", coachesData);
-        requestBody.put("entrepreneurs", entrepreneursData);
-        requestBody.put("programme", programmeData);
-        requestBody.put("thematique", thematiqueData);
+        // 4. Construct Prompt and Call Gemini Direct
+        String thematiqueContext = "";
+        if (thematique != null) {
+            thematiqueContext = "THÉMATIQUE DE COACHING : " + thematique.getNom() + "\n" +
+                    "Description : " + thematique.getDescription() + "\n" +
+                    "Le matching doit PRIORISER les coaches dont l'expertise correspond directement à cette thématique. Le critère 'Alignement thématique' vaut 30% du score.";
+        }
 
-        String aiResponse;
+        String systemPrompt = "Tu es un expert RH et coach de startups. Tu effectues le matching entre des coachs et des entrepreneurs.\n" +
+                thematiqueContext + "\n" +
+                "Tu calcules un score de compatibilité 0-100 selon 5 critères pondérés :\n" +
+                "1. Alignement thématique (30%)\n" +
+                "2. Alignement sectoriel (25%)\n" +
+                "3. Compétences complémentaires (20%)\n" +
+                "4. Stade de maturité (15%)\n" +
+                "5. Charge coach (10%) : Score = (1 - nb_entrepreneurs_actifs/5) * 100\n" +
+                "Propose LE MEILLEUR coach pour chaque entrepreneur.\n" +
+                "Si score < 40 → alerte SCORE_FAIBLE.\n" +
+                "Si charge >= 5 → alerte COACH_SURCHARGE.\n" +
+                "RÈGLE ABSOLUE : JSON valide UNIQUEMENT. Zéro texte avant ou après le JSON.";
+
+        String coachesStr, entrepreneursStr;
         try {
+            coachesStr = objectMapper.writeValueAsString(coachesData.subList(0, Math.min(20, coachesData.size())));
+            entrepreneursStr = objectMapper.writeValueAsString(entrepreneursData.subList(0, Math.min(20, entrepreneursData.size())));
+        } catch (Exception e) {
+            throw new RuntimeException("Erreur de formatage JSON", e);
+        }
+
+        String userPrompt = "Programme : " + programme.getNom() + "\n" +
+                "COACHES DISPONIBLES :\n" + coachesStr + "\n\n" +
+                "ENTREPRENEURS :\n" + entrepreneursStr + "\n\n" +
+                "Schéma attendu JSON :\n" +
+                "{ \"matchings\": [ { \"entrepreneur_id\": 0, \"coach_id\": 0, \"score_final\": 0, \"scores_detail\": { \"alignement_thematique\": 0, \"alignement_sectoriel\": 0, \"competences_complementaires\": 0, \"stade_maturite\": 0, \"charge_coach\": 0 }, \"justification\": \"...\", \"points_forts\": [\"...\"], \"points_attention\": [\"...\"], \"recommandation_session_1\": \"...\" } ], \"alertes\": [] }";
+
+        String finalPrompt = systemPrompt + "\n\n" + userPrompt;
+
+        Map<String, Object> geminiRequest = new LinkedHashMap<>();
+        Map<String, Object> part = new LinkedHashMap<>();
+        part.put("text", finalPrompt);
+        Map<String, Object> content = new LinkedHashMap<>();
+        content.put("parts", List.of(part));
+        geminiRequest.put("contents", List.of(content));
+
+        String aiResponse = null;
+        try {
+            if ("unconfigured".equals(geminiApiKey) || geminiApiKey.isEmpty()) {
+                throw new RuntimeException("La clé API Gemini (gemini.api.key) n'est pas configurée dans le backend.");
+            }
+
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(geminiRequest, headers);
 
-            ResponseEntity<Map> response = restTemplate.postForEntity(
-                    aiServiceUrl + "/api/matching/run", entity, Map.class);
-            aiResponse = objectMapper.writeValueAsString(response.getBody());
+            String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=" + geminiApiKey;
+            ResponseEntity<Map> response = restTemplate.postForEntity(url, entity, Map.class);
+            
+            Map<String, Object> body = response.getBody();
+            if (body != null && body.containsKey("candidates")) {
+                List<Map<String, Object>> candidates = (List<Map<String, Object>>) body.get("candidates");
+                if (!candidates.isEmpty()) {
+                    List<Map<String, Object>> parts = (List<Map<String, Object>>) ((Map<String, Object>) candidates.get(0).get("content")).get("parts");
+                    if (!parts.isEmpty()) aiResponse = (String) parts.get(0).get("text");
+                }
+            }
+            if (aiResponse == null) throw new RuntimeException("Réponse vide de Gemini");
+
+            aiResponse = aiResponse.replace("```json", "").replace("```", "").trim();
         } catch (Exception e) {
             log.error("AI Service call failed: {}", e.getMessage());
-            throw new RuntimeException("Erreur lors de l'appel au service IA : " + e.getMessage());
+            throw new RuntimeException("Erreur de l'API Gemini : " + e.getMessage());
         }
 
         // 5. Parse AI response and create session + matchings
