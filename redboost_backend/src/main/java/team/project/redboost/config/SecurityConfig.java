@@ -37,12 +37,12 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/Auth/**", "/ws/**", "/api/coach/submit", "/api/coach/binome","/api/projets/GetAllPublic","/api/contact","/api/projets/count", "/api/users/coaches/count","/api/users/entrepreneurs/count","/api/files/**","/error","/api/candidatures/**","/api/form-templates/**").permitAll()
-                        .requestMatchers("/uploads/**").permitAll()
+                        .requestMatchers("/uploads/**", "/api/documents/**").permitAll()
                         .requestMatchers(
-                                "/v3/api-docs/**",          // OpenAPI JSON/YAML definition
-                                "/swagger-ui/**",           // Main Swagger UI resources (CSS, JS, etc.)
-                                "/swagger-ui.html",         // Legacy/direct access (often redirects)
-                                "/swagger-ui/index.html"    // Modern entry point in many versions
+                                "/v3/api-docs/**",          
+                                "/swagger-ui/**",           
+                                "/swagger-ui.html",         
+                                "/swagger-ui/index.html"    
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

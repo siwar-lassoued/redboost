@@ -101,7 +101,7 @@ export class CandidatureService {
                         documents: (c.documents && c.documents.length > 0) ? c.documents.map((d: string) => ({ 
                             name: d.split('/').pop() || 'Document', 
                             size: '—',
-                            url: `${environment.apiUrl.replace('/api', '')}/uploads/candidatures/${d}`
+                            url: `${environment.apiUrl}/documents/candidatures/${d.split('/').pop()}`
                         })) : [],
                         formAnswers,
                         noteInterne: c.commentairesAdmin || null,

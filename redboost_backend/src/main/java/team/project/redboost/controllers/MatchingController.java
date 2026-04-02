@@ -45,6 +45,11 @@ public class MatchingController {
         return ResponseEntity.ok(matchingService.getHistory(programmeId));
     }
 
+    @GetMapping("/session/{sessionId}/details")
+    public ResponseEntity<List<Map<String, Object>>> getSessionDetails(@PathVariable Long sessionId) {
+        return ResponseEntity.ok(matchingService.getSessionMatchingsEnriched(sessionId));
+    }
+
     @GetMapping("/stats/{programmeId}")
     public ResponseEntity<Map<String, Integer>> getMatchingStats(@PathVariable Long programmeId) {
         return ResponseEntity.ok(matchingService.getMatchingStats(programmeId));

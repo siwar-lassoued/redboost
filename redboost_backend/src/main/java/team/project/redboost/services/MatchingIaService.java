@@ -68,7 +68,7 @@ public class MatchingIaService {
             throw new RuntimeException("Aucun entrepreneur non-matché à traiter pour ce programme.");
         }
 
-        // 3. Build data for AI
+        // 3. Build ENRICHED data for AI — include ALL available profile fields
         List<Map<String, Object>> coachesData = coaches.stream().map(c -> {
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("id", c.getId());
@@ -76,11 +76,26 @@ public class MatchingIaService {
             m.put("expertise", c.getExpertise());
             m.put("skills", c.getSkills());
             m.put("secteur", c.getSecteur());
+            m.put("region", c.getRegion());
             m.put("years_of_experience", c.getYearsOfExperience());
             m.put("bio", c.getBio());
+            m.put("entreprise", c.getEntreprise());
+            m.put("industry", c.getIndustry());
+            m.put("linkedin", c.getLinkedinUrl());
+            // Academic & professional qualifications
+            m.put("formation_academique", c.getFormationAcademNom());
+            m.put("formation_academique_realisations", c.getFormationAcademRealisations());
+            m.put("competences_pro", c.getCompetencesProNom());
+            m.put("competences_pro_certificat", c.getCompetencesProCertificat());
+            // Coaching track record
+            m.put("nb_entrepreneurs_coaches", c.getNbEntreCoaches());
+            m.put("succes_client", c.getSuccesClient());
+            m.put("engagement_communautaire", c.getEngagementCommunautaire());
             // Count current active matchings for this coach
             long activeCount = matchingRepo.findByCoachIdAndStatut(c.getId(), Matching.StatutMatching.VALIDE).size();
             m.put("nb_entrepreneurs_actifs", activeCount);
+            // Remove null values to keep prompt clean
+            m.values().removeIf(Objects::isNull);
             return m;
         }).collect(Collectors.toList());
 
@@ -91,10 +106,39 @@ public class MatchingIaService {
             m.put("email", c.getEmail());
             m.put("entreprise", c.getNomEntreprise());
             m.put("secteur", c.getEntrepriseEst());
+            m.put("region", c.getRegionBasee());
             m.put("phase_maturite", c.getPhaseMaturite());
             m.put("description", c.getBreveDescription());
             m.put("besoins_accompagnement", c.getBesoinsAccompagnement());
+            m.put("besoins_formation", c.getBesoinsFormation());
             m.put("innovation", c.getComposanteInnovation());
+            m.put("impact_environnemental", c.getImpactEnvironnemental());
+            m.put("impact_social", c.getImpactSocial());
+            m.put("viabilite_commerciale", c.getViabiliteCommerciale());
+            m.put("valeur_ajoutee", c.getValeurAjoutee());
+            m.put("marche_cible", c.getMarchePersonnasCibles());
+            m.put("role_entreprise", c.getRoleEntreprise());
+            m.put("experience_equipe", c.getExperienceEquipeFondatrice());
+            m.put("nb_cofondateurs", c.getNombreCoFondateurs());
+            m.put("nb_emplois_crees", c.getNombreEmploisCrees());
+            m.put("a_beneficie_accompagnement", c.getBeneficieAccompagnement());
+            m.put("details_accompagnement", c.getDetailsAccompagnement());
+            // Include dynamicAnswers data — this is the richest source of information
+            if (c.getDynamicAnswers() != null && !c.getDynamicAnswers().isEmpty()) {
+                try {
+                    Map<String, Object> dynRoot = objectMapper.readValue(c.getDynamicAnswers(), Map.class);
+                    Object answers = dynRoot.get("answers");
+                    if (answers instanceof Map) {
+                        m.put("reponses_formulaire", answers);
+                    } else {
+                        m.put("reponses_formulaire", dynRoot);
+                    }
+                } catch (Exception e) {
+                    log.warn("Failed to parse dynamicAnswers for candidature {}: {}", c.getId(), e.getMessage());
+                }
+            }
+            // Remove null values to keep prompt clean
+            m.values().removeIf(Objects::isNull);
             return m;
         }).collect(Collectors.toList());
 
@@ -123,18 +167,23 @@ public class MatchingIaService {
                     "Le matching doit PRIORISER les coaches dont l'expertise correspond directement à cette thématique. Le critère 'Alignement thématique' vaut 30% du score.";
         }
 
-        String systemPrompt = "Tu es un expert RH et coach de startups. Tu effectues le matching entre des coachs et des entrepreneurs.\n" +
-                thematiqueContext + "\n" +
+        String systemPrompt = "Tu es un expert RH spécialisé dans le coaching de startups en Tunisie. Tu effectues le matching entre des coachs et des entrepreneurs pour le programme RedBoost.\n" +
+                thematiqueContext + "\n\n" +
+                "INSTRUCTIONS IMPORTANTES :\n" +
+                "- Analyse TOUS les champs fournis pour chaque profil, y compris 'reponses_formulaire' qui contient les réponses détaillées du formulaire de candidature.\n" +
+                "- Si certains champs sont absents ou vides pour un coach, évalue sur la base des données DISPONIBLES et pénalise uniquement les critères où l'information est réellement manquante.\n" +
+                "- Ne donne PAS un score de 0% pour un critère juste parce qu'une donnée est manquante. Utilise 50% comme valeur neutre si tu ne peux pas évaluer un critère.\n" +
+                "- Exploite les descriptions, bio, compétences, succès clients, formations et certifications pour enrichir ton analyse.\n\n" +
                 "Tu calcules un score de compatibilité 0-100 selon 5 critères pondérés :\n" +
-                "1. Alignement thématique (30%)\n" +
-                "2. Alignement sectoriel (25%)\n" +
-                "3. Compétences complémentaires (20%)\n" +
-                "4. Stade de maturité (15%)\n" +
-                "5. Charge coach (10%) : Score = (1 - nb_entrepreneurs_actifs/5) * 100\n" +
+                "1. Alignement thématique (30%) : Le coach a-t-il l'expertise/formation/certifications en lien avec le thème ou le secteur de l'entrepreneur ?\n" +
+                "2. Alignement sectoriel (25%) : Le secteur, l'industrie ou l'expérience du coach correspondent-ils au domaine de la startup ?\n" +
+                "3. Compétences complémentaires (20%) : Les compétences du coach (skills, expertise, formations) répondent-elles aux besoins d'accompagnement et de formation de l'entrepreneur ?\n" +
+                "4. Stade de maturité (15%) : L'expérience du coach (nombre d'entrepreneurs coachés, années d'expérience, succès clients) est-elle adaptée à la phase de maturité de la startup ?\n" +
+                "5. Charge coach (10%) : Score = max(0, (1 - nb_entrepreneurs_actifs/5)) * 100. Un coach sans charge a 100%.\n\n" +
                 "Propose LE MEILLEUR coach pour chaque entrepreneur.\n" +
-                "Si score < 40 → alerte SCORE_FAIBLE.\n" +
-                "Si charge >= 5 → alerte COACH_SURCHARGE.\n" +
-                "RÈGLE ABSOLUE : JSON valide UNIQUEMENT. Zéro texte avant ou après le JSON.";
+                "Si score < 40 → ajoute une alerte SCORE_FAIBLE avec explication.\n" +
+                "Si charge >= 5 → ajoute une alerte COACH_SURCHARGE.\n" +
+                "RÈGLE ABSOLUE : Retourne UNIQUEMENT du JSON valide. Zéro texte avant ou après le bloc JSON.";
 
         String coachesStr, entrepreneursStr;
         try {
@@ -314,6 +363,61 @@ public class MatchingIaService {
                 "activeCount", active.size(),
                 "unmatchedCount", (int) unmatchedCount
         );
+    }
+
+    // ─── Enriched Session Details ─────────────────────────────────
+
+    public List<Map<String, Object>> getSessionMatchingsEnriched(Long sessionId) {
+        List<Matching> matchings = matchingRepo.findByMatchingSessionId(sessionId);
+        return matchings.stream().map(m -> {
+            Map<String, Object> view = new LinkedHashMap<>();
+            view.put("matchingId", m.getId());
+            view.put("scoreIa", m.getScoreIa());
+            view.put("statut", m.getStatut());
+            view.put("justification", m.getJustification());
+            view.put("pointsForts", m.getPointsForts());
+            view.put("pointsAttention", m.getPointsAttention());
+            view.put("recommandationSession1", m.getRecommandationSession1());
+            view.put("scoresDetail", m.getScoresDetail());
+
+            // Coach full profile
+            userRepo.findById(m.getCoachId()).ifPresent(c -> {
+                Map<String, Object> coach = new LinkedHashMap<>();
+                coach.put("id", c.getId());
+                coach.put("nom", c.getLastName());
+                coach.put("prenom", c.getFirstName());
+                coach.put("email", c.getEmail());
+                coach.put("expertise", c.getExpertise());
+                coach.put("skills", c.getSkills());
+                coach.put("secteur", c.getSecteur());
+                coach.put("bio", c.getBio());
+                coach.put("yearsOfExperience", c.getYearsOfExperience());
+                coach.put("phoneNumber", c.getPhoneNumber());
+                long activeCount = matchingRepo.findByCoachIdAndStatut(c.getId(), Matching.StatutMatching.VALIDE).size();
+                coach.put("nbEntrepreneursActifs", activeCount);
+                view.put("coach", coach);
+            });
+
+            // Entrepreneur full profile (from candidature)
+            candidatureRepo.findById(m.getEntrepreneurId()).ifPresent(c -> {
+                Map<String, Object> ent = new LinkedHashMap<>();
+                ent.put("id", c.getId());
+                ent.put("nom", c.getNomPrenom());
+                ent.put("email", c.getEmail());
+                ent.put("telephone", c.getNumeroTelephone());
+                ent.put("entreprise", c.getNomEntreprise());
+                ent.put("secteur", c.getEntrepriseEst());
+                ent.put("phaseMaturite", c.getPhaseMaturite());
+                ent.put("description", c.getBreveDescription());
+                ent.put("region", c.getRegionBasee());
+                ent.put("innovation", c.getComposanteInnovation());
+                ent.put("besoinsAccompagnement", c.getBesoinsAccompagnement());
+                ent.put("roleEntreprise", c.getRoleEntreprise());
+                view.put("entrepreneur", ent);
+            });
+
+            return view;
+        }).collect(Collectors.toList());
     }
 
     // ─── Helpers ──────────────────────────────────────────────────

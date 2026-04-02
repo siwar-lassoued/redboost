@@ -7,7 +7,6 @@ import { MatchingService, MatchingSession, MatchingItem } from '../services/matc
 import { ThematiqueService, ThematiqueCoaching } from '../services/thematique.service';
 
 interface Programme { id: number; nom: string; typeProgramme: string; dateDebut: string; dateFin: string; }
-interface CoachUser { id: number; firstName: string; lastName: string; expertise: string; }
 
 @Component({
     selector: 'app-admin-matching',
@@ -25,9 +24,6 @@ interface CoachUser { id: number; firstName: string; lastName: string; expertise
           <div class="ia-badge">
             <i class="pi pi-bolt"></i> IA RedBoost Activée
           </div>
-          <button class="btn-validate-all" (click)="validateSession()" [disabled]="bulkLoading">
-            {{ bulkLoading ? 'Validation...' : 'Valider tous les matchings (' + results.length + ')' }}
-          </button>
         </div>
       </div>
 
@@ -92,8 +88,8 @@ interface CoachUser { id: number; firstName: string; lastName: string; expertise
             <div *ngIf="stats && stats.unmatchedCount === 0" class="empty-state-inline">
               <p><strong>Félicitations !</strong> Tous les entrepreneurs ont déjà un coaching actif.</p>
             </div>
-            <div *ngIf="errorMessage" style="margin-bottom: 15px; padding: 10px; background: #fee; border-left: 4px solid #f44336; border-radius: 4px;">
-              <p style="margin: 0; color: #d32f2f;"><strong>🚨 Erreur IA Backend :</strong> {{ errorMessage }}</p>
+            <div *ngIf="errorMessage" class="error-box">
+              <p><strong>🚨 Erreur IA Backend :</strong> {{ errorMessage }}</p>
             </div>
 
             <button *ngIf="!stats || stats.unmatchedCount > 0"
@@ -111,48 +107,179 @@ interface CoachUser { id: number; firstName: string; lastName: string; expertise
           <div class="results-header">
             <div>
               <h3>Propositions de Matching</h3>
-              <p class="results-meta">Session #{{ currentSession.id }} • {{ results.length }} matchings générés</p>
+              <p class="results-meta">Session #{{ currentSession.id }} • {{ enrichedResults.length }} matchings générés</p>
             </div>
             <button class="btn-validate-all" (click)="validateSession()" [disabled]="bulkLoading">
-              Tout Valider
+              {{ bulkLoading ? 'Validation...' : 'Tout Valider (' + enrichedResults.length + ')' }}
             </button>
           </div>
 
-          <div *ngFor="let m of results" class="matching-card" [style.border-left-color]="scoreColor(m.scoreIa)">
-            <div class="mc-body">
-              <div class="mc-person">
-                <div class="avatar avatar-ent">{{ getInitial(m.entName) }}</div>
+          <!-- Enriched Matching Cards -->
+          <div *ngFor="let m of enrichedResults; let i = index" class="result-card" [style.border-left-color]="scoreColor(m.scoreIa)">
+
+            <!-- Card Header: Score + Actions -->
+            <div class="rc-header">
+              <div class="rc-score-section">
+                <div class="rc-score-circle" [style.background]="scoreColor(m.scoreIa)">
+                  {{ m.scoreIa | number:'1.0-0' }}%
+                </div>
                 <div>
-                  <p class="person-name">{{ m.entName }}</p>
-                  <p class="person-detail">{{ m.entSector }}</p>
+                  <p class="rc-score-label">Score IA</p>
+                  <p class="rc-score-level" [style.color]="scoreColor(m.scoreIa)">{{ scoreLabel(m.scoreIa) }}</p>
                 </div>
               </div>
-
-              <div class="mc-arrow">
-                <span class="arrow-icon"><i class="pi pi-arrow-right"></i></span>
-                <span class="score-text" [style.color]="scoreColor(m.scoreIa)">{{ m.scoreIa }}%</span>
-              </div>
-
-              <div class="mc-person">
-                <div class="avatar avatar-coach">{{ getInitial(m.coachName) }}</div>
-                <div>
-                  <p class="person-name">{{ m.coachName }}</p>
-                  <p class="person-detail">{{ m.coachExpertise }}</p>
-                  <div class="score-badge" [style.background]="scoreColor(m.scoreIa) + '18'" [style.color]="scoreColor(m.scoreIa)">
-                    Score IA : {{ m.scoreIa }}%
-                  </div>
-                </div>
-              </div>
-
-              <div class="mc-actions">
+              <div class="rc-actions">
+                <button class="btn-expand" (click)="toggleExpand(i)">
+                  <i [class]="expandedCards[i] ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"></i>
+                  {{ expandedCards[i] ? 'Réduire' : 'Détails' }}
+                </button>
                 <button class="btn-action-validate" (click)="validateSingle(m.matchingId)" [disabled]="singleLoading[m.matchingId]">
                   {{ singleLoading[m.matchingId] ? '...' : 'Valider' }}
                 </button>
               </div>
             </div>
 
-            <div class="mc-ia-box" *ngIf="m.justification">
-              <span class="ia-label">Analyse IA : </span>{{ m.justification }}
+            <!-- Profiles Side by Side -->
+            <div class="rc-profiles">
+              <!-- Entrepreneur Profile -->
+              <div class="rc-profile-card rc-ent">
+                <div class="rc-profile-header">
+                  <span class="rc-role-badge rc-role-ent">Entrepreneur</span>
+                </div>
+                <h4 class="rc-name">{{ m.entrepreneur?.nom || 'N/A' }}</h4>
+                <div class="rc-info-grid">
+                  <div class="rc-info-item" *ngIf="m.entrepreneur?.email">
+                    <span class="rc-info-label">Email</span>
+                    <span class="rc-info-value">{{ m.entrepreneur.email }}</span>
+                  </div>
+                  <div class="rc-info-item" *ngIf="m.entrepreneur?.telephone">
+                    <span class="rc-info-label">Téléphone</span>
+                    <span class="rc-info-value">{{ m.entrepreneur.telephone }}</span>
+                  </div>
+                  <div class="rc-info-item" *ngIf="m.entrepreneur?.entreprise">
+                    <span class="rc-info-label">Entreprise</span>
+                    <span class="rc-info-value">{{ m.entrepreneur.entreprise }}</span>
+                  </div>
+                  <div class="rc-info-item" *ngIf="m.entrepreneur?.secteur">
+                    <span class="rc-info-label">Secteur</span>
+                    <span class="rc-info-value">{{ m.entrepreneur.secteur }}</span>
+                  </div>
+                  <div class="rc-info-item" *ngIf="m.entrepreneur?.phaseMaturite">
+                    <span class="rc-info-label">Phase de maturité</span>
+                    <span class="rc-info-value">{{ m.entrepreneur.phaseMaturite }}</span>
+                  </div>
+                  <div class="rc-info-item" *ngIf="m.entrepreneur?.region">
+                    <span class="rc-info-label">Région</span>
+                    <span class="rc-info-value">{{ m.entrepreneur.region }}</span>
+                  </div>
+                  <div class="rc-info-item rc-info-full" *ngIf="m.entrepreneur?.description">
+                    <span class="rc-info-label">Description</span>
+                    <span class="rc-info-value">{{ m.entrepreneur.description }}</span>
+                  </div>
+                  <div class="rc-info-item rc-info-full" *ngIf="m.entrepreneur?.innovation">
+                    <span class="rc-info-label">Innovation</span>
+                    <span class="rc-info-value">{{ m.entrepreneur.innovation }}</span>
+                  </div>
+                  <div class="rc-info-item rc-info-full" *ngIf="m.entrepreneur?.besoinsAccompagnement?.length">
+                    <span class="rc-info-label">Besoins d'accompagnement</span>
+                    <div class="rc-tags">
+                      <span class="rc-tag rc-tag-ent" *ngFor="let b of m.entrepreneur.besoinsAccompagnement">{{ b }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Arrow -->
+              <div class="rc-arrow-col">
+                <div class="rc-arrow-wrapper">
+                  <i class="pi pi-arrow-right"></i>
+                </div>
+              </div>
+
+              <!-- Coach Profile -->
+              <div class="rc-profile-card rc-coach">
+                <div class="rc-profile-header">
+                  <span class="rc-role-badge rc-role-coach">Coach</span>
+                  <span class="rc-charge-badge" *ngIf="m.coach?.nbEntrepreneursActifs != null">
+                    {{ m.coach.nbEntrepreneursActifs }} actif(s)
+                  </span>
+                </div>
+                <h4 class="rc-name">{{ m.coach?.prenom }} {{ m.coach?.nom }}</h4>
+                <div class="rc-info-grid">
+                  <div class="rc-info-item" *ngIf="m.coach?.email">
+                    <span class="rc-info-label">Email</span>
+                    <span class="rc-info-value">{{ m.coach.email }}</span>
+                  </div>
+                  <div class="rc-info-item" *ngIf="m.coach?.phoneNumber">
+                    <span class="rc-info-label">Téléphone</span>
+                    <span class="rc-info-value">{{ m.coach.phoneNumber }}</span>
+                  </div>
+                  <div class="rc-info-item" *ngIf="m.coach?.expertise">
+                    <span class="rc-info-label">Expertise</span>
+                    <span class="rc-info-value">{{ m.coach.expertise }}</span>
+                  </div>
+                  <div class="rc-info-item" *ngIf="m.coach?.secteur">
+                    <span class="rc-info-label">Secteur</span>
+                    <span class="rc-info-value">{{ m.coach.secteur }}</span>
+                  </div>
+                  <div class="rc-info-item" *ngIf="m.coach?.skills">
+                    <span class="rc-info-label">Compétences</span>
+                    <span class="rc-info-value">{{ m.coach.skills }}</span>
+                  </div>
+                  <div class="rc-info-item" *ngIf="m.coach?.yearsOfExperience">
+                    <span class="rc-info-label">Expérience</span>
+                    <span class="rc-info-value">{{ m.coach.yearsOfExperience }} ans</span>
+                  </div>
+                  <div class="rc-info-item rc-info-full" *ngIf="m.coach?.bio">
+                    <span class="rc-info-label">Bio</span>
+                    <span class="rc-info-value">{{ m.coach.bio }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Expandable Details -->
+            <div *ngIf="expandedCards[i]" class="rc-details">
+              <!-- Score Details -->
+              <div class="rc-detail-section" *ngIf="m.parsedScoresDetail">
+                <h5 class="rc-detail-title"><i class="pi pi-chart-bar"></i> Détail des Scores</h5>
+                <div class="rc-scores-grid">
+                  <div class="rc-score-item" *ngFor="let entry of objectEntries(m.parsedScoresDetail)">
+                    <span class="rc-score-item-label">{{ formatScoreLabel(entry[0]) }}</span>
+                    <div class="rc-score-bar-bg">
+                      <div class="rc-score-bar" [style.width.%]="entry[1]" [style.background]="scoreColor(entry[1])"></div>
+                    </div>
+                    <span class="rc-score-item-value">{{ entry[1] }}%</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Points Forts -->
+              <div class="rc-detail-section" *ngIf="m.parsedPointsForts?.length">
+                <h5 class="rc-detail-title rc-detail-success"><i class="pi pi-check-circle"></i> Points Forts</h5>
+                <div class="rc-tags">
+                  <span class="rc-tag rc-tag-success" *ngFor="let p of m.parsedPointsForts">{{ p }}</span>
+                </div>
+              </div>
+
+              <!-- Points Attention -->
+              <div class="rc-detail-section" *ngIf="m.parsedPointsAttention?.length">
+                <h5 class="rc-detail-title rc-detail-warning"><i class="pi pi-exclamation-triangle"></i> Points d'Attention</h5>
+                <div class="rc-tags">
+                  <span class="rc-tag rc-tag-warning" *ngFor="let p of m.parsedPointsAttention">{{ p }}</span>
+                </div>
+              </div>
+
+              <!-- Recommandation -->
+              <div class="rc-detail-section" *ngIf="m.recommandationSession1">
+                <h5 class="rc-detail-title"><i class="pi pi-comments"></i> Recommandation 1ère Session</h5>
+                <p class="rc-recommandation">{{ m.recommandationSession1 }}</p>
+              </div>
+            </div>
+
+            <!-- Justification always visible -->
+            <div class="rc-ia-box" *ngIf="m.justification">
+              <span class="rc-ia-label">Analyse IA : </span>{{ m.justification }}
             </div>
           </div>
         </div>
@@ -261,7 +388,6 @@ interface CoachUser { id: number; firstName: string; lastName: string; expertise
           <div *ngFor="let m of history" class="history-card">
             <div class="hc-left">
               <div class="hc-pair">
-                <div class="avatar avatar-ent">{{ m.entrepreneur?.nom?.[0] || 'E' }}</div>
                 <div>
                   <p class="hc-role">Entrepreneur</p>
                   <p class="hc-name">{{ m.entrepreneur?.nom || 'N/A' }}</p>
@@ -269,7 +395,6 @@ interface CoachUser { id: number; firstName: string; lastName: string; expertise
               </div>
               <div class="hc-arrow"><i class="pi pi-arrow-right"></i></div>
               <div class="hc-pair">
-                <div class="avatar avatar-coach">{{ m.coach?.prenom?.[0] || 'C' }}</div>
                 <div>
                   <p class="hc-role">Coach</p>
                   <p class="hc-name">{{ m.coach?.prenom }} {{ m.coach?.nom }}</p>
@@ -367,13 +492,19 @@ interface CoachUser { id: number; firstName: string; lastName: string; expertise
       }
       .form-actions { display: flex; gap: 12px; margin-top: 12px; }
 
+      .error-box {
+        margin-bottom: 15px; padding: 12px 16px; background: #FEF2F2;
+        border-left: 4px solid #EF4444; border-radius: 12px;
+      }
+      .error-box p { margin: 0; color: #DC2626; font-size: 13px; }
+
       /* Validate all */
       .btn-validate-all {
         padding: 10px 20px; border-radius: 12px; font-size: 13px; font-weight: 700;
         background: #16a34a; color: #fff; border: none; cursor: pointer;
-        transition: all .2s;
+        transition: all .2s; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);
       }
-      .btn-validate-all:hover { opacity: 0.9; }
+      .btn-validate-all:hover { opacity: 0.9; transform: translateY(-1px); }
       .btn-validate-all:disabled { opacity: 0.5; }
 
       /* Results */
@@ -382,49 +513,126 @@ interface CoachUser { id: number; firstName: string; lastName: string; expertise
       .results-header h3 { font-size: 22px; font-weight: 800; color: #1A1A2E; margin: 0; }
       .results-meta { font-size: 13px; color: #9CA3AF; margin-top: 4px; }
 
-      /* Matching Card */
-      .matching-card {
+      /* ══════════ Result Card ══════════ */
+      .result-card {
         background: #fff; border-radius: 20px; overflow: hidden;
-        box-shadow: 0 2px 16px rgba(0,0,0,0.07); margin-bottom: 16px;
-        border-left: 4px solid #ea5073;
+        box-shadow: 0 2px 16px rgba(0,0,0,0.07); margin-bottom: 20px;
+        border-left: 5px solid #ea5073; transition: box-shadow .2s;
       }
-      .mc-body {
-        padding: 20px; display: flex; align-items: center; gap: 16px;
+      .result-card:hover { box-shadow: 0 4px 24px rgba(0,0,0,0.1); }
+
+      .rc-header {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 16px 20px; background: #F9FAFB; border-bottom: 1px solid #F3F4F6;
       }
-      .mc-person { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
-      .avatar {
-        width: 44px; height: 44px; border-radius: 12px; display: flex;
+      .rc-score-section { display: flex; align-items: center; gap: 12px; }
+      .rc-score-circle {
+        width: 52px; height: 52px; border-radius: 50%; display: flex;
         align-items: center; justify-content: center; color: #fff;
-        font-size: 14px; font-weight: 700; flex-shrink: 0;
+        font-size: 15px; font-weight: 800; flex-shrink: 0;
       }
-      .avatar-ent { background: linear-gradient(135deg, #ea5073, #6d3345); }
-      .avatar-coach { background: linear-gradient(135deg, #3B82F6, #1D4ED8); }
-      .person-name { font-weight: 700; font-size: 14px; color: #1A1A2E; margin: 0; }
-      .person-detail { font-size: 12px; color: #9CA3AF; margin: 2px 0 0; }
-      .score-badge {
-        display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 10px;
-        border-radius: 20px; margin-top: 4px;
+      .rc-score-label { font-size: 11px; font-weight: 700; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.05em; margin: 0; }
+      .rc-score-level { font-size: 14px; font-weight: 700; margin: 2px 0 0; }
+      .rc-actions { display: flex; gap: 8px; align-items: center; }
+      .btn-expand {
+        padding: 8px 14px; border-radius: 10px; font-size: 12px; font-weight: 600;
+        background: #fff; color: #6B7280; border: 1px solid #E5E7EB; cursor: pointer;
+        display: flex; align-items: center; gap: 6px; transition: all .2s;
       }
-
-      .mc-arrow { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; padding: 0 8px; }
-      .arrow-icon { font-size: 20px; color: #D1D5DB; }
-      .score-text { font-size: 11px; font-weight: 700; }
-
-      .mc-actions { display: flex; gap: 8px; flex-shrink: 0; }
+      .btn-expand:hover { background: #F3F4F6; }
       .btn-action-validate {
-        padding: 8px 16px; border-radius: 10px; font-size: 12px; font-weight: 600;
+        padding: 8px 18px; border-radius: 10px; font-size: 12px; font-weight: 700;
         color: #fff; border: none; cursor: pointer; transition: all .2s;
-        background: linear-gradient(135deg, #ea5073, #6d3345);
+        background: linear-gradient(135deg, #16a34a, #15803d);
+        box-shadow: 0 2px 8px rgba(22, 163, 74, 0.25);
       }
-      .btn-action-validate:hover { opacity: 0.9; }
+      .btn-action-validate:hover { opacity: 0.9; transform: translateY(-1px); }
       .btn-action-validate:disabled { opacity: 0.4; }
 
-      .mc-ia-box {
+      /* Profiles */
+      .rc-profiles {
+        display: grid; grid-template-columns: 1fr auto 1fr;
+        gap: 0; padding: 20px;
+      }
+      .rc-profile-card {
+        padding: 16px; border-radius: 16px; border: 1px solid #F3F4F6;
+        background: #FAFBFC;
+      }
+      .rc-ent { border-left: 3px solid #ea5073; }
+      .rc-coach { border-left: 3px solid #2a7b8c; }
+      .rc-profile-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+      .rc-role-badge {
+        font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px;
+        text-transform: uppercase; letter-spacing: 0.04em;
+      }
+      .rc-role-ent { background: #FFF0F5; color: #C0392B; }
+      .rc-role-coach { background: #E8F5F7; color: #2a7b8c; }
+      .rc-charge-badge {
+        font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 20px;
+        background: #FEF3C7; color: #92400E;
+      }
+      .rc-name { font-size: 16px; font-weight: 700; color: #1A1A2E; margin: 0 0 12px; }
+      .rc-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+      .rc-info-item { display: flex; flex-direction: column; gap: 2px; }
+      .rc-info-full { grid-column: 1 / -1; }
+      .rc-info-label { font-size: 10px; font-weight: 700; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.04em; }
+      .rc-info-value { font-size: 13px; color: #374151; line-height: 1.4; word-break: break-word; }
+
+      .rc-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+      .rc-tag {
+        font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px;
+      }
+      .rc-tag-ent { background: #FFF0F5; color: #C0392B; }
+      .rc-tag-success { background: #D1FAE5; color: #065F46; }
+      .rc-tag-warning { background: #FEF3C7; color: #92400E; }
+
+      .rc-arrow-col {
+        display: flex; align-items: center; justify-content: center; padding: 0 16px;
+      }
+      .rc-arrow-wrapper {
+        width: 40px; height: 40px; border-radius: 50%; background: #F3F4F6;
+        display: flex; align-items: center; justify-content: center;
+        color: #9CA3AF; font-size: 18px;
+      }
+
+      /* Expanded details */
+      .rc-details {
+        padding: 0 20px 16px; display: flex; flex-direction: column; gap: 16px;
+        border-top: 1px solid #F3F4F6; margin-top: 0; padding-top: 16px;
+      }
+      .rc-detail-section {
+        background: #F9FAFB; border-radius: 12px; padding: 14px 16px;
+        border: 1px solid #F3F4F6;
+      }
+      .rc-detail-title {
+        font-size: 13px; font-weight: 700; color: #1A1A2E; margin: 0 0 10px;
+        display: flex; align-items: center; gap: 8px;
+      }
+      .rc-detail-success { color: #16a34a; }
+      .rc-detail-warning { color: #D97706; }
+
+      .rc-scores-grid { display: flex; flex-direction: column; gap: 8px; }
+      .rc-score-item { display: flex; align-items: center; gap: 10px; }
+      .rc-score-item-label { font-size: 12px; font-weight: 600; color: #6B7280; min-width: 180px; }
+      .rc-score-bar-bg {
+        flex: 1; height: 8px; border-radius: 4px; background: #E5E7EB; overflow: hidden;
+      }
+      .rc-score-bar { height: 100%; border-radius: 4px; transition: width .5s ease; }
+      .rc-score-item-value { font-size: 12px; font-weight: 700; color: #374151; min-width: 36px; text-align: right; }
+
+      .rc-recommandation {
+        font-size: 13px; color: #374151; line-height: 1.6; margin: 0;
+        padding: 10px 14px; background: #fff; border-radius: 8px;
+        border: 1px solid #E5E7EB;
+      }
+
+      /* IA Box */
+      .rc-ia-box {
         margin: 0 20px 16px; padding: 12px 16px; border-radius: 12px;
         font-size: 12px; color: #374151; line-height: 1.6;
         background: #EFF6FF; border-left: 4px solid #3B82F6;
       }
-      .ia-label { font-weight: 700; color: #1D4ED8; }
+      .rc-ia-label { font-weight: 700; color: #1D4ED8; }
 
       /* Thematiques */
       .thematique-form {
@@ -485,8 +693,14 @@ interface CoachUser { id: number; firstName: string; lastName: string; expertise
 
       @media (max-width: 768px) {
         .form-grid, .form-grid-3 { grid-template-columns: 1fr; }
-        .mc-body { flex-wrap: wrap; }
+        .rc-profiles { grid-template-columns: 1fr; }
+        .rc-arrow-col { padding: 8px 0; }
+        .rc-arrow-wrapper { transform: rotate(90deg); }
         .matching-header { flex-direction: column; gap: 12px; }
+        .rc-header { flex-direction: column; gap: 12px; align-items: flex-start; }
+        .rc-info-grid { grid-template-columns: 1fr; }
+        .rc-score-item { flex-wrap: wrap; }
+        .rc-score-item-label { min-width: 120px; }
       }
     `]
 })
@@ -508,7 +722,8 @@ export class AdminMatchingComponent implements OnInit {
 
     stats: { activeCount: number; unmatchedCount: number } | null = null;
     currentSession: MatchingSession | null = null;
-    results: any[] = [];
+    enrichedResults: any[] = [];
+    expandedCards: Record<number, boolean> = {};
     history: any[] = [];
 
     // Thematique form
@@ -530,7 +745,7 @@ export class AdminMatchingComponent implements OnInit {
 
     onProgChange(): void {
         this.currentSession = null;
-        this.results = [];
+        this.enrichedResults = [];
         this.stats = null;
         this.thematiques = [];
         this.selectedThematiqueId = 0;
@@ -566,10 +781,26 @@ export class AdminMatchingComponent implements OnInit {
         this.matchingSvc.runMatchingIA(this.selectedProgId, thId).subscribe({
             next: (session) => {
                 this.currentSession = session;
-                if (session.matchings && session.matchings.length > 0) {
-                    this.results = session.matchings.map(m => this.buildResultView(m));
-                }
-                this.isLoading = false;
+                // Fetch enriched details
+                this.matchingSvc.getSessionDetails(session.id).subscribe({
+                    next: (enriched) => {
+                        this.enrichedResults = enriched.map(m => this.parseEnrichedResult(m));
+                        this.isLoading = false;
+                    },
+                    error: () => {
+                        // Fallback to basic data
+                        if (session.matchings && session.matchings.length > 0) {
+                            this.enrichedResults = session.matchings.map(m => ({
+                                matchingId: m.id,
+                                scoreIa: m.scoreIa,
+                                justification: m.justification,
+                                entrepreneur: { nom: 'Entrepreneur #' + m.entrepreneurId },
+                                coach: { nom: 'Coach #' + m.coachId }
+                            }));
+                        }
+                        this.isLoading = false;
+                    }
+                });
                 if (this.selectedProgId) {
                     this.matchingSvc.getMatchingStats(this.selectedProgId).subscribe(s => this.stats = s);
                 }
@@ -582,12 +813,21 @@ export class AdminMatchingComponent implements OnInit {
                 } else if (e.error && e.error.message) {
                     this.errorMessage = e.error.message;
                 } else if (!e.ok && e.status === 500) {
-                    this.errorMessage = "Le serveur redboost.tn a crashé ou n'arrive pas à contacter le service Python local (localhost:8000).";
+                    this.errorMessage = "Le serveur a crashé ou n'arrive pas à contacter le service IA.";
                 } else {
                     this.errorMessage = "Erreur serveur : " + e.message;
                 }
             }
         });
+    }
+
+    parseEnrichedResult(m: any): any {
+        const result = { ...m };
+        // Parse JSON strings
+        try { result.parsedScoresDetail = typeof m.scoresDetail === 'string' ? JSON.parse(m.scoresDetail) : m.scoresDetail; } catch { result.parsedScoresDetail = null; }
+        try { result.parsedPointsForts = typeof m.pointsForts === 'string' ? JSON.parse(m.pointsForts) : m.pointsForts; } catch { result.parsedPointsForts = null; }
+        try { result.parsedPointsAttention = typeof m.pointsAttention === 'string' ? JSON.parse(m.pointsAttention) : m.pointsAttention; } catch { result.parsedPointsAttention = null; }
+        return result;
     }
 
     validateSession(): void {
@@ -597,7 +837,7 @@ export class AdminMatchingComponent implements OnInit {
             next: () => {
                 this.bulkLoading = false;
                 this.currentSession = null;
-                this.results = [];
+                this.enrichedResults = [];
                 this.setTab('historique');
             },
             error: (e) => { console.error(e); this.bulkLoading = false; }
@@ -608,12 +848,12 @@ export class AdminMatchingComponent implements OnInit {
         this.singleLoading[matchingId] = true;
         this.matchingSvc.validateSingle(matchingId, 1).subscribe({
             next: () => {
-                this.results = this.results.filter(r => r.matchingId !== matchingId);
+                this.enrichedResults = this.enrichedResults.filter(r => r.matchingId !== matchingId);
                 this.singleLoading[matchingId] = false;
                 if (this.selectedProgId) {
                     this.matchingSvc.getMatchingStats(this.selectedProgId).subscribe(s => this.stats = s);
                 }
-                if (this.results.length === 0) {
+                if (this.enrichedResults.length === 0) {
                     this.currentSession = null;
                     this.setTab('historique');
                 }
@@ -677,22 +917,8 @@ export class AdminMatchingComponent implements OnInit {
         });
     }
 
-    buildResultView(m: MatchingItem): any {
-        // Find coach and entrepreneur names from available data
-        const coach = this.getCoachById(m.coachId);
-        return {
-            matchingId: m.id,
-            entName: 'Entrepreneur #' + m.entrepreneurId,
-            entSector: '',
-            coachName: coach ? `${coach.firstName} ${coach.lastName}` : `Coach #${m.coachId}`,
-            coachExpertise: coach?.expertise || '',
-            scoreIa: m.scoreIa,
-            justification: m.justification
-        };
-    }
-
-    private getCoachById(id: number): CoachUser | undefined {
-        return undefined; // Coach details come from history endpoint
+    toggleExpand(index: number): void {
+        this.expandedCards[index] = !this.expandedCards[index];
     }
 
     scoreColor(s: number): string {
@@ -701,7 +927,25 @@ export class AdminMatchingComponent implements OnInit {
         return '#EF4444';
     }
 
-    getInitial(name: string): string {
-        return name ? name.charAt(0).toUpperCase() : '?';
+    scoreLabel(s: number): string {
+        if (s >= 76) return 'Excellente compatibilité';
+        if (s >= 50) return 'Compatibilité moyenne';
+        return 'Compatibilité faible';
+    }
+
+    formatScoreLabel(key: string): string {
+        const labels: Record<string, string> = {
+            'alignement_thematique': 'Alignement thématique',
+            'alignement_sectoriel': 'Alignement sectoriel',
+            'competences_complementaires': 'Compétences complémentaires',
+            'stade_maturite': 'Stade de maturité',
+            'charge_coach': 'Charge du coach'
+        };
+        return labels[key] || key.replace(/_/g, ' ');
+    }
+
+    objectEntries(obj: any): [string, number][] {
+        if (!obj || typeof obj !== 'object') return [];
+        return Object.entries(obj) as [string, number][];
     }
 }

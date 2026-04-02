@@ -29,7 +29,6 @@ import team.project.redboost.repositories.FormTemplateRepository;
 import team.project.redboost.repositories.UserRepository;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class CandidatureRedstarterService {
     
@@ -40,8 +39,29 @@ public class CandidatureRedstarterService {
     private final CandidatureLogRepository logRepository;
     private final FormTemplateRepository formTemplateRepository;
     private final EmailService emailService;
-    private static final String UPLOAD_DIR = "uploads/candidatures/";
     private static final com.fasterxml.jackson.databind.ObjectMapper MAPPER = new com.fasterxml.jackson.databind.ObjectMapper();
+
+    private final Path candidatureUploadPath;
+
+    public CandidatureRedstarterService(
+            CandidatureRedstarterRepository candidatureRepository,
+            NotificationService notificationService,
+            UserRepository userRepository,
+            UserService userService,
+            CandidatureLogRepository logRepository,
+            FormTemplateRepository formTemplateRepository,
+            EmailService emailService,
+            @org.springframework.beans.factory.annotation.Value("${file.upload-dir:uploads}") String uploadDir) {
+        this.candidatureRepository = candidatureRepository;
+        this.notificationService = notificationService;
+        this.userRepository = userRepository;
+        this.userService = userService;
+        this.logRepository = logRepository;
+        this.formTemplateRepository = formTemplateRepository;
+        this.emailService = emailService;
+        this.candidatureUploadPath = Paths.get(uploadDir, "candidatures").toAbsolutePath().normalize();
+        log.info("Candidature upload path resolved to: {}", this.candidatureUploadPath);
+    }
 
     private Map<String, Object> getDynamicAnswersMap(CandidatureRedstarter candidature) {
         if (candidature.getDynamicAnswers() == null || candidature.getDynamicAnswers().isEmpty()) return null;
@@ -532,10 +552,9 @@ public class CandidatureRedstarterService {
     
     private List<String> saveDocuments(List<MultipartFile> files) throws IOException {
         List<String> documentPaths = new ArrayList<>();
-        Path uploadPath = Paths.get(UPLOAD_DIR);
         
-        if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
+        if (!Files.exists(candidatureUploadPath)) {
+            Files.createDirectories(candidatureUploadPath);
         }
         
         for (MultipartFile file : files) {
@@ -544,12 +563,12 @@ public class CandidatureRedstarterService {
                 String fileExtension = originalFilename != null ? 
                     originalFilename.substring(originalFilename.lastIndexOf(".")) : "";
                 String uniqueFilename = UUID.randomUUID().toString() + fileExtension;
-                Path filePath = uploadPath.resolve(uniqueFilename);
+                Path filePath = candidatureUploadPath.resolve(uniqueFilename);
                 
                 Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
                 documentPaths.add(uniqueFilename);
                 
-                log.info("Document saved: {}", uniqueFilename);
+                log.info("Document saved to: {}", filePath);
             }
         }
         
@@ -558,7 +577,7 @@ public class CandidatureRedstarterService {
     
     private void deleteDocument(String filename) {
         try {
-            Path filePath = Paths.get(UPLOAD_DIR, filename);
+            Path filePath = candidatureUploadPath.resolve(filename);
             Files.deleteIfExists(filePath);
             log.info("Document deleted: {}", filename);
         } catch (IOException e) {

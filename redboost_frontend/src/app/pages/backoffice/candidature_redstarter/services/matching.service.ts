@@ -56,6 +56,10 @@ export class MatchingService {
         });
     }
 
+    getSessionDetails(sessionId: number): Observable<any[]> {
+        return this.http.get<any[]>(`${this.baseUrl}/session/${sessionId}/details`);
+    }
+
     getHistory(programmeId: number): Observable<any[]> {
         return this.http.get<any[]>(`${this.baseUrl}/history/${programmeId}`);
     }
