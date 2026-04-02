@@ -28,14 +28,14 @@ public class DocumentController {
     private String uploadDir;
 
     @GetMapping("/candidatures/{filename:.+}")
-    public ResponseEntity<Resource> serveCandidatureDocument(@PathVariable String filename) {
+    public ResponseEntity<?> serveCandidatureDocument(@PathVariable String filename) {
         try {
             Path filePath = Paths.get(uploadDir, "candidatures", filename).toAbsolutePath().normalize();
             Resource resource = new UrlResource(filePath.toUri());
 
             if (!resource.exists() || !resource.isReadable()) {
                 log.warn("Document not found or not readable: {}", filePath);
-                return ResponseEntity.notFound().build();
+                return ResponseEntity.status(404).body("Le document " + filename + " est introuvable sur le disque du serveur. Emplacement cherché : " + filePath.toString());
             }
 
             // Determine content type

@@ -32,7 +32,8 @@ public class MatchingIaService {
     @Value("${ai.service.base-url}")
     private String aiServiceUrl;
 
-    private String geminiApiKey = "AIzaSyDHOy-ToddMEzSxDUUdh0x0SqxH19W6FbA";
+    @Value("${gemini.api.key:unconfigured}")
+    private String geminiApiKey;
 
     // ─── Run Matching IA ──────────────────────────────────────────
 
