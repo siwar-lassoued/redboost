@@ -7,6 +7,8 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import { environment } from '../../../environment';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 
 @Component({
     selector: 'app-menu',
@@ -29,6 +31,7 @@ import { environment } from '../../../environment';
 })
 export class AppMenu implements OnInit {
     model: MenuItem[] = [];
+    private readonly menuApiUrl = `${environment.apiUrl}/navigation/menu`;
 
     constructor(
         private http: HttpClient,
@@ -57,7 +60,18 @@ export class AppMenu implements OnInit {
         this.http
             .get(`${environment.apiUrl}/users/profile`, { headers })
             .subscribe({
-                next: (response: any) => this.setMenuBasedOnRole(response.role),
+                next: (response: any) => {
+                    const role = response?.role;
+                    if (!role) {
+                        this.messageService.add({
+                            severity: 'warn',
+                            summary: 'Avertissement',
+                            detail: 'Rôle utilisateur introuvable',
+                        });
+                        return;
+                    }
+                    this.fetchMenuFromApi(role, headers);
+                },
                 error: () => {
                     this.messageService.add({
                         severity: 'error',
@@ -67,6 +81,138 @@ export class AppMenu implements OnInit {
                     this.router.navigate(['/signin']);
                 },
             });
+    }
+
+    private fetchMenuFromApi(role: string, headers: HttpHeaders): void {
+        this.http
+            .get<MenuItem[]>(`${this.menuApiUrl}?role=${role}`, { headers })
+            .pipe(catchError(() => of(null)))
+            .subscribe((menu) => {
+                if (menu && menu.length > 0) {
+                    this.model = menu;
+                    return;
+                }
+
+                if (role === 'COACH') {
+                    this.fetchCoachMenuData(headers);
+                } else {
+                    this.setMenuBasedOnRole(role);
+                }
+            });
+    }
+
+    private fetchCoachMenuData(headers: HttpHeaders): void {
+        this.http
+            .get<MenuItem[]>(`${environment.apiUrl}/coach/menu`, { headers })
+            .pipe(catchError(() => of(null)))
+            .subscribe((menu) => {
+                if (menu && menu.length > 0) {
+                    this.model = menu;
+                } else {
+                    this.buildCoachMenuFromBackend(headers);
+                }
+            });
+    }
+
+    private buildCoachMenuFromBackend(headers: HttpHeaders): void {
+        const entrepreneurs$ = this.http
+            .get<any[]>(`${environment.apiUrl}/coach/entrepreneurs`, { headers })
+            .pipe(catchError(() => of([])));
+        const sessions$ = this.http
+            .get<any[]>(`${environment.apiUrl}/coach/sessions`, { headers })
+            .pipe(catchError(() => of([])));
+        const disponibilites$ = this.http
+            .get<any[]>(`${environment.apiUrl}/coach/disponibilites`, { headers })
+            .pipe(catchError(() => of([])));
+        const livrables$ = this.http
+            .get<any[]>(`${environment.apiUrl}/coach/livrables`, { headers })
+            .pipe(catchError(() => of([])));
+
+        forkJoin({
+            entrepreneurs: entrepreneurs$,
+            sessions: sessions$,
+            disponibilites: disponibilites$,
+            livrables: livrables$,
+        }).subscribe({
+            next: (result) => {
+                this.model = [
+                    {
+                        label: 'ACCUEIL',
+                        icon: 'pi pi-fw pi-home',
+                        items: [
+                            {
+                                label: 'Dashboard',
+                                icon: 'pi pi-fw pi-home',
+                                routerLink: ['/coach-dashboard'],
+                            },
+                        ],
+                    },
+                    {
+                        label: 'MON ACTIVITÉ',
+                        icon: 'pi pi-fw pi-briefcase',
+                        items: [
+                            {
+                                label: `Calendrier & Disponibilité (${result.disponibilites.length})`,
+                                icon: 'pi pi-fw pi-calendar',
+                                routerLink: ['/disponibilites'],
+                            },
+                            {
+                                label: `Mes Sessions (${result.sessions.length})`,
+                                icon: 'pi pi-fw pi-users',
+                                routerLink: ['/mes-sessions'],
+                            },
+                            {
+                                label: `Livrables (${result.livrables.length})`,
+                                icon: 'pi pi-fw pi-file-export',
+                                routerLink: ['/coach-entrep-deliverable'],
+                            },
+                        ],
+                    },
+                    {
+                        label: 'MES ENTREPRENEURS',
+                        icon: 'pi pi-fw pi-users',
+                        items: [
+                            {
+                                label: `Mes Entrepreneurs (${result.entrepreneurs.length})`,
+                                icon: 'pi pi-fw pi-user',
+                                routerLink: ['/coach-entrepreneurs'],
+                            },
+                            {
+                                label: 'Chat',
+                                icon: 'pi pi-fw pi-comments',
+                                routerLink: ['/gestion_comm'],
+                            },
+                        ],
+                    },
+                    {
+                        label: 'RAPPORTS',
+                        icon: 'pi pi-fw pi-file-pdf',
+                        items: [
+                            {
+                                label: 'Rapport de missions',
+                                icon: 'pi pi-fw pi-file-pdf',
+                                routerLink: ['/rapport-missions'],
+                            },
+                        ],
+                    },
+                    {
+                        separator: true,
+                    },
+                    {
+                        items: [
+                            {
+                                label: 'Paramètres',
+                                icon: 'pi pi-fw pi-cog',
+                                routerLink: ['/profile'],
+                            },
+                        ],
+                    },
+                ];
+            },
+            error: () => {
+                this.model = this.getCoachMenu();
+            },
+        });
     }
 
     private setMenuBasedOnRole(role: string): void {
@@ -295,94 +441,71 @@ export class AppMenu implements OnInit {
         return [
             {
                 label: 'ACCUEIL',
-                icon: 'pi pi-fw pi-home',
                 items: [
                     {
-                        label: 'Tableau de bord',
-                        icon: 'pi pi-fw pi-chart-bar',
+                        label: 'Dashboard',
+                        icon: 'pi pi-fw pi-home',
                         routerLink: ['/coach-dashboard'],
                     },
                 ],
             },
             {
-                label: 'CALENDRIER',
-                icon: 'pi pi-fw pi-calendar',
-                routerLink: ['/rendez-vous-planner-coach'],
-            },
-            {
-                label: 'PROJETS',
-                icon: 'pi pi-fw pi-folder',
+                label: 'MON ACTIVITÉ',
                 items: [
                     {
-                        label: 'Mes projets',
-                        icon: 'pi pi-fw pi-list',
-                        routerLink: ['/GetProjet'],
-                    },
-                ],
-            },
-            {
-                label: 'PLANIFICATION',
-                icon: 'pi pi-fw pi-calendar-plus',
-                items: [
-                    {
-                        label: 'Nouveau',
-                        icon: 'pi pi-fw pi-plus',
-                        routerLink: ['/rendez-vous-planner-coach'],
+                        label: 'Calendrier & Disponibilité',
+                        icon: 'pi pi-fw pi-calendar',
+                        routerLink: ['/disponibilites'], // Temporarily point to this for the calendar view map
                     },
                     {
-                        label: 'Documents',
-                        icon: 'pi pi-fw pi-file',
-                        routerLink: ['/ShowCoachDoc'],
+                        label: 'Mes Sessions',
+                        icon: 'pi pi-fw pi-users',
+                        routerLink: ['/mes-sessions'], // Needs to be created/mapped
                     },
                     {
                         label: 'Livrables',
                         icon: 'pi pi-fw pi-file-export',
                         routerLink: ['/coach-entrep-deliverable'],
                     },
-                    {
-                        label: 'Notes',
-                        icon: 'pi pi-fw pi-book',
-                        routerLink: ['/coach-notes-list'],
-                    },
-                    {
-                        label: 'Tâches',
-                        icon: 'pi pi-fw pi-tasks',
-                        routerLink: ['/projects/:projectId/documents'],
-                    },
                 ],
             },
             {
-                label: 'ADMIN LIVRABLES',
-                icon: 'pi pi-fw pi-file',
+                label: 'MES ENTREPRENEURS',
                 items: [
                     {
-                        label: 'Livrables',
-                        icon: 'pi pi-fw pi-file',
-                        routerLink: ['/coach-deliverable'],
+                        label: 'Mes Entrepreneurs',
+                        icon: 'pi pi-fw pi-user',
+                        routerLink: ['/coach-entrepreneurs'], // Needs to be created/mapped
                     },
-                ],
-            },
-            {
-                label: 'COMMUNICATION',
-                icon: 'pi pi-fw pi-comments',
-                items: [
                     {
-                        label: 'Messagerie',
-                        icon: 'pi pi-fw pi-inbox',
+                        label: 'Chat',
+                        icon: 'pi pi-fw pi-comments',
                         routerLink: ['/gestion_comm'],
                     },
+                ],
+            },
+            {
+                label: 'RAPPORTS',
+                items: [
                     {
-                        label: 'Réclamations',
-                        icon: 'pi pi-fw pi-exclamation-circle',
-                        routerLink: ['/messagerie-reclamation'],
-                    },
-                    {
-                        label: 'Feedback',
-                        icon: 'pi pi-fw pi-comment',
-                        routerLink: ['/feedback'],
+                        label: 'Rapport de missions',
+                        icon: 'pi pi-fw pi-file-pdf',
+                        routerLink: ['/rapport-missions'], // Needs to be created/mapped
                     },
                 ],
             },
+            {
+                separator: true // Adds space before bottom section if needed
+            },
+            {
+                items: [
+                    {
+                        label: 'Paramètres',
+                        icon: 'pi pi-fw pi-cog',
+                        routerLink: ['/profile'], // Default link for settings
+                    }
+                ]
+            }
         ];
     }
 }
