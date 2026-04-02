@@ -82,7 +82,7 @@ type Step = 'choice' | 'templates' | 'form';
               </div>
               <div class="fl-template-actions">
                 <button (click)="handleTemplateSelect(template)" class="fl-btn-primary">
-                  <lucide-icon name="edit-2" [size]="14"></lucide-icon> Éditer
+                  <lucide-icon name="pencil" [size]="14"></lucide-icon> Éditer
                 </button>
                 <button (click)="handleTemplateDuplicate(template)" class="fl-btn-outline" title="Dupliquer">
                   <lucide-icon name="copy" [size]="14"></lucide-icon>

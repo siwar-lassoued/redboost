@@ -38,6 +38,27 @@
 .filter-select:focus { border-color: #C0392B; }
 .hist-count { font-size: 14px; color: #6B7280; margin-bottom: 12px; }
 
+/* ── Type & Programme badges ── */
+.type-badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; background: #F3F4F6; color: #6B7280; }
+.type-badge.coach { background: #D1FAE5; color: #065F46; }
+.type-badge.entrepreneur { background: #FFF0F5; color: #C0392B; }
+.prog-badge { font-size: 12px; padding: 4px 10px; border-radius: 20px; background: #E3F2FD; color: #1565C0; font-weight: 500; display: inline-flex; align-items: center; gap: 4px; }
+.prog-text { font-size: 13px; color: #6B7280; }
+.kpi-evaluation { border-color: #D97706; }
+.kpi-evaluation .kpi-icon-wrap { background: rgba(217,119,6,0.1); color: #D97706; }
+
+/* ── Profile Toggle Buttons ── */
+.profile-toggle { display: flex; gap: 4px; background: #F3F4F6; border-radius: 12px; padding: 3px; }
+.toggle-btn {
+  padding: 8px 16px; border-radius: 10px; font-size: 13px; font-weight: 600;
+  border: none; cursor: pointer; transition: all .2s; background: transparent; color: #6B7280;
+  display: flex; align-items: center; gap: 6px; white-space: nowrap;
+}
+.toggle-btn:hover { background: rgba(255,255,255,0.6); }
+.toggle-btn.active { background: #fff; color: #1A1A2E; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.toggle-btn.coach.active { background: #D1FAE5; color: #065F46; }
+.toggle-btn.entrepreneur.active { background: #FFF0F5; color: #C0392B; }
+
 /* ── Step dots (in table) ── */
 .step-dots { display: flex; align-items: center; gap: 3px; }
 .step-dot-sm { width: 10px; height: 10px; border-radius: 50%; transition: background .2s; }
