@@ -351,6 +351,11 @@ export class AppMenu implements OnInit {
                 icon: 'pi pi-fw pi-bolt',
                 routerLink: ['/admin_matching'],
             },
+            {
+                label: 'RAPPORTS IA',
+                icon: 'pi pi-fw pi-sparkles',
+                routerLink: ['/admin_reporting_ia'],
+            },
         ];
     }
 
