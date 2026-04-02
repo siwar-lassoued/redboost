@@ -46,6 +46,16 @@ import { CalendarComponent } from './app/pages/backoffice/event_organizer/calend
 import { DashboardGlobalComponent } from './app/pages/backoffice/dashboard_global/dashboard_global';
 import { DashboardViewComponent } from './app/pages/backoffice/programmes/Gestion_sprint/SprintDashboard/dashoard/dashboard-overview';
 
+import { CoachDashboardComponent } from './app/pages/dashboard/coachDashboard/CoachDashboard';
+import { DisponibilitesComponent } from './app/pages/dashboard/coachDashboard/disponibilites.component';
+import { ReclamationsComponent } from './app/pages/dashboard/coachDashboard/reclamations.component';
+import { CoachEntrepreneursComponent } from './app/pages/dashboard/coachDashboard/coach-entrepreneurs.component';
+import { CoachEntrepreneurDetailComponent } from './app/pages/dashboard/coachDashboard/coach-entrepreneur-detail.component';
+import { SessionsComponent } from './app/pages/dashboard/coachDashboard/sessions.component';
+import { CoachChatComponent } from './app/pages/dashboard/coachDashboard/coach-chat.component';
+import { CoachRapportMissionsComponent } from './app/pages/dashboard/coachDashboard/coach-rapport-missions.component';
+import { CoachLivrablesComponent } from './app/pages/dashboard/coachDashboard/coach-livrables.component';
+
 export const pagesRoutes: Routes = [
     { path: 'profile', component: UserProfileComponent },
     { path: 'all-users', component: UserListComponent },
@@ -110,6 +120,18 @@ export const appRoutes: Routes = [
                 path: 'all-coach-requests',
                 component: AllCoachRequestsComponent,
             },
+            { path: 'coach-dashboard', component: CoachDashboardComponent },
+            { path: 'disponibilites', component: DisponibilitesComponent },
+            { path: 'mes-disponibilites', component: DisponibilitesComponent },
+            { path: 'coach-entrepreneurs', component: CoachEntrepreneursComponent },
+            { path: 'coach-entrepreneurs/:id', component: CoachEntrepreneurDetailComponent },
+            { path: 'mes-sessions', component: SessionsComponent },
+            { path: 'gestion_comm', component: CoachChatComponent },
+            { path: 'coach-chat', component: CoachChatComponent },
+            { path: 'rapport-missions', component: CoachRapportMissionsComponent },
+            { path: 'coach-entrep-deliverable', component: CoachLivrablesComponent },
+            { path: 'coach-livrables', component: CoachLivrablesComponent },
+            { path: 'messagerie-reclamation', component: ReclamationsComponent },
 
             ...pagesRoutes,
         ],
