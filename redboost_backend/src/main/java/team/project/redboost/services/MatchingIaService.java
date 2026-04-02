@@ -10,7 +10,12 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 import team.project.redboost.entities.*;
 import team.project.redboost.repositories.*;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.text.PDFTextStripper;
 
+import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -34,6 +39,9 @@ public class MatchingIaService {
 
     @Value("${gemini.api.key:unconfigured}")
     private String geminiApiKey;
+
+    @Value("${file.upload-dir:uploads}")
+    private String uploadDir;
 
     // ─── Run Matching IA ──────────────────────────────────────────
 
@@ -138,6 +146,21 @@ public class MatchingIaService {
                     log.warn("Failed to parse dynamicAnswers for candidature {}: {}", c.getId(), e.getMessage());
                 }
             }
+            
+            // Extract text from uploaded documents (CVs, Pitch Decks, etc.)
+            if (c.getDocuments() != null && !c.getDocuments().isEmpty()) {
+                List<String> extraits = new ArrayList<>();
+                for (String docName : c.getDocuments()) {
+                    String extracted = extractTextFromDocument(docName);
+                    if (extracted != null && !extracted.isEmpty()) {
+                        extraits.add("Document '" + docName + "' :\n" + extracted);
+                    }
+                }
+                if (!extraits.isEmpty()) {
+                    m.put("documents_extrait", extraits);
+                }
+            }
+
             // Remove null values to keep prompt clean
             m.values().removeIf(Objects::isNull);
             return m;
@@ -433,5 +456,33 @@ public class MatchingIaService {
         if (val == null) return 0.0;
         if (val instanceof Number) return ((Number) val).doubleValue();
         return Double.parseDouble(val.toString());
+    }
+
+    private String extractTextFromDocument(String filename) {
+        if (filename == null || filename.isEmpty()) return null;
+        try {
+            Path filePath = Paths.get(uploadDir, "candidatures", filename).toAbsolutePath().normalize();
+            File file = filePath.toFile();
+            if (!file.exists() || !file.isFile()) return null;
+
+            // Process only PDFs to avoid binary garbage and unsupported formats crashing the stripper
+            if (!filename.toLowerCase().endsWith(".pdf")) return null;
+
+            try (PDDocument document = PDDocument.load(file)) {
+                PDFTextStripper stripper = new PDFTextStripper();
+                String text = stripper.getText(document);
+                if (text != null && !text.trim().isEmpty()) {
+                    text = text.trim();
+                    // Limit characters to avoid overwhelming the LLM API token limits
+                    if (text.length() > 3000) {
+                        text = text.substring(0, 3000) + "\n... [Fin de l'extrait, texte tronqué]";
+                    }
+                    return text;
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Impossible de lire le document PDF {}: {}", filename, e.getMessage());
+        }
+        return null;
     }
 }
