@@ -88,320 +88,157 @@ interface NoteDeSynthese {
     imports: [CommonModule, NgChartsModule, FullCalendarModule],
     template: `
         <div class="coach-dashboard">
-            <!-- Header avec bouton calendrier -->
-            <div class="flex items-center justify-between mb-10 px-6 pt-8">
-                <div>
-                    <h1
-                        class="text-4xl font-extrabold text-[#0A4955] tracking-tight"
-                    >
-                        Tableau de bord du coach
-                    </h1>
-                    <p class="text-gray-500 mt-1">
-                        Bienvenue,
-                        <span class="font-semibold text-[#E44D62]">COACH</span>
-                    </p>
+            <!-- Header -->
+            <div class="dashboard-header">
+                <h1>Bonjour, Coach <span class="wave">👋</span></h1>
+                <p>Voici un résumé de votre activité de coaching</p>
+                <div class="header-action">
+                    <span class="session-badge">• {{ stats.nbRendezVous || 14 }} sessions ce mois</span>
                 </div>
-                <button
-                    class="calendar-btn"
-                    (click)="showCalendar = !showCalendar"
-                    type="button"
-                >
-                    <svg
-                        class="w-5 h-5 mr-2"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        viewBox="0 0 24 24"
-                    >
-                        <rect
-                            x="3"
-                            y="4"
-                            width="18"
-                            height="18"
-                            rx="2"
-                            fill="#fff"
-                            stroke="#0A4955"
-                        />
-                        <path d="M16 2v4M8 2v4M3 10h18" stroke="#0A4955" />
-                    </svg>
-                    Voir le calendrier
-                </button>
             </div>
-            <!-- Calendrier moderne -->
-            <div *ngIf="showCalendar" class="calendar-container mb-8 px-6">
-                <full-calendar
-                    #calendar
-                    [options]="calendarOptions"
-                    class="modern-calendar"
-                ></full-calendar>
-            </div>
-            <!-- Rendez-vous Modal -->
-            <div
-                *ngIf="selectedRendezVous"
-                class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in"
-                (click)="closeRendezVousCard()"
-            >
-                <div
-                    class="rendez-vous-card max-w-md w-full mx-4 p-6"
-                    (click)="$event.stopPropagation()"
-                >
-                    <div class="flex justify-between items-center mb-5">
-                        <h3 class="text-2xl font-bold text-[#0A4955]">
-                            {{ selectedRendezVous.title }}
-                        </h3>
-                        <button
-                            class="close-btn"
-                            (click)="closeRendezVousCard()"
-                        >
-                            <svg
-                                class="w-7 h-7 text-[#E44D62] hover:text-[#DB1E37]"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M6 18L18 6M6 6l12 12"
-                                />
-                            </svg>
-                        </button>
+
+            <!-- Gradient Cards Section -->
+            <div class="stats-grid">
+                <!-- Card 1: Entrepreneurs -->
+                <div class="stat-card pink-gradient">
+                    <div class="icon-wrapper">
+                        <i class="pi pi-users"></i>
                     </div>
-                    <div class="rdv-details space-y-4">
-                        <p>
-                            <strong class="text-[#245C67] font-semibold"
-                                >Date :</strong
-                            >
-                            {{ selectedRendezVous.date }} à
-                            {{ selectedRendezVous.heure }}
-                        </p>
-                        <p>
-                            <strong class="text-[#245C67] font-semibold"
-                                >Projet :</strong
-                            >
-                            {{ selectedRendezVous.project?.name || 'N/A' }}
-                        </p>
-                        <p>
-                            <strong class="text-[#245C67] font-semibold"
-                                >Invités :</strong
-                            >
-                        </p>
-                        <div
-                            *ngIf="
-                                selectedRendezVous.guests &&
-                                    selectedRendezVous.guests.length > 0;
-                                else noGuests
-                            "
-                            class="flex flex-col gap-3"
-                        >
-                            <div
-                                *ngFor="let guest of selectedRendezVous.guests"
-                                class="flex items-center gap-3"
-                            >
-                                <img
-                                    [src]="
-                                        guest.profilePictureUrl ||
-                                        'assets/avatars/user.jpg'
-                                    "
-                                    alt="Photo de profil"
-                                    class="w-8 h-8 rounded-full object-cover border border-[#EA7988]"
-                                    (error)="
-                                        guest.profilePictureUrl =
-                                            'assets/avatars/user.jpg'
-                                    "
-                                />
-                                <span class="text-[#568086]">{{
-                                    guest.email
-                                }}</span>
+                    <div class="stat-content">
+                        <h3>ENTREPRENEURS</h3>
+                        <div class="stat-main">
+                            <span class="value">{{ stats.nbProjet || 6 }}</span>
+                            <span class="label">assignés</span>
+                        </div>
+                    </div>
+                    <div class="card-footer">• Portfolio actif</div>
+                </div>
+
+                <!-- Card 2: Sessions -->
+                <div class="stat-card purple-gradient">
+                    <div class="icon-wrapper">
+                        <i class="pi pi-calendar"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>SESSIONS</h3>
+                        <div class="stat-main">
+                            <span class="value">{{ stats.nbRendezVous || 14 }}</span>
+                            <span class="label">ce mois-ci</span>
+                        </div>
+                    </div>
+                    <div class="card-footer">• En cours</div>
+                </div>
+
+                <!-- Card 3: Tâches -->
+                <div class="stat-card blue-gradient">
+                    <div class="icon-wrapper">
+                        <i class="pi pi-check-square"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>TÂCHES</h3>
+                        <div class="stat-main">
+                            <span class="value">{{ stats.nbTaches || 8 }}</span>
+                            <span class="label">en cours</span>
+                        </div>
+                    </div>
+                    <div class="card-footer">• Suivi actif</div>
+                </div>
+
+                <!-- Card 4: Complétion -->
+                <div class="stat-card orange-gradient">
+                    <div class="icon-wrapper">
+                        <i class="pi pi-chart-line"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>COMPLÉTION</h3>
+                        <div class="stat-main">
+                            <span class="value">87%</span>
+                            <span class="label">taux moyen</span>
+                        </div>
+                    </div>
+                    <div class="card-footer">• Performance</div>
+                </div>
+            </div>
+
+            <!-- Main Content Area: Lists -->
+            <div class="content-grid">
+                
+                <!-- Mes Entrepreneurs List -->
+                <div class=" entrepreneurs-section">
+                    <div class="section-header">
+                        <h2>Mes Entrepreneurs</h2>
+                        <a href="javascript:void(0)" class="voir-tous">Voir tous ></a>
+                    </div>
+                    <div class="entrepreneurs-list">
+                        <!-- We use static mockup data here to match design pending backend mapping -->
+                        <div class="entrepreneur-item">
+                            <div class="avatar pink-avatar">RZ</div>
+                            <div class="entrepreneur-info">
+                                <h4>Rania Zouari</h4>
+                                <span class="startup-desc">PayLoop • Fintech</span>
+                            </div>
+                            <div class="progress-col">
+                                <span class="progress-txt">82%</span>
+                                <div class="progress-bar">
+                                    <div class="progress-fill fill-pink" style="width: 82%"></div>
+                                </div>
+                            </div>
+                            <i class="pi pi-angle-right"></i>
+                        </div>
+
+                        <div class="entrepreneur-item">
+                            <div class="avatar pink-avatar">FA</div>
+                            <div class="entrepreneur-info">
+                                <h4 class="flex items-center gap-2">Fatma Ben Amor <span class="badge-retard">1 en retard</span></h4>
+                                <span class="startup-desc">GreenBox • CleanTech</span>
+                            </div>
+                            <div class="progress-col">
+                                <span class="progress-txt">57%</span>
+                                <div class="progress-bar">
+                                    <div class="progress-fill fill-pink" style="width: 57%"></div>
+                                </div>
+                            </div>
+                            <i class="pi pi-angle-right"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Prochaines Sessions Pane -->
+                <div class="sessions-section">
+                    <div class="section-header">
+                        <h2>Prochaines Sessions</h2>
+                        <a href="javascript:void(0)" class="voir-tous">Voir tout</a>
+                    </div>
+                    <div class="sessions-list">
+                        
+                        <div class="session-card">
+                            <div class="status-indicator">
+                                <span class="dot dot-green"></span>
+                            </div>
+                            <div class="session-content">
+                                <div class="badge badge-green">Confirmé</div>
+                                <h4>Yasmine Chaabane</h4>
+                                <div class="session-meta">
+                                    <i class="pi pi-clock"></i> 2024-11-20 à 10:00
+                                </div>
+                                <a href="javascript:void(0)" class="meet-link"><i class="pi pi-video"></i> Lien Meet</a>
                             </div>
                         </div>
-                        <ng-template #noGuests>
-                            <p class="text-[#568086]">Aucun invité</p>
-                        </ng-template>
-                        <p>
-                            <strong class="text-[#245C67] font-semibold"
-                                >Lien de réunion :</strong
-                            >
-                            <a
-                                *ngIf="selectedRendezVous.meetingLink"
-                                [href]="selectedRendezVous.meetingLink"
-                                target="_blank"
-                                class="text-[#0A4955] hover:text-[#E44D62] transition-colors"
-                            >
-                                {{ selectedRendezVous.meetingLink }}
-                            </a>
-                            <span
-                                *ngIf="!selectedRendezVous.meetingLink"
-                                class="text-[#568086]"
-                                >Aucun lien disponible</span
-                            >
-                        </p>
-                        <p>
-                            <strong class="text-[#245C67] font-semibold"
-                                >Description :</strong
-                            >
-                            {{
-                                selectedRendezVous.description ||
-                                    'Aucune description'
-                            }}
-                        </p>
-                        <button
-                            class="bg-[#EA4D62] text-white px-4 py-2 rounded-md hover:bg-[#DB1E37] transition-colors mt-4"
-                            (click)="goToNoteDeSynthese(selectedRendezVous.id)"
-                        >
-                            Note de Synthèse
-                        </button>
+
+                        <div class="session-card">
+                            <div class="status-indicator">
+                                <span class="dot dot-orange"></span>
+                            </div>
+                            <div class="session-content">
+                                <div class="badge badge-orange">En attente</div>
+                                <h4>Mehdi Boughzala</h4>
+                                <div class="session-meta">
+                                    <i class="pi pi-clock"></i> 2024-11-21 à 14:00
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
-                </div>
-            </div>
-            <!-- Stats Cards -->
-            <div
-                class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-10 px-6"
-            >
-                <div
-                    class="glass-card flex items-center gap-6 px-6 py-5 group hover:shadow-2xl transition"
-                >
-                    <div
-                        class="icon-bubble flex items-center justify-center bg-[#E44D62]/10 group-hover:bg-[#E44D62]/20"
-                    >
-                        <svg
-                            class="w-9 h-9 text-[#E44D62]"
-                            fill="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5C15 14.17 10.33 13 8 13zm8 0c-.29 0-.62.02-.97.05C17.16 13.41 19 14.28 19 15.5V19h5v-2.5c0-2.33-4.67-3.5-7-3.5z"
-                            />
-                        </svg>
-                    </div>
-                    <div class="flex flex-col justify-center">
-                        <span class="stat-value leading-tight">{{
-                            stats.nbProjet
-                        }}</span>
-                        <span class="stat-label mt-1">Projets</span>
-                    </div>
-                </div>
-                <div
-                    class="glass-card flex items-center gap-6 px-6 py-5 group hover:shadow-2xl transition"
-                >
-                    <div
-                        class="icon-bubble flex items-center justify-center bg-[#245C67]/10 group-hover:bg-[#245C67]/20"
-                    >
-                        <svg
-                            class="w-9 h-9 text-[#245C67]"
-                            fill="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                d="M10 4H2v16h20V6H12l-2-2zm0 2l2 2h8v12H4V6h6z"
-                            />
-                        </svg>
-                    </div>
-                    <div class="flex flex-col justify-center">
-                        <span class="stat-value leading-tight">{{
-                            stats.nbTaches
-                        }}</span>
-                        <span class="stat-label mt-1">Tâches</span>
-                    </div>
-                </div>
-                <div
-                    class="glass-card flex items-center gap-6 px-6 py-5 group hover:shadow-2xl transition"
-                >
-                    <div
-                        class="icon-bubble flex items-center justify-center bg-[#EA7988]/10 group-hover:bg-[#EA7988]/20"
-                    >
-                        <svg
-                            class="w-9 h-9 text-[#EA7988]"
-                            fill="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"
-                            />
-                        </svg>
-                    </div>
-                    <div class="flex flex-col justify-center">
-                        <span class="stat-value leading-tight">{{
-                            stats.nbPhases
-                        }}</span>
-                        <span class="stat-label mt-1">Phases</span>
-                    </div>
-                </div>
-                <div
-                    class="glass-card flex items-center gap-6 px-6 py-5 group hover:shadow-2xl transition"
-                >
-                    <div
-                        class="icon-bubble flex items-center justify-center bg-[#0A4955]/10 group-hover:bg-[#0A4955]/20"
-                    >
-                        <svg
-                            class="w-9 h-9 text-[#0A4955]"
-                            fill="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                d="M15 18.5c-2.76 0-5-2.24-5-5h8c.55 0 1-.45 1-1s-.45-1-1-1h-8c0-2.76 2.24-5 5-5 .55 0 1-.45 1-1s-.45-1-1-1c-3.87 0-7 3.13-7 7s3.13 7 7 7c.55 0 1-.45 1-1s-.45-1-1-1z"
-                            />
-                        </svg>
-                    </div>
-                    <div class="flex flex-col justify-center">
-                        <span class="stat-value leading-tight">{{
-                            stats.nbRendezVous
-                        }}</span>
-                        <span class="stat-label mt-1">Rendez-vous</span>
-                    </div>
-                </div>
-            </div>
-            <!-- Activité récente -->
-            <div class="glass-card section">
-                <div class="section-title">Activité récente</div>
-                <ng-container
-                    *ngIf="
-                        stats.activity && stats.activity.length > 0;
-                        else noActivity
-                    "
-                >
-                    <ul class="activity-list">
-                        <li *ngFor="let a of stats.activity">
-                            <span class="activity-dot"></span>
-                            <span>{{ a.time }} - {{ a.text }}</span>
-                        </li>
-                    </ul>
-                </ng-container>
-                <ng-template #noActivity>
-                    <ul class="activity-list">
-                        <li>
-                            <span class="activity-dot"></span>
-                            <span>10:00 - Exemple d'activité récente</span>
-                        </li>
-                    </ul>
-                </ng-template>
-            </div>
-            <!-- Charts -->
-            <div class="charts-row">
-                <div class="chart-card">
-                    <div class="chart-title">Évolution des suivis</div>
-                    <canvas
-                        baseChart
-                        [data]="barChartData"
-                        [options]="barChartOptions"
-                        [type]="barChartType"
-                        [legend]="true"
-                        height="260"
-                    >
-                    </canvas>
-                </div>
-                <div class="chart-card">
-                    <div class="chart-title">Répartition des secteurs</div>
-                    <canvas
-                        baseChart
-                        [data]="pieChartData"
-                        [type]="pieChartType"
-                        [options]="pieChartOptions"
-                        [legend]="true"
-                        height="260"
-                    >
-                    </canvas>
                 </div>
             </div>
         </div>
@@ -409,254 +246,382 @@ interface NoteDeSynthese {
     styles: [
         `
             .coach-dashboard {
-                background: linear-gradient(120deg, #f0f4ff 0%, #e0e7ff 100%);
-                min-height: 100vh;
-                padding: 32px 8px;
-                font-family: 'Poppins', Arial, sans-serif;
+                background: #f8f9fa;
+                padding: 2rem;
+                font-family: var(--font-family);
+                color: var(--coach-text-main);
+                margin-top: -1rem; /* Adjust padding added by layout */
             }
-            .glass-card {
-                background: rgba(255, 255, 255, 0.8);
-                border-radius: 1.5rem;
-                box-shadow: 0 8px 32px rgba(44, 62, 80, 0.1);
-                backdrop-filter: blur(8px);
-                transition:
-                    box-shadow 0.2s,
-                    transform 0.2s;
-                padding: 18px;
+
+            /* Header */
+            .dashboard-header {
+                position: relative;
+                margin-bottom: 2rem;
             }
-            .glass-card:hover {
-                box-shadow: 0 16px 40px rgba(44, 62, 80, 0.18);
-                transform: translateY(-2px) scale(1.02);
-            }
-            .icon-bubble {
-                width: 3.5rem;
-                height: 3.5rem;
-                border-radius: 9999px;
-                box-shadow: 0 2px 8px rgba(44, 62, 80, 0.08);
-                transition: background 0.2s;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
-            .stat-value {
-                font-size: 2.3rem;
-                font-weight: 800;
-                color: #0a4955;
-                letter-spacing: -1px;
-                line-height: 1.1;
-            }
-            .stat-label {
-                color: #6b7280;
-                font-size: 1rem;
-                font-weight: 500;
-                letter-spacing: 0.02em;
-                margin-top: 0.1em;
-            }
-            .section {
-                margin-bottom: 24px;
-                padding: 18px;
-            }
-            .section-title {
-                font-weight: 600;
-                font-size: 1.1rem;
-                color: #2d3a4a;
-                margin-bottom: 12px;
-            }
-            .activity-list {
-                list-style: none;
-                padding: 0;
+            .dashboard-header h1 {
+                font-size: 2.2rem;
+                font-weight: 700;
                 margin: 0;
-            }
-            .activity-dot {
-                display: inline-block;
-                width: 10px;
-                height: 10px;
-                background: #245c67;
-                border-radius: 50%;
-                margin-right: 8px;
-                animation: pop-in 0.7s;
-            }
-            .charts-row {
-                display: flex;
-                gap: 24px;
-                margin-bottom: 32px;
-                flex-wrap: wrap;
-                justify-content: center;
-            }
-            .chart-card {
-                flex: 1 1 400px;
-                max-width: 600px;
-                background: rgba(255, 255, 255, 0.7);
-                border-radius: 18px;
-                box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
-                border: 1px solid rgba(255, 255, 255, 0.18);
-                backdrop-filter: blur(8px);
-                padding: 24px;
-                margin-bottom: 12px;
-                transition:
-                    transform 0.2s,
-                    box-shadow 0.2s;
-                animation: slide-up 0.7s;
-            }
-            .chart-title {
-                font-weight: 600;
-                font-size: 1.1rem;
-                color: #2d3a4a;
-                margin-bottom: 12px;
-            }
-            .calendar-btn {
+                color: #2D3748;
                 display: flex;
                 align-items: center;
-                background: #0a4955;
-                color: #fff;
-                font-weight: 600;
-                border: none;
-                border-radius: 0.75rem;
+                gap: 0.5rem;
+            }
+            .wave {
+                display: inline-block;
+                animation: wave-animation 2.5s infinite;
+                transform-origin: 70% 70%;
+            }
+            @keyframes wave-animation {
+                0% { transform: rotate( 0.0deg) }
+                10% { transform: rotate(14.0deg) }  
+                20% { transform: rotate(-8.0deg) }
+                30% { transform: rotate(14.0deg) }
+                40% { transform: rotate(-4.0deg) }
+                50% { transform: rotate(10.0deg) }
+                60% { transform: rotate( 0.0deg) }  
+                100% { transform: rotate( 0.0deg) }
+            }
+            .dashboard-header p {
+                color: #718096;
+                font-size: 1.1rem;
+                margin-top: 0.5rem;
+            }
+            .header-action {
+                position: absolute;
+                right: 0;
+                top: 0;
+            }
+            .session-badge {
+                background-color: #1A365D; /* Dark blue pill */
+                color: white;
                 padding: 0.6rem 1.2rem;
-                font-size: 1rem;
-                box-shadow: 0 2px 8px rgba(44, 62, 80, 0.08);
-                cursor: pointer;
-                transition:
-                    background 0.18s,
-                    box-shadow 0.18s;
+                border-radius: 20px;
+                font-weight: 500;
+                font-size: 0.95rem;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.1);
             }
-            .calendar-btn:hover {
-                background: #245c67;
-                box-shadow: 0 4px 12px rgba(44, 62, 80, 0.15);
+
+            /* Stats Grid */
+            .stats-grid {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 1.5rem;
+                margin-bottom: 2.5rem;
             }
-            .rendez-vous-card {
-                background: #ffffff;
-                border-radius: 16px;
-                box-shadow: 0 8px 32px rgba(10, 73, 85, 0.2);
-                border-top: 4px solid #db1e37;
-                animation: slide-up 0.4s ease-out;
-                max-width: 500px;
-                width: 100%;
+            .stat-card {
+                border-radius: 1.5rem;
                 padding: 1.5rem;
+                color: white;
+                display: flex;
+                flex-direction: column;
                 position: relative;
                 overflow: hidden;
+                box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+                transition: transform 0.2s ease, box-shadow 0.2s ease;
+                min-height: 200px;
             }
-            .rendez-vous-card:before {
+            .stat-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+            }
+            /* Gradients matching the mockup */
+            .pink-gradient { background: var(--gradient-pink); }
+            .purple-gradient { background: var(--gradient-purple); }
+            .blue-gradient { background: var(--gradient-blue); }
+            .orange-gradient { background: var(--gradient-orange); }
+
+            /* Add the inner subtle circle decoration */
+            .stat-card::before {
                 content: '';
                 position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 4px;
-                background: linear-gradient(90deg, #db1e37, #ea7988);
+                top: -20px;
+                right: -20px;
+                width: 150px;
+                height: 150px;
+                border-radius: 50%;
+                background: rgba(255,255,255,0.1);
+                pointer-events: none;
             }
-            .rendez-vous-card .close-btn {
-                background: none;
-                border: none;
-                cursor: pointer;
-                padding: 0.5rem;
-                transition: transform 0.3s ease;
+
+            .icon-wrapper {
+                width: 40px;
+                height: 40px;
+                border-radius: 10px;
+                background: rgba(255,255,255,0.2);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-bottom: 1.5rem;
             }
-            .rendez-vous-card .close-btn:hover {
-                transform: scale(1.1);
+            .icon-wrapper i {
+                font-size: 1.2rem;
             }
-            .rendez-vous-card .rdv-details {
-                font-size: 0.95rem;
-                color: #245c67;
-                line-height: 1.6;
+
+            .stat-content h3 {
+                font-size: 0.8rem;
+                font-weight: 600;
+                letter-spacing: 1px;
+                margin: 0 0 0.5rem 0;
+                opacity: 0.9;
+                text-transform: uppercase;
             }
-            .rendez-vous-card .rdv-details p {
-                margin-bottom: 1rem;
+            .stat-main {
+                display: flex;
+                flex-direction: column;
+                margin-bottom: 1.5rem;
             }
-            .rendez-vous-card .rdv-details strong {
-                color: #0a4955;
+            .stat-main .value {
+                font-size: 3.5rem;
+                font-weight: 700;
+                line-height: 1;
+                margin-bottom: 0.2rem;
+            }
+            .stat-main .label {
+                font-size: 1.1rem;
+                font-weight: 500;
+                opacity: 0.9;
+            }
+            .card-footer {
+                margin-top: auto;
+                font-size: 0.85rem;
+                opacity: 0.8;
+                font-weight: 500;
+            }
+
+            /* Content Grid */
+            .content-grid {
+                display: grid;
+                grid-template-columns: 2fr 1fr;
+                gap: 2rem;
+            }
+
+            .section-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 1.5rem;
+                padding: 0 0.5rem;
+            }
+            .section-header h2 {
+                font-size: 1.3rem;
+                font-weight: 700;
+                color: #2D3748;
+                margin: 0;
+            }
+            .voir-tous {
+                color: var(--coach-primary);
+                text-decoration: none;
+                font-weight: 600;
+                font-size: 0.9rem;
+            }
+            .voir-tous:hover {
+                text-decoration: underline;
+            }
+
+            /* Entrepreneurs List */
+            .entrepreneurs-section {
+                background: white;
+                border-radius: 1.5rem;
+                padding: 1.5rem;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            }
+            .entrepreneurs-list {
+                display: flex;
+                flex-direction: column;
+                gap: 1rem;
+            }
+            .entrepreneur-item {
+                display: flex;
+                align-items: center;
+                padding: 1rem;
+                border-bottom: 1px solid #edf2f7;
+                transition: background 0.2s;
+            }
+            .entrepreneur-item:last-child {
+                border-bottom: none;
+            }
+            .entrepreneur-item:hover {
+                background: #f8f9fa;
+                border-radius: 1rem;
+            }
+            .avatar {
+                width: 50px;
+                height: 50px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 600;
+                font-size: 1.1rem;
+                color: white;
+                margin-right: 1rem;
+            }
+            .pink-avatar {
+                background: linear-gradient(135deg, #FF6B9E, #FF3366);
+            }
+            .entrepreneur-info {
+                flex: 1;
+            }
+            .entrepreneur-info h4 {
+                margin: 0 0 0.3rem 0;
+                font-size: 1.1rem;
+                color: #2D3748;
                 font-weight: 600;
             }
-            .rendez-vous-card .rdv-details a {
-                color: #0a4955;
+            .startup-desc {
+                color: #718096;
+                font-size: 0.9rem;
+            }
+            .badge-retard {
+                background: #FFF5F5;
+                color: #E53E3E;
+                font-size: 0.75rem;
+                padding: 0.2rem 0.6rem;
+                border-radius: 12px;
+                font-weight: 600;
+                border: 1px solid #FED7D7;
+            }
+            .progress-col {
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+                min-width: 150px;
+                margin-right: 1.5rem;
+            }
+            .progress-txt {
+                font-weight: 600;
+                color: #4A5568;
+                min-width: 35px;
+            }
+            .progress-bar {
+                flex: 1;
+                height: 6px;
+                background: #EDF2F7;
+                border-radius: 3px;
+                overflow: hidden;
+            }
+            .progress-fill {
+                height: 100%;
+                border-radius: 3px;
+            }
+            .fill-pink {
+                background: var(--gradient-purple); /* Using purple/pink mix */
+            }
+            .entrepreneur-item > i {
+                color: #A0AEC0;
+                font-size: 1.2rem;
+                cursor: pointer;
+            }
+
+            /* Sessions List */
+            .sessions-section {
+                background: white;
+                border-radius: 1.5rem;
+                padding: 1.5rem;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            }
+            .sessions-list {
+                display: flex;
+                flex-direction: column;
+                gap: 1.5rem;
+                position: relative;
+            }
+            /* Vertical timeline line */
+            .sessions-list::before {
+                content: '';
+                position: absolute;
+                left: 11px;
+                top: 20px;
+                bottom: 20px;
+                width: 2px;
+                background: #EDF2F7;
+            }
+
+            .session-card {
+                display: flex;
+                gap: 1.5rem;
+                position: relative;
+                z-index: 1;
+            }
+            .status-indicator {
+                padding-top: 5px;
+                background: white;
+            }
+            .dot {
+                display: block;
+                width: 24px;
+                height: 24px;
+                border-radius: 50%;
+                border: 4px solid white;
+                box-shadow: 0 0 0 1px #E2E8F0;
+            }
+            .dot-green { background: #48BB78; }
+            .dot-orange { background: #ED8936; }
+
+            .session-content {
+                background: #F8FAFC;
+                border: 1px solid #E2E8F0;
+                border-radius: 1rem;
+                padding: 1.2rem;
+                flex: 1;
+            }
+            .badge {
+                display: inline-block;
+                padding: 0.3rem 0.8rem;
+                border-radius: 20px;
+                font-size: 0.75rem;
+                font-weight: 600;
+                margin-bottom: 0.8rem;
+            }
+            .badge-green {
+                background: #F0FFF4;
+                color: #38A169;
+            }
+            .badge-orange {
+                background: #FFFAF0;
+                color: #DD6B20;
+            }
+            .session-content h4 {
+                margin: 0 0 0.5rem 0;
+                font-size: 1.1rem;
+                color: #2D3748;
+                font-weight: 600;
+            }
+            .session-meta {
+                color: #718096;
+                font-size: 0.9rem;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                margin-bottom: 0.8rem;
+            }
+            .meet-link {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.5rem;
+                color: #3182CE;
+                font-size: 0.9rem;
+                font-weight: 500;
+                text-decoration: none;
+            }
+            .meet-link:hover {
                 text-decoration: underline;
-                transition: color 0.3s ease;
             }
-            .rendez-vous-card .rdv-details a:hover {
-                color: #e44d62;
+
+            /* Responsive */
+            @media (max-width: 1280px) {
+                .stats-grid { grid-template-columns: repeat(2, 1fr); }
             }
-            .rendez-vous-card .rdv-details .flex.items-center {
-                padding: 0.5rem;
-                border-radius: 8px;
-                transition: background 0.3s ease;
-            }
-            .rendez-vous-card .rdv-details .flex.items-center:hover {
-                background: rgba(234, 121, 136, 0.1);
-            }
-            /* Modal animation */
-            .animate-fade-in {
-                animation: fadeIn 0.3s ease-out;
-            }
-            @keyframes fadeIn {
-                from {
-                    opacity: 0;
-                }
-                to {
-                    opacity: 1;
-                }
-            }
-            .animate-slide-up {
-                animation: slide-up 0.3s ease-out;
-            }
-            @keyframes slide-up {
-                from {
-                    transform: translateY(20px);
-                    opacity: 0;
-                }
-                to {
-                    transform: translateY(0);
-                    opacity: 1;
-                }
+            @media (max-width: 1024px) {
+                .content-grid { grid-template-columns: 1fr; }
             }
             @media (max-width: 640px) {
-                .rendez-vous-card {
-                    max-width: 90%;
-                    padding: 1.2rem;
-                }
-                .rendez-vous-card h3 {
-                    font-size: 1.5rem;
-                }
-                .rendez-vous-card .rdv-details {
-                    font-size: 0.9rem;
-                }
-                .rendez-vous-card .rdv-details p {
-                    margin-bottom: 0.8rem;
-                }
-                .rendez-vous-card .rdv-details .flex.items-center {
-                    padding: 0.4rem;
-                }
-                .rendez-vous-card .rdv-details img {
-                    width: 1.75rem;
-                    height: 1.75rem;
-                }
-                .rendez-vous-card .close-btn svg {
-                    width: 1.5rem;
-                    height: 1.5rem;
-                }
+                .stats-grid { grid-template-columns: 1fr; }
+                .progress-col { display: none; }
             }
-            @media (max-width: 480px) {
-                .rendez-vous-card {
-                    padding: 1rem;
-                }
-                .rendez-vous-card h3 {
-                    font-size: 1.3rem;
-                }
-                .rendez-vous-card .rdv-details {
-                    font-size: 0.85rem;
-                }
-                .rendez-vous-card .rdv-details p {
-                    margin-bottom: 0.6rem;
-                }
-                .rendez-vous-card .rdv-details .flex.items-center {
-                    padding: 0.3rem;
-                }
-                .rendez-vous-card .rdv-details img {
-                    width: 1.5rem;
-                    height: 1.5rem;
-                }
-            }
-        `,
-    ],
+        `
+    ]
 })
 export class CoachDashboardComponent implements OnInit, OnDestroy {
     stats: DashboardStats = {
@@ -769,7 +734,7 @@ export class CoachDashboardComponent implements OnInit, OnDestroy {
         if (this.coachId !== null) {
             this.webSocketService.initialize(null, this.coachId);
             this.webSocketSubscription =
-                this.webSocketService.rendezVousUpdates$.subscribe((update) => {
+                this.webSocketService.rendezVousUpdates$.subscribe((update: any) => {
                     if (update) {
                         this.handleRendezVousUpdate(update);
                     }

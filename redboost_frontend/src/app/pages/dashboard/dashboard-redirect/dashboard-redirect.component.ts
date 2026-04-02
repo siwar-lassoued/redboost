@@ -14,7 +14,7 @@ export class DashboardRedirectComponent {
 
         switch (userRole) {
             case 'COACH':
-                this.router.navigate(['/Dash']);
+                this.router.navigate(['/coach-dashboard']);
                 break;
             case 'ENTREPRENEUR':
                 this.router.navigate(['/entrepreneur-dashboard']);

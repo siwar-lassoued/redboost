@@ -117,14 +117,29 @@ import { AppMenu } from './app.menu';
             /* Active Menu Item */
             :host ::ng-deep .layout-menu > li > a.active-route,
             :host ::ng-deep .layout-menu > li > .menu-item-link.active-route {
-                background-color: rgba(233, 30, 99, 0.08);
-                color: #e91e63;
+                background-color: var(--sidebar-active-bg, rgba(255, 77, 133, 0.08));
+                color: var(--sidebar-active-color, #FF4D85);
                 font-weight: 600;
+                border-radius: 0 20px 20px 0; /* Add slight rounding on the right like in the mockup */
+                position: relative;
+            }
+
+            :host ::ng-deep .layout-menu > li > a.active-route::after,
+            :host ::ng-deep .layout-menu > li > .menu-item-link.active-route::after {
+                content: '';
+                position: absolute;
+                right: 1.5rem;
+                top: 50%;
+                transform: translateY(-50%);
+                width: 6px;
+                height: 6px;
+                border-radius: 50%;
+                background-color: var(--sidebar-active-color, #FF4D85);
             }
 
             :host ::ng-deep .layout-menu > li > a.active-route i,
             :host ::ng-deep .layout-menu > li > .menu-item-link.active-route i {
-                color: #e91e63;
+                color: var(--sidebar-active-color, #FF4D85);
             }
 
             /* Active Menuitem with Children */
@@ -134,7 +149,7 @@ import { AppMenu } from './app.menu';
                 .layout-menu
                 > li
                 > .menu-item-link.active-menuitem {
-                color: #212529;
+                color: var(--coach-text-main, #212529);
             }
 
             :host ::ng-deep .layout-menu > li > a.active-menuitem i:first-child,
@@ -144,7 +159,7 @@ import { AppMenu } from './app.menu';
                 > li
                 > .menu-item-link.active-menuitem
                 i:first-child {
-                color: #e91e63;
+                color: var(--sidebar-active-color, #FF4D85);
             }
 
             :host
