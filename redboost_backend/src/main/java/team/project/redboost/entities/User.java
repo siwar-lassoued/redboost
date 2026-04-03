@@ -145,6 +145,15 @@ public class User implements UserDetails {
     @Column(name = "obstacle_principal", length = 1000)
     private String obstaclePrincipal;
 
+    @Column(name = "description_projet", length = 1500)
+    private String descriptionProjet;
+
+    @Column(name = "stade_projet")
+    private String stadeProjet;
+
+    @Column(name = "besoins_coaching", length = 1500)
+    private String besoinsCoaching;
+
     // Authentication fields
     private String refreshToken;
 

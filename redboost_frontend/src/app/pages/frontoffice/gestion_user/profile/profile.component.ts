@@ -61,6 +61,9 @@ export class UserProfileComponent implements OnInit {
         secteur: '',
         region: '',
         entreprise: '',
+        descriptionProjet: '',
+        stadeProjet: '',
+        besoinsCoaching: '',
     };
     isLoading: boolean = true;
     projetContacts: { [key: number]: any } = {};
@@ -197,6 +200,9 @@ export class UserProfileComponent implements OnInit {
                     secteur: response.secteur || '',
                     region: response.region || '',
                     entreprise: response.entreprise || '',
+                    descriptionProjet: response.descriptionProjet || '',
+                    stadeProjet: response.stadeProjet || '',
+                    besoinsCoaching: response.besoinsCoaching || '',
                 };
                 
                 this.userService.setUser(this.user);

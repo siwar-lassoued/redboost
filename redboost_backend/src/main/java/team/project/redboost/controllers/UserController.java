@@ -319,6 +319,18 @@ public class UserController {
                             String obstaclePrincipal = (String) updateRequest.get("obstaclePrincipal");
                             user.setObstaclePrincipal(obstaclePrincipal != null && !obstaclePrincipal.isEmpty() ? obstaclePrincipal : null);
                         }
+                        if (updateRequest.containsKey("descriptionProjet")) {
+                            String descriptionProjet = (String) updateRequest.get("descriptionProjet");
+                            user.setDescriptionProjet(descriptionProjet != null && !descriptionProjet.isEmpty() ? descriptionProjet : null);
+                        }
+                        if (updateRequest.containsKey("stadeProjet")) {
+                            String stadeProjet = (String) updateRequest.get("stadeProjet");
+                            user.setStadeProjet(stadeProjet != null && !stadeProjet.isEmpty() ? stadeProjet : null);
+                        }
+                        if (updateRequest.containsKey("besoinsCoaching")) {
+                            String besoinsCoaching = (String) updateRequest.get("besoinsCoaching");
+                            user.setBesoinsCoaching(besoinsCoaching != null && !besoinsCoaching.isEmpty() ? besoinsCoaching : null);
+                        }
                         // Add these fields for ENTREPRENEUR update
                         if (updateRequest.containsKey("entreprise")) {
                             user.setEntreprise((String) updateRequest.get("entreprise"));
@@ -536,6 +548,9 @@ public class UserController {
             response.put("apprentInformelDate", user.getApprentInformelDate());
             response.put("apprentInformelCertificat", user.getApprentInformelCertificat());
             response.put("obstaclePrincipal", user.getObstaclePrincipal());
+            response.put("descriptionProjet", user.getDescriptionProjet());
+            response.put("stadeProjet", user.getStadeProjet());
+            response.put("besoinsCoaching", user.getBesoinsCoaching());
         }
 
         return response;
@@ -653,6 +668,15 @@ public class UserController {
             }
             if (updateRequest.containsKey("region")) {
                 user.setRegion((String) updateRequest.get("region"));
+            }
+            if (updateRequest.containsKey("descriptionProjet")) {
+                user.setDescriptionProjet((String) updateRequest.get("descriptionProjet"));
+            }
+            if (updateRequest.containsKey("stadeProjet")) {
+                user.setStadeProjet((String) updateRequest.get("stadeProjet"));
+            }
+            if (updateRequest.containsKey("besoinsCoaching")) {
+                user.setBesoinsCoaching((String) updateRequest.get("besoinsCoaching"));
             }
 
             // Handle programme associations
