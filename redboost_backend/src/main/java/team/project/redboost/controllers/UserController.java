@@ -828,6 +828,34 @@ public class UserController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
+    @GetMapping("/entrepreneurs/{entrepreneurId}/coaches")
+    public ResponseEntity<List<Map<String, Object>>> getCoachesForEntrepreneur(@PathVariable Long entrepreneurId) {
+        User entrepreneur = userService.findById(entrepreneurId);
+        if (entrepreneur == null || entrepreneur.getProgrammes() == null) {
+            return ResponseEntity.ok(Collections.emptyList());
+        }
+
+        List<Map<String, Object>> coaches = entrepreneur.getProgrammes().stream()
+                .filter(p -> p.getCoach() != null)
+                .map(p -> buildUserResponse(p.getCoach()))
+                .distinct()
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(coaches);
+    }
+
+    @GetMapping("/coach/{coachId}/entrepreneurs")
+    public ResponseEntity<List<Map<String, Object>>> getEntrepreneursForCoach(@PathVariable Long coachId) {
+        List<User> entrepreneurs = userRepository.findByRole(Role.ENTREPRENEUR).stream()
+                .filter(e -> e.getProgrammes() != null && e.getProgrammes().stream()
+                        .anyMatch(p -> p.getCoach() != null && p.getCoach().getId().equals(coachId)))
+                .collect(Collectors.toList());
+
+        List<Map<String, Object>> response = entrepreneurs.stream()
+                .map(this::buildUserResponse)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(response);
     }
 
 }
