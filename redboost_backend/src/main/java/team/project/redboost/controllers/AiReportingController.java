@@ -12,6 +12,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/reporting-ia")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "https://redboost.tn")
 public class AiReportingController {
 
     private final AiReportingService aiReportingService;

@@ -61,10 +61,10 @@ public class AiReportingService {
         int totalSessions = 0;
         int sessionsCompleted = 0;
         for (MatchingSession ms : sessions) {
-            LocalDate sessionDate = ms.getDateDebut().toLocalDate();
+            LocalDate sessionDate = ms.getDateMatching().toLocalDate();
             if (!sessionDate.isBefore(start) && !sessionDate.isAfter(end)) {
                 totalSessions++;
-                if (ms.getStatut() == MatchingSession.SessionStatus.CLOTUREE) {
+                if (ms.getStatut() == MatchingSession.StatutSession.VALIDE) {
                     sessionsCompleted++;
                 }
             }
