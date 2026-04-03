@@ -828,6 +828,8 @@ public class UserController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
+    }
+
     @GetMapping("/entrepreneurs/{entrepreneurId}/coaches")
     public ResponseEntity<List<Map<String, Object>>> getCoachesForEntrepreneur(@PathVariable Long entrepreneurId) {
         User entrepreneur = userService.findById(entrepreneurId);
