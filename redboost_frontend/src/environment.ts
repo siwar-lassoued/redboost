@@ -1,10 +1,10 @@
 export const environment = {
     production: false,
-    apiUrl: 'https://redboost.tn/api',
-    apiUploads: 'https://redboost.tn/api',
+    // apiUrl: 'https://redboost.tn/api',
+    // apiUploads: 'https://redboost.tn/api',
 
-    // apiUrl: 'http://localhost:8082/api',
-    // apiUploads: 'http://localhost:8082/api',
+    apiUrl: 'http://localhost:8082/api',
+    apiUploads: 'http://localhost:8082/api',
     firebaseConfig: {
         apiKey: 'AIzaSyBfq3z--mKyHOSGk6yZ3xbkLjAVF51vLaA',
         authDomain: 'redstart-53910.firebaseapp.com',

@@ -57,6 +57,12 @@ import { CoachChatComponent } from './app/pages/dashboard/coachDashboard/coach-c
 import { CoachRapportMissionsComponent } from './app/pages/dashboard/coachDashboard/coach-rapport-missions.component';
 import { CoachLivrablesComponent } from './app/pages/dashboard/coachDashboard/coach-livrables.component';
 
+// New dynamic KPI and Form features
+import { AdminKpiFormsComponent } from './app/pages/backoffice/kpi_forms/admin-kpi-forms.component';
+import { AdminEvaluationsComponent } from './app/pages/backoffice/evaluations/admin-evaluations.component';
+import { AdminLivrablesComponent } from './app/pages/backoffice/livrables/admin-livrables.component';
+import { EntrepreneurKpiFormsComponent } from './app/pages/entrepreneur/kpi_forms/entrepreneur-kpi-forms.component';
+
 export const pagesRoutes: Routes = [
     { path: 'profile', component: UserProfileComponent },
     { path: 'all-users', component: UserListComponent },
@@ -134,6 +140,12 @@ export const appRoutes: Routes = [
             { path: 'coach-entrep-deliverable', component: CoachLivrablesComponent },
             { path: 'coach-livrables', component: CoachLivrablesComponent },
             { path: 'messagerie-reclamation', component: ReclamationsComponent },
+
+            // New KPI and Form features
+            { path: 'admin-kpi-forms', component: AdminKpiFormsComponent },
+            { path: 'admin-evaluations', component: AdminEvaluationsComponent },
+            { path: 'admin-livrables', component: AdminLivrablesComponent },
+            { path: 'entrepreneur-kpi-forms', component: EntrepreneurKpiFormsComponent },
 
             ...pagesRoutes,
         ],

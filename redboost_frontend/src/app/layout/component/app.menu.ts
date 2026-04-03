@@ -289,6 +289,27 @@ export class AppMenu implements OnInit {
             },
             
             {
+                label: 'SUIVI COACH & KPI',
+                icon: 'pi pi-fw pi-star',
+                items: [
+                    {
+                        label: 'Évaluations Coach',
+                        icon: 'pi pi-fw pi-star-fill',
+                        routerLink: ['/admin-evaluations'],
+                    },
+                    {
+                        label: 'Formulaires KPI',
+                        icon: 'pi pi-fw pi-list',
+                        routerLink: ['/admin-kpi-forms'],
+                    },
+                    {
+                        label: 'Livrables Coach',
+                        icon: 'pi pi-fw pi-file',
+                        routerLink: ['/admin-livrables'],
+                    },
+                ],
+            },
+            {
                 label: 'BASE DE DONNÉES',
                 icon: 'pi pi-fw pi-database',
                 items: [
@@ -396,6 +417,17 @@ export class AppMenu implements OnInit {
                         routerLink: ['/GetProjet'],
                     },
                 ],
+            },
+            {
+                label: 'SUIVI PERFORMANCE',
+                icon: 'pi pi-fw pi-chart-line',
+                items: [
+                    {
+                        label: 'Mes Formulaires KPI',
+                        icon: 'pi pi-fw pi-check-square',
+                        routerLink: ['/entrepreneur-kpi-forms'],
+                    },
+                ]
             },
             {
                 label: 'LIVRABLES',
