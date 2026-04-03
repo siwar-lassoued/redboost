@@ -1,5 +1,7 @@
 import { Component, OnInit, signal, inject, ChangeDetectionStrategy, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
 import { FormsModule } from '@angular/forms';
 import { AiReportingService } from '../services/ai-reporting.service';
 import { ProgrammeService } from '../services/programme.service';
@@ -139,7 +141,7 @@ type MoisOption = 'current' | 'last' | 'custom';
       </div>
 
       <!-- ── Section 2 — Rapport Généré ─────────────────────── -->
-      <div *ngIf="generatedReport() as report" class="mx-6 bg-white rounded-2xl overflow-hidden shadow-sm mb-10" style="border: 1px solid rgba(0,0,0,0.04);">
+      <div id="reportToDownload" *ngIf="generatedReport() as report" class="mx-6 bg-white rounded-2xl overflow-hidden shadow-sm mb-10" style="border: 1px solid rgba(0,0,0,0.04);">
         <div class="px-8 py-5 border-b border-gray-100 flex items-center justify-between" style="background: linear-gradient(to right, #ffffff, #fff0f5)">
           <div>
             <div class="flex items-center gap-3">
@@ -151,9 +153,16 @@ type MoisOption = 'current' | 'last' | 'custom';
               {{ report.periodLabel }} • Généré par <span class="font-bold border-b border-dashed border-gray-300 pb-0.5">{{ report.generatedBy }}</span>
             </p>
           </div>
-          <button (click)="generatedReport.set(null)" class="text-gray-400 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 p-2 rounded-xl transition-colors cursor-pointer border-none">
-             <i class="pi pi-times" style="font-size: 1.25rem;"></i>
-          </button>
+          <div class="flex gap-2">
+             <button (click)="downloadPdf()" [disabled]="downloadingPdf()" class="text-white px-4 py-2 rounded-xl transition-colors cursor-pointer border-none font-bold text-sm shadow-sm flex items-center gap-2 hover:opacity-90" style="background: var(--gradient-pink, linear-gradient(135deg, #FF6B9E 0%, #E83E8C 100%));">
+               <i class="pi" [ngClass]="downloadingPdf() ? 'pi-spinner pi-spin' : 'pi-file-pdf'" style="font-size: 1.1rem;"></i>
+               <span *ngIf="!downloadingPdf()">Télécharger PDF</span>
+               <span *ngIf="downloadingPdf()">Génération...</span>
+             </button>
+             <button (click)="generatedReport.set(null)" class="text-gray-400 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 p-2 rounded-xl transition-colors cursor-pointer border-none">
+               <i class="pi pi-times" style="font-size: 1.25rem;"></i>
+             </button>
+          </div>
         </div>
 
         <div class="p-8">
@@ -360,6 +369,8 @@ export class AdminReportingIaComponent implements OnInit {
   generatedReport = signal<AiReporting | null>(null);
   history = signal<AiReporting[]>([]);
 
+  downloadingPdf = signal(false);
+
   ngOnInit() {
     this.progSvc.getAll().subscribe((r: any[]) => {
       this.programmes.set(r);
@@ -463,5 +474,35 @@ export class AdminReportingIaComponent implements OnInit {
       }
     }
     return { start: null, end: null };
+  }
+
+  async downloadPdf() {
+    this.downloadingPdf.set(true);
+    try {
+      const element = document.getElementById('reportToDownload');
+      if (!element) return;
+
+      const canvas = await html2canvas(element, { 
+        scale: 2, 
+        useCORS: true,
+        backgroundColor: '#ffffff'
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      
+      const programmeMenu = this.programmes().find(p => p.id === this.selectedProgramId());
+      const fileName = `Rapport_Strategies_${programmeMenu?.nom || 'Programme'}.pdf`;
+      
+      pdf.save(fileName);
+    } catch (e) {
+      console.error('Erreur de génération du PDF', e);
+    } finally {
+      this.downloadingPdf.set(false);
+    }
   }
 }

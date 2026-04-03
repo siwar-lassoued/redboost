@@ -33,6 +33,9 @@ public class AiReportingService {
     private final TacheRepository tacheRepository;
     private final MatchingSessionRepository matchingSessionRepository;
     private final TacheDocumentRepository tacheDocumentRepository;
+    private final MatchingRepository matchingRepository;
+    private final SprintDocumentRepository sprintDocumentRepository;
+    private final ActiviteDocumentRepository activiteDocumentRepository;
 
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
@@ -42,6 +45,12 @@ public class AiReportingService {
 
     @Value("${file.upload.tache-documents-dir:uploads/tache-documents}")
     private String tacheUploadDir;
+
+    @Value("${file.upload.sprint-documents-dir:uploads/sprint-documents}")
+    private String sprintUploadDir;
+
+    @Value("${file.upload.activity-documents-dir:uploads/activity-documents}")
+    private String activityUploadDir;
 
     public List<AiReporting> getHistory(Long programmeId) {
         return aiReportingRepository.findByProgrammeIdOrderByDateGenerationDesc(programmeId);
@@ -61,6 +70,7 @@ public class AiReportingService {
         int totalSessions = 0;
         int sessionsCompleted = 0;
         for (MatchingSession ms : sessions) {
+            if (ms.getDateMatching() == null) continue;
             LocalDate sessionDate = ms.getDateMatching().toLocalDate();
             if (!sessionDate.isBefore(start) && !sessionDate.isAfter(end)) {
                 totalSessions++;
@@ -70,9 +80,25 @@ public class AiReportingService {
             }
         }
 
+        // Fetch valid matchings for context
+        List<Matching> activeMatchings = matchingRepository.findActiveByProgramme(programmeId);
+        
         // Gather Activities and files for AI Context
         StringBuilder contextBuilder = new StringBuilder();
-        contextBuilder.append("Activités et Livrables de la période:\n\n");
+        
+        contextBuilder.append("--- RELATIONS DE COACHING ---\n");
+        if (activeMatchings.isEmpty()) {
+            contextBuilder.append("Aucun binôme validé pour le moment.\n");
+        } else {
+            for (Matching m : activeMatchings) {
+                contextBuilder.append("Binôme: Coach ID ").append(m.getCoachId()).append(" & Entrepreneur ID ").append(m.getEntrepreneurId()).append("\n")
+                        .append("Expertise/Justification: ").append(m.getJustification()).append("\n")
+                        .append("Points d'attention: ").append(m.getPointsAttention()).append("\n");
+            }
+        }
+        contextBuilder.append("\n");
+
+        contextBuilder.append("--- ACTIVITÉS ET LIVRABLES ---\n\n");
 
         int totalTaches = 0;
         int tachesCompleted = 0;
@@ -80,9 +106,25 @@ public class AiReportingService {
         int livrablesApproved = 0;
 
         for (Sprint sprint : sprints) {
+            // Include Sprint Documents (Strategic files)
+            List<SprintDocument> sDocs = sprintDocumentRepository.findBySprintId(sprint.getId());
+            for (SprintDocument sd : sDocs) {
+                contextBuilder.append("[Document Sprint] ").append(sd.getNom()).append("\n");
+                String txt = extractTextFromPath(sd.getCheminFichier(), sprintUploadDir);
+                if (txt != null) contextBuilder.append("Contenu: ").append(txt).append("\n");
+            }
+
             // Only consider sprints intersecting with the period roughly, or we just load their tasks and check task dates
             List<Activite> activites = activiteRepository.findBySprintId(sprint.getId());
             for (Activite act : activites) {
+                // Include Activity Documents
+                List<ActiviteDocument> aDocs = activiteDocumentRepository.findByActiviteId(act.getId());
+                for (ActiviteDocument ad : aDocs) {
+                    contextBuilder.append("[Document Activité] ").append(ad.getNom()).append("\n");
+                    String txt = extractTextFromPath(ad.getCheminFichier(), activityUploadDir);
+                    if (txt != null) contextBuilder.append("Contenu: ").append(txt).append("\n");
+                }
+                
                 List<Tache> taches = tacheRepository.findByActiviteId(act.getId());
                 for (Tache tache : taches) {
                     if (tache.getDateDebut() != null && !tache.getDateDebut().isAfter(end) && 
@@ -106,7 +148,7 @@ public class AiReportingService {
                                 livrablesApproved++; 
                                 
                                 contextBuilder.append("  Livrable (Document attaché): ").append(doc.getNom()).append("\n");
-                                String extractedText = extractTextFromDocument(doc);
+                                String extractedText = extractTextFromPath(doc.getCheminFichier(), tacheUploadDir);
                                 if (extractedText != null && !extractedText.isEmpty()) {
                                     contextBuilder.append("  [Contenu du livrable extrait] :\n  ")
                                                   .append(extractedText.replace("\n", "\n  "))
@@ -122,14 +164,15 @@ public class AiReportingService {
 
         // Build Payload for Gemini
         String systemPrompt = "Tu es 'Redboost IA', un système expert d'analyse de données pour les programmes d'incubation.\n" +
-                "Tu reçois les données brutes des activités, tâches et livrables (fichiers partagés entre coachs et entrepreneurs) pour une période donnée.\n" +
+                "Tu reçois les données brutes des activités, tâches et livrables (fichiers partagés entre coachs et entrepreneurs) pour une période donnée, ainsi que les détails du matching initial.\n" +
                 "Ton rôle est d'analyser profondément ces données et de générer un rapport stratégique JSON.\n\n" +
                 "Instructions:\n" +
                 "- kpis_cles : Identifie 3 ou 4 points de succès majeurs ou faits marquants (ex: '3 livrables clés validés dont le Business Plan').\n" +
                 "- alertes : Identifie les blocages, les entrepreneurs en retard ou l'absence de soumission de livrables.\n" +
-                "- recommandations : Donne des recommandations actionnables pour l'équipe encadrante.\n" +
-                "- analyse_livrables : Fais une synthèse de la qualité des documents soumis d'après leur contenu lu.\n" +
-                "- resume_executif : Écris un paragraphe narratif résumant la santé globale du sprint/période.\n" +
+                "- recommandations : Donne des recommandations actionnables pour l'équipe encadrante et les binômes.\n" +
+                "- analyse_livrables : Fais une synthèse de la qualité des documents soumis (Sprint, Activité, Tâche) d'après leur contenu lu.\n" +
+                "- resume_executif : Écris un paragraphe narratif résumant la santé globale du sprint/période en tenant compte des relations coach-entrepreneur.\n" +
+                "- tendances : Analyse si les binômes suivent les orientations/recommandations issues du matching initial.\n" +
                 "RÈGLE ABSOLUE : Tu dois répondre EXCLUSIVEMENT avec un JSON valide. Zéro texte avant ou après.\n";
 
         String userPrompt = "Programme : " + programme.getNom() + "\n" +
@@ -154,6 +197,10 @@ public class AiReportingService {
         Map<String, Object> content = new LinkedHashMap<>();
         content.put("parts", List.of(part));
         geminiRequest.put("contents", List.of(content));
+
+        if ("unconfigured".equals(geminiApiKey) || geminiApiKey == null || geminiApiKey.trim().isEmpty()) {
+            throw new RuntimeException("Validation Echouee: La clé API Gemini (gemini.api.key) n'est pas configurée ou est invalide sur ce serveur.");
+        }
 
         String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=" + geminiApiKey;
 
@@ -219,20 +266,18 @@ public class AiReportingService {
         aiReportingRepository.deleteById(id);
     }
 
-    private String extractTextFromDocument(TacheDocument document) {
-        if (document.getCheminFichier() == null || !document.getCheminFichier().toLowerCase().endsWith(".pdf")) {
-            return null; // Only extract text from PDFs for now
+    private String extractTextFromPath(String relativeUrlPath, String uploadBaseDir) {
+        if (relativeUrlPath == null || !relativeUrlPath.toLowerCase().endsWith(".pdf")) {
+            return null;
         }
         
         try {
-            // cheminFichier is typically "/api/files/tache-documents/uuid.pdf" or something similar
-            String filename = document.getCheminFichier().substring(document.getCheminFichier().lastIndexOf('/') + 1);
-            Path filePath = Paths.get(tacheUploadDir, filename).toAbsolutePath().normalize();
+            String filename = relativeUrlPath.substring(relativeUrlPath.lastIndexOf('/') + 1);
+            Path filePath = Paths.get(uploadBaseDir, filename).toAbsolutePath().normalize();
             File file = filePath.toFile();
             
             if (!file.exists() || !file.isFile()) {
-                log.warn("Livrable physique non trouvé pour extraire le texte : {}", filePath);
-                return null; // File missing
+                return null; 
             }
 
             try (PDDocument doc = PDDocument.load(file)) {
@@ -240,15 +285,14 @@ public class AiReportingService {
                 String text = stripper.getText(doc);
                 if (text != null && !text.trim().isEmpty()) {
                     text = text.trim();
-                    // Limiter pour ne pas exploser les tokens LLM (~1500 chars max par fichier dans ce batch report)
                     if (text.length() > 2000) {
-                        text = text.substring(0, 2000) + "\n...[Texte tronqué pour synthèse globale]";
+                        text = text.substring(0, 2000) + "...";
                     }
                     return text;
                 }
             }
         } catch(Exception e) {
-            log.warn("Erreur lors de l'extraction PDF pour {}: {}", document.getCheminFichier(), e.getMessage());
+            log.warn("Erreur d'extraction pour {}: {}", relativeUrlPath, e.getMessage());
         }
         return null;
     }
