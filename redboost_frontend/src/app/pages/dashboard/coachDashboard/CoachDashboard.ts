@@ -19,6 +19,7 @@ import { Subscription } from 'rxjs';
 import { Calendar } from '@fullcalendar/core';
 import { Router } from '@angular/router';
 import { environment } from '../../../../environment';
+import { CoachService, CoachEntrepreneurDTO, UpcomingSessionDTO } from './services/coach.service';
 
 interface Kpi {
     label: string;
@@ -170,32 +171,36 @@ interface NoteDeSynthese {
                         <a href="javascript:void(0)" class="voir-tous">Voir tous ></a>
                     </div>
                     <div class="entrepreneurs-list">
-                        <!-- We use static mockup data here to match design pending backend mapping -->
-                        <div class="entrepreneur-item">
-                            <div class="avatar pink-avatar">RZ</div>
-                            <div class="entrepreneur-info">
-                                <h4>Rania Zouari</h4>
-                                <span class="startup-desc">PayLoop • Fintech</span>
-                            </div>
-                            <div class="progress-col">
-                                <span class="progress-txt">82%</span>
-                                <div class="progress-bar">
-                                    <div class="progress-fill fill-pink" style="width: 82%"></div>
-                                </div>
-                            </div>
-                            <i class="pi pi-angle-right"></i>
+                        <!-- Dynamic entrepreneurs loaded from backend -->
+                        <div *ngIf="isLoadingEntrepreneurs" class="loading-indicator">
+                            <p>Chargement des entrepreneurs...</p>
+                        </div>
+                        
+                        <div *ngIf="!isLoadingEntrepreneurs && entrepreneurs.length === 0" class="empty-state">
+                            <p>Aucun entrepreneur assigné pour le moment</p>
                         </div>
 
-                        <div class="entrepreneur-item">
-                            <div class="avatar pink-avatar">FA</div>
+                        <div *ngFor="let entrepreneur of entrepreneurs" class="entrepreneur-item">
+                            <div class="avatar pink-avatar">
+                                {{ entrepreneur.firstName.charAt(0) }}{{ entrepreneur.lastName.charAt(0) }}
+                            </div>
                             <div class="entrepreneur-info">
-                                <h4 class="flex items-center gap-2">Fatma Ben Amor <span class="badge-retard">1 en retard</span></h4>
-                                <span class="startup-desc">GreenBox • CleanTech</span>
+                                <h4 class="flex items-center gap-2">
+                                    {{ entrepreneur.firstName }} {{ entrepreneur.lastName }}
+                                    <span *ngIf="entrepreneur.delayedTasksCount && entrepreneur.delayedTasksCount > 0" 
+                                          class="badge-retard">
+                                        {{ entrepreneur.delayedTasksCount }} en retard
+                                    </span>
+                                </h4>
+                                <span class="startup-desc">
+                                    {{ entrepreneur.entreprise || 'N/A' }} • {{ entrepreneur.secteur || 'Non spécifié' }}
+                                </span>
                             </div>
                             <div class="progress-col">
-                                <span class="progress-txt">57%</span>
+                                <span class="progress-txt">{{ entrepreneur.completionRate || 0 }}%</span>
                                 <div class="progress-bar">
-                                    <div class="progress-fill fill-pink" style="width: 57%"></div>
+                                    <div class="progress-fill fill-pink" 
+                                         [style.width]="(entrepreneur.completionRate || 0) + '%'"></div>
                                 </div>
                             </div>
                             <i class="pi pi-angle-right"></i>
@@ -210,34 +215,41 @@ interface NoteDeSynthese {
                         <a href="javascript:void(0)" class="voir-tous">Voir tout</a>
                     </div>
                     <div class="sessions-list">
+                        <!-- Dynamic sessions loaded from backend -->
+                        <div *ngIf="isLoadingSessions" class="loading-indicator">
+                            <p>Chargement des sessions...</p>
+                        </div>
                         
-                        <div class="session-card">
-                            <div class="status-indicator">
-                                <span class="dot dot-green"></span>
-                            </div>
-                            <div class="session-content">
-                                <div class="badge badge-green">Confirmé</div>
-                                <h4>Yasmine Chaabane</h4>
-                                <div class="session-meta">
-                                    <i class="pi pi-clock"></i> 2024-11-20 à 10:00
-                                </div>
-                                <a href="javascript:void(0)" class="meet-link"><i class="pi pi-video"></i> Lien Meet</a>
-                            </div>
+                        <div *ngIf="!isLoadingSessions && upcomingSessions.length === 0" class="empty-state">
+                            <p>Aucune session prévue pour le moment</p>
                         </div>
 
-                        <div class="session-card">
+                        <div *ngFor="let session of upcomingSessions" class="session-card">
                             <div class="status-indicator">
-                                <span class="dot dot-orange"></span>
+                                <span class="dot" 
+                                      [class.dot-green]="session.statut === 'CONFIRMED'" 
+                                      [class.dot-orange]="session.statut === 'PENDING'"
+                                      [class.dot-red]="session.statut === 'CANCELLED'"></span>
                             </div>
                             <div class="session-content">
-                                <div class="badge badge-orange">En attente</div>
-                                <h4>Mehdi Boughzala</h4>
-                                <div class="session-meta">
-                                    <i class="pi pi-clock"></i> 2024-11-21 à 14:00
+                                <div class="badge" 
+                                     [class.badge-green]="session.statut === 'CONFIRMED'"
+                                     [class.badge-orange]="session.statut === 'PENDING'"
+                                     [class.badge-red]="session.statut === 'CANCELLED'">
+                                    {{ session.statut === 'CONFIRMED' ? 'Confirmé' : 
+                                       session.statut === 'PENDING' ? 'En attente' : 'Annulé' }}
                                 </div>
+                                <h4>{{ session.entrepreneurName }}</h4>
+                                <div class="session-meta">
+                                    <i class="pi pi-clock"></i> 
+                                    {{ session.dateSession }} à {{ session.heureDebut }}
+                                </div>
+                                <a *ngIf="session.meetingLink" [href]="session.meetingLink" 
+                                   target="_blank" class="meet-link">
+                                    <i class="pi pi-video"></i> Lien Meet
+                                </a>
                             </div>
                         </div>
-
                     </div>
                 </div>
             </div>
@@ -558,6 +570,7 @@ interface NoteDeSynthese {
             }
             .dot-green { background: #48BB78; }
             .dot-orange { background: #ED8936; }
+            .dot-red { background: #F56565; }
 
             .session-content {
                 background: #F8FAFC;
@@ -581,6 +594,25 @@ interface NoteDeSynthese {
             .badge-orange {
                 background: #FFFAF0;
                 color: #DD6B20;
+            }
+            .badge-red {
+                background: #FFF5F5;
+                color: #E53E3E;
+            }
+
+            /* Loading and empty state styles */
+            .loading-indicator {
+                text-align: center;
+                padding: 2rem;
+                color: #718096;
+                font-size: 0.95rem;
+            }
+
+            .empty-state {
+                text-align: center;
+                padding: 2rem;
+                color: #A0AEC0;
+                font-size: 0.95rem;
             }
             .session-content h4 {
                 margin: 0 0 0.5rem 0;
@@ -631,6 +663,13 @@ export class CoachDashboardComponent implements OnInit, OnDestroy {
         nbProjet: 0,
         activity: [],
     };
+    
+    // Dynamic data from backend
+    entrepreneurs: CoachEntrepreneurDTO[] = [];
+    upcomingSessions: UpcomingSessionDTO[] = [];
+    isLoadingEntrepreneurs = false;
+    isLoadingSessions = false;
+    
     startups: Startup[] = [
         {
             name: 'GreenTech',
@@ -722,6 +761,7 @@ export class CoachDashboardComponent implements OnInit, OnDestroy {
         private toastr: ToastrService,
         private cdr: ChangeDetectorRef,
         private router: Router,
+        private coachService: CoachService,
     ) {}
 
     ngOnInit() {
@@ -786,6 +826,10 @@ export class CoachDashboardComponent implements OnInit, OnDestroy {
                         );
                     },
                 });
+
+            // Load dynamic entrepreneurs and upcoming sessions from backend
+            this.loadCoachEntrepreneurs();
+            this.loadUpcomingSessions();
         } else {
             console.error(
                 'Coach ID not found. Please ensure you are logged in.',
@@ -994,6 +1038,56 @@ export class CoachDashboardComponent implements OnInit, OnDestroy {
     closeRendezVousCard(): void {
         this.selectedRendezVous = null;
         this.cdr.detectChanges();
+    }
+
+    /**
+     * Load the list of entrepreneurs assigned to the coach from the backend
+     */
+    private loadCoachEntrepreneurs(): void {
+        if (this.coachId === null) return;
+        
+        this.isLoadingEntrepreneurs = true;
+        this.coachService.getCoachEntrepreneurs(this.coachId).subscribe({
+            next: (data) => {
+                this.entrepreneurs = data;
+                this.isLoadingEntrepreneurs = false;
+                this.cdr.detectChanges();
+            },
+            error: (err) => {
+                console.error('Error loading entrepreneurs:', err);
+                this.isLoadingEntrepreneurs = false;
+                this.toastr.error(
+                    'Erreur lors du chargement des entrepreneurs',
+                    'Erreur',
+                );
+                this.cdr.detectChanges();
+            },
+        });
+    }
+
+    /**
+     * Load the list of upcoming sessions for the coach from the backend
+     */
+    private loadUpcomingSessions(): void {
+        if (this.coachId === null) return;
+        
+        this.isLoadingSessions = true;
+        this.coachService.getUpcomingSessions(this.coachId).subscribe({
+            next: (data) => {
+                this.upcomingSessions = data;
+                this.isLoadingSessions = false;
+                this.cdr.detectChanges();
+            },
+            error: (err) => {
+                console.error('Error loading upcoming sessions:', err);
+                this.isLoadingSessions = false;
+                this.toastr.error(
+                    'Erreur lors du chargement des sessions',
+                    'Erreur',
+                );
+                this.cdr.detectChanges();
+            },
+        });
     }
 
     ngOnDestroy(): void {
