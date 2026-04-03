@@ -1,7 +1,6 @@
 import { Component, OnInit, signal, inject, ChangeDetectionStrategy, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { LucideAngularModule } from 'lucide-angular';
 import { AiReportingService } from '../services/ai-reporting.service';
 import { ProgrammeService } from '../services/programme.service';
 import { AiReporting, AiPeriodType } from '../models/ai-reporting.model';
@@ -13,18 +12,18 @@ type MoisOption = 'current' | 'last' | 'custom';
   selector: 'rb-admin-reporting-ia',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, LucideAngularModule],
+  imports: [CommonModule, FormsModule],
   template: `
     <div class="page-wrapper min-h-screen bg-gray-50 pb-20">
       <!-- ── Header ─────────────────────────────────────────── -->
       <div class="flex items-center justify-between mb-8 px-6 pt-6">
         <div>
-          <h1 class="text-3xl font-extrabold text-[#1A1A2E] tracking-tight m-0">Reporting & Performance IA</h1>
+          <h1 class="text-3xl font-extrabold text-[#1A1A2E] tracking-tight m-0">Reporting & Performance</h1>
           <p class="text-gray-500 text-sm mt-1">Générez des rapports analytiques et holistiques sur vos programmes</p>
         </div>
         <div class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-[#FF4D85] bg-[#fff0f5] border border-[#FF4D85]/20 shadow-sm">
-          <lucide-icon name="sparkles" [size]="16" class="fill-[#FF4D85]/20"></lucide-icon>
-          IA RedBoost v2
+          <i class="pi pi-star fill-[#FF4D85]/20" style="font-size: 1.25rem;"></i>
+          IA RedBoost
         </div>
       </div>
 
@@ -32,7 +31,7 @@ type MoisOption = 'current' | 'last' | 'custom';
       <div class="mx-6 bg-white rounded-2xl p-8 mb-10 shadow-sm" style="border: 1px solid rgba(0,0,0,0.04);">
         <div class="flex items-center gap-3 mb-6">
           <div class="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-md" style="background: var(--gradient-pink, linear-gradient(135deg, #FF6B9E 0%, #E83E8C 100%));">
-            <lucide-icon name="plus-circle" [size]="20"></lucide-icon>
+            <i class="pi pi-plus-circle" style="font-size: 1.25rem;"></i>
           </div>
           <div>
             <h2 class="text-xl font-bold text-[#1A1A2E] m-0">Générer un rapport Stratégique</h2>
@@ -54,7 +53,7 @@ type MoisOption = 'current' | 'last' | 'custom';
                   <option value="0" disabled>Choisir un programme...</option>
                   <option *ngFor="let p of programmes()" [value]="p.id">{{ p.nom }}</option>
                 </select>
-                <lucide-icon name="chevron-down" [size]="14" class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></lucide-icon>
+                <i class="pi pi-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" style="font-size: 1.25rem;"></i>
               </div>
             </div>
 
@@ -103,19 +102,18 @@ type MoisOption = 'current' | 'last' | 'custom';
 
           <div class="space-y-6">
             <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-3">Données traitées par l'Intelligence Artificielle</label>
+              <label class="block text-sm font-semibold text-gray-700 mb-3">Données traitées</label>
               <div class="space-y-3">
                 <div *ngFor="let inc of inclusionItems" class="flex items-center gap-3 p-3 rounded-xl border border-gray-100 bg-gray-50 opacity-90 pointer-events-none">
                   <div class="w-5 h-5 rounded flex items-center justify-center text-white" style="background: var(--gradient-pink, #FF4D85)">
-                    <lucide-icon name="check" [size]="12" strokeWidth="3"></lucide-icon>
+                    <i class="pi pi-check" style="font-size: 1.25rem;"></i>
                   </div>
-                  <lucide-icon [name]="inc.icon" [size]="16" class="text-gray-400"></lucide-icon>
+                  <i [class]="'pi pi-' + inc.icon + ' text-gray-400'"></i>
                   <span class="text-sm font-semibold text-gray-600">{{ inc.label }}</span>
                 </div>
               </div>
               <p class="text-xs text-gray-400 mt-4 leading-relaxed bg-[#fff0f5] p-3 rounded-xl border border-[#ffb3c6]">
-                 <lucide-icon name="info" [size]="12" class="inline text-[#FF4D85] -mt-0.5 mr-1"></lucide-icon>
-                 Le modèle IA extraira automatiquement le texte des documents déposés dans les Tâches et Activités (Livrables PDF) pour affiner ses recommandations et analyser la qualité du travail.
+                 <i class="pi pi-info-circle inline text-[#FF4D85] -mt-0.5 mr-1" style="font-size: 1.25rem;"></i>
               </p>
             </div>
           </div>
@@ -129,11 +127,11 @@ type MoisOption = 'current' | 'last' | 'custom';
             style="background: var(--gradient-pink, linear-gradient(135deg, #FF6B9E 0%, #E83E8C 100%)); box-shadow: 0 4px 14px rgba(255,107,158,0.3)"
           >
             <ng-container *ngIf="loading()">
-              <lucide-icon name="loader-2" [size]="20" class="animate-spin"></lucide-icon>
-              <span class="text-lg tracking-wide">Traitement en cours par Gemini 1.5 Pro...</span>
+              <i class="pi pi-spinner pi-spin " style="font-size: 1.25rem;"></i>
+              <span class="text-lg tracking-wide">Traitement en cours...</span>
             </ng-container>
             <ng-container *ngIf="!loading()">
-              <lucide-icon name="zap" [size]="20" class="fill-current text-white"></lucide-icon>
+              <i class="pi pi-bolt  text-white" style="font-size: 1.25rem;"></i>
               <span class="text-lg tracking-wide">Générer le rapport stratégique</span>
             </ng-container>
           </button>
@@ -145,7 +143,7 @@ type MoisOption = 'current' | 'last' | 'custom';
         <div class="px-8 py-5 border-b border-gray-100 flex items-center justify-between" style="background: linear-gradient(to right, #ffffff, #fff0f5)">
           <div>
             <div class="flex items-center gap-3">
-              <lucide-icon name="file-chart-column" [size]="22" class="text-[#FF4D85]"></lucide-icon>
+              <i class="pi pi-file text-[#FF4D85]" style="font-size: 1.25rem;"></i>
               <h2 class="text-2xl font-black text-[#1A1A2E] m-0 tracking-tight">Rapport d'Activité</h2>
             </div>
             <p class="text-xs text-gray-500 mt-1 font-medium">
@@ -154,7 +152,7 @@ type MoisOption = 'current' | 'last' | 'custom';
             </p>
           </div>
           <button (click)="generatedReport.set(null)" class="text-gray-400 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 p-2 rounded-xl transition-colors cursor-pointer border-none">
-             <lucide-icon name="x" [size]="18"></lucide-icon>
+             <i class="pi pi-times" style="font-size: 1.25rem;"></i>
           </button>
         </div>
 
@@ -163,21 +161,21 @@ type MoisOption = 'current' | 'last' | 'custom';
           <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             <div class="rounded-2xl p-5 border border-blue-100 bg-blue-50/50 flex flex-col justify-center items-center">
               <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mb-3">
-                <lucide-icon name="calendar" [size]="20"></lucide-icon>
+                <i class="pi pi-calendar" style="font-size: 1.25rem;"></i>
               </div>
               <div class="text-3xl font-black text-blue-600 leading-none mb-1">{{ report.sessionsCompleted }}<span class="text-sm text-blue-400 font-bold ml-1">/{{report.totalSessions}}</span></div>
               <div class="text-[10px] font-bold text-blue-800 uppercase tracking-widest text-center mt-1">Sessions Validées</div>
             </div>
             <div class="rounded-2xl p-5 border-emerald-100 bg-emerald-50/50 flex flex-col justify-center items-center">
               <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-3">
-                <lucide-icon name="check-square" [size]="20"></lucide-icon>
+                <i class="pi pi-check-square" style="font-size: 1.25rem;"></i>
               </div>
               <div class="text-3xl font-black text-emerald-600 leading-none mb-1">{{ report.tachesCompleted }}<span class="text-sm text-emerald-400 font-bold ml-1">/{{report.totalTaches}}</span></div>
               <div class="text-[10px] font-bold text-emerald-800 uppercase tracking-widest text-center mt-1">Tâches Clôturées</div>
             </div>
             <div class="rounded-2xl p-5 border-purple-100 bg-purple-50/50 flex flex-col justify-center items-center">
               <div class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center mb-3">
-                <lucide-icon name="file-badge" [size]="20"></lucide-icon>
+                <i class="pi pi-id-card" style="font-size: 1.25rem;"></i>
               </div>
               <div class="text-3xl font-black text-purple-600 leading-none mb-1">{{ report.totalLivrables }}</div>
               <div class="text-[10px] font-bold text-purple-800 uppercase tracking-widest text-center mt-1">Livrables Soumis</div>
@@ -185,7 +183,7 @@ type MoisOption = 'current' | 'last' | 'custom';
             <!-- Empty metric or rating -->
             <div class="rounded-2xl p-5 border-amber-100 bg-amber-50/50 flex flex-col justify-center items-center">
               <div class="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mb-3">
-                <lucide-icon name="trending-up" [size]="20"></lucide-icon>
+                <i class="pi pi-chart-line" style="font-size: 1.25rem;"></i>
               </div>
               <div class="text-3xl font-black text-amber-600 leading-none mb-1">{{ (report.tachesCompleted / (report.totalTaches || 1) * 100).toFixed(0) }}%</div>
               <div class="text-[10px] font-bold text-amber-800 uppercase tracking-widest text-center mt-1">Progression Proj.</div>
@@ -195,7 +193,7 @@ type MoisOption = 'current' | 'last' | 'custom';
           <!-- Exec Summary -->
           <div class="bg-[#f8f9fa] border-l-4 border-[#FF4D85] p-6 rounded-r-xl mb-8">
             <h3 class="text-sm font-black text-[#1A1A2E] uppercase tracking-wider mb-3 flex items-center gap-2">
-              <lucide-icon name="sparkles" [size]="16" class="text-[#FF4D85]"></lucide-icon> Résumé Exécutif
+              <i class="pi pi-star text-[#FF4D85]" style="font-size: 1.25rem;"></i> Résumé Exécutif
             </h3>
             <p class="text-gray-700 leading-relaxed font-medium text-sm">{{ report.resumeExecutif }}</p>
           </div>
@@ -203,7 +201,7 @@ type MoisOption = 'current' | 'last' | 'custom';
           <!-- Analyse Livrables -->
           <div class="bg-gray-50 border border-gray-100 p-6 rounded-xl mb-8" *ngIf="report.analyseLivrables">
             <h3 class="text-sm font-black text-purple-800 uppercase tracking-wider mb-3 flex items-center gap-2">
-              <lucide-icon name="book-open-check" [size]="16" class="text-purple-600"></lucide-icon> Synthèse des Livrables lus par l'IA
+              <i class="pi pi-book text-purple-600" style="font-size: 1.25rem;"></i> Synthèse des Livrables lus par l'IA
             </h3>
             <p class="text-gray-600 leading-relaxed text-sm">{{ report.analyseLivrables }}</p>
           </div>
@@ -212,7 +210,7 @@ type MoisOption = 'current' | 'last' | 'custom';
             <!-- Highlights -->
             <div>
               <h3 class="text-sm font-black text-emerald-600 uppercase tracking-wider mb-4 flex items-center gap-2">
-                <lucide-icon name="trending-up" [size]="16"></lucide-icon> Points de Succès
+                <i class="pi pi-chart-line" style="font-size: 1.25rem;"></i> Points de Succès
               </h3>
               <ul class="space-y-3">
                 <li *ngFor="let k of getParsed(report.kpisJson)" class="flex items-start gap-3 bg-white border border-emerald-50 p-4 rounded-xl shadow-sm">
@@ -226,11 +224,11 @@ type MoisOption = 'current' | 'last' | 'custom';
             <div class="space-y-6">
               <div>
                 <h3 class="text-sm font-black text-red-600 uppercase tracking-wider mb-4 flex items-center gap-2">
-                  <lucide-icon name="alert-triangle" [size]="16"></lucide-icon> Vigilance & Retards
+                  <i class="pi pi-exclamation-triangle" style="font-size: 1.25rem;"></i> Vigilance & Retards
                 </h3>
                 <div class="space-y-3">
                   <div *ngFor="let a of getParsedAlerts(report.alertesJson)" class="flex items-start gap-3 bg-[#FEF2F2] border border-red-100 p-4 rounded-xl">
-                     <lucide-icon name="siren" [size]="16" class="text-red-500 flex-shrink-0 mt-0.5"></lucide-icon>
+                     <i class="pi pi-megaphone text-red-500 flex-shrink-0 mt-0.5" style="font-size: 1.25rem;"></i>
                      <div>
                        <span class="block text-[10px] font-black text-red-600 uppercase tracking-widest mb-1">{{ a.type || 'ALERTE' }}</span>
                        <span class="text-sm text-red-900 font-medium leading-tight">{{ a.message || a }}</span>
@@ -242,7 +240,7 @@ type MoisOption = 'current' | 'last' | 'custom';
 
               <div>
                 <h3 class="text-sm font-black text-blue-600 uppercase tracking-wider mb-4 flex items-center gap-2">
-                  <lucide-icon name="lightbulb" [size]="16"></lucide-icon> Recommandations Stratégiques
+                  <i class="pi pi-lightbulb" style="font-size: 1.25rem;"></i> Recommandations Stratégiques
                 </h3>
                 <div class="space-y-3">
                   <div *ngFor="let r of getParsed(report.recommandationsJson)" class="bg-[#EFF6FF] text-blue-900 p-4 rounded-xl text-sm font-medium border border-blue-100 shadow-sm leading-relaxed">
@@ -264,7 +262,7 @@ type MoisOption = 'current' | 'last' | 'custom';
 
         <div class="bg-white rounded-xl shadow-sm overflow-hidden" style="border: 1px solid rgba(0,0,0,0.04);">
           <div *ngIf="history().length === 0" class="py-12 flex flex-col items-center justify-center text-gray-400">
-            <lucide-icon name="files" [size]="40" class="opacity-20 mb-3"></lucide-icon>
+            <i class="pi pi-copy opacity-20 mb-3" style="font-size: 1.25rem;"></i>
             <p class="text-sm font-medium">Aucun rapport d'activité n'est disponible</p>
           </div>
 
@@ -301,10 +299,10 @@ type MoisOption = 'current' | 'last' | 'custom';
                 <td class="px-6 py-4">
                   <div class="flex items-center justify-end gap-2">
                     <button (click)="generatedReport.set(h)" class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors border-none bg-transparent cursor-pointer" title="Voir">
-                       <lucide-icon name="eye" [size]="16"></lucide-icon>
+                       <i class="pi pi-eye" style="font-size: 1.25rem;"></i>
                     </button>
                     <button (click)="handleDelete(h.id)" class="p-2 text-red-400 hover:bg-red-50 hover:text-red-500 rounded-lg transition-colors border-none bg-transparent cursor-pointer" title="Supprimer">
-                       <lucide-icon name="trash-2" [size]="16"></lucide-icon>
+                       <i class="pi pi-trash" style="font-size: 1.25rem;"></i>
                     </button>
                   </div>
                 </td>

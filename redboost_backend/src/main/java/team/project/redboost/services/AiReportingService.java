@@ -155,7 +155,7 @@ public class AiReportingService {
         content.put("parts", List.of(part));
         geminiRequest.put("contents", List.of(content));
 
-        String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=" + geminiApiKey;
+        String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=" + geminiApiKey;
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -196,7 +196,7 @@ public class AiReportingService {
                             .totalLivrables(totalLivrables)
                             .livrablesApproved(livrablesApproved)
                             .averageRating(0.0) // Mock rating
-                            .generatedBy("IA RedBoost (Gemini 1.5 Pro)")
+                            .generatedBy("IA RedBoost (Gemini 3 Flash Preview)")
                             .resumeExecutif((String) aiData.get("resume_executif"))
                             .analyseLivrables((String) aiData.get("analyse_livrables"))
                             .tendances((String) aiData.get("tendances"))
