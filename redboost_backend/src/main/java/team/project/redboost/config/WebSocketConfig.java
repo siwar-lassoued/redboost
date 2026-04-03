@@ -11,8 +11,8 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @lombok.RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-    private final team.project.redboost.security.JwtUtils jwtUtils;
-    private final team.project.redboost.security.services.UserDetailsServiceImpl userDetailsService;
+    private final team.project.redboost.config.JwtUtil jwtUtils;
+    private final team.project.redboost.services.CustomUserDetailsService userDetailsService;
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
@@ -44,10 +44,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                     String authToken = accessor.getFirstNativeHeader("Authorization");
                     if (authToken != null && authToken.startsWith("Bearer ")) {
                         String token = authToken.substring(7);
-                        if (jwtUtils.validateJwtToken(token)) {
-                            String username = jwtUtils.getUserNameFromJwtToken(token);
+                        if (jwtUtils.validateToken(token)) {
+                            String email = jwtUtils.extractEmail(token);
                             org.springframework.security.core.userdetails.UserDetails userDetails = userDetailsService
-                                    .loadUserByUsername(username);
+                                    .loadUserByUsername(email);
                             org.springframework.security.authentication.UsernamePasswordAuthenticationToken auth = new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
                                     userDetails, null, userDetails.getAuthorities());
                             accessor.setUser(auth);
