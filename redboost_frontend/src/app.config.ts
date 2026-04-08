@@ -12,8 +12,8 @@ import {
 } from '@angular/router';
 import { providePrimeNG } from 'primeng/config';
 import { appRoutes } from './app.routes';
-import { provideNativeDateAdapter } from '@angular/material/core'; // Import this!
-import { MessageService } from 'primeng/api'; // Import MessageService
+import { provideNativeDateAdapter } from '@angular/material/core'; 
+import { MessageService } from 'primeng/api'; 
 import { AuthInterceptor } from './app/pages/frontoffice/gestion_user/auth/AuthInterceptor';
 import { provideFirebaseApp, initializeApp } from '@angular/fire/app';
 import {
@@ -30,7 +30,7 @@ import { LucideAngularModule, icons } from 'lucide-angular';
 
 export const appConfig: ApplicationConfig = {
     providers: [
-        MessageService, // Provide MessageService
+        MessageService, 
         provideRouter(
             appRoutes,
             withInMemoryScrolling({
