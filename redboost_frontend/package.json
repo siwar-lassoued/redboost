@@ -44,6 +44,8 @@
     "dhtmlx-gantt": "^9.0.5",
     "file-saver": "^2.0.5",
     "firebase": "^11.4.0",
+    "glob": "^13.0.6",
+    "html2canvas": "^1.4.1",
     "jsbarcode": "^3.11.6",
     "jspdf": "^3.0.1",
     "jwt-decode": "^4.0.0",

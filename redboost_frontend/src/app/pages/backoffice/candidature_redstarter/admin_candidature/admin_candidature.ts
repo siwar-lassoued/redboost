@@ -77,30 +77,49 @@ export class AdminCandidaturesComponent implements OnInit {
 
   load(): void {
     this.svc.getAll({
-      type: this.activeTab(),
-      limit: 100,
+      limit: 200,
       search: this.searchQuery || undefined,
-      statut: this.statusFilter === 'ALL' ? undefined : this.statusFilter as CandidatureStatus
     }).subscribe(r => {
       let data = r.data || [];
+
+      // Filter by tab (profile type)
+      const tab = this.activeTab();
+      if (tab === 'coaches') {
+        data = data.filter(c => c.type === 'coaches');
+      } else if (tab === 'entrepreneurs') {
+        data = data.filter(c => c.type === 'entrepreneurs');
+      } else if (tab === 'spontanees') {
+        data = data.filter(c => c.type === 'spontanees');
+      }
+
+      // Extract programme list from tab-filtered data (before status filter)
+      const progs = [...new Set(data.map(c => c.programme).filter(Boolean))] as string[];
+      this.programmes.set(progs);
+
+      // Programme filter
       if (this.filterProgram !== 'all') {
         data = data.filter(c => c.programme === this.filterProgram);
       }
+
+      // Status filter
       if (this.statusFilter !== 'HISTORIQUE') {
-        data = data.filter(c => this.ACTIVE_STATUSES.includes(c.statut));
+        if (this.statusFilter === 'ALL') {
+          data = data.filter(c => this.ACTIVE_STATUSES.includes(c.statut));
+        } else {
+          data = data.filter(c => c.statut === this.statusFilter);
+        }
       }
+
       // Profile filter for Spontanées tab
-      if (this.activeTab() === 'spontanees' && this.profileFilter !== 'all') {
+      if (tab === 'spontanees' && this.profileFilter !== 'all') {
         data = data.filter(c => {
-          const profile = this.getDeductedProfile(c);
-          if (this.profileFilter === 'Coach') return profile === 'coaches';
-          if (this.profileFilter === 'Entrepreneur') return profile === 'entrepreneurs';
+          if (this.profileFilter === 'Coach') return this.isCoach(c);
+          if (this.profileFilter === 'Entrepreneur') return !this.isCoach(c);
           return true;
         });
       }
+
       this.candidatures.set(data);
-      const progs = [...new Set((r.data || []).map(c => c.programme).filter(Boolean))] as string[];
-      this.programmes.set(progs);
     });
   }
 
@@ -224,25 +243,7 @@ export class AdminCandidaturesComponent implements OnInit {
     });
   }
 
-  getDeductedProfile(c: Candidature): 'coaches' | 'entrepreneurs' | 'spontanees' {
-    if (c.type === 'coaches') return 'coaches';
-    if (c.type === 'entrepreneurs') return 'entrepreneurs';
-    
-    const profileAnswer = c.formAnswers?.find((a: any) =>
-      a.question && a.question.toLowerCase().includes('coach') && a.question.toLowerCase().includes('entrepreneur')
-    );
-    if (profileAnswer) {
-        let val = profileAnswer.answer;
-        if (Array.isArray(val)) val = val[0];
-        if (typeof val === 'string') {
-           if (val.toLowerCase().includes('coach')) return 'coaches';
-           if (val.toLowerCase().includes('entrepreneur')) return 'entrepreneurs';
-        }
-    }
-    return c.type as any || 'spontanees';
-  }
-
-  isCoach(c: Candidature): boolean { return this.getDeductedProfile(c) === 'coaches'; }
+  isCoach(c: Candidature): boolean { return c.deductedProfile === 'coaches'; }
   getInitials(c: Candidature): string { if (!c?.nom) return '??'; return c.nom.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase(); }
 
   getAnswerIcon(type: string): string {

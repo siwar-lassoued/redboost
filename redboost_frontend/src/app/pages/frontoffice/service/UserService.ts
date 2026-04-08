@@ -10,8 +10,8 @@ import { environment } from '../../../../environment'; // Import environment
 export class UserService {
     private userSubject = new BehaviorSubject<any>(null);
     user$ = this.userSubject.asObservable();
-    private userCache = new Map<number, any>(); // Cache for user profiles
-    private apiUrl = environment.apiUrl; // Use environment.apiUrl
+    private userCache = new Map<number, any>(); 
+    private apiUrl = environment.apiUrl; 
 
     constructor(private http: HttpClient) {}
 

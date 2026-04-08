@@ -309,7 +309,11 @@ public class CandidatureRedstarterService {
                 }
             }
             if (targetEmail != null) {
-                emailService.sendEmail(targetEmail, subject != null ? subject : "Mise à jour de votre candidature", emailContent);
+                try {
+                    emailService.sendEmail(targetEmail, subject != null ? subject : "Mise à jour de votre candidature", emailContent);
+                } catch (Exception e) {
+                    log.error("Erreur lors de l'envoi de l'email à {}. Le compte a été créé/statut mis à jour mais l'email n'a pas pu partir : {}", targetEmail, e.getMessage());
+                }
             }
         }
 

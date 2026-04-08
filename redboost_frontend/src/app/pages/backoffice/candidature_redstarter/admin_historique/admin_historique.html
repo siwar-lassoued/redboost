@@ -63,10 +63,18 @@
       <input type="text" placeholder="Rechercher par nom ou email..." [value]="searchTerm()" (input)="searchTerm.set($any($event.target).value)" class="search-input">
     </div>
     
-    <select [value]="filterType()" (change)="filterType.set($any($event.target).value)" class="filter-select">
-      <option value="all">Tous les profils</option>
-      <option value="entrepreneurs">Entrepreneurs / Startups</option>
-      <option value="coaches">Coachs / Mentors</option>
+    <div class="profile-toggle">
+      <button class="toggle-btn coach" [class.active]="filterType() === 'coaches'" (click)="filterType.set(filterType() === 'coaches' ? 'all' : 'coaches')">
+        <lucide-icon name="shield" [size]="14"></lucide-icon> Coach
+      </button>
+      <button class="toggle-btn entrepreneur" [class.active]="filterType() === 'entrepreneurs'" (click)="filterType.set(filterType() === 'entrepreneurs' ? 'all' : 'entrepreneurs')">
+        <lucide-icon name="rocket" [size]="14"></lucide-icon> Entrepreneur
+      </button>
+    </div>
+
+    <select [value]="filterProgramme()" (change)="filterProgramme.set($any($event.target).value)" class="filter-select">
+      <option value="all">Tous les programmes</option>
+      @for (p of programmes(); track p) { <option [value]="p">{{ p }}</option> }
     </select>
 
     <select [value]="filterStatus()" (change)="filterStatus.set($any($event.target).value)" class="filter-select">
@@ -90,7 +98,7 @@
         <div class="table-card">
           <table class="hist-table">
             <thead>
-              <tr><th>Candidat</th><th>Statut</th><th>Parcours</th><th>Date</th></tr>
+              <tr><th>Candidat</th><th>Profil</th><th>Programme</th><th>Statut</th><th>Parcours</th><th>Date</th></tr>
             </thead>
             <tbody>
               @for (c of filtered(); track c.id) {
@@ -103,6 +111,12 @@
                       </div>
                     </div>
                   </td>
+                  <td>
+                    <span class="type-badge" [class.coach]="isCoach(c)" [class.entrepreneur]="!isCoach(c) && c.deductedProfile === 'entrepreneurs'">
+                      {{ getProfileLabel(c) }}
+                    </span>
+                  </td>
+                  <td><span class="prog-text">{{ c.programme || '—' }}</span></td>
                   <td>
                     <span class="status-pill" [style.background]="getStatusCfg(c.statut).bg" [style.color]="getStatusCfg(c.statut).color">
                       {{ getStatusCfg(c.statut).label }}
@@ -148,6 +162,12 @@
         </div>
 
         <div class="dp-status-row">
+          <span class="type-badge" [class.coach]="isCoach(selected()!)" [class.entrepreneur]="!isCoach(selected()!) && selected()!.deductedProfile === 'entrepreneurs'">
+            {{ getProfileLabel(selected()!) }}
+          </span>
+          @if (selected()!.programme) {
+            <span class="prog-badge">{{ selected()!.programme }}</span>
+          }
           <span class="status-pill big" [style.background]="getStatusCfg(selected()!.statut).bg" [style.color]="getStatusCfg(selected()!.statut).color">
             {{ getStatusCfg(selected()!.statut).label }}
           </span>

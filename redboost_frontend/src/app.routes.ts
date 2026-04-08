@@ -38,6 +38,7 @@ import { SubmitCandidatureComponent } from './app/pages/backoffice/candidature_r
 import { AdminCandidaturesComponent } from './app/pages/backoffice/candidature_redstarter/admin_candidature/admin_candidature';
 import { AdminHistoriqueComponent } from './app/pages/backoffice/candidature_redstarter/admin_historique/admin_historique';
 import { AdminMatchingComponent } from './app/pages/backoffice/candidature_redstarter/admin_matching/admin_matching';
+import { AdminReportingIaComponent } from './app/pages/backoffice/candidature_redstarter/admin_reporting_ia/admin-reporting-ia.component';
 import { TemplateListComponent } from './app/pages/backoffice/database_management/template/suivitemplate';
 import { InsertDataComponent } from './app/pages/backoffice/database_management/insertion_data/template_list/insertion_donnees';
 import { TemplateDataManagementComponent } from './app/pages/backoffice/database_management/insertion_data/data_view/data_management';
@@ -56,6 +57,21 @@ import { CoachChatComponent } from './app/pages/dashboard/coachDashboard/coach-c
 import { CoachRapportMissionsComponent } from './app/pages/dashboard/coachDashboard/coach-rapport-missions.component';
 import { CoachLivrablesComponent } from './app/pages/dashboard/coachDashboard/coach-livrables.component';
 import { NoteDeSyntheseCreateComponent } from './app/pages/dashboard/coachDashboard/note-de-synthese-create.component';
+
+// New dynamic KPI and Form features
+import { AdminKpiFormsComponent } from './app/pages/backoffice/kpi_forms/admin-kpi-forms.component';
+import { AdminEvaluationsComponent } from './app/pages/backoffice/evaluations/admin-evaluations.component';
+import { AdminLivrablesComponent } from './app/pages/backoffice/livrables/admin-livrables.component';
+import { EntrepreneurKpiFormsComponent } from './app/pages/entrepreneur/kpi_forms/entrepreneur-kpi-forms.component';
+import { EntrepreneurDashboardComponent } from './app/pages/entrepreneur/dashboard/entrepreneur-dashboard.component';
+import { MesCoachsComponent } from './app/pages/entrepreneur/mes-coachs/mes-coachs.component';
+import { EntrepreneurSessionsComponent } from './app/pages/entrepreneur/mes-sessions/entrepreneur-sessions.component';
+import { CoachRatingComponent } from './app/pages/entrepreneur/coach-rating/coach-rating.component';
+import { EntrepreneurTachesComponent } from './app/pages/entrepreneur/mes-taches/entrepreneur-taches.component';
+import { EntrepreneurLivrablesComponent } from './app/pages/entrepreneur/mes-livrables/entrepreneur-livrables.component';
+import { EntrepreneurProgrammeComponent } from './app/pages/entrepreneur/mon-programme/entrepreneur-programme.component';
+import { EntrepreneurStatusComponent } from './app/pages/entrepreneur/status/entrepreneur-status.component';
+import { EntrepreneurChatComponent } from './app/pages/entrepreneur/chat/entrepreneur-chat.component';
 
 export const pagesRoutes: Routes = [
     { path: 'profile', component: UserProfileComponent },
@@ -104,6 +120,7 @@ export const appRoutes: Routes = [
             { path: 'admin_redstarter', component: AdminCandidaturesComponent },
             { path: 'admin_historique', component: AdminHistoriqueComponent },
             { path: 'admin_matching', component: AdminMatchingComponent },
+            { path: 'admin_reporting_ia', component: AdminReportingIaComponent },
             {path: 'gestion-entrepreneur',component: EntrepreneursManagementComponent},
             { path: 'workflow', component: RapportRedactionComponent },
            // { path: 'sprintdash', component: SprintDashboardComponent },
@@ -127,13 +144,36 @@ export const appRoutes: Routes = [
             { path: 'coach-entrepreneurs', component: CoachEntrepreneursComponent },
             { path: 'coach-entrepreneurs/:id', component: CoachEntrepreneurDetailComponent },
             { path: 'mes-sessions', component: SessionsComponent },
-            { path: 'gestion_comm', component: CoachChatComponent },
             { path: 'coach-chat', component: CoachChatComponent },
+            { path: 'gestion_comm', component: EntrepreneurChatComponent },
             { path: 'rapport-missions', component: CoachRapportMissionsComponent },
             { path: 'coach-entrep-deliverable', component: CoachLivrablesComponent },
             { path: 'coach-livrables', component: CoachLivrablesComponent },
             { path: 'note-de-synthese-create/:id', component: NoteDeSyntheseCreateComponent },
             { path: 'messagerie-reclamation', component: ReclamationsComponent },
+
+            // New KPI and Form features
+            { path: 'admin-kpi-forms', component: AdminKpiFormsComponent },
+            { path: 'admin-evaluations', component: AdminEvaluationsComponent },
+            { path: 'admin-livrables', component: AdminLivrablesComponent },
+            
+            // Entrepreneur Profile
+            { path: 'entrep-calendar', component: EntrepreneurSessionsComponent },
+            { path: 'mes-sessions-entrep', component: EntrepreneurSessionsComponent },
+            { path: 'entrep-deliverable', component: EntrepreneurLivrablesComponent },
+            { path: 'entrepreneur-kpi-forms', component: EntrepreneurKpiFormsComponent },
+            { path: 'feedback', component: CoachRatingComponent },
+            
+            // Entrepreneur Routes
+            { path: 'entrepreneur-dashboard', component: EntrepreneurDashboardComponent },
+            { path: 'entrepreneur/mes-coachs', component: MesCoachsComponent },
+            { path: 'entrepreneur/mes-sessions', component: EntrepreneurSessionsComponent },
+            { path: 'entrepreneur/mes-taches', component: EntrepreneurTachesComponent },
+            { path: 'entrepreneur/mes-livrables', component: EntrepreneurLivrablesComponent },
+            { path: 'entrepreneur/mon-programme', component: EntrepreneurProgrammeComponent },
+            { path: 'entrepreneur/status', component: EntrepreneurStatusComponent },
+            { path: 'entrepreneur/chat', component: EntrepreneurChatComponent },
+            { path: 'coach-rating/:sessionId', component: CoachRatingComponent },
 
             ...pagesRoutes,
         ],

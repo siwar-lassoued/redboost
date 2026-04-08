@@ -13,6 +13,7 @@ import team.project.redboost.entities.ParticipationMode;
 
 import java.io.IOException;
 import java.time.ZoneId;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -21,6 +22,12 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class GoogleCalendarService {
+
+    @lombok.Data
+    public static class GoogleEventResult {
+        private String eventId;
+        private String meetLink;
+    }
 
     private final Calendar calendarService;
     private final Credential credential;
@@ -56,6 +63,52 @@ public class GoogleCalendarService {
         }
 
         return createdEvent;
+    }
+
+    /**
+     * Creates a simple Google Meet event without linking an Event entity directly
+     */
+    public GoogleEventResult createMeetEvent(String title, LocalDateTime start, LocalDateTime end, String coachEmail, String entrepreneurEmail) throws IOException {
+        ensureValidCredential();
+
+        com.google.api.services.calendar.model.Event googleEvent = new com.google.api.services.calendar.model.Event()
+                .setSummary(title)
+                .setDescription("Session de coaching sur RedBoost.");
+
+        EventDateTime startEvent = new EventDateTime()
+                .setDateTime(new DateTime(java.util.Date.from(start.atZone(ZoneId.of("Africa/Tunis")).toInstant())))
+                .setTimeZone("Africa/Tunis");
+
+        EventDateTime endEvent = new EventDateTime()
+                .setDateTime(new DateTime(java.util.Date.from(end.atZone(ZoneId.of("Africa/Tunis")).toInstant())))
+                .setTimeZone("Africa/Tunis");
+
+        googleEvent.setStart(startEvent);
+        googleEvent.setEnd(endEvent);
+
+        googleEvent.setAttendees(Arrays.asList(
+                new EventAttendee().setEmail(coachEmail),
+                new EventAttendee().setEmail(entrepreneurEmail)
+        ));
+
+        ConferenceData conferenceData = new ConferenceData()
+                .setCreateRequest(new CreateConferenceRequest()
+                        .setRequestId("session-" + System.currentTimeMillis() + "-" + title.hashCode())
+                        .setConferenceSolutionKey(new ConferenceSolutionKey().setType("hangoutsMeet")));
+        
+        googleEvent.setConferenceData(conferenceData);
+
+        com.google.api.services.calendar.model.Event createdEvent = calendarService.events()
+                .insert("primary", googleEvent)
+                .setConferenceDataVersion(1)
+                .setSendUpdates("all")
+                .execute();
+
+        GoogleEventResult result = new GoogleEventResult();
+        result.setEventId(createdEvent.getId());
+        result.setMeetLink(extractMeetLink(createdEvent));
+
+        return result;
     }
 
     /**

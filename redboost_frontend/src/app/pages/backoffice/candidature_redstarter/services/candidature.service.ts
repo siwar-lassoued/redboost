@@ -57,15 +57,17 @@ export class CandidatureService {
                         filtered = items;
                     }
                 }
-                if (filters?.statut) {
-                    filtered = filtered.filter((c: any) => c.statut === filters.statut);
-                }
+
 
                 const mappedData: Candidature[] = items.map((c: any) => {
                     let formAnswers: any[] = [];
                     try {
                         if (c.dynamicAnswers) {
-                            const parsed = JSON.parse(c.dynamicAnswers);
+                            let parsed = JSON.parse(c.dynamicAnswers);
+                            // Handle nested { answers: { ... } } structure
+                            if (parsed.answers && typeof parsed.answers === 'object' && !Array.isArray(parsed.answers)) {
+                                parsed = parsed.answers;
+                            }
                             formAnswers = Object.entries(parsed).map(([q, a], idx) => ({
                                 questionId: idx,
                                 question: q,
@@ -87,15 +89,67 @@ export class CandidatureService {
                         ].filter(a => !!a.answer);
                     }
 
+                    // Determine base profile type from backend
+                    let resolvedType: 'coaches' | 'entrepreneurs' | 'spontanees' = 'spontanees';
+                    let deductedProfile: 'coaches' | 'entrepreneurs' | 'spontanees' = 'spontanees';
+
+                    // Enforce "spontanees" if programme indicates it
+                    const progStr = (c.programme || '').toLowerCase();
+                    const isProgSpontanee = progStr.includes('spontanée') || progStr.includes('spontanee') || progStr.includes('spontanné');
+
+                    if (c.profileType && !isProgSpontanee) {
+                        const pt = c.profileType.toLowerCase();
+                        if (pt === 'coach' || pt === 'coaches') {
+                            resolvedType = 'coaches';
+                            deductedProfile = 'coaches';
+                        }
+                        else if (pt === 'entrepreneur' || pt === 'entrepreneurs') {
+                            resolvedType = 'entrepreneurs';
+                            deductedProfile = 'entrepreneurs';
+                        }
+                    }
+
+                    // Check formAnswers for profile choice (spontaneous candidatures)
+                    if (resolvedType === 'spontanees' && formAnswers.length > 0) {
+                        // More robust check: Look for explicit answers containing "coach" or "entrepreneur" in QCM or short text
+                        const profileAnswer = formAnswers.find((a: any) => {
+                            if (a.type === 'text-long' || !a.answer) return false;
+                            let val = a.answer;
+                            if (Array.isArray(val)) val = val[0];
+                            if (typeof val === 'string') {
+                                const v = val.toLowerCase();
+                                return v.includes('coach') || v.includes('entrepreneur');
+                            }
+                            return false;
+                        });
+                        
+                        if (profileAnswer) {
+                            let val = profileAnswer.answer;
+                            if (Array.isArray(val)) val = val[0];
+                            if (typeof val === 'string') {
+                                if (val.toLowerCase().includes('coach')) deductedProfile = 'coaches';
+                                else if (val.toLowerCase().includes('entrepreneur')) deductedProfile = 'entrepreneurs';
+                            }
+                        }
+                    }
+
+                    // Ultimate fallback: check roleEntreprise for old records
+                    if (deductedProfile === 'spontanees' && c.roleEntreprise) {
+                        const rol = c.roleEntreprise.toLowerCase();
+                        if (rol.includes('coach')) deductedProfile = 'coaches';
+                        else if (rol.includes('entrepreneur')) deductedProfile = 'entrepreneurs';
+                    }
+
                     return {
                         id: c.id,
-                        type: c.formTemplateId ? (c.statut === 'COACH' ? 'coaches' : 'entrepreneurs') : 'spontanees', // Basic logic, refined below
+                        type: resolvedType,
+                        deductedProfile: deductedProfile,
                         nom: c.nomPrenom || 'Inconnu',
                         email: c.email || 'N/A',
                         phone: c.numeroTelephone || '—',
                         statut: c.statut,
                         submittedAt: c.dateCreationCandidature || c.dateSoumission || null,
-                        programme: c.nomEntreprise || '—',
+                        programme: c.programme || null,
                         round: '—',
                         history: [],
                         documents: (c.documents && c.documents.length > 0) ? c.documents.map((d: string) => ({ 
@@ -110,13 +164,7 @@ export class CandidatureService {
                     };
                 });
 
-              
-                const finalData = mappedData.map(c => {
-                   if (filters?.type) c.type = filters.type;
-                   return c;
-                });
-
-                return { data: finalData };
+                return { data: mappedData };
             })
         );
     }

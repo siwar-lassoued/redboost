@@ -39,11 +39,14 @@
     </div>
     <div class="filter-selects">
       @if (activeTab() === 'spontanees') {
-        <select [(ngModel)]="profileFilter" (ngModelChange)="load()" class="filter-select">
-          <option value="all">Tous les profils</option>
-          <option value="Coach">Coach</option>
-          <option value="Entrepreneur">Entrepreneur</option>
-        </select>
+        <div class="profile-toggle">
+          <button class="toggle-btn coach" [class.active]="profileFilter === 'Coach'" (click)="profileFilter = profileFilter === 'Coach' ? 'all' : 'Coach'; load()">
+            <lucide-icon name="shield" [size]="14"></lucide-icon> Coach
+          </button>
+          <button class="toggle-btn entrepreneur" [class.active]="profileFilter === 'Entrepreneur'" (click)="profileFilter = profileFilter === 'Entrepreneur' ? 'all' : 'Entrepreneur'; load()">
+            <lucide-icon name="rocket" [size]="14"></lucide-icon> Entrepreneur
+          </button>
+        </div>
       }
       <select [(ngModel)]="filterProgram" (ngModelChange)="load()" class="filter-select">
         <option value="all">Tous les programmes</option>

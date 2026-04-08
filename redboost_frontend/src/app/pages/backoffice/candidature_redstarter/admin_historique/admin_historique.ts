@@ -22,6 +22,8 @@ export class AdminHistoriqueComponent implements OnInit {
   searchTerm    = signal('');
   filterStatus  = signal('all');
   filterType    = signal('all');
+  filterProgramme = signal('all');
+  programmes    = signal<string[]>([]);
 
   allCandidatures = signal<Candidature[]>([]);
   selected        = signal<Candidature|null>(null);
@@ -55,10 +57,10 @@ export class AdminHistoriqueComponent implements OnInit {
       if (q && !c.nom.toLowerCase().includes(q) && !c.email.toLowerCase().includes(q)) return false;
       if (this.filterStatus() !== 'all' && c.statut !== this.filterStatus()) return false;
       if (this.filterType() !== 'all') {
-          const profile = this.getDeductedProfile(c);
-          if (this.filterType() === 'coaches' && profile !== 'coaches') return false;
-          if (this.filterType() === 'entrepreneurs' && profile !== 'entrepreneurs') return false;
+          if (this.filterType() === 'coaches' && !this.isCoach(c)) return false;
+          if (this.filterType() === 'entrepreneurs' && this.isCoach(c)) return false;
       }
+      if (this.filterProgramme() !== 'all' && c.programme !== this.filterProgramme()) return false;
       return true;
     });
   });
@@ -78,9 +80,14 @@ export class AdminHistoriqueComponent implements OnInit {
       this.kpiRejected.set(stats['rejete'] || 0);
     });
 
-    // 2. Load list with a more reasonable size if possible, or keep 1000 but optimize backend
+    // 2. Load list
     this.svc.getAll({ limit: 200 }).subscribe({
-      next: r => this.allCandidatures.set(r.data || []),
+      next: r => {
+        const data = r.data || [];
+        this.allCandidatures.set(data);
+        const progs = [...new Set(data.map(c => c.programme).filter(Boolean))] as string[];
+        this.programmes.set(progs);
+      },
       error: () => this.allCandidatures.set([])
     });
   }
@@ -98,9 +105,9 @@ export class AdminHistoriqueComponent implements OnInit {
       steps[i].current = steps[i].statut === c.statut;
     }
     if (c.statut === 'ACCEPTE') {
-      steps.push({ statut:'ACCEPTE', label:'Acceptée ✅', description:'Candidature acceptée', reached:true, current:true, date:c.dateAcceptation, note:c.noteInterne ?? null });
+      steps.push({ statut:'ACCEPTE', label:'Acceptée ', description:'Candidature acceptée', reached:true, current:true, date:c.dateAcceptation, note:c.noteInterne ?? null });
     } else if (c.statut === 'REJETE') {
-      steps.push({ statut:'REJETE', label:'Rejetée ❌', description:'Candidature non retenue', reached:true, current:true, date:null, note:c.motifRejet ?? null });
+      steps.push({ statut:'REJETE', label:'Rejetée ', description:'Candidature non retenue', reached:true, current:true, date:null, note:c.motifRejet ?? null });
     }
     return steps;
   }
@@ -131,6 +138,12 @@ export class AdminHistoriqueComponent implements OnInit {
 
   getInitials(name: string): string {
     return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+  }
+
+  isCoach(c: Candidature): boolean { return c.deductedProfile === 'coaches'; }
+
+  getProfileLabel(c: Candidature): string {
+    return this.isCoach(c) ? 'Coach' : 'Entrepreneur';
   }
 
   openDetail(c: Candidature): void {

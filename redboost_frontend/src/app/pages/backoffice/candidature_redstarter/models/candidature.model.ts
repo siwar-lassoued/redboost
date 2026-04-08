@@ -29,6 +29,7 @@ export interface FormAnswer {
 export interface Candidature {
     id: string;
     type: 'coaches' | 'entrepreneurs' | 'spontanees';
+    deductedProfile?: 'coaches' | 'entrepreneurs' | 'spontanees';
     nom: string;
     email: string;
     phone: string;

@@ -23,7 +23,6 @@ export class RoleGuard implements CanActivate {
         const expectedRole = route.data['expectedRole'];
         const userRole = this.authService.getUserRole();
 
-        // For the DashboardRedirectComponent, no expectedRole is needed
         if (!expectedRole) {
             return true;
         }
