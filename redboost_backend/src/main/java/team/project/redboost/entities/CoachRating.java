@@ -23,6 +23,10 @@ public class CoachRating {
     @JoinColumn(name = "programme_id")
     private Programme programme;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "session_id")
+    private Session session;
+
     @Column(name = "global_rating", nullable = false)
     private double globalRating;
 
@@ -59,6 +63,8 @@ public class CoachRating {
     public void setEntrepreneur(User entrepreneur) { this.entrepreneur = entrepreneur; }
     public Programme getProgramme() { return programme; }
     public void setProgramme(Programme programme) { this.programme = programme; }
+    public Session getSession() { return session; }
+    public void setSession(Session session) { this.session = session; }
     public double getGlobalRating() { return globalRating; }
     public void setGlobalRating(double globalRating) { this.globalRating = globalRating; }
     public double getCommunication() { return communication; }

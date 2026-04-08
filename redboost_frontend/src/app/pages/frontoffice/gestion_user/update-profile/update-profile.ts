@@ -5,7 +5,7 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { ChipModule } from 'primeng/chip';
 import { CheckboxModule } from 'primeng/checkbox';
-import { CalendarModule } from 'primeng/calendar';
+import { DatePickerModule } from 'primeng/datepicker';
 import { DropdownModule } from 'primeng/dropdown';
 import { TextareaModule } from 'primeng/textarea';
 import {
@@ -41,7 +41,7 @@ function phoneValidator(control: AbstractControl): ValidationErrors | null {
         TextareaModule,
         ChipModule,
         CheckboxModule,
-        CalendarModule,
+        DatePickerModule,
         DropdownModule,
         ReactiveFormsModule,
         FormsModule,

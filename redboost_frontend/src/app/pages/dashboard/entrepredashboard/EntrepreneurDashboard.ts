@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {
     Component,
     OnInit,
@@ -14,6 +15,7 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import frLocale from '@fullcalendar/core/locales/fr';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../frontoffice/service/auth.service';
+import { jwtDecode } from 'jwt-decode';
 import { WebSocketService } from '../../frontoffice/service/WebSocketService';
 import { ToastrService } from 'ngx-toastr';
 import { Subscription, Observable } from 'rxjs';

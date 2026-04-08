@@ -6,4 +6,5 @@ import team.project.redboost.entities.CoachRating;
 
 @Repository
 public interface CoachRatingRepository extends JpaRepository<CoachRating, Long> {
+    boolean existsByEntrepreneurIdAndSessionId(Long entrepreneurId, String sessionId);
 }

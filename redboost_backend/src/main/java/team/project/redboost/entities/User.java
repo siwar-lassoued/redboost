@@ -18,7 +18,7 @@ import java.util.Set;
 
 @Data
 @Entity
-@Table(name = "user")
+@Table(name = "users")
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class User implements UserDetails {
     @Id
@@ -62,7 +62,7 @@ public class User implements UserDetails {
     @Column(name = "linkedin_url")
     private String linkedinUrl;
 
-    @Column(name = "bio", length = 500)
+    @Column(name = "bio", columnDefinition = "TEXT")
     private String bio;
 
     @Enumerated(EnumType.STRING)
@@ -81,10 +81,10 @@ public class User implements UserDetails {
     @Column(name = "years_of_experience")
     private Integer yearsOfExperience;
 
-    @Column(name = "skills", length = 1000)
+    @Column(name = "skills", columnDefinition = "TEXT")
     private String skills;
 
-    @Column(name = "expertise", length = 1000)
+    @Column(name = "expertise", columnDefinition = "TEXT")
     private String expertise;
 
     @Column(name = "formation_academ_nom")
@@ -93,7 +93,7 @@ public class User implements UserDetails {
     @Column(name = "formation_academ_date")
     private String formationAcademDate;
 
-    @Column(name = "formation_academ_realisations", length = 1000)
+    @Column(name = "formation_academ_realisations", columnDefinition = "TEXT")
     private String formationAcademRealisations;
 
     @Column(name = "nb_entre_coaches")
@@ -108,10 +108,10 @@ public class User implements UserDetails {
     @Column(name = "competences_pro_certificat")
     private String competencesProCertificat;
 
-    @Column(name = "succes_client", length = 1000)
+    @Column(name = "succes_client", columnDefinition = "TEXT")
     private String succesClient;
 
-    @Column(name = "engagement_communautaire", length = 1000)
+    @Column(name = "engagement_communautaire", columnDefinition = "TEXT")
     private String engagementCommunautaire;
 
     @Column(name = "session_essai")
@@ -130,7 +130,7 @@ public class User implements UserDetails {
     @Column(name = "forma_academ_date")
     private String formaAcademDate;
 
-    @Column(name = "forma_academ_realisations", length = 1000)
+    @Column(name = "forma_academ_realisations", columnDefinition = "TEXT")
     private String formaAcademRealisations;
 
     @Column(name = "apprent_informel_nom")
@@ -142,8 +142,17 @@ public class User implements UserDetails {
     @Column(name = "apprent_informel_certificat")
     private String apprentInformelCertificat;
 
-    @Column(name = "obstacle_principal", length = 1000)
+    @Column(name = "obstacle_principal", columnDefinition = "TEXT")
     private String obstaclePrincipal;
+
+    @Column(name = "description_projet", columnDefinition = "TEXT")
+    private String descriptionProjet;
+
+    @Column(name = "stade_projet")
+    private String stadeProjet;
+
+    @Column(name = "besoins_coaching", columnDefinition = "TEXT")
+    private String besoinsCoaching;
 
     // Authentication fields
     private String refreshToken;

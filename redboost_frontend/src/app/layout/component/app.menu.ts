@@ -84,21 +84,11 @@ export class AppMenu implements OnInit {
     }
 
     private fetchMenuFromApi(role: string, headers: HttpHeaders): void {
-        this.http
-            .get<MenuItem[]>(`${this.menuApiUrl}?role=${role}`, { headers })
-            .pipe(catchError(() => of(null)))
-            .subscribe((menu) => {
-                if (menu && menu.length > 0) {
-                    this.model = menu;
-                    return;
-                }
-
-                if (role === 'COACH') {
-                    this.fetchCoachMenuData(headers);
-                } else {
-                    this.setMenuBasedOnRole(role);
-                }
-            });
+        if (role === 'COACH') {
+            this.fetchCoachMenuData(headers);
+        } else {
+            this.setMenuBasedOnRole(role);
+        }
     }
 
     private fetchCoachMenuData(headers: HttpHeaders): void {

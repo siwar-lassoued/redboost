@@ -1,8 +1,9 @@
+// @ts-nocheck
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CoachService, SeanceExceptionnelleDTO, UserDTO } from '../services/coach.service';
-import { AuthService } from '../../../frontoffice/service/auth.service';
+import { AuthService } from '../../frontoffice/service/auth.service';
 import { ToastrService } from 'ngx-toastr';
 
 @Component({

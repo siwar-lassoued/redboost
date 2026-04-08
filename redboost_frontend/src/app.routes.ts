@@ -63,6 +63,14 @@ import { AdminEvaluationsComponent } from './app/pages/backoffice/evaluations/ad
 import { AdminLivrablesComponent } from './app/pages/backoffice/livrables/admin-livrables.component';
 import { EntrepreneurKpiFormsComponent } from './app/pages/entrepreneur/kpi_forms/entrepreneur-kpi-forms.component';
 
+// Entrepreneur Profile features
+import { EntrepreneurDashboardComponent } from './app/pages/entrepreneur/dashboard/entrepreneur-dashboard.component';
+import { EntrepreneurSessionsComponent } from './app/pages/entrepreneur/mes-sessions/entrepreneur-sessions.component';
+import { EntrepreneurLivrablesComponent } from './app/pages/entrepreneur/mes-livrables/entrepreneur-livrables.component';
+import { EntrepreneurChatComponent } from './app/pages/entrepreneur/chat/entrepreneur-chat.component';
+import { CoachRatingComponent } from './app/pages/entrepreneur/coach-rating/coach-rating.component';
+
+
 export const pagesRoutes: Routes = [
     { path: 'profile', component: UserProfileComponent },
     { path: 'all-users', component: UserListComponent },
@@ -134,8 +142,8 @@ export const appRoutes: Routes = [
             { path: 'coach-entrepreneurs', component: CoachEntrepreneursComponent },
             { path: 'coach-entrepreneurs/:id', component: CoachEntrepreneurDetailComponent },
             { path: 'mes-sessions', component: SessionsComponent },
-            { path: 'gestion_comm', component: CoachChatComponent },
             { path: 'coach-chat', component: CoachChatComponent },
+            { path: 'gestion_comm', component: EntrepreneurChatComponent },
             { path: 'rapport-missions', component: CoachRapportMissionsComponent },
             { path: 'coach-entrep-deliverable', component: CoachLivrablesComponent },
             { path: 'coach-livrables', component: CoachLivrablesComponent },
@@ -145,7 +153,14 @@ export const appRoutes: Routes = [
             { path: 'admin-kpi-forms', component: AdminKpiFormsComponent },
             { path: 'admin-evaluations', component: AdminEvaluationsComponent },
             { path: 'admin-livrables', component: AdminLivrablesComponent },
+            
+            // Entrepreneur Profile
+            { path: 'entrepreneur-dashboard', component: EntrepreneurDashboardComponent },
+            { path: 'entrep-calendar', component: EntrepreneurSessionsComponent },
+            { path: 'mes-sessions-entrep', component: EntrepreneurSessionsComponent },
+            { path: 'entrep-deliverable', component: EntrepreneurLivrablesComponent },
             { path: 'entrepreneur-kpi-forms', component: EntrepreneurKpiFormsComponent },
+            { path: 'feedback', component: CoachRatingComponent },
 
             ...pagesRoutes,
         ],
