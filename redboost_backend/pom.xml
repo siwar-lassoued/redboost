@@ -216,13 +216,6 @@
             <version>v3-rev197-1.25.0</version>
         </dependency>
 
-        <!-- Apache POI for Word documents -->
-        <dependency>
-            <groupId>org.apache.poi</groupId>
-            <artifactId>poi-ooxml</artifactId>
-            <version>5.2.5</version>
-        </dependency>
-
         <!-- WebSocket -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

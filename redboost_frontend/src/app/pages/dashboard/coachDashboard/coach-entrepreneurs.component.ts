@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { CoachService, UserDTO } from './services/coach.service';
+import { CoachService, CoachEntrepreneurDTO } from './services/coach.service';
 import { AuthService } from '../../frontoffice/service/auth.service';
 
 @Component({
@@ -34,23 +34,26 @@ import { AuthService } from '../../frontoffice/service/auth.service';
           <div *ngFor="let ent of filteredEntrepreneurs" class="entrepreneur-card">
               <div class="card-header">
                   <div class="avatar-container">
-                      <div class="avatar" [style.background]="getAvatarGradient(ent)">{{getInitials(ent)}}</div>
+                      <div class="avatar pink-avatar">{{getInitials(ent)}}</div>
                   </div>
-                  <button class="btn-more"><i class="pi pi-ellipsis-v"></i></button>
               </div>
               <div class="card-body">
                   <div class="program-type">{{ent.secteur || 'N/A'}}</div>
                   <h3>{{ent.firstName}} {{ent.lastName}}</h3>
                   <div class="startup-name">{{ent.entreprise || 'Pas d\\'entreprise'}}</div>
-                  <div class="meta-info">
-                      <div class="info-item">
-                          <i class="pi pi-envelope"></i>
-                          <span>{{ent.email}}</span>
+                  
+                  <div class="progress-section mb-4">
+                      <div class="flex justify-between text-xs mb-1">
+                          <span>Progression</span>
+                          <span>{{ent.completionRate || 0}}%</span>
                       </div>
-                      <div *ngIf="ent.phoneNumber" class="info-item">
-                          <i class="pi pi-phone"></i>
-                          <span>{{ent.phoneNumber}}</span>
+                      <div class="w-full bg-gray-200 rounded-full h-1.5">
+                          <div class="bg-pink-500 h-1.5 rounded-full" [style.width.%]="ent.completionRate || 0"></div>
                       </div>
+                  </div>
+
+                  <div *ngIf="ent.delayedTasksCount && ent.delayedTasksCount > 0" class="text-xs text-red-500 font-bold mb-2">
+                      <i class="pi pi-exclamation-circle"></i> {{ ent.delayedTasksCount }} tâches en retard
                   </div>
               </div>
               <div class="card-footer">
@@ -85,13 +88,12 @@ import { AuthService } from '../../frontoffice/service/auth.service';
     .entrepreneur-card:hover { transform: translateY(-4px); box-shadow: 0 12px 25px rgba(0,0,0,0.08); }
     .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; }
     .avatar { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.2rem; color: white; }
+    .pink-avatar { background: linear-gradient(135deg, #FF6B9E, #FF3366); }
     .btn-more { background: none; border: none; color: #A0AEC0; cursor: pointer; padding: 0.5rem; border-radius: 50%; }
     .btn-more:hover { background: #F7FAFC; color: #4A5568; }
     .program-type { font-size: 0.75rem; font-weight: 700; color: #A0AEC0; letter-spacing: 1px; margin-bottom: 0.3rem; text-transform: uppercase; }
     .card-body h3 { margin: 0; font-size: 1.3rem; color: #2D3748; font-weight: 700; }
     .startup-name { color: #FF4D85; font-weight: 600; font-size: 0.95rem; margin-bottom: 1.2rem; }
-    .meta-info { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1.5rem; }
-    .info-item { display: flex; align-items: center; gap: 0.6rem; font-size: 0.85rem; color: #718096; }
     .card-footer { margin-top: auto; }
     .btn-secondary { display: block; text-align: center; text-decoration: none; background: white; border: 1px solid #E2E8F0; color: #4A5568; padding: 0.8rem; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
     .btn-secondary:hover { background: #F8FAFC; border-color: #CBD5E0; color: #2D3748; }
@@ -105,18 +107,9 @@ export class CoachEntrepreneursComponent implements OnInit {
   loading: boolean = false;
   searchTerm: string = '';
   activeFilter: string = 'all';
-  entrepreneurs: UserDTO[] = [];
-  filteredEntrepreneurs: UserDTO[] = [];
+  entrepreneurs: CoachEntrepreneurDTO[] = [];
+  filteredEntrepreneurs: CoachEntrepreneurDTO[] = [];
   sectors: string[] = [];
-
-  private gradients = [
-    'linear-gradient(135deg, #FF6B9E, #FF3366)',
-    'linear-gradient(135deg, #B794F4, #805AD5)',
-    'linear-gradient(135deg, #63B3ED, #3182CE)',
-    'linear-gradient(135deg, #68D391, #38A169)',
-    'linear-gradient(135deg, #F6AD55, #DD6B20)',
-    'linear-gradient(135deg, #FC8181, #E53E3E)',
-  ];
 
   constructor(
     private coachService: CoachService,
@@ -128,8 +121,13 @@ export class CoachEntrepreneursComponent implements OnInit {
   }
 
   loadEntrepreneurs() {
+    const rawCoachId = this.authService.getUserId();
+    const coachId = typeof rawCoachId === 'string' ? parseInt(rawCoachId, 10) : rawCoachId;
+
+    if (!coachId) return;
+
     this.loading = true;
-    this.coachService.getEntrepreneurs().subscribe({
+    this.coachService.getCoachEntrepreneurs(coachId).subscribe({
       next: (data) => {
         this.entrepreneurs = data;
         this.filteredEntrepreneurs = [...data];
@@ -171,12 +169,7 @@ export class CoachEntrepreneursComponent implements OnInit {
     return this.entrepreneurs.filter(e => e.secteur === sector).length;
   }
 
-  getInitials(ent: UserDTO): string {
+  getInitials(ent: CoachEntrepreneurDTO): string {
     return (ent.firstName?.charAt(0) || '') + (ent.lastName?.charAt(0) || '');
-  }
-
-  getAvatarGradient(ent: UserDTO): string {
-    const hash = (ent.id || 0) % this.gradients.length;
-    return this.gradients[hash];
   }
 }

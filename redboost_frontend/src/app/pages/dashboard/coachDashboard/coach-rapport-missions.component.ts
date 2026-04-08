@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { CoachService, ProgrammeDTO } from './services/coach.service';
+import { AuthService } from '../../frontoffice/service/auth.service';
 
 @Component({
   selector: 'app-coach-rapport-missions',
@@ -19,11 +21,10 @@ import { FormsModule } from '@angular/forms';
           <div class="config-grid">
               <div class="form-group">
                   <label>Programme*</label>
-                  <select class="premium-select" [(ngModel)]="selectedProgramme">
-                      <option>Boost Tech 2024</option>
-                      <option>CleanTech Accelerator</option>
-                      <option>FinTech Seed</option>
-                  </select>
+              <select class="premium-select" [(ngModel)]="selectedProgramme">
+                  <option *ngFor="let prog of programs" [value]="prog.nom">{{prog.nom}} ({{prog.annee}})</option>
+                  <option *ngIf="programs.length === 0" disabled>Aucun programme trouvé</option>
+              </select>
               </div>
               <div class="form-group">
                   <label>Date début*</label>
@@ -305,7 +306,9 @@ import { FormsModule } from '@angular/forms';
   `]
 })
 export class CoachRapportMissionsComponent implements OnInit {
-  selectedProgramme: string = 'Boost Tech 2024';
+  selectedProgramme: string = '';
+  programs: ProgrammeDTO[] = [];
+  coachId: number | null = null;
   dateDebutMois: string = 'Janvier';
   dateDebutAnnee: string = '2024';
   dateFinMois: string = 'Octobre';
@@ -334,8 +337,32 @@ export class CoachRapportMissionsComponent implements OnInit {
     { name: 'Siwar Benkraïem', sessions: {} },
   ];
 
-  constructor() {}
-  ngOnInit(): void {}
+  constructor(
+      private coachService: CoachService,
+      private authService: AuthService
+  ) {}
+
+  ngOnInit(): void {
+    const rawId = this.authService.getUserId();
+    this.coachId = typeof rawId === 'string' ? parseInt(rawId, 10) : rawId;
+    
+    if (this.coachId) {
+        this.loadPrograms();
+    }
+  }
+
+  loadPrograms() {
+    if (!this.coachId) return;
+    this.coachService.getCoachProgrammes(this.coachId).subscribe({
+        next: (data) => {
+            this.programs = data;
+            if (this.programs.length > 0) {
+                this.selectedProgramme = this.programs[0].nom;
+            }
+        },
+        error: (err) => console.error('Error loading programs:', err)
+    });
+  }
 
   chargerDonnees() {
     this.donneesChargees = true;

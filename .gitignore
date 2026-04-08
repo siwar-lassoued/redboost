@@ -73,3 +73,5 @@ ai_service/.env
 ai_service/__pycache__/
 ai_service/.idea/
 ai_service/**/__pycache__/
+
+redboost_frontend/src/environment.ts

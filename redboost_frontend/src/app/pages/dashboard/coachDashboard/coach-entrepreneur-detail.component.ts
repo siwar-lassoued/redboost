@@ -1,6 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, ActivatedRoute } from '@angular/router';
+import { CoachService, CoachEntrepreneurDetailDTO } from './services/coach.service';
+import { AuthService } from '../../frontoffice/service/auth.service';
+import { ToastrService } from 'ngx-toastr';
 
 @Component({
   selector: 'app-coach-entrepreneur-detail',
@@ -9,196 +12,159 @@ import { RouterModule } from '@angular/router';
   template: `
     <div class="entrepreneur-detail-page">
       <!-- Breadcrumb / Back Navigation -->
-      <a routerLink="/coach-entrepreneurs" class="back-link">
-          <i class="pi pi-arrow-left"></i> Retour aux entrepreneurs
+      <a routerLink="/coach-dashboard" class="back-link">
+          <i class="pi pi-arrow-left"></i> Retour au dashboard
       </a>
 
-      <!-- Profile Header Card -->
-      <div class="profile-header-card">
-          <div class="avatar purple-avatar">RZ</div>
-          <div class="profile-info">
-              <h1>Rania Zouari</h1>
-              <div class="startup-sub">PayLoop · Fintech · Series A</div>
-              <div class="project-desc"><b>Description du projet :</b> Plateforme digitale permettant aux agriculteurs de vendre directement leurs produits aux consommateurs.</div>
-          </div>
-          <div class="header-actions">
-              <button class="btn-coach-badge">Sami Ben Salah</button>
-          </div>
+      <div *ngIf="isLoading" class="loading-state">
+          <p>Chargement des détails de l'entrepreneur...</p>
       </div>
 
-      <!-- Stats Bar -->
-      <div class="stats-bar">
-          <div class="stat-item"><span class="dot dot-pink"></span> Progression <b>82%</b></div>
-          <div class="stat-item"><span class="dot dot-green"></span> Coach <b>Sami Ben Salah</b></div>
-          <div class="stat-item"><span class="dot dot-green"></span> Tâches en retard <b>0</b></div>
+      <div *ngIf="!isLoading && entrepreneur">
+        <!-- Profile Header Card -->
+        <div class="profile-header-card">
+            <div class="avatar pink-avatar">
+                {{ entrepreneur.firstName.charAt(0) }}{{ entrepreneur.lastName.charAt(0) }}
+            </div>
+            <div class="profile-info">
+                <h1>{{ entrepreneur.firstName }} {{ entrepreneur.lastName }}</h1>
+                <div class="startup-sub">{{ entrepreneur.entreprise }} · {{ entrepreneur.secteur }}</div>
+                <div class="project-desc"><b>Description du projet :</b> {{ entrepreneur.startupDescription }}</div>
+            </div>
+            <div class="header-actions">
+                <button class="btn-coach-badge">Sami Ben Salah</button>
+            </div>
+        </div>
+
+        <!-- Stats Bar -->
+        <div class="stats-bar">
+            <div class="stat-item"><span class="dot dot-pink"></span> Progression <b>{{ entrepreneur.completionRate }}%</b></div>
+            <div class="stat-item"><span class="dot dot-green"></span> Email <b>{{ entrepreneur.email }}</b></div>
+            <div class="stat-item"><span class="dot dot-green"></span> Téléphone <b>{{ entrepreneur.phoneNumber }}</b></div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="custom-tabs">
+            <button class="tab" [class.active]="activeTab === 'taches'" (click)="activeTab = 'taches'">Tâches</button>
+            <button class="tab" [class.active]="activeTab === 'livrables'" (click)="activeTab = 'livrables'">
+                Livrables <span class="tab-badge" *ngIf="entrepreneur.livrables.length > 0">{{ entrepreneur.livrables.length }}</span>
+            </button>
+            <button class="tab" [class.active]="activeTab === 'reporting'" (click)="activeTab = 'reporting'">
+                Reporting Sessions <span class="tab-count">{{ entrepreneur.notes.length }}</span>
+            </button>
+        </div>
+
+        <!-- Tab Content Area -->
+        <div class="tab-content">
+            <!-- Tâches View -->
+            <div *ngIf="activeTab === 'taches'">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-[#2D3748]">Plan d'action ({{ entrepreneur.tasks?.length || 0 }} tâches)</h2>
+                    <button class="btn-primary" (click)="showTaskModal = true">
+                        <i class="pi pi-plus"></i> Ajouter une tâche
+                    </button>
+                </div>
+
+            <!-- Tasks List Mockup (using data if available) -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div *ngIf="!entrepreneur.tasks || entrepreneur.tasks.length === 0" class="p-8 text-center text-gray-500">
+                    Aucune tâche spécifique assignée pour le moment.
+                </div>
+                
+                <div *ngFor="let task of entrepreneur.tasks" class="task-item border-b border-gray-100 p-4 hover:bg-gray-50 flex items-center gap-4">
+                    <div class="task-checkbox">
+                        <i *ngIf="task.status === 'TERMINEE'" class="pi pi-check-circle text-green-500 text-xl"></i>
+                        <div *ngIf="task.status !== 'TERMINEE'" class="w-5 h-5 rounded-full border-2 border-gray-300"></div>
+                    </div>
+                    <div class="task-content flex-1">
+                        <h4 class="font-semibold text-gray-800 m-0">{{ task.titre }}</h4>
+                        <p class="text-sm text-gray-500 mt-1">{{ task.description }}</p>
+                    </div>
+                    <div class="task-meta">
+                        <span class="badge" [class.badge-success]="task.status === 'TERMINEE'" 
+                                          [class.badge-warning]="task.status !== 'TERMINEE'">
+                            {{ task.status === 'TERMINEE' ? 'Terminé' : 'En cours' }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            </div>
+
+            <!-- Livrables View -->
+            <div *ngIf="activeTab === 'livrables'">
+                <div class="livrable-stats">
+                    <div class="livrable-stat"><i class="pi pi-check-circle text-green-500"></i> Livrables reçus <b>{{ entrepreneur.livrables.length }}</b></div>
+                </div>
+
+                <div *ngIf="entrepreneur.livrables.length === 0" class="bg-white rounded-xl p-8 text-center text-gray-500 border border-dashed border-gray-300">
+                    Aucun livrable n'a encore été déposé par cet entrepreneur.
+                </div>
+
+                <div *ngFor="let livrable of entrepreneur.livrables" class="livrable-card">
+                    <div class="livrable-header">
+                        <div class="flex items-center gap-2">
+                            <i class="pi pi-file text-gray-400"></i>
+                            <strong>{{ livrable.tacheTitre }}</strong>
+                        </div>
+                        <span class="tag tag-blue">{{ livrable.typeFichier }}</span>
+                    </div>
+                    <div class="text-sm text-gray-500 mb-3"><i class="pi pi-calendar"></i> {{ livrable.dateUpload | date:'shortDate' }}</div>
+                    <div class="livrable-file">
+                        <i class="pi pi-file text-gray-400"></i>
+                        <div>
+                            <div class="font-medium text-gray-800">{{ livrable.nom }}</div>
+                            <div class="text-xs text-gray-400">{{ (livrable.tailleFichier / 1024) | number:'1.0-0' }} KB</div>
+                        </div>
+                        <div class="ml-auto flex gap-2">
+                            <a [href]="livrable.url" target="_blank" class="link-voir"><i class="pi pi-eye"></i> Voir</a>
+                            <a [href]="livrable.url" download class="link-dl"><i class="pi pi-download"></i> DL</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reporting Sessions View -->
+            <div *ngIf="activeTab === 'reporting'">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-[#2D3748]">Reporting Sessions</h2>
+                    <button class="btn-primary"><i class="pi pi-plus"></i> Nouveau rapport</button>
+                </div>
+
+                <div *ngIf="entrepreneur.notes.length === 0" class="bg-white rounded-xl p-8 text-center text-gray-500 border border-dashed border-gray-300">
+                    Aucune note de synthèse n'a été rédigée pour le moment.
+                </div>
+
+                <div *ngFor="let note of entrepreneur.notes" class="session-report-card">
+                    <div class="session-report-header">
+                        <div class="flex items-center gap-3">
+                            <div class="avatar-sm-dark">SB</div>
+                            <div>
+                                <div class="text-white font-bold">Rapport</div>
+                                <div class="text-gray-300 text-sm">{{ note.date | date:'mediumDate' }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="session-report-body">
+                        <p class="text-gray-700 font-semibold">Synthèse :</p>
+                        <p class="text-gray-700">{{ note.synthese }}</p>
+                        <div class="plan-action">
+                            <div class="plan-title">APPRÉCIATION</div>
+                            <p class="text-sm text-gray-600">{{ note.appreciation }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
       </div>
 
-      <!-- Navigation Tabs -->
-      <div class="custom-tabs">
-          <button class="tab" [class.active]="activeTab === 'taches'" (click)="activeTab = 'taches'">Tâches</button>
-          <button class="tab" [class.active]="activeTab === 'livrables'" (click)="activeTab = 'livrables'">Livrables <span class="tab-badge" *ngIf="true">1 À Valider</span></button>
-          <button class="tab" [class.active]="activeTab === 'reporting'" (click)="activeTab = 'reporting'">Reporting Sessions <span class="tab-count">1</span></button>
+      <!-- Error State -->
+      <div *ngIf="!isLoading && !entrepreneur" class="error-state text-center p-20">
+          <i class="pi pi-exclamation-circle text-5xl text-red-500 mb-4"></i>
+          <p class="text-xl font-bold text-gray-700">Entrepreneur introuvable</p>
+          <button routerLink="/coach-dashboard" class="mt-4 text-pink-500 hover:underline">Retour au dashboard</button>
       </div>
 
-      <!-- Tab Content Area -->
-      <div class="tab-content">
-          <!-- Tâches View -->
-          <div *ngIf="activeTab === 'taches'">
-              <div class="flex justify-between items-center mb-6">
-                  <h2 class="text-xl font-bold text-[#2D3748]">Plan d'action (8 tâches)</h2>
-                  <button class="btn-primary" (click)="showTaskModal = true">
-                      <i class="pi pi-plus"></i> Ajouter une tâche
-                  </button>
-              </div>
-
-          <!-- Tasks List -->
-          <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-              <!-- Task Item -->
-              <div class="task-item border-b border-gray-100 p-4 hover:bg-gray-50 flex items-center gap-4">
-                  <div class="task-checkbox">
-                      <i class="pi pi-check-circle text-green-500 text-xl"></i>
-                  </div>
-                  <div class="task-content flex-1">
-                      <h4 class="font-semibold text-gray-800 m-0">Finaliser le Business Plan</h4>
-                      <p class="text-sm text-gray-500 mt-1">Fournir le prévisionnel financier sur 3 ans</p>
-                  </div>
-                  <div class="task-meta">
-                      <span class="badge badge-success">Terminé</span>
-                  </div>
-              </div>
-
-              <!-- Task Item -->
-              <div class="task-item p-4 hover:bg-gray-50 flex items-center gap-4">
-                  <div class="task-checkbox">
-                      <div class="w-5 h-5 rounded-full border-2 border-gray-300"></div>
-                  </div>
-                  <div class="task-content flex-1">
-                      <h4 class="font-semibold text-gray-800 m-0">Préparer le pitch deck</h4>
-                      <p class="text-sm text-gray-500 mt-1">Slides pour la levée de fonds pre-seed</p>
-                  </div>
-                  <div class="task-meta flex gap-4 items-center">
-                      <span class="text-xs text-red-500 font-semibold"><i class="pi pi-calendar"></i> En retard (12 Nov)</span>
-                      <span class="badge badge-warning">En cours</span>
-                  </div>
-              </div>
-          </div>
-          </div>
-
-          <!-- Livrables View -->
-          <div *ngIf="activeTab === 'livrables'">
-              <!-- Mini Stats -->
-              <div class="livrable-stats">
-                  <div class="livrable-stat"><i class="pi pi-check-circle text-green-500"></i> Livrables reçus <b>2</b></div>
-                  <div class="livrable-stat"><i class="pi pi-exclamation-triangle text-yellow-500"></i> Tâches en attente <b>1</b></div>
-                  <div class="livrable-stat"><i class="pi pi-times-circle text-red-500"></i> À valider <b>1</b></div>
-              </div>
-
-              <!-- Livrable Card 1 - Nouveau -->
-              <div class="livrable-card livrable-highlight">
-                  <div class="livrable-header">
-                      <div class="flex items-center gap-2">
-                          <i class="pi pi-clock text-yellow-500"></i>
-                          <strong>Signer partenariat bancaire</strong>
-                      </div>
-                      <div class="flex gap-2">
-                          <span class="tag tag-red">NOUVEAU</span>
-                          <span class="tag tag-blue">Nouvelle version</span>
-                      </div>
-                  </div>
-                  <div class="text-sm text-gray-500 mb-3"><i class="pi pi-calendar"></i> 2024-12-01</div>
-                  <div class="livrable-file">
-                      <i class="pi pi-file text-gray-400"></i>
-                      <div>
-                          <div class="font-medium text-gray-800">partenariat_bancaire_v2.docx</div>
-                          <div class="text-xs text-gray-400">890 KB · 📅 2024-11-25</div>
-                      </div>
-                      <div class="ml-auto flex gap-2">
-                          <button class="link-voir"><i class="pi pi-eye"></i> Voir</button>
-                          <button class="link-dl"><i class="pi pi-download"></i> DL</button>
-                      </div>
-                  </div>
-                  <div class="text-sm text-gray-500 mt-2 cursor-pointer"><i class="pi pi-chevron-right"></i> Historique (2 versions)</div>
-                  <div class="livrable-actions">
-                      <button class="btn-accept"><i class="pi pi-check-circle"></i> Accepter</button>
-                      <button class="btn-revision"><i class="pi pi-replay"></i> Révision</button>
-                  </div>
-              </div>
-
-              <!-- Livrable Card 2 - Aucun livrable -->
-              <div class="livrable-card">
-                  <div class="livrable-header">
-                      <div class="flex items-center gap-2">
-                          <i class="pi pi-folder text-gray-400"></i>
-                          <strong>Lancer campagne marketing</strong>
-                      </div>
-                      <span class="tag tag-gray">Aucun livrable</span>
-                  </div>
-                  <div class="text-sm text-gray-500"><i class="pi pi-calendar"></i> 2024-11-28</div>
-                  <div class="text-sm text-gray-400 mt-2 italic">Aucun livrable soumis pour cette tâche.</div>
-              </div>
-
-              <!-- Livrable Card 3 - Accepté -->
-              <div class="livrable-card">
-                  <div class="livrable-header">
-                      <div class="flex items-center gap-2">
-                          <i class="pi pi-check-circle text-green-500"></i>
-                          <strong>Intégration API paiement</strong>
-                      </div>
-                      <span class="tag tag-green">Accepté</span>
-                  </div>
-                  <div class="text-sm text-gray-500 mb-3"><i class="pi pi-calendar"></i> 2024-11-15</div>
-                  <div class="livrable-file">
-                      <i class="pi pi-file-pdf text-red-400"></i>
-                      <div>
-                          <div class="font-medium text-gray-800">api_integration_rapport.pdf</div>
-                          <div class="text-xs text-gray-400">2.1 MB · 📅 2024-11-14</div>
-                      </div>
-                      <div class="ml-auto flex gap-2">
-                          <button class="link-voir"><i class="pi pi-eye"></i> Voir</button>
-                          <button class="link-dl"><i class="pi pi-download"></i> DL</button>
-                      </div>
-                  </div>
-                  <div class="text-sm text-green-600 mt-2"><i class="pi pi-check"></i> Validé le 2024-11-15</div>
-              </div>
-          </div>
-
-          <!-- Reporting Sessions View -->
-          <div *ngIf="activeTab === 'reporting'">
-              <div class="flex justify-between items-center mb-6">
-                  <h2 class="text-xl font-bold text-[#2D3748]">Reporting Sessions</h2>
-                  <button class="btn-primary"><i class="pi pi-plus"></i> Nouveau rapport</button>
-              </div>
-
-              <div class="session-report-card">
-                  <div class="session-report-header">
-                      <div class="flex items-center gap-3">
-                          <div class="avatar-sm-dark">SB</div>
-                          <div>
-                              <div class="text-white font-bold">Session #7</div>
-                              <div class="text-gray-300 text-sm">2024-11-20</div>
-                          </div>
-                      </div>
-                      <div class="stars">
-                          <i class="pi pi-star-fill text-yellow-400"></i>
-                          <i class="pi pi-star-fill text-yellow-400"></i>
-                          <i class="pi pi-star-fill text-yellow-400"></i>
-                          <i class="pi pi-star-fill text-yellow-400"></i>
-                          <i class="pi pi-star-fill text-yellow-400"></i>
-                      </div>
-                  </div>
-                  <div class="session-report-body">
-                      <p class="text-gray-700">Suivi KPIs mensuels. Progression remarquable: +15% utilisateurs actifs, ARR en forte hausse. La startup est prête pour la levée de fonds.</p>
-                      <div class="plan-action">
-                          <div class="plan-title">PLAN D'ACTION</div>
-                          <div class="plan-item"><i class="pi pi-check-circle text-green-500"></i> Préparer le rapport KPIs pour investisseurs</div>
-                          <div class="plan-item"><i class="pi pi-check-circle text-green-500"></i> Finaliser le term sheet pour la levée de fonds Serie A</div>
-                      </div>
-                  </div>
-              </div>
-          </div>
-      </div>
-
-      <!-- Ajouter une Tâche Modal -->
+      <!-- Ajouter une Tâche Modal (Mock) -->
       <div *ngIf="showTaskModal" class="modal-backdrop" (click)="showTaskModal = false">
           <div class="modal-content" (click)="$event.stopPropagation()">
               <div class="modal-header">
@@ -220,43 +186,6 @@ import { RouterModule } from '@angular/router';
                   </div>
                   <button class="btn-primary w-full justify-center" (click)="showTaskModal = false">
                       Créer la tâche
-                  </button>
-              </div>
-          </div>
-      </div>
-
-      <!-- Ajouter Livrable Modal -->
-      <div *ngIf="showLivrableModal" class="modal-backdrop" (click)="showLivrableModal = false">
-          <div class="modal-content" style="max-width: 600px;" (click)="$event.stopPropagation()">
-              <div class="modal-header">
-                  <h2>Déposer un livrable</h2>
-                  <button class="close-btn" (click)="showLivrableModal = false"><i class="pi pi-times"></i></button>
-              </div>
-              <div class="modal-body">
-                  <div class="search-bar w-full mb-6">
-                      <i class="pi pi-search"></i>
-                      <input type="text" placeholder="Rechercher par nom d'entrepreneur, programme..." />
-                  </div>
-                  
-                  <div class="upload-zone mb-6" (click)="fileInput.click()">
-                      <div class="flex flex-col items-center justify-center py-6 text-gray-500">
-                          <i class="pi pi-cloud-upload text-4xl mb-3 text-[#FF4D85]"></i>
-                          <p class="font-medium">Cliquez ou glissez-déposez le fichier ici</p>
-                          <p class="text-sm mt-1">PDF, Excel, Word (Max. 10MB)</p>
-                      </div>
-                      <input type="file" #fileInput class="hidden" />
-                  </div>
-
-                  <div class="form-group mb-4">
-                      <label>Associer à une tâche (Optionnel)</label>
-                      <select class="premium-input bg-white">
-                          <option>Finaliser le Business Plan</option>
-                          <option>Préparer le pitch deck</option>
-                      </select>
-                  </div>
-
-                  <button class="btn-primary w-full justify-center" (click)="showLivrableModal = false">
-                      Importer le document
                   </button>
               </div>
           </div>
@@ -687,10 +616,47 @@ import { RouterModule } from '@angular/router';
 export class CoachEntrepreneurDetailComponent implements OnInit {
   activeTab: string = 'taches';
   showTaskModal: boolean = false;
-  showLivrableModal: boolean = false;
+  entrepreneur: CoachEntrepreneurDetailDTO | null = null;
+  isLoading: boolean = true;
+  coachId: number | null = null;
 
-  constructor() {}
+  constructor(
+    private route: ActivatedRoute,
+    private coachService: CoachService,
+    private authService: AuthService,
+    private toastr: ToastrService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
+    const rawCoachId = this.authService.getUserId();
+    this.coachId = typeof rawCoachId === 'string' ? parseInt(rawCoachId, 10) : rawCoachId;
+    
+    this.route.params.subscribe(params => {
+      const entrepreneurId = +params['id'];
+      if (entrepreneurId && this.coachId) {
+        this.loadEntrepreneurDetails(this.coachId, entrepreneurId);
+      } else {
+        this.isLoading = false;
+        this.toastr.error('ID Entrepreneur ou Coach manquant', 'Erreur');
+      }
+    });
+  }
+
+  loadEntrepreneurDetails(coachId: number, entrepreneurId: number): void {
+    this.isLoading = true;
+    this.coachService.getEntrepreneurDetail(coachId, entrepreneurId).subscribe({
+      next: (data) => {
+        this.entrepreneur = data;
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error loading entrepreneur details:', err);
+        this.isLoading = false;
+        this.toastr.error('Erreur lors du chargement des détails', 'Erreur');
+        this.cdr.detectChanges();
+      }
+    });
   }
 }

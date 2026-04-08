@@ -55,6 +55,7 @@ import { SessionsComponent } from './app/pages/dashboard/coachDashboard/sessions
 import { CoachChatComponent } from './app/pages/dashboard/coachDashboard/coach-chat.component';
 import { CoachRapportMissionsComponent } from './app/pages/dashboard/coachDashboard/coach-rapport-missions.component';
 import { CoachLivrablesComponent } from './app/pages/dashboard/coachDashboard/coach-livrables.component';
+import { NoteDeSyntheseCreateComponent } from './app/pages/dashboard/coachDashboard/note-de-synthese-create.component';
 
 export const pagesRoutes: Routes = [
     { path: 'profile', component: UserProfileComponent },
@@ -131,6 +132,7 @@ export const appRoutes: Routes = [
             { path: 'rapport-missions', component: CoachRapportMissionsComponent },
             { path: 'coach-entrep-deliverable', component: CoachLivrablesComponent },
             { path: 'coach-livrables', component: CoachLivrablesComponent },
+            { path: 'note-de-synthese-create/:id', component: NoteDeSyntheseCreateComponent },
             { path: 'messagerie-reclamation', component: ReclamationsComponent },
 
             ...pagesRoutes,

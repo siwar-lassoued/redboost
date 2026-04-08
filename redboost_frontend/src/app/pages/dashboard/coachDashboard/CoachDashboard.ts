@@ -153,7 +153,7 @@ interface NoteDeSynthese {
                     <div class="stat-content">
                         <h3>COMPLÉTION</h3>
                         <div class="stat-main">
-                            <span class="value">87%</span>
+                            <span class="value">{{ averageCompletionRate || 0 }}%</span>
                             <span class="label">taux moyen</span>
                         </div>
                     </div>
@@ -180,7 +180,9 @@ interface NoteDeSynthese {
                             <p>Aucun entrepreneur assigné pour le moment</p>
                         </div>
 
-                        <div *ngFor="let entrepreneur of entrepreneurs" class="entrepreneur-item">
+                        <div *ngFor="let entrepreneur of entrepreneurs" 
+                             class="entrepreneur-item cursor-pointer" 
+                             (click)="goToEntrepreneurDetail(entrepreneur.id)">
                             <div class="avatar pink-avatar">
                                 {{ entrepreneur.firstName.charAt(0) }}{{ entrepreneur.lastName.charAt(0) }}
                             </div>
@@ -669,6 +671,7 @@ export class CoachDashboardComponent implements OnInit, OnDestroy {
     upcomingSessions: UpcomingSessionDTO[] = [];
     isLoadingEntrepreneurs = false;
     isLoadingSessions = false;
+    averageCompletionRate = 0;
     
     startups: Startup[] = [
         {
@@ -780,23 +783,16 @@ export class CoachDashboardComponent implements OnInit, OnDestroy {
                     }
                 });
 
-            this.http
-                .get<DashboardStats>(
-                    `${environment.apiUrl}/coach-dashboard/stats?coachId=${this.coachId}`,
-                )
-                .subscribe({
-                    next: (data) => {
-                        this.stats = { ...this.stats, ...data };
-                        this.cdr.detectChanges();
-                    },
-                    error: (err) => {
-                        console.error('Error fetching stats:', err);
-                        this.toastr.error(
-                            'Erreur lors de la récupération des statistiques',
-                            'Erreur',
-                        );
-                    },
-                });
+            // Use the unified coachService for dashboard stats
+            this.coachService.getDashboardStats(this.coachId).subscribe({
+                next: (data) => {
+                    this.stats = { ...this.stats, ...data };
+                    this.cdr.detectChanges();
+                },
+                error: (err) => {
+                    console.error('Error fetching stats:', err);
+                }
+            });
 
             this.loadAcceptedRendezVous();
 
@@ -820,10 +816,6 @@ export class CoachDashboardComponent implements OnInit, OnDestroy {
                     },
                     error: (err) => {
                         console.error('Error fetching tasks to validate:', err);
-                        this.toastr.error(
-                            'Erreur lors de la récupération des tâches',
-                            'Erreur',
-                        );
                     },
                 });
 
@@ -836,6 +828,13 @@ export class CoachDashboardComponent implements OnInit, OnDestroy {
             );
             this.toastr.error('Utilisateur non authentifié', 'Erreur');
         }
+    }
+
+    /**
+     * Navigate to the detailed view of an entrepreneur
+     */
+    goToEntrepreneurDetail(entrepreneurId: number): void {
+        this.router.navigate(['/coach-entrepreneurs', entrepreneurId]);
     }
 
     ngAfterViewInit(): void {
@@ -1051,6 +1050,14 @@ export class CoachDashboardComponent implements OnInit, OnDestroy {
             next: (data) => {
                 this.entrepreneurs = data;
                 this.isLoadingEntrepreneurs = false;
+                
+                if (this.entrepreneurs.length > 0) {
+                    const totalProgress = this.entrepreneurs.reduce((acc, current) => acc + (current.completionRate || 0), 0);
+                    this.averageCompletionRate = Math.round(totalProgress / this.entrepreneurs.length);
+                } else {
+                    this.averageCompletionRate = 0;
+                }
+                
                 this.cdr.detectChanges();
             },
             error: (err) => {

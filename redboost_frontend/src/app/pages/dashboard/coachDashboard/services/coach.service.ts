@@ -106,6 +106,35 @@ export interface UpcomingSessionDTO {
   meetingLink?: string;
 }
 
+export interface CoachEntrepreneurDetailDTO {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber: string;
+  entreprise: string;
+  secteur: string;
+  profilePictureUrl: string;
+  startupDescription: string;
+  completionRate: number;
+  tasks: any[];
+  livrables: Array<{
+    id: number;
+    nom: string;
+    dateUpload: string;
+    typeFichier: string;
+    tailleFichier: number;
+    url: string;
+    tacheTitre: string;
+  }>;
+  notes: Array<{
+    id: number;
+    date: string;
+    synthese: string;
+    appreciation: string;
+  }>;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -205,5 +234,24 @@ export class CoachService {
       entrepreneurs: CoachEntrepreneurDTO[];
       sessions: UpcomingSessionDTO[];
     }>(`${this.apiUrl}/${coachId}/dashboard-overview`);
+  }
+
+  // Get details for a specific entrepreneur
+  getEntrepreneurDetail(coachId: number, entrepreneurId: number): Observable<CoachEntrepreneurDetailDTO> {
+    return this.http.get<CoachEntrepreneurDetailDTO>(`${this.apiUrl}/${coachId}/entrepreneurs/${entrepreneurId}/details`);
+  }
+
+  /**
+   * Create or update a session report (Note de synthèse)
+   */
+  saveNote(note: any): Observable<any> {
+    return this.http.post(`${environment.apiUrl}/notes`, note);
+  }
+
+  /**
+   * Get programs assigned to the coach
+   */
+  getCoachProgrammes(coachId: number): Observable<ProgrammeDTO[]> {
+    return this.http.get<ProgrammeDTO[]>(`${this.apiUrl}/${coachId}/programmes`);
   }
 }
