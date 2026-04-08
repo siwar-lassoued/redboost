@@ -62,6 +62,15 @@ import { AdminKpiFormsComponent } from './app/pages/backoffice/kpi_forms/admin-k
 import { AdminEvaluationsComponent } from './app/pages/backoffice/evaluations/admin-evaluations.component';
 import { AdminLivrablesComponent } from './app/pages/backoffice/livrables/admin-livrables.component';
 import { EntrepreneurKpiFormsComponent } from './app/pages/entrepreneur/kpi_forms/entrepreneur-kpi-forms.component';
+import { EntrepreneurDashboardComponent } from './app/pages/entrepreneur/dashboard/entrepreneur-dashboard.component';
+import { MesCoachsComponent } from './app/pages/entrepreneur/mes-coachs/mes-coachs.component';
+import { EntrepreneurSessionsComponent } from './app/pages/entrepreneur/mes-sessions/entrepreneur-sessions.component';
+import { CoachRatingComponent } from './app/pages/entrepreneur/coach-rating/coach-rating.component';
+import { EntrepreneurTachesComponent } from './app/pages/entrepreneur/mes-taches/entrepreneur-taches.component';
+import { EntrepreneurLivrablesComponent } from './app/pages/entrepreneur/mes-livrables/entrepreneur-livrables.component';
+import { EntrepreneurProgrammeComponent } from './app/pages/entrepreneur/mon-programme/entrepreneur-programme.component';
+import { EntrepreneurStatusComponent } from './app/pages/entrepreneur/status/entrepreneur-status.component';
+import { EntrepreneurChatComponent } from './app/pages/entrepreneur/chat/entrepreneur-chat.component';
 
 // Entrepreneur Profile features
 import { EntrepreneurDashboardComponent } from './app/pages/entrepreneur/dashboard/entrepreneur-dashboard.component';
@@ -161,6 +170,17 @@ export const appRoutes: Routes = [
             { path: 'entrep-deliverable', component: EntrepreneurLivrablesComponent },
             { path: 'entrepreneur-kpi-forms', component: EntrepreneurKpiFormsComponent },
             { path: 'feedback', component: CoachRatingComponent },
+            
+            // Entrepreneur Routes
+            { path: 'entrepreneur-dashboard', component: EntrepreneurDashboardComponent },
+            { path: 'entrepreneur/mes-coachs', component: MesCoachsComponent },
+            { path: 'entrepreneur/mes-sessions', component: EntrepreneurSessionsComponent },
+            { path: 'entrepreneur/mes-taches', component: EntrepreneurTachesComponent },
+            { path: 'entrepreneur/mes-livrables', component: EntrepreneurLivrablesComponent },
+            { path: 'entrepreneur/mon-programme', component: EntrepreneurProgrammeComponent },
+            { path: 'entrepreneur/status', component: EntrepreneurStatusComponent },
+            { path: 'entrepreneur/chat', component: EntrepreneurChatComponent },
+            { path: 'coach-rating/:sessionId', component: CoachRatingComponent },
 
             ...pagesRoutes,
         ],

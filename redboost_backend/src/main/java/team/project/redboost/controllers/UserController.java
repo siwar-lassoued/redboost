@@ -841,6 +841,14 @@ public class UserController {
                 .map(m -> userService.findById(m.getCoachId()))
                 .filter(coach -> coach != null)
                 .map(this::buildUserResponse)
+        User entrepreneur = userService.findById(entrepreneurId);
+        if (entrepreneur == null || entrepreneur.getProgrammes() == null) {
+            return ResponseEntity.ok(Collections.emptyList());
+        }
+
+        List<Map<String, Object>> coaches = entrepreneur.getProgrammes().stream()
+                .filter(p -> p.getCoach() != null)
+                .map(p -> buildUserResponse(p.getCoach()))
                 .distinct()
                 .collect(Collectors.toList());
 
@@ -856,6 +864,13 @@ public class UserController {
                 .filter(entrepreneur -> entrepreneur != null)
                 .map(this::buildUserResponse)
                 .distinct()
+        List<User> entrepreneurs = userRepository.findByRole(Role.ENTREPRENEUR).stream()
+                .filter(e -> e.getProgrammes() != null && e.getProgrammes().stream()
+                        .anyMatch(p -> p.getCoach() != null && p.getCoach().getId().equals(coachId)))
+                .collect(Collectors.toList());
+
+        List<Map<String, Object>> response = entrepreneurs.stream()
+                .map(this::buildUserResponse)
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(response);

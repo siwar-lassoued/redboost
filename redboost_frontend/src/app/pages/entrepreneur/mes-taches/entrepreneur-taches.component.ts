@@ -5,6 +5,7 @@ import { TacheService } from '../../../core/services/tache.service';
 import { LivrableService } from '../../../core/services/livrable.service';
 import { AuthService } from '../../frontoffice/service/auth.service';
 import { jwtDecode } from 'jwt-decode';
+import { AuthService } from '../../../core/services/auth.service';
 
 type KanbanCol = 'A_FAIRE' | 'EN_COURS' | 'TERMINEE';
 type TaskRisk = 'HAUTE' | 'CRITIQUE' | 'MOYENNE' | 'BASSE';
@@ -153,6 +154,7 @@ export class EntrepreneurTachesComponent implements OnInit {
   ngOnInit(): void {
     const token = this.authSvc.getToken();
     const user = token ? { id: (jwtDecode(token as string) as any).userId } : null;
+    const user = this.authSvc.currentUser$.value;
     if (!user) return;
 
     this.tacheSvc.getByUser(user.id).subscribe({

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
 import { AuthService } from '../../frontoffice/service/auth.service';
 import { jwtDecode } from 'jwt-decode';
+import { AuthService } from '../../../core/services/auth.service';
 import { UserService } from '../../../core/services/user.service';
 
 type ParamTab = 'profil' | 'securite';
@@ -145,6 +146,7 @@ export class EntrepreneurParametresComponent implements OnInit {
   ngOnInit() {
     const token = this.authSvc.getToken();
     const user: any = token ? jwtDecode(token as string) : null;
+    const user = this.authSvc.currentUser$.value;
     if (user) {
       this.form.name = `${user.prenom} ${user.nom}`;
       this.form.phone = user.telephone || '';
@@ -157,6 +159,7 @@ export class EntrepreneurParametresComponent implements OnInit {
   handleSave() {
     const token = this.authSvc.getToken();
     const user: any = token ? jwtDecode(token as string) : null;
+    const user = this.authSvc.currentUser$.value;
     if (!user) return;
     const parts = this.form.name.split(' ');
     this.userSvc.update(user.id, {

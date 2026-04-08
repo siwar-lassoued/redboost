@@ -479,6 +479,47 @@
                                 />
                             </div>
                         </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group full-width">
+                                <label for="stadeProjet">Stade du projet</label>
+                                <p-dropdown
+                                    id="stadeProjet"
+                                    formControlName="stadeProjet"
+                                    [options]="[
+                                        {label: 'Idée', value: 'IDEE'},
+                                        {label: 'MVP', value: 'MVP'},
+                                        {label: 'Croissance', value: 'CROISSANCE'},
+                                        {label: 'Scale', value: 'SCALE'}
+                                    ]"
+                                    placeholder="Sélectionnez le stade"
+                                    [style]="{'width':'100%'}"
+                                    appendTo="body"
+                                ></p-dropdown>
+                            </div>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label for="descriptionProjet">Description du projet</label>
+                            <textarea
+                                pTextarea
+                                id="descriptionProjet"
+                                formControlName="descriptionProjet"
+                                placeholder="Décrivez votre projet"
+                                rows="3"
+                            ></textarea>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label for="besoinsCoaching">Besoins coaching</label>
+                            <textarea
+                                pTextarea
+                                id="besoinsCoaching"
+                                formControlName="besoinsCoaching"
+                                placeholder="Vos besoins en matière de coaching (Levée de fonds, stratégie...)"
+                                rows="2"
+                            ></textarea>
+                        </div>
 
                         <div class="form-divider">
                             <h4>Formation académique</h4>

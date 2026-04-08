@@ -2,6 +2,7 @@ import { Component, ChangeDetectionStrategy, OnInit, signal, inject } from '@ang
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../frontoffice/service/auth.service';
 import { jwtDecode } from 'jwt-decode';
+import { AuthService } from '../../../core/services/auth.service';
 import { DashboardService } from '../../../core/services/dashboard.service';
 
 @Component({
@@ -90,6 +91,7 @@ export class EntrepreneurStatusComponent implements OnInit {
   ngOnInit() {
     const token = this.authSvc.getToken();
     const user = token ? { id: (jwtDecode(token as string) as any).userId } : null;
+    const user = this.authSvc.currentUser$.value;
     if (user) {
       this.dashboardSvc.getKpis('entrepreneur').subscribe((data: any) => {
         const taskPct = data.totalTasks > 0 ? Math.round((data.completedTasks / data.totalTasks) * 100) : 0;

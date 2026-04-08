@@ -311,16 +311,34 @@
                             </div>
                         </ng-container>
                         <ng-container *ngIf="user?.role === 'ENTREPRENEUR'">
-                            <div class="info-row" *ngIf="user?.startupName">
-                                <div class="info-label">Startup</div>
+                            <div class="info-row" *ngIf="user?.startupName || user?.entreprise">
+                                <div class="info-label">Startup / Entreprise</div>
                                 <div class="info-value">
-                                    {{ user?.startupName }}
+                                    {{ user?.entreprise || user?.startupName }}
                                 </div>
                             </div>
-                            <div class="info-row" *ngIf="user?.industry">
+                            <div class="info-row" *ngIf="user?.industry || user?.secteur">
                                 <div class="info-label">Secteur</div>
                                 <div class="info-value">
-                                    {{ user?.industry }}
+                                    {{ user?.secteur || user?.industry }}
+                                </div>
+                            </div>
+                            <div class="info-row" *ngIf="user?.descriptionProjet">
+                                <div class="info-label">Description du projet</div>
+                                <div class="info-value">
+                                    {{ user?.descriptionProjet }}
+                                </div>
+                            </div>
+                            <div class="info-row" *ngIf="user?.stadeProjet">
+                                <div class="info-label">Stade du projet</div>
+                                <div class="info-value">
+                                    {{ user?.stadeProjet }}
+                                </div>
+                            </div>
+                            <div class="info-row" *ngIf="user?.besoinsCoaching">
+                                <div class="info-label">Besoins coaching</div>
+                                <div class="info-value">
+                                    {{ user?.besoinsCoaching }}
                                 </div>
                             </div>
                             <div

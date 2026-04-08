@@ -56,11 +56,11 @@ export class KpiFormService {
         return this.http.get<KpiForm[]>(this.apiUrl);
     }
 
-    getFormsByProgramme(programmeId: number): Observable<KpiForm[]> {
+    getFormsByProgramme(programmeId: string | number): Observable<KpiForm[]> {
         return this.http.get<KpiForm[]>(`${this.apiUrl}/programme/${programmeId}`);
     }
 
-    getFormById(id: number): Observable<KpiForm> {
+    getFormById(id: string | number): Observable<KpiForm> {
         return this.http.get<KpiForm>(`${this.apiUrl}/${id}`);
     }
 
@@ -68,27 +68,27 @@ export class KpiFormService {
         return this.http.post<KpiForm>(this.apiUrl, form);
     }
 
-    updateForm(id: number, form: KpiForm): Observable<KpiForm> {
+    updateForm(id: string | number, form: KpiForm): Observable<KpiForm> {
         return this.http.put<KpiForm>(`${this.apiUrl}/${id}`, form);
     }
 
-    deleteForm(id: number): Observable<void> {
+    deleteForm(id: string | number): Observable<void> {
         return this.http.delete<void>(`${this.apiUrl}/${id}`);
     }
 
-    sendForm(id: number, entrepreneurIds: number[]): Observable<void> {
+    sendForm(id: string | number, entrepreneurIds: (string | number)[]): Observable<void> {
         return this.http.post<void>(`${this.apiUrl}/${id}/send`, { entrepreneurIds });
     }
 
-    getResponsesForForm(id: number): Observable<KpiFormResponse[]> {
+    getResponsesForForm(id: string | number): Observable<KpiFormResponse[]> {
         return this.http.get<KpiFormResponse[]>(`${this.apiUrl}/${id}/responses`);
     }
 
-    getPendingFormsForEntrepreneur(entrepreneurId: number): Observable<KpiFormResponse[]> {
+    getPendingFormsForEntrepreneur(entrepreneurId: string | number): Observable<KpiFormResponse[]> {
         return this.http.get<KpiFormResponse[]>(`${this.apiUrl}/entrepreneur/${entrepreneurId}`);
     }
 
-    submitResponse(responseId: number, answers: KpiFormAnswer[]): Observable<KpiFormResponse> {
+    submitResponse(responseId: string | number, answers: KpiFormAnswer[]): Observable<KpiFormResponse> {
         return this.http.post<KpiFormResponse>(`${this.apiUrl}/responses/${responseId}/submit`, answers);
     }
 }

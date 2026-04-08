@@ -7,6 +7,7 @@ import { ButtonModule } from 'primeng/button';
 import { MatchingService, MatchingView } from '../../../core/services/matching.service';
 import { AuthService } from '../../frontoffice/service/auth.service';
 import { jwtDecode } from 'jwt-decode';
+import { AuthService } from '../../../core/services/auth.service';
 import { DisponibiliteService, DisponibiliteSlot } from '../../../core/services/disponibilite.service';
 import { SessionBookingService } from '../../../core/services/session-booking.service';
 
@@ -212,6 +213,7 @@ export class MesCoachsComponent implements OnInit {
 
   ngOnInit(): void {
     const userId = (this.authSvc.getToken() ? (jwtDecode(this.authSvc.getToken() as string) as any).userId : null);
+    const userId = this.authSvc.currentUser$.value?.id;
     if (userId) {
       this.matchSvc.getEntrepreneurCoaches(userId).subscribe(data => {
         this.matchings.set(data);
@@ -260,6 +262,7 @@ export class MesCoachsComponent implements OnInit {
     const slot = this.selectedSlotToBook();
     const coach = this.selectedCoachForBooking();
     const userId = (this.authSvc.getToken() ? (jwtDecode(this.authSvc.getToken() as string) as any).userId : null);
+    const userId = this.authSvc.currentUser$.value?.id;
     if (!slot || !userId || !coach) return;
 
     this.isBooking.set(true);

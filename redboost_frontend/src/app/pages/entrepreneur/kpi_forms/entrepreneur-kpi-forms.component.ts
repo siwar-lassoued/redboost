@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { KpiFormService, KpiFormResponse, KpiFormAnswer, KpiForm, KpiFormQuestion } from '../../backoffice/kpi_forms/kpi-form.service';
 import { AuthService } from '../../frontoffice/service/auth.service';
 import { jwtDecode } from 'jwt-decode';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'rb-entrepreneur-kpi-forms',
@@ -166,6 +167,7 @@ export class EntrepreneurKpiFormsComponent implements OnInit {
   loadResponses() {
     const token = this.auth.getToken();
     const user = token ? { id: (jwtDecode(token as string) as any).userId } : null;
+    const user = this.auth.currentUser$.value;
     if (!user) return;
     
     this.svc.getPendingFormsForEntrepreneur(user.id).subscribe((res: KpiFormResponse[]) => {

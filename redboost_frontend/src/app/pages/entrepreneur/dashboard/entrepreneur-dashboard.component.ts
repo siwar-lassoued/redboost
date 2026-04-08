@@ -17,6 +17,14 @@ import { MatchingService, MatchingView } from '../../../core/services/matching.s
 // @ts-nocheck
 import { UserService } from '../../../core/services/user.service';
 // @ts-nocheck
+import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
+import { AuthService } from '../../../core/services/auth.service';
+import { SessionService } from '../../../core/services/session.service';
+import { TacheService } from '../../../core/services/tache.service';
+import { MatchingService, MatchingView } from '../../../core/services/matching.service';
+import { UserService } from '../../../core/services/user.service';
 import { OnInit, computed } from '@angular/core';
 
 @Component({
@@ -35,6 +43,11 @@ import { OnInit, computed } from '@angular/core';
           <p class="text-gray-500 mt-1 font-medium">
             {{ currentUserProfile?.startupName || 'Ma Startup' }} · 
             {{ currentUserProfile?.secteur || 'Secteur' }} · 
+            Bonjour, {{ (auth.currentUser$ | async)?.prenom || 'Entrepreneur' }} 👋
+          </h1>
+          <p class="text-gray-500 mt-1 font-medium">
+            {{ (auth.currentUser$ | async)?.startupName || 'Ma Startup' }} · 
+            {{ (auth.currentUser$ | async)?.secteur || 'Secteur' }} · 
             <span class="font-black text-sky-500">Seed</span>
           </p>
         </div>
@@ -276,6 +289,67 @@ export class EntrepreneurDashboardComponent implements OnInit {
           });
         }
       });
+    const userSnapshot = this.auth.currentUser$.value;
+    if (!userSnapshot) return;
+
+    // Refresh current user to get full dynamic data (startup name, etc)
+    this.userSvc.getById(userSnapshot.id).subscribe(u => {
+      const current = this.auth.currentUser$.value;
+      if (current) {
+        this.auth.currentUser$.next({
+          ...current,
+          ...u
+        });
+      }
+    });
+
+    // Load Coach
+    this.matchSvc.getEntrepreneurCoaches(userSnapshot.id).subscribe(matches => {
+      if (matches.length > 0) {
+        this.assignedCoach.set(matches[0]);
+        try {
+          this.coachTags.set(JSON.parse(matches[0].pointsForts || '[]').slice(0, 3));
+        } catch(e) {
+          this.coachTags.set(['Coaching', 'Stratégie', 'Expertise']);
+        }
+      }
+    });
+
+    // Load Tasks
+    this.tacheSvc.getByUser(userSnapshot.id).subscribe((taches: any) => {
+      const myTaches: any[] = Array.isArray(taches) ? taches : (taches.data || []);
+      this.totalTasks.set(myTaches.length);
+
+      const urgent = myTaches
+        .filter((t: any) => t.statut !== 'TERMINE' && t.dateEcheance)
+        .sort((a: any, b: any) => new Date(a.dateEcheance!).getTime() - new Date(b.dateEcheance!).getTime())
+        .slice(0, 3)
+        .map((t: any) => ({
+          id: t.id,
+          title: t.titre,
+          deadline: new Date(t.dateEcheance!).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
+        }));
+      this.urgentTasks.set(urgent);
+
+      const completed = myTaches.filter((t: any) => t.statut === 'TERMINE').length;
+      this.progress.set(myTaches.length ? Math.round((completed / myTaches.length) * 100) : 0);
+    });
+
+    // Load Sessions
+    this.sessionSvc.getByEntrepreneur(userSnapshot.id).subscribe((sessions: any) => {
+      const mySessions: any[] = Array.isArray(sessions) ? sessions : (sessions.data || []);
+      const upcoming = mySessions
+        .filter((s: any) => new Date(s.date).getTime() > Date.now())
+        .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())[0];
+
+      if (upcoming) {
+        this.nextSession.set({
+          date: new Date(upcoming.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'short' }),
+          time: new Date(upcoming.date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+          duration: 60,
+          meetLink: upcoming.meetLink,
+        });
+      }
     });
   }
 
