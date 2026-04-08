@@ -65,13 +65,11 @@ public class TacheController {
     }
 
     @PutMapping("/{id}/status")
-    @PutMapping("/{id}/statut")
     public ResponseEntity<Map<String, Object>> updateStatut(
             @PathVariable Long id,
             @RequestBody Map<String, String> body) {
         Tache t = tacheService.getById(id);
         t.setStatus(Tache.StatusTache.valueOf(body.get("status")));
-        t.setStatut(Tache.Statut.valueOf(body.get("statut")));
         Map<String, Object> res = new HashMap<>();
         res.put("data", tacheService.update(id, t));
         return ResponseEntity.ok(res);

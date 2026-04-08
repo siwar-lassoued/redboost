@@ -3,8 +3,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TacheService } from '../../../core/services/tache.service';
 import { LivrableService } from '../../../core/services/livrable.service';
-import { AuthService } from '../../frontoffice/service/auth.service';
-import { jwtDecode } from 'jwt-decode';
 import { AuthService } from '../../../core/services/auth.service';
 
 type KanbanCol = 'A_FAIRE' | 'EN_COURS' | 'TERMINEE';
@@ -152,8 +150,6 @@ export class EntrepreneurTachesComponent implements OnInit {
   selectedFiles = signal<Record<string, string>>({});
 
   ngOnInit(): void {
-    const token = this.authSvc.getToken();
-    const user = token ? { id: (jwtDecode(token as string) as any).userId } : null;
     const user = this.authSvc.currentUser$.value;
     if (!user) return;
 

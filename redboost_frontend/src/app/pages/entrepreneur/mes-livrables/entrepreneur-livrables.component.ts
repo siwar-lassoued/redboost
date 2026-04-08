@@ -1,8 +1,6 @@
 import { Component, signal, computed, inject, ChangeDetectionStrategy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LivrableService } from '../../../core/services/livrable.service';
-import { AuthService } from '../../frontoffice/service/auth.service';
-import { jwtDecode } from 'jwt-decode';
 import { AuthService } from '../../../core/services/auth.service';
 
 type LivTab = 'ALL' | 'EN_ATTENTE' | 'VALIDE' | 'REJETE';
@@ -167,8 +165,6 @@ export class EntrepreneurLivrablesComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    const token = this.authSvc.getToken();
-    const user = token ? { id: (jwtDecode(token as string) as any).userId } : null;
     const user = this.authSvc.currentUser$.value;
     if (!user) return;
 

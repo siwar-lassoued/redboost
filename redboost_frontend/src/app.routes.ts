@@ -72,14 +72,6 @@ import { EntrepreneurProgrammeComponent } from './app/pages/entrepreneur/mon-pro
 import { EntrepreneurStatusComponent } from './app/pages/entrepreneur/status/entrepreneur-status.component';
 import { EntrepreneurChatComponent } from './app/pages/entrepreneur/chat/entrepreneur-chat.component';
 
-// Entrepreneur Profile features
-import { EntrepreneurDashboardComponent } from './app/pages/entrepreneur/dashboard/entrepreneur-dashboard.component';
-import { EntrepreneurSessionsComponent } from './app/pages/entrepreneur/mes-sessions/entrepreneur-sessions.component';
-import { EntrepreneurLivrablesComponent } from './app/pages/entrepreneur/mes-livrables/entrepreneur-livrables.component';
-import { EntrepreneurChatComponent } from './app/pages/entrepreneur/chat/entrepreneur-chat.component';
-import { CoachRatingComponent } from './app/pages/entrepreneur/coach-rating/coach-rating.component';
-
-
 export const pagesRoutes: Routes = [
     { path: 'profile', component: UserProfileComponent },
     { path: 'all-users', component: UserListComponent },
@@ -164,7 +156,6 @@ export const appRoutes: Routes = [
             { path: 'admin-livrables', component: AdminLivrablesComponent },
             
             // Entrepreneur Profile
-            { path: 'entrepreneur-dashboard', component: EntrepreneurDashboardComponent },
             { path: 'entrep-calendar', component: EntrepreneurSessionsComponent },
             { path: 'mes-sessions-entrep', component: EntrepreneurSessionsComponent },
             { path: 'entrep-deliverable', component: EntrepreneurLivrablesComponent },

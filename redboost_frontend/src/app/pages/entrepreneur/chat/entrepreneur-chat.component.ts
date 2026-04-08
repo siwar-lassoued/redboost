@@ -3,8 +3,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MessageService, Message } from '../../../core/services/message.service';
 import { SocketService, ChatMessage } from '../../../core/services/socket.service';
-import { AuthService } from '../../frontoffice/service/auth.service';
-import { jwtDecode } from 'jwt-decode';
 import { AuthService } from '../../../core/services/auth.service';
 import { UserService } from '../../../core/services/user.service';
 import { User } from '../../../core/models/user.model';
@@ -279,8 +277,9 @@ export class EntrepreneurChatComponent implements OnInit, AfterViewChecked {
   }
 
   ngOnInit(): void {
-    this.currentUserId = (this.authService.getToken() ? (jwtDecode(this.authService.getToken() as string) as any).userId : null);
-    this.currentUserId = this.authService.currentUser$.value?.id;
+    // We expect the auth service to maintain currentUser state directly
+    const user = this.authService.currentUser$.value;
+    this.currentUserId = user?.id?.toString();
     this.loadCoach();
     this.connectWebSocket();
     

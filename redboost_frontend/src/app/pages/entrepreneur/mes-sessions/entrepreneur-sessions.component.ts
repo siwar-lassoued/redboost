@@ -2,8 +2,6 @@ import { Component, signal, computed, inject, ChangeDetectionStrategy, OnInit } 
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { SessionService } from '../../../core/services/session.service';
-import { AuthService } from '../../frontoffice/service/auth.service';
-import { jwtDecode } from 'jwt-decode';
 import { AuthService } from '../../../core/services/auth.service';
 
 type Tab = 'PLANIFIEE' | 'REALISEE' | 'ANNULEE';
@@ -191,8 +189,6 @@ export class EntrepreneurSessionsComponent implements OnInit {
   currentTabConfig = computed(() => this.tabs.find(t => t.id === this.activeTab())!);
 
   ngOnInit(): void {
-    const token = this.authSvc.getToken();
-    const user = token ? { id: (jwtDecode(token as string) as any).userId } : null;
     const user = this.authSvc.currentUser$.value;
     if (!user) return;
 
@@ -201,7 +197,6 @@ export class EntrepreneurSessionsComponent implements OnInit {
         this.allSessions.set(Array.isArray(sessions) ? sessions : []);
       },
       error: (err: any) => {
-      error: (err) => {
         console.error('Error loading sessions:', err);
         this.allSessions.set([]);
       }
@@ -242,7 +237,6 @@ export class EntrepreneurSessionsComponent implements OnInit {
              this.ngOnInit(); // Refresh list
           },
           error: (err: any) => {
-          error: (err) => {
              console.error(err);
              alert('Erreur: ' + (err.error?.message || 'Contactez l\'administration'));
           }

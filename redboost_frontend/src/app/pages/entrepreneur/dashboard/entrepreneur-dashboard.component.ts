@@ -1,22 +1,3 @@
-// @ts-nocheck
-import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
-// @ts-nocheck
-import { CommonModule } from '@angular/common';
-// @ts-nocheck
-import { RouterLink } from '@angular/router';
-// @ts-nocheck
-import { AuthService } from '../../frontoffice/service/auth.service';
-// @ts-nocheck
-import { jwtDecode } from 'jwt-decode';
-// @ts-nocheck
-import { SessionService } from '../../../core/services/session.service';
-// @ts-nocheck
-import { TacheService } from '../../../core/services/tache.service';
-// @ts-nocheck
-import { MatchingService, MatchingView } from '../../../core/services/matching.service';
-// @ts-nocheck
-import { UserService } from '../../../core/services/user.service';
-// @ts-nocheck
 import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -38,16 +19,11 @@ import { OnInit, computed } from '@angular/core';
       <div class="flex items-center justify-between mb-8">
         <div>
           <h1 class="text-3xl font-black text-[#1A1A2E] tracking-tight">
-            Bonjour, {{ currentUserProfile?.prenom || 'Entrepreneur' }} 
+            Bonjour, {{ currentUserProfile?.prenom || 'Entrepreneur' }} 👋
           </h1>
           <p class="text-gray-500 mt-1 font-medium">
             {{ currentUserProfile?.startupName || 'Ma Startup' }} · 
             {{ currentUserProfile?.secteur || 'Secteur' }} · 
-            Bonjour, {{ (auth.currentUser$ | async)?.prenom || 'Entrepreneur' }} 👋
-          </h1>
-          <p class="text-gray-500 mt-1 font-medium">
-            {{ (auth.currentUser$ | async)?.startupName || 'Ma Startup' }} · 
-            {{ (auth.currentUser$ | async)?.secteur || 'Secteur' }} · 
             <span class="font-black text-sky-500">Seed</span>
           </p>
         </div>
@@ -233,74 +209,12 @@ export class EntrepreneurDashboardComponent implements OnInit {
   progress = signal(0);
 
   ngOnInit() {
-    this.auth.getCurrentUser().subscribe(userSnapshot => {
-      if (!userSnapshot) return;
-
-      // Refresh current user to get full dynamic data (startup name, etc)
-      this.userSvc.getById(userSnapshot.id).subscribe(u => {
-        this.currentUserProfile = u;
-      });
-
-      // Load Coach
-      this.matchSvc.getEntrepreneurCoaches(userSnapshot.id.toString()).subscribe((matches: any[]) => {
-        if (matches.length > 0) {
-          this.assignedCoach.set(matches[0]);
-          try {
-            this.coachTags.set(JSON.parse(matches[0].pointsForts || '[]').slice(0, 3));
-          } catch(e) {
-            this.coachTags.set(['Coaching', 'Stratégie', 'Expertise']);
-          }
-        }
-      });
-
-      // Load Tasks
-      this.tacheSvc.getByUser(userSnapshot.id).subscribe((taches: any) => {
-        const myTaches: any[] = Array.isArray(taches) ? taches : (taches.data || []);
-        this.totalTasks.set(myTaches.length);
-
-        const urgent = myTaches
-          .filter((t: any) => t.statut !== 'TERMINE' && t.dateEcheance)
-          .sort((a: any, b: any) => new Date(a.dateEcheance!).getTime() - new Date(b.dateEcheance!).getTime())
-          .slice(0, 3)
-          .map((t: any) => ({
-            id: t.id,
-            title: t.titre,
-            deadline: new Date(t.dateEcheance!).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
-          }));
-        this.urgentTasks.set(urgent);
-
-        const completed = myTaches.filter((t: any) => t.statut === 'TERMINE').length;
-        this.progress.set(myTaches.length ? Math.round((completed / myTaches.length) * 100) : 0);
-      });
-
-      // Load Sessions
-      this.sessionSvc.getByEntrepreneur(userSnapshot.id).subscribe((sessions: any) => {
-        const mySessions: any[] = Array.isArray(sessions) ? sessions : (sessions.data || []);
-        const upcoming = mySessions
-          .filter((s: any) => new Date(s.date).getTime() > Date.now())
-          .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())[0];
-
-        if (upcoming) {
-          this.nextSession.set({
-            date: new Date(upcoming.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'short' }),
-            time: new Date(upcoming.date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-            duration: 60,
-            meetLink: upcoming.meetLink,
-          });
-        }
-      });
-    const userSnapshot = this.auth.currentUser$.value;
+    const userSnapshot = (this.auth as any).currentUser$ ? (this.auth as any).currentUser$.value : null;
     if (!userSnapshot) return;
 
     // Refresh current user to get full dynamic data (startup name, etc)
     this.userSvc.getById(userSnapshot.id).subscribe(u => {
-      const current = this.auth.currentUser$.value;
-      if (current) {
-        this.auth.currentUser$.next({
-          ...current,
-          ...u
-        });
-      }
+      this.currentUserProfile = u;
     });
 
     // Load Coach
