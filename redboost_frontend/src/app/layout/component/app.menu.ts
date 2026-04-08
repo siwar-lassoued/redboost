@@ -293,55 +293,54 @@ export class AppMenu implements OnInit {
                 ],
             },
             {
-                label: 'CALENDRIER',
-                icon: 'pi pi-fw pi-calendar',
-                routerLink: ['/entrep-calendar'],
-            },
-            {
-                label: 'PROJETS',
-                icon: 'pi pi-fw pi-folder',
+                label: 'SESSIONS & COACHS',
+                icon: 'pi pi-fw pi-users',
                 items: [
                     {
-                        label: 'Nouveau projet',
-                        icon: 'pi pi-fw pi-plus',
-                        routerLink: ['/addprojet'],
+                        label: 'Mes Coachs',
+                        icon: 'pi pi-fw pi-user-check',
+                        routerLink: ['/entrepreneur/mes-coachs'],
                     },
                     {
-                        label: 'Mes projets',
-                        icon: 'pi pi-fw pi-list',
-                        routerLink: ['/GetProjet'],
+                        label: 'Mes Sessions',
+                        icon: 'pi pi-fw pi-calendar-clock',
+                        routerLink: ['/entrepreneur/mes-sessions'],
+                    },
+                    {
+                        label: 'Chat avec mon coach',
+                        icon: 'pi pi-fw pi-comments',
+                        routerLink: ['/entrepreneur/chat'],
                     },
                 ],
             },
             {
-                label: 'SUIVI PERFORMANCE',
-                icon: 'pi pi-fw pi-chart-line',
-                items: [
-                    {
-                        label: 'Mes Formulaires KPI',
-                        icon: 'pi pi-fw pi-check-square',
-                        routerLink: ['/entrepreneur-kpi-forms'],
-                    },
-                ]
+                label: 'CALENDRIER',
+                icon: 'pi pi-fw pi-calendar',
+                routerLink: ['/calendar'],
             },
             {
-                label: 'LIVRABLES',
-                icon: 'pi pi-fw pi-file',
-                routerLink: ['/entrep-deliverable'],
-            },
-            {
-                label: 'DOCUMENTS',
-                icon: 'pi pi-fw pi-book',
+                label: 'PROGRAMME & TÂCHES',
+                icon: 'pi pi-fw pi-briefcase',
                 items: [
                     {
-                        label: 'Détails',
+                        label: 'Mon Programme',
                         icon: 'pi pi-fw pi-info-circle',
-                        routerLink: ['/ShowEntreDoc'],
+                        routerLink: ['/entrepreneur/mon-programme'],
                     },
                     {
-                        label: 'Tâches',
-                        icon: 'pi pi-fw pi-tasks',
-                        routerLink: ['/projects/:projectId/documents'],
+                        label: 'Mes Tâches',
+                        icon: 'pi pi-fw pi-list',
+                        routerLink: ['/entrepreneur/mes-taches'],
+                    },
+                    {
+                        label: 'Mes Livrables',
+                        icon: 'pi pi-fw pi-file-pdf',
+                        routerLink: ['/entrepreneur/mes-livrables'],
+                    },
+                    {
+                        label: 'Mon Statut',
+                        icon: 'pi pi-fw pi-chart-line',
+                        routerLink: ['/entrepreneur/status'],
                     },
                 ],
             },

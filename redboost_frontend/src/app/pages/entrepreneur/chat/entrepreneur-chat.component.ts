@@ -5,6 +5,7 @@ import { MessageService, Message } from '../../../core/services/message.service'
 import { SocketService, ChatMessage } from '../../../core/services/socket.service';
 import { AuthService } from '../../frontoffice/service/auth.service';
 import { jwtDecode } from 'jwt-decode';
+import { AuthService } from '../../../core/services/auth.service';
 import { UserService } from '../../../core/services/user.service';
 import { User } from '../../../core/models/user.model';
 import { ChatFileUploadComponent } from '../../../shared/components/chat-file-upload/chat-file-upload.component';
@@ -279,6 +280,7 @@ export class EntrepreneurChatComponent implements OnInit, AfterViewChecked {
 
   ngOnInit(): void {
     this.currentUserId = (this.authService.getToken() ? (jwtDecode(this.authService.getToken() as string) as any).userId : null);
+    this.currentUserId = this.authService.currentUser$.value?.id;
     this.loadCoach();
     this.connectWebSocket();
     

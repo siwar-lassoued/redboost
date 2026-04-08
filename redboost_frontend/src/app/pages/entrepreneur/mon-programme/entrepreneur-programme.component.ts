@@ -7,6 +7,7 @@ import { TacheService } from '../../../core/services/tache.service';
 import { LivrableService } from '../../../core/services/livrable.service';
 import { AuthService } from '../../frontoffice/service/auth.service';
 import { jwtDecode } from 'jwt-decode';
+import { AuthService } from '../../../core/services/auth.service';
 
 const STATUT_CFG: Record<string, { label: string; bg: string; color: string }> = {
   EN_COURS: { label: 'En cours', bg: '#D1FAE5', color: '#065F46' },
@@ -196,6 +197,7 @@ export class EntrepreneurProgrammeComponent implements OnInit {
   ngOnInit(): void {
     const token = this.authSvc.getToken();
     const user = token ? { id: (jwtDecode(token as string) as any).userId } : null;
+    const user = this.authSvc.currentUser$.value;
     if (!user) { this.loading.set(false); return; }
 
     // Load matching to find the programme

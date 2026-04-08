@@ -142,6 +142,9 @@ export class ProfileUpdateDialogComponent implements OnInit, OnChanges {
             apprentInformelDate: [null],
             apprentInformelCertificat: [''],
             obstaclePrincipal: [''],
+            descriptionProjet: [''],
+            stadeProjet: [''],
+            besoinsCoaching: [''],
         });
     }
 
@@ -186,6 +189,9 @@ export class ProfileUpdateDialogComponent implements OnInit, OnChanges {
             apprentInformelDate: this.user.apprentInformelDate ? new Date(this.user.apprentInformelDate) : null,
             apprentInformelCertificat: this.user.apprentInformelCertificat || '',
             obstaclePrincipal: this.user.obstaclePrincipal || '',
+            descriptionProjet: this.user.descriptionProjet || '',
+            stadeProjet: this.user.stadeProjet || '',
+            besoinsCoaching: this.user.besoinsCoaching || '',
         });
 
         // Parse skills and expertise
@@ -324,6 +330,9 @@ export class ProfileUpdateDialogComponent implements OnInit, OnChanges {
         }
         addIfPresent('apprentInformelCertificat', formValue.apprentInformelCertificat);
         addIfPresent('obstaclePrincipal', formValue.obstaclePrincipal);
+        addIfPresent('descriptionProjet', formValue.descriptionProjet);
+        addIfPresent('stadeProjet', formValue.stadeProjet);
+        addIfPresent('besoinsCoaching', formValue.besoinsCoaching);
     }
 
 

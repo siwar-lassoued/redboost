@@ -19,7 +19,7 @@
 
         .header-bg {
             height: 180px;
-            background: linear-gradient(135deg, #DB1E37, #0A4955);
+            background: linear-gradient(135deg, #DC2626, #111827);
         }
 
         .profile-intro {
@@ -99,7 +99,7 @@
 
                         .name-input {
                             padding: 0.5rem;
-                            border: 1px solid #568086;
+                            border: 1px solid #9CA3AF;
                             border-radius: 4px;
                             font-size: 1rem;
                             width: 160px;
@@ -107,8 +107,8 @@
 
                             &:focus {
                                 outline: none;
-                                border-color: #0A4955;
-                                box-shadow: 0 0 0 2px rgba(10, 73, 85, 0.2);
+                                border-color: #111827;
+                                box-shadow: 0 0 0 2px rgba(17, 24, 39, 0.2);
                             }
                         }
 
@@ -123,11 +123,11 @@
                         }
 
                         .save-button {
-                            background-color: #0A4955;
+                            background-color: #111827;
                             color: #fff;
 
                             &:hover {
-                                background-color: #083A44;
+                                background-color: #030712;
                             }
                         }
 
@@ -142,12 +142,12 @@
 
                         .edit-icon {
                             cursor: pointer;
-                            color: #d8e1e2;
+                            color: #E5E7EB;
                             font-size: 1rem;
                             transition: color 0.2s;
 
                             &:hover {
-                                color: #DB1E37;
+                                color: #DC2626;
                             }
                         }
                     }
@@ -155,7 +155,7 @@
 
                 .profile-badge {
                     display: inline-block;
-                    background: linear-gradient(to right, #DB1E37, #0A4955);
+                    background: linear-gradient(to right, #DC2626, #111827);
                     color: white;
                     padding: 0.25rem 1rem;
                     border-radius: 20px;
@@ -176,7 +176,7 @@
                     .stat-number {
                         font-size: 1.5rem;
                         font-weight: 700;
-                        color: #0A4955;
+                        color: #111827;
                         margin-bottom: 0.25rem;
                     }
 
@@ -211,7 +211,7 @@
             .section-title {
                 font-size: 1.25rem;
                 font-weight: 600;
-                color: #0A4955;
+                color: #111827;
                 margin: 0 0 1rem 0;
                 padding-bottom: 0.5rem;
                 border-bottom: 2px solid #f0f0f0;
@@ -220,7 +220,7 @@
                 gap: 0.5rem;
 
                 i {
-                    color: #DB1E37;
+                    color: #DC2626;
                 }
             }
 
@@ -237,7 +237,7 @@
 
                 i {
                     width: 20px;
-                    color: #0A4955;
+                    color: #111827;
                 }
             }
 
@@ -252,7 +252,7 @@
                     transition: color 0.2s;
 
                     &:hover {
-                        color: #DB1E37;
+                        color: #DC2626;
                     }
                 }
             }
@@ -279,13 +279,13 @@
                         font-weight: 500;
 
                         &.skill-tag {
-                            background-color: rgba(219, 30, 55, 0.1);
-                            color: #DB1E37;
+                            background-color: rgba(220, 38, 38, 0.1);
+                            color: #DC2626;
                         }
 
                         &.expertise-tag {
-                            background-color: rgba(10, 73, 85, 0.1);
-                            color: #0A4955;
+                            background-color: rgba(17, 24, 39, 0.1);
+                            color: #111827;
                         }
                     }
                 }
@@ -299,7 +299,7 @@
 
                 .info-label {
                     font-weight: 600;
-                    color: #0A4955;
+                    color: #111827;
                     min-width: 120px;
                 }
 
@@ -313,7 +313,7 @@
 
                 .info-group-title {
                     font-size: 1rem;
-                    color: #DB1E37;
+                    color: #DC2626;
                     margin: 0 0 0.75rem 0;
                     font-weight: 600;
                 }
@@ -486,7 +486,7 @@
         gap: 0.5rem;
         padding: 0.75rem 1.5rem;
         background: white;
-        color: #0A4955;
+        color: #111827;
         border: 2px solid white;
         border-radius: 25px;
         font-weight: 600;
@@ -500,7 +500,7 @@
         }
 
         &:hover {
-            background: linear-gradient(135deg, #DB1E37, #0A4955);
+            background: linear-gradient(135deg, #DC2626, #111827);
             color: white;
             border-color: transparent;
             transform: translateY(-2px);

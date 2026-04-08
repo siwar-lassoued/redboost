@@ -146,12 +146,14 @@ public class User implements UserDetails {
     private String obstaclePrincipal;
 
     @Column(name = "description_projet", columnDefinition = "TEXT")
+    @Column(name = "description_projet", length = 1500)
     private String descriptionProjet;
 
     @Column(name = "stade_projet")
     private String stadeProjet;
 
     @Column(name = "besoins_coaching", columnDefinition = "TEXT")
+    @Column(name = "besoins_coaching", length = 1500)
     private String besoinsCoaching;
 
     // Authentication fields
