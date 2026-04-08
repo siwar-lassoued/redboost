@@ -5,7 +5,7 @@ export const environment = {
 
     // apiUrl: 'http://localhost:8082/api',
     // apiUploads: 'http://localhost:8082/api',
-    firebaseConfig: {
+   firebaseConfig: {
         apiKey: 'AIzaSyBfq3z--mKyHOSGk6yZ3xbkLjAVF51vLaA',
         authDomain: 'redstart-53910.firebaseapp.com',
         projectId: 'redstart-53910',
