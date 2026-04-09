@@ -96,17 +96,68 @@ import { AuthService } from '../../frontoffice/service/auth.service';
                   <button class="close-btn" (click)="showDispoModal = false"><i class="pi pi-times"></i></button>
               </div>
               <div class="modal-body">
-                  <div class="form-group mb-4">
-                      <label>Thématique / Programme *</label>
+                  <div class="form-group">
+                      <label>Titre de la disponibilité *</label>
+                      <input type="text" class="premium-input" [(ngModel)]="newDispoTitle" placeholder="Ex: Session individuelle Boost Tech">
+                  </div>
+
+                  <div class="form-group">
+                      <label>Programme *</label>
                       <select class="premium-input" [(ngModel)]="selectedThematiqueId">
-                          <option [value]="null">Sélectionner une thématique...</option>
-                          <option *ngFor="let t of thematiques" [value]="t.id">{{t.nom}} ({{t.dateDebut | date:'shortDate'}} - {{t.dateFin | date:'shortDate'}})</option>
+                           <option [ngValue]="null">Sélectionner un programme...</option>
+                          <option *ngFor="let t of thematiques" [ngValue]="t.id">
+                            {{t.nom}} ({{t.dateDebut | date:'shortDate'}} - {{t.dateFin | date:'shortDate'}})
+                          </option>
                       </select>
                   </div>
-                  <div class="modal-actions">
+                   <div class="form-group">
+                      <label>Date(s) *</label>
+                      <input type="date" class="premium-input" [(ngModel)]="availabilityDates[0]">
+                      <button class="btn-inline mt-2" (click)="addAvailabilityDate()">
+                        <i class="pi pi-plus"></i> Ajouter une autre date
+                      </button>
+                      <div *ngFor="let date of availabilityDates; let i = index" class="secondary-date" [class.hidden]="i === 0">
+                        <input type="date" class="premium-input" [(ngModel)]="availabilityDates[i]">
+                        <button class="btn-remove-inline" (click)="removeAvailabilityDate(i)">
+                          <i class="pi pi-times"></i>
+                        </button>
+                      </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label>Créneaux disponibles *</label>
+                    <p class="field-help">Définissez vos plages horaires disponibles</p>
+                    <div class="slot-card" *ngFor="let slot of timeSlots; let i = index">
+                      <div class="slot-title">Créneau {{ i + 1 }}</div>
+                      <div class="slot-grid">
+                        <div>
+                          <label class="slot-label">Heure de début</label>
+                          <input type="time" class="premium-input" [(ngModel)]="slot.start">
+                        </div>
+                        <div>
+                          <label class="slot-label">Heure de fin</label>
+                          <input type="time" class="premium-input" [(ngModel)]="slot.end">
+                        </div>
+                      </div>
+                      <button *ngIf="timeSlots.length > 1" class="btn-remove-slot" (click)="removeTimeSlot(i)">
+                        <i class="pi pi-trash"></i> Supprimer ce créneau
+                      </button>
+                    </div>
+                    <button class="btn-inline mt-2" (click)="addTimeSlot()">
+                      <i class="pi pi-plus"></i> Ajouter un autre créneau
+                    </button>
+                  </div>
+
+                  <div class="form-group">
+                    <label>Durée de session *</label>
+                    <input type="text" class="premium-input" [(ngModel)]="sessionDuration" placeholder="1h">
+                    <p class="field-help">Exemples : 30 min, 45 min, 1h, 1h30, 2h</p>
+                  </div>
+              </div>
+              <div class="modal-actions">  
                       <button class="btn-outline" (click)="showDispoModal = false">Annuler</button>
                       <button class="btn-primary" [disabled]="!selectedThematiqueId" (click)="addDisponibilite()">Ajouter la disponibilité</button>
-                  </div>
+                  
               </div>
           </div>
       </div>
@@ -167,14 +218,25 @@ import { AuthService } from '../../frontoffice/service/auth.service';
     .shadow-glow { box-shadow: 0 4px 15px rgba(233,30,99,0.4); }
     .btn-outline { background: white; border: 1px solid #E2E8F0; color: #4A5568; padding: 0.8rem 1.5rem; border-radius: 12px; font-weight: 600; cursor: pointer; }
     .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 2rem; }
-    .modal-content { background: white; border-radius: 1.5rem; width: 100%; max-width: 500px; padding: 2rem; box-shadow: 0 20px 40px rgba(0,0,0,0.1); animation: slide-up 0.3s ease-out; }
-    .modal-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; }
+    .modal-content { background: white; border-radius: 1.5rem; width: 100%; max-width: 620px; max-height: calc(100vh - 4rem); box-shadow: 0 20px 40px rgba(0,0,0,0.1); animation: slide-up 0.3s ease-out; overflow: hidden; display: flex; flex-direction: column; }
+    .modal-header { display: flex; justify-content: space-between; align-items: flex-start; padding: 1.4rem 1.6rem 1rem; border-bottom: 1px solid #EDF2F7; }
     .modal-header h2 { font-size: 1.3rem; font-weight: 700; color: #2D3748; margin: 0; }
-    .close-btn { background: none; border: none; font-size: 1.2rem; color: #A0AEC0; cursor: pointer; }
+    .modal-body { overflow-y: auto; padding: 1.4rem 1.6rem; display: flex; flex-direction: column; gap: 1rem; }
     .form-group label { display: block; font-size: 0.9rem; font-weight: 600; color: #4A5568; margin-bottom: 0.5rem; }
     .premium-input { width: 100%; padding: 0.75rem 1rem; border-radius: 10px; border: 1px solid #E2E8F0; background: #F8FAFC; font-family: inherit; font-size: 0.95rem; color: #2D3748; outline: none; }
     .premium-input:focus { border-color: #FF4D85; box-shadow: 0 0 0 3px rgba(255,77,133,0.1); }
-    .modal-actions { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1rem; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 1rem; padding: 1rem 1.6rem 1.2rem; border-top: 1px solid #EDF2F7; }
+    .btn-inline { width: 100%; border: 1px solid #E2E8F0; background: white; color: #4A5568; border-radius: 16px; padding: 0.75rem 1rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+    .btn-inline:hover { background: #F8FAFC; }
+    .secondary-date { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem; }
+    .hidden { display: none; }
+    .btn-remove-inline { border: 1px solid #FECACA; background: #FFF1F2; color: #E11D48; border-radius: 10px; height: 42px; width: 42px; cursor: pointer; flex-shrink: 0; }
+    .field-help { font-size: 0.85rem; color: #718096; margin: 0.45rem 0 0; }
+    .slot-card { background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 14px; padding: 0.85rem; margin-bottom: 0.6rem; }
+    .slot-title { font-size: 0.95rem; font-weight: 700; color: #4A5568; margin-bottom: 0.5rem; }
+    .slot-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .slot-label { margin-bottom: 0.35rem !important; font-size: 0.85rem !important; }
+    .btn-remove-slot { margin-top: 0.7rem; border: 1px solid #FECACA; background: #FFF1F2; color: #E11D48; border-radius: 10px; padding: 0.45rem 0.7rem; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
     .loading-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.7); z-index: 999; display: flex; align-items: center; justify-content: center; }
     .spinner { width: 40px; height: 40px; border: 4px solid #EDF2F7; border-top-color: #FF4D85; border-radius: 50%; animation: spin 0.8s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -186,6 +248,10 @@ export class DisponibilitesComponent implements OnInit {
   loading: boolean = false;
   showDispoModal: boolean = false;
   selectedThematiqueId: number | null = null;
+  newDispoTitle: string = '';
+  availabilityDates: string[] = [''];
+  timeSlots: { start: string; end: string }[] = [{ start: '', end: '' }];
+  sessionDuration: string = '1h';
 
   disponibilites: DisponibiliteDTO[] = [];
   sessions: SessionCoachDTO[] = [];
@@ -281,11 +347,36 @@ export class DisponibilitesComponent implements OnInit {
       next: (data) => {
         this.disponibilites.push(data);
         this.buildCalendarEventsFromDispos();
-        this.selectedThematiqueId = null;
-        this.showDispoModal = false;
+        this.resetModalForm();
       },
       error: () => {}
     });
+  }
+  addAvailabilityDate() {
+    this.availabilityDates.push('');
+  }
+
+  removeAvailabilityDate(index: number) {
+    if (this.availabilityDates.length === 1) return;
+    this.availabilityDates.splice(index, 1);
+  }
+
+  addTimeSlot() {
+    this.timeSlots.push({ start: '', end: '' });
+  }
+
+  removeTimeSlot(index: number) {
+    if (this.timeSlots.length === 1) return;
+    this.timeSlots.splice(index, 1);
+  }
+
+  private resetModalForm() {
+    this.selectedThematiqueId = null;
+    this.newDispoTitle = '';
+    this.availabilityDates = [''];
+    this.timeSlots = [{ start: '', end: '' }];
+    this.sessionDuration = '1h';
+    this.showDispoModal = false;
   }
 
   deleteDispo(id: number) {

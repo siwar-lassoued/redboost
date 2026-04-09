@@ -24,7 +24,6 @@ export class NotificationWebSocketService {
   // backend endpoints
   private apiUrl = 'https://redboost.tn/api/notifications';
   private wsUrl = 'https://redboost.tn/ws';
-
   private stompClient: Client | null = null;
   
   // State management

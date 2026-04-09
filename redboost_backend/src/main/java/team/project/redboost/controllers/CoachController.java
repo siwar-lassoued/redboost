@@ -108,7 +108,10 @@ public class CoachController {
     public ResponseEntity<List<UpcomingSessionDTO>> getUpcomingSessions(@PathVariable Long coachId) {
         return ResponseEntity.ok(coachService.getUpcomingSessions(coachId));
     }
-
+    @GetMapping("/{coachId}/dashboard-overview")
+    public ResponseEntity<CoachDashboardOverviewDTO> getDashboardOverview(@PathVariable Long coachId) {
+        return ResponseEntity.ok(coachService.getDashboardOverview(coachId));
+    }
     @GetMapping("/{coachId}/entrepreneurs/{entrepreneurId}/details")
     public ResponseEntity<CoachEntrepreneurDetailDTO> getEntrepreneurDetail(
             @PathVariable Long coachId, 
