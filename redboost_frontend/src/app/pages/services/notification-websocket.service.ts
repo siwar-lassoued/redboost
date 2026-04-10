@@ -70,7 +70,9 @@ export class NotificationWebSocketService {
 
     
     this.stompClient = new Client({
-      webSocketFactory: () => new SockJS(this.wsUrl),
+      webSocketFactory: () => new SockJS(this.wsUrl, null, {
+        transports: ['xhr-streaming', 'xhr-polling']
+      }),
       connectHeaders: {
         Authorization: `Bearer ${token}`
       },
