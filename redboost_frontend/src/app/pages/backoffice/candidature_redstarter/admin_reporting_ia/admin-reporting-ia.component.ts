@@ -16,243 +16,198 @@ type MoisOption = 'current' | 'last' | 'custom';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="page-wrapper min-h-screen bg-gray-50 pb-20">
-      <!-- ── Header ─────────────────────────────────────────── -->
-      <div class="flex items-center justify-between mb-8 px-6 pt-6">
+    <div class="matching-page">
+      <!-- ── Header ─────────────────────── -->
+      <div class="matching-header">
         <div>
-          <h1 class="text-3xl font-extrabold text-[#1A1A2E] tracking-tight m-0">Reporting & Performance</h1>
-          <p class="text-gray-500 text-sm mt-1">Générez des rapports analytiques et holistiques sur vos programmes</p>
+          <h1 class="matching-title">Reporting & Performance</h1>
+          <p class="matching-subtitle">Générez des rapports analytiques et holistiques sur vos programmes</p>
         </div>
-        <div class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-[#FF4D85] bg-[#fff0f5] border border-[#FF4D85]/20 shadow-sm">
-          <i class="pi pi-star fill-[#FF4D85]/20" style="font-size: 1.25rem;"></i>
-          IA RedBoost
+        <div class="header-actions">
+          <div class="ia-badge">
+            <i class="pi pi-star"></i> IA RedBoost
+          </div>
         </div>
       </div>
 
-      <!-- ── Section 1 — Générateur ─────────────────────────── -->
-      <div class="mx-6 bg-white rounded-2xl p-8 mb-10 shadow-sm" style="border: 1px solid rgba(0,0,0,0.04);">
-        <div class="flex items-center gap-3 mb-6">
-          <div class="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-md" style="background: var(--gradient-pink, linear-gradient(135deg, #FF6B9E 0%, #E83E8C 100%));">
-            <i class="pi pi-plus-circle" style="font-size: 1.25rem;"></i>
-          </div>
+      <!-- ── Générateur ─────────────────────── -->
+      <div class="card">
+        <div class="card-header-row">
+          <div class="card-icon"><i class="pi pi-plus-circle"></i></div>
           <div>
-            <h2 class="text-xl font-bold text-[#1A1A2E] m-0">Générer un rapport Stratégique</h2>
-            <p class="text-xs text-gray-400">Croisement automatique des sessions, tâches, et livrables (documents partagés).</p>
+            <h2 class="card-title">Générer un rapport Stratégique</h2>
+            <p class="hint" style="margin-top:2px;">Croisement automatique des sessions, tâches, et livrables (documents partagés).</p>
           </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
-          <div class="space-y-6">
-            <!-- Programme -->
-            <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">Programme d'incubation</label>
-              <div class="relative">
-                <select 
-                  [ngModel]="selectedProgramId()"
-                  (ngModelChange)="selectedProgramId.set($event)"
-                  class="w-full border border-gray-200 rounded-xl py-3 px-4 text-sm focus:outline-none focus:border-[#FF4D85] bg-gray-50 appearance-none font-medium cursor-pointer transition-colors"
-                >
-                  <option value="0" disabled>Choisir un programme...</option>
-                  <option *ngFor="let p of programmes()" [value]="p.id">{{ p.nom }}</option>
-                </select>
-                <i class="pi pi-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" style="font-size: 1.25rem;"></i>
-              </div>
+        <div class="form-grid">
+          <!-- Left Column -->
+          <div style="display:flex; flex-direction:column; gap:20px;">
+            <div class="form-group">
+              <label>Programme d'incubation <span class="required">*</span></label>
+              <select [ngModel]="selectedProgramId()" (ngModelChange)="selectedProgramId.set($event)" class="form-select">
+                <option [ngValue]="0" disabled>Choisir un programme...</option>
+                <option *ngFor="let p of programmes()" [value]="p.id">{{ p.nom }}</option>
+              </select>
             </div>
 
-            <!-- Période -->
-            <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">Période d'analyse</label>
-              <div class="flex bg-gray-100 p-1.5 rounded-xl">
+            <div class="form-group">
+              <label>Période d'analyse <span class="required">*</span></label>
+              <div class="period-tabs">
                 <button *ngFor="let pt of periodTypes"
                     (click)="periodType.set(pt.id)"
-                    class="flex-1 py-2 rounded-lg text-xs font-bold transition-all border-none cursor-pointer"
-                    [ngStyle]="{'background': periodType() === pt.id ? 'var(--gradient-pink, #FF4D85)' : 'transparent', 'color': periodType() === pt.id ? 'white' : '#6B7280', 'box-shadow': periodType() === pt.id ? '0 2px 4px rgba(255,107,158,0.2)' : 'none'}">
+                    class="period-btn"
+                    [class.active]="periodType() === pt.id">
                   {{ pt.label }}
                 </button>
               </div>
             </div>
 
-            <div class="min-h-[80px]">
-              <div *ngIf="periodType() === 'LIBRE'" class="grid grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-xs font-bold text-gray-500 mb-1">Du</label>
-                  <input type="date" [(ngModel)]="dateFrom" class="w-full border border-gray-200 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-[#FF4D85] bg-gray-50 font-medium">
+            <div class="form-group" style="min-height:80px;">
+              <div *ngIf="periodType() === 'LIBRE'" style="display:flex; gap:16px;">
+                <div style="flex:1">
+                  <label class="hint" style="display:block; margin-bottom:4px;">Du</label>
+                  <input type="date" [(ngModel)]="dateFrom" class="form-input">
                 </div>
-                <div>
-                  <label class="block text-xs font-bold text-gray-500 mb-1">Au</label>
-                  <input type="date" [(ngModel)]="dateTo" class="w-full border border-gray-200 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-[#FF4D85] bg-gray-50 font-medium">
+                <div style="flex:1">
+                  <label class="hint" style="display:block; margin-bottom:4px;">Au</label>
+                  <input type="date" [(ngModel)]="dateTo" class="form-input">
                 </div>
               </div>
 
-              <div *ngIf="periodType() === 'HEBDO'" class="flex flex-wrap gap-2">
-                <label *ngFor="let opt of hebdoOptions" class="flex-1 flex items-center justify-center gap-2 p-3 rounded-xl border-2 cursor-pointer transition-colors" [class]="hebdoOpt() === opt.val ? 'border-[#FF4D85] bg-[#fff0f5] text-[#FF4D85]' : 'border-gray-100 bg-gray-50 text-gray-500'">
-                  <input type="radio" name="hebdo" [value]="opt.val" [ngModel]="hebdoOpt()" (ngModelChange)="hebdoOpt.set($event)" class="hidden">
-                  <span class="text-xs font-bold">{{ opt.label }}</span>
+              <div *ngIf="periodType() === 'HEBDO'" style="display:flex; flex-wrap:wrap; gap:8px;">
+                <label *ngFor="let opt of hebdoOptions" class="opt-label" [class.active-opt]="hebdoOpt() === opt.val">
+                  <input type="radio" name="hebdo" [value]="opt.val" [ngModel]="hebdoOpt()" (ngModelChange)="hebdoOpt.set($event)" style="display:none;">
+                  {{ opt.label }}
                 </label>
-                <input *ngIf="hebdoOpt() === 'custom'" type="week" [(ngModel)]="customWeek" class="w-full mt-2 border border-gray-200 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-[#FF4D85] bg-gray-50 font-medium">
+                <input *ngIf="hebdoOpt() === 'custom'" type="week" [(ngModel)]="customWeek" class="form-input" style="margin-top:8px;">
               </div>
 
-              <div *ngIf="periodType() === 'MOIS'" class="flex flex-wrap gap-2">
-                <label *ngFor="let opt of moisOptions" class="flex-1 flex items-center justify-center gap-2 p-3 rounded-xl border-2 cursor-pointer transition-colors" [class]="moisOpt() === opt.val ? 'border-[#FF4D85] bg-[#fff0f5] text-[#FF4D85]' : 'border-gray-100 bg-gray-50 text-gray-500'">
-                  <input type="radio" name="mois" [value]="opt.val" [ngModel]="moisOpt()" (ngModelChange)="moisOpt.set($event)" class="hidden">
-                  <span class="text-xs font-bold">{{ opt.label }}</span>
+              <div *ngIf="periodType() === 'MOIS'" style="display:flex; flex-wrap:wrap; gap:8px;">
+                <label *ngFor="let opt of moisOptions" class="opt-label" [class.active-opt]="moisOpt() === opt.val">
+                  <input type="radio" name="mois" [value]="opt.val" [ngModel]="moisOpt()" (ngModelChange)="moisOpt.set($event)" style="display:none;">
+                  {{ opt.label }}
                 </label>
-                <input *ngIf="moisOpt() === 'custom'" type="month" [(ngModel)]="customMonth" class="w-full mt-2 border border-gray-200 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-[#FF4D85] bg-gray-50 font-medium">
+                <input *ngIf="moisOpt() === 'custom'" type="month" [(ngModel)]="customMonth" class="form-input" style="margin-top:8px;">
               </div>
             </div>
           </div>
 
-          <div class="space-y-6">
-            <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-3">Données traitées</label>
-              <div class="space-y-3">
-                <div *ngFor="let inc of inclusionItems" class="flex items-center gap-3 p-3 rounded-xl border border-gray-100 bg-gray-50 opacity-90 pointer-events-none">
-                  <div class="w-5 h-5 rounded flex items-center justify-center text-white" style="background: var(--gradient-pink, #FF4D85)">
-                    <i class="pi pi-check" style="font-size: 1.25rem;"></i>
-                  </div>
-                  <i [class]="'pi pi-' + inc.icon + ' text-gray-400'"></i>
-                  <span class="text-sm font-semibold text-gray-600">{{ inc.label }}</span>
+          <!-- Right Column -->
+          <div>
+            <div class="form-group">
+              <label>Données traitées par l'IA</label>
+              <div style="display:flex; flex-direction:column; gap:12px; margin-top:8px;">
+                <div *ngFor="let inc of inclusionItems" class="data-item">
+                  <div class="data-icon"><i class="pi pi-check"></i></div>
+                  <i [class]="'pi pi-' + inc.icon" style="color:#9CA3AF; margin-right:8px;"></i>
+                  <span>{{ inc.label }}</span>
                 </div>
               </div>
-              <p class="text-xs text-gray-400 mt-4 leading-relaxed bg-[#fff0f5] p-3 rounded-xl border border-[#ffb3c6]">
-                 <i class="pi pi-info-circle inline text-[#FF4D85] -mt-0.5 mr-1" style="font-size: 1.25rem;"></i>
-              </p>
             </div>
           </div>
         </div>
 
-        <div class="mt-8 pt-6 border-t border-gray-100">
-          <button 
-            (click)="handleGenerate()"
-            [disabled]="loading() || selectedProgramId() === 0"
-            class="w-full flex items-center justify-center gap-3 py-4 rounded-xl text-white font-bold transition-all hover:opacity-90 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
-            style="background: var(--gradient-pink, linear-gradient(135deg, #FF6B9E 0%, #E83E8C 100%)); box-shadow: 0 4px 14px rgba(255,107,158,0.3)"
-          >
-            <ng-container *ngIf="loading()">
-              <i class="pi pi-spinner pi-spin " style="font-size: 1.25rem;"></i>
-              <span class="text-lg tracking-wide">Traitement en cours...</span>
-            </ng-container>
-            <ng-container *ngIf="!loading()">
-              <i class="pi pi-bolt  text-white" style="font-size: 1.25rem;"></i>
-              <span class="text-lg tracking-wide">Générer le rapport stratégique</span>
-            </ng-container>
+        <div class="launch-section">
+          <button (click)="handleGenerate()" [disabled]="loading() || selectedProgramId() === 0" class="btn-launch" style="width:100%; justify-content:center;">
+            <i [class]="loading() ? 'pi pi-spinner pi-spin' : 'pi pi-bolt'"></i>
+            {{ loading() ? 'Veuillez patienter, traitement en cours...' : 'Générer le rapport stratégique' }}
           </button>
         </div>
       </div>
 
-      <!-- ── Section 2 — Rapport Généré ─────────────────────── -->
-      <div id="reportToDownload" *ngIf="generatedReport() as report" class="mx-6 bg-white rounded-2xl overflow-hidden shadow-sm mb-10" style="border: 1px solid rgba(0,0,0,0.04);">
-        <div class="px-8 py-5 border-b border-gray-100 flex items-center justify-between" style="background: linear-gradient(to right, #ffffff, #fff0f5)">
+      <!-- ── Rapport Généré ─────────────────────── -->
+      <div id="reportToDownload" *ngIf="generatedReport() as report" class="card" style="padding:0; overflow:hidden; border-left:5px solid #ea5073;">
+        <div class="report-header">
           <div>
-            <div class="flex items-center gap-3">
-              <i class="pi pi-file text-[#FF4D85]" style="font-size: 1.25rem;"></i>
-              <h2 class="text-2xl font-black text-[#1A1A2E] m-0 tracking-tight">Rapport d'Activité</h2>
-            </div>
-            <p class="text-xs text-gray-500 mt-1 font-medium">
-              <span class="text-[#FF4D85] font-bold uppercase tracking-wider bg-[#FF4D85]/10 px-2 py-0.5 rounded mr-2">{{ report.periodType }}</span>
-              {{ report.periodLabel }} • Généré par <span class="font-bold border-b border-dashed border-gray-300 pb-0.5">{{ report.generatedBy }}</span>
+            <h2 class="card-title" style="display:flex; align-items:center; gap:10px;">
+              <i class="pi pi-file" style="color:#ea5073;"></i> Rapport d'Activité
+            </h2>
+            <p class="hint" style="margin-top:6px;">
+              <span class="report-tag">{{ report.periodType }}</span>
+              {{ report.periodLabel }} • Généré par <strong>{{ report.generatedBy }}</strong>
             </p>
           </div>
-          <div class="flex gap-2">
-             <button (click)="downloadPdf()" [disabled]="downloadingPdf()" class="text-white px-4 py-2 rounded-xl transition-colors cursor-pointer border-none font-bold text-sm shadow-sm flex items-center gap-2 hover:opacity-90" style="background: var(--gradient-pink, linear-gradient(135deg, #FF6B9E 0%, #E83E8C 100%));">
-               <i class="pi" [ngClass]="downloadingPdf() ? 'pi-spinner pi-spin' : 'pi-file-pdf'" style="font-size: 1.1rem;"></i>
-               <span *ngIf="!downloadingPdf()">Télécharger PDF</span>
-               <span *ngIf="downloadingPdf()">Génération...</span>
+          <div style="display:flex; gap:8px;">
+             <button (click)="downloadPdf()" [disabled]="downloadingPdf()" class="btn-launch" style="padding:8px 16px; font-size:13px;">
+               <i class="pi" [ngClass]="downloadingPdf() ? 'pi-spinner pi-spin' : 'pi-file-pdf'"></i>
+               {{ downloadingPdf() ? 'Génération...' : 'Télécharger PDF' }}
              </button>
-             <button (click)="generatedReport.set(null)" class="text-gray-400 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 p-2 rounded-xl transition-colors cursor-pointer border-none">
-               <i class="pi pi-times" style="font-size: 1.25rem;"></i>
+             <button (click)="generatedReport.set(null)" class="btn-cancel" style="padding:8px 12px;">
+               <i class="pi pi-times"></i>
              </button>
           </div>
         </div>
 
-        <div class="p-8">
+        <div style="padding:24px;">
           <!-- KPIs -->
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div class="rounded-2xl p-5 border border-blue-100 bg-blue-50/50 flex flex-col justify-center items-center">
-              <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mb-3">
-                <i class="pi pi-calendar" style="font-size: 1.25rem;"></i>
-              </div>
-              <div class="text-3xl font-black text-blue-600 leading-none mb-1">{{ report.sessionsCompleted }}<span class="text-sm text-blue-400 font-bold ml-1">/{{report.totalSessions}}</span></div>
-              <div class="text-[10px] font-bold text-blue-800 uppercase tracking-widest text-center mt-1">Sessions Validées</div>
+          <div class="kpi-grid">
+            <div class="kpi-box blue-kpi">
+              <i class="pi pi-calendar kpi-icon"></i>
+              <div class="kpi-val">{{ report.sessionsCompleted }}<span class="kpi-max">/{{report.totalSessions}}</span></div>
+              <div class="kpi-label">Sessions Validées</div>
             </div>
-            <div class="rounded-2xl p-5 border-emerald-100 bg-emerald-50/50 flex flex-col justify-center items-center">
-              <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-3">
-                <i class="pi pi-check-square" style="font-size: 1.25rem;"></i>
-              </div>
-              <div class="text-3xl font-black text-emerald-600 leading-none mb-1">{{ report.tachesCompleted }}<span class="text-sm text-emerald-400 font-bold ml-1">/{{report.totalTaches}}</span></div>
-              <div class="text-[10px] font-bold text-emerald-800 uppercase tracking-widest text-center mt-1">Tâches Clôturées</div>
+            <div class="kpi-box green-kpi">
+              <i class="pi pi-check-square kpi-icon"></i>
+              <div class="kpi-val">{{ report.tachesCompleted }}<span class="kpi-max">/{{report.totalTaches}}</span></div>
+              <div class="kpi-label">Tâches Clôturées</div>
             </div>
-            <div class="rounded-2xl p-5 border-purple-100 bg-purple-50/50 flex flex-col justify-center items-center">
-              <div class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center mb-3">
-                <i class="pi pi-id-card" style="font-size: 1.25rem;"></i>
-              </div>
-              <div class="text-3xl font-black text-purple-600 leading-none mb-1">{{ report.totalLivrables }}</div>
-              <div class="text-[10px] font-bold text-purple-800 uppercase tracking-widest text-center mt-1">Livrables Soumis</div>
+            <div class="kpi-box purple-kpi">
+              <i class="pi pi-id-card kpi-icon"></i>
+              <div class="kpi-val">{{ report.totalLivrables }}</div>
+              <div class="kpi-label">Livrables Soumis</div>
             </div>
-            <!-- Empty metric or rating -->
-            <div class="rounded-2xl p-5 border-amber-100 bg-amber-50/50 flex flex-col justify-center items-center">
-              <div class="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mb-3">
-                <i class="pi pi-chart-line" style="font-size: 1.25rem;"></i>
-              </div>
-              <div class="text-3xl font-black text-amber-600 leading-none mb-1">{{ (report.tachesCompleted / (report.totalTaches || 1) * 100).toFixed(0) }}%</div>
-              <div class="text-[10px] font-bold text-amber-800 uppercase tracking-widest text-center mt-1">Progression Proj.</div>
+            <div class="kpi-box yellow-kpi">
+              <i class="pi pi-chart-line kpi-icon"></i>
+              <div class="kpi-val">{{ (report.tachesCompleted / (report.totalTaches || 1) * 100).toFixed(0) }}%</div>
+              <div class="kpi-label">Progression Proj.</div>
             </div>
           </div>
 
           <!-- Exec Summary -->
-          <div class="bg-[#f8f9fa] border-l-4 border-[#FF4D85] p-6 rounded-r-xl mb-8">
-            <h3 class="text-sm font-black text-[#1A1A2E] uppercase tracking-wider mb-3 flex items-center gap-2">
-              <i class="pi pi-star text-[#FF4D85]" style="font-size: 1.25rem;"></i> Résumé Exécutif
-            </h3>
-            <p class="text-gray-700 leading-relaxed font-medium text-sm">{{ report.resumeExecutif }}</p>
+          <div class="exec-summary">
+            <h3><i class="pi pi-star" style="color:#ea5073; margin-right:8px;"></i> Résumé Exécutif</h3>
+            <p>{{ report.resumeExecutif }}</p>
           </div>
 
           <!-- Analyse Livrables -->
-          <div class="bg-gray-50 border border-gray-100 p-6 rounded-xl mb-8" *ngIf="report.analyseLivrables">
-            <h3 class="text-sm font-black text-purple-800 uppercase tracking-wider mb-3 flex items-center gap-2">
-              <i class="pi pi-book text-purple-600" style="font-size: 1.25rem;"></i> Synthèse des Livrables lus par l'IA
-            </h3>
-            <p class="text-gray-600 leading-relaxed text-sm">{{ report.analyseLivrables }}</p>
+          <div class="livrables-summary" *ngIf="report.analyseLivrables">
+            <h3><i class="pi pi-book" style="margin-right:8px;"></i> Synthèse des Livrables lus par l'IA</h3>
+            <p>{{ report.analyseLivrables }}</p>
           </div>
 
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div class="form-grid">
             <!-- Highlights -->
             <div>
-              <h3 class="text-sm font-black text-emerald-600 uppercase tracking-wider mb-4 flex items-center gap-2">
-                <i class="pi pi-chart-line" style="font-size: 1.25rem;"></i> Points de Succès
-              </h3>
-              <ul class="space-y-3">
-                <li *ngFor="let k of getParsed(report.kpisJson)" class="flex items-start gap-3 bg-white border border-emerald-50 p-4 rounded-xl shadow-sm">
-                  <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-2 flex-shrink-0"></div>
-                  <span class="text-sm text-gray-700 font-medium">{{ k }}</span>
-                </li>
-              </ul>
+              <h3 class="section-title green-title"><i class="pi pi-chart-line"></i> Points de Succès</h3>
+              <div style="display:flex; flex-direction:column; gap:12px;">
+                <div *ngFor="let k of getParsed(report.kpisJson)" class="highlight-item">
+                  <div class="dot-green"></div>
+                  <span>{{ k }}</span>
+                </div>
+              </div>
             </div>
 
             <!-- Alerts & Recos -->
-            <div class="space-y-6">
+            <div style="display:flex; flex-direction:column; gap:24px;">
               <div>
-                <h3 class="text-sm font-black text-red-600 uppercase tracking-wider mb-4 flex items-center gap-2">
-                  <i class="pi pi-exclamation-triangle" style="font-size: 1.25rem;"></i> Vigilance & Retards
-                </h3>
-                <div class="space-y-3">
-                  <div *ngFor="let a of getParsedAlerts(report.alertesJson)" class="flex items-start gap-3 bg-[#FEF2F2] border border-red-100 p-4 rounded-xl">
-                     <i class="pi pi-megaphone text-red-500 flex-shrink-0 mt-0.5" style="font-size: 1.25rem;"></i>
+                <h3 class="section-title red-title"><i class="pi pi-exclamation-triangle"></i> Vigilance & Retards</h3>
+                <div style="display:flex; flex-direction:column; gap:12px;">
+                  <div *ngFor="let a of getParsedAlerts(report.alertesJson)" class="alert-item">
+                     <i class="pi pi-megaphone"></i>
                      <div>
-                       <span class="block text-[10px] font-black text-red-600 uppercase tracking-widest mb-1">{{ a.type || 'ALERTE' }}</span>
-                       <span class="text-sm text-red-900 font-medium leading-tight">{{ a.message || a }}</span>
+                       <span class="alert-type">{{ a.type || 'ALERTE' }}</span>
+                       <span class="alert-msg">{{ a.message || a }}</span>
                      </div>
                   </div>
-                  <div *ngIf="getParsedAlerts(report.alertesJson).length === 0" class="text-sm text-gray-400 italic p-2">Aucune alerte soulevée.</div>
+                  <div *ngIf="getParsedAlerts(report.alertesJson).length === 0" class="hint">Aucune alerte soulevée.</div>
                 </div>
               </div>
 
               <div>
-                <h3 class="text-sm font-black text-blue-600 uppercase tracking-wider mb-4 flex items-center gap-2">
-                  <i class="pi pi-lightbulb" style="font-size: 1.25rem;"></i> Recommandations Stratégiques
-                </h3>
-                <div class="space-y-3">
-                  <div *ngFor="let r of getParsed(report.recommandationsJson)" class="bg-[#EFF6FF] text-blue-900 p-4 rounded-xl text-sm font-medium border border-blue-100 shadow-sm leading-relaxed">
+                <h3 class="section-title blue-title"><i class="pi pi-lightbulb"></i> Recommandations Stratégiques</h3>
+                <div style="display:flex; flex-direction:column; gap:12px;">
+                  <div *ngFor="let r of getParsed(report.recommandationsJson)" class="reco-item">
                      {{ r }}
                   </div>
                 </div>
@@ -262,58 +217,48 @@ type MoisOption = 'current' | 'last' | 'custom';
         </div>
       </div>
 
-      <!-- ── Section 3 — Historique ─────────────────────────── -->
-      <div class="mx-6">
-        <div class="flex items-center justify-between mb-6">
-          <h2 class="text-xl font-bold text-[#1A1A2E] m-0">Historique des Rapports</h2>
-          <span class="text-xs bg-gray-200 text-gray-600 px-3 py-1 rounded-full font-bold">{{ history().length }} rapports archivés</span>
+      <!-- ── Historique ─────────────────────── -->
+      <div class="card">
+        <div class="card-header-row" style="margin-bottom:0;">
+          <div class="card-icon" style="background:#F3F4F6; color:#6B7280;"><i class="pi pi-history"></i></div>
+          <h2 class="card-title">Historique des Rapports ({{ history().length }})</h2>
         </div>
 
-        <div class="bg-white rounded-xl shadow-sm overflow-hidden" style="border: 1px solid rgba(0,0,0,0.04);">
-          <div *ngIf="history().length === 0" class="py-12 flex flex-col items-center justify-center text-gray-400">
-            <i class="pi pi-copy opacity-20 mb-3" style="font-size: 1.25rem;"></i>
-            <p class="text-sm font-medium">Aucun rapport d'activité n'est disponible</p>
+        <div style="margin-top:20px;">
+          <div *ngIf="history().length === 0" class="empty-state-inline">
+            <p>Aucun rapport d'activité n'est disponible pour ce programme.</p>
           </div>
 
-          <table *ngIf="history().length > 0" class="w-full text-left border-collapse">
+          <table *ngIf="history().length > 0" class="history-table">
             <thead>
-              <tr class="bg-gray-50 border-b border-gray-100">
-                <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Programme</th>
-                <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Type Période</th>
-                <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Couverture</th>
-                <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Santé (Tâches)</th>
-                <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
+              <tr>
+                <th>Programme / Date</th>
+                <th>Période</th>
+                <th>Santé (Tâches)</th>
+                <th style="text-align:right;">Actions</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-gray-50">
-              <tr *ngFor="let h of history()" class="hover:bg-gray-50/50 transition-colors">
-                <td class="px-6 py-4">
-                  <div class="text-sm font-bold text-[#1A1A2E]">{{ h.programme?.nom || 'Programme N/A' }}</div>
-                  <div class="text-xs text-gray-400 mt-0.5">Le {{ h.dateGeneration }}</div>
+            <tbody>
+              <tr *ngFor="let h of history()">
+                <td>
+                  <div style="font-weight:700; color:#1A1A2E;">{{ h.programme?.nom || 'Programme N/A' }}</div>
+                  <div class="hint">Le {{ h.dateGeneration }}</div>
                 </td>
-                <td class="px-6 py-4">
-                  <span class="text-[10px] bg-[#fff0f5] text-[#FF4D85] px-2.5 py-1 rounded-full font-black uppercase tracking-wider border border-[#ffb3c6]/40">{{ h.periodType }}</span>
+                <td>
+                  <span class="report-tag">{{ h.periodType }}</span>
+                  <div style="font-size:13px; margin-top:4px; font-weight:500;">{{ h.periodLabel }}</div>
                 </td>
-                <td class="px-6 py-4 text-sm text-gray-600 font-medium">
-                  {{ h.periodLabel }}
-                </td>
-                <td class="px-6 py-4">
-                  <div class="flex items-center gap-2">
-                    <div class="w-16 h-2 bg-gray-100 rounded-full overflow-hidden">
-                       <div class="h-full bg-emerald-500 rounded-full" [style.width]="(h.tachesCompleted / (h.totalTaches || 1) * 100) + '%'"></div>
+                <td>
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <div style="width:60px; height:6px; background:#F3F4F6; border-radius:10px; overflow:hidden;">
+                       <div style="height:100%; background:#10B981; border-radius:10px;" [style.width]="(h.tachesCompleted / (h.totalTaches || 1) * 100) + '%'"></div>
                     </div>
-                    <span class="text-xs font-bold text-emerald-600">{{ h.tachesCompleted }}/{{ h.totalTaches }}</span>
+                    <span style="font-size:12px; font-weight:700; color:#059669;">{{ h.tachesCompleted }}/{{ h.totalTaches }}</span>
                   </div>
                 </td>
-                <td class="px-6 py-4">
-                  <div class="flex items-center justify-end gap-2">
-                    <button (click)="generatedReport.set(h)" class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors border-none bg-transparent cursor-pointer" title="Voir">
-                       <i class="pi pi-eye" style="font-size: 1.25rem;"></i>
-                    </button>
-                    <button (click)="handleDelete(h.id)" class="p-2 text-red-400 hover:bg-red-50 hover:text-red-500 rounded-lg transition-colors border-none bg-transparent cursor-pointer" title="Supprimer">
-                       <i class="pi pi-trash" style="font-size: 1.25rem;"></i>
-                    </button>
-                  </div>
+                <td style="text-align:right;">
+                  <button (click)="generatedReport.set(h)" class="btn-sm"><i class="pi pi-eye"></i></button>
+                  <button (click)="handleDelete(h.id)" class="btn-sm btn-sm-danger" style="margin-left:6px;"><i class="pi pi-trash"></i></button>
                 </td>
               </tr>
             </tbody>
@@ -324,6 +269,183 @@ type MoisOption = 'current' | 'last' | 'custom';
   `,
   styles: [`
     :host { display: block; }
+    
+    /* Variables communes depuis admin_matching.ts */
+    .matching-page { padding: 24px; background: #F5F6FA; min-height: 100vh; }
+    .matching-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }
+    .matching-title { font-size: 28px; font-weight: 800; color: #1A1A2E; margin: 0; }
+    .matching-subtitle { color: #8a8a8a; font-size: 14px; margin-top: 4px; }
+    .header-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+    .ia-badge {
+      display: flex; align-items: center; gap: 6px; padding: 8px 16px;
+      border-radius: 12px; font-size: 13px; font-weight: 700; color: #fff;
+      background: linear-gradient(135deg, #ea5073, #6d3345);
+    }
+    .card {
+      background: #fff; border-radius: 20px; padding: 24px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.07); margin-bottom: 20px;
+    }
+    .card-header-row { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+    .card-icon {
+      width: 36px; height: 36px; border-radius: 10px; display: flex;
+      align-items: center; justify-content: center; font-size: 16px;
+      background: linear-gradient(135deg, #ea5073, #6d3345); color: white;
+    }
+    .card-title { font-size: 18px; font-weight: 700; color: #1A1A2E; margin: 0; }
+
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+    .form-group { display: flex; flex-direction: column; gap: 8px; }
+    .form-group label { font-size: 13px; font-weight: 600; color: #374151; }
+    .required { color: #ea5073; }
+    .form-select, .form-input {
+      width: 100%; padding: 12px 16px; border: 1px solid #E5E7EB; background: #F9FAFB;
+      border-radius: 12px; font-size: 14px; outline: none; font-weight: 500;
+      color: #333; transition: border-color .2s; box-sizing: border-box;
+    }
+    .form-select:focus, .form-input:focus { border-color: #ea5073; }
+    .hint { font-size: 12px; color: #9CA3AF; margin-top: 4px; }
+    .empty-state-inline {
+      text-align: center; padding: 32px; color: #6B7280; font-size: 14px;
+      background: #F9FAFB; border-radius: 16px; border: 1px dashed #E5E7EB;
+    }
+
+    .btn-launch {
+      display: inline-flex; align-items: center; gap: 8px; padding: 16px 24px;
+      border-radius: 12px; font-size: 15px; font-weight: 700; color: #fff;
+      background: linear-gradient(135deg, #ea5073, #6d3345); border: none;
+      cursor: pointer; transition: all .2s; box-shadow: 0 4px 12px rgba(234, 80, 115, 0.3);
+    }
+    .btn-launch:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
+    .btn-launch:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-cancel {
+      padding: 10px 20px; border-radius: 12px; font-size: 14px; font-weight: 600;
+      background: #F3F4F6; color: #6B7280; border: none; cursor: pointer; transition: background .2s;
+    }
+    .btn-cancel:hover { background: #E5E7EB; }
+    .launch-section { margin-top: 32px; padding-top: 24px; border-top: 1px solid #F3F4F6; }
+
+    /* Period Tabs */
+    .period-tabs { display: flex; background: #F3F4F6; padding: 6px; border-radius: 12px; }
+    .period-btn {
+      flex: 1; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 700;
+      border: none; cursor: pointer; transition: all .2s; background: transparent; color: #6B7280;
+    }
+    .period-btn.active {
+      background: linear-gradient(135deg, #ea5073, #6d3345); color: #fff;
+      box-shadow: 0 2px 4px rgba(234,80,115,0.2);
+    }
+
+    .opt-label {
+      flex: 1; min-width: 100px; display: flex; align-items: center; justify-content: center;
+      padding: 12px; border-radius: 12px; border: 2px solid #F3F4F6; background: #F9FAFB;
+      color: #6B7280; font-size: 12px; font-weight: 700; cursor: pointer; transition: all .2s; text-align: center;
+    }
+    .opt-label.active-opt { border-color: #ea5073; background: #FFF0F5; color: #ea5073; }
+
+    /* Données traitées */
+    .data-item {
+      display: flex; align-items: center; padding: 12px; border-radius: 12px;
+      border: 1px solid #F3F4F6; background: #F9FAFB; font-size: 13px; font-weight: 600; color: #4B5563;
+    }
+    .data-icon {
+      width: 20px; height: 20px; border-radius: 4px; display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, #ea5073, #6d3345); color: #fff; font-size: 10px; margin-right: 12px;
+    }
+
+    /* Report Details Header */
+    .report-header {
+      padding: 20px 24px; border-bottom: 1px solid #F3F4F6;
+      background: linear-gradient(to right, #ffffff, #FFF0F5);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .report-tag {
+      background: rgba(234,80,115,0.1); color: #ea5073; font-weight: 800;
+      padding: 2px 8px; border-radius: 4px; font-size: 10px; text-transform: uppercase; margin-right: 8px;
+    }
+
+    /* KPIs */
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+    .kpi-box {
+      border-radius: 16px; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      border: 1px solid transparent; text-align: center;
+    }
+    .kpi-icon { font-size: 20px; margin-bottom: 12px; }
+    .kpi-val { font-size: 32px; font-weight: 900; line-height: 1; margin-bottom: 4px; }
+    .kpi-max { font-size: 14px; font-weight: 700; opacity: 0.7; margin-left: 4px; }
+    .kpi-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    .blue-kpi { background: #EFF6FF; border-color: #DBEAFE; color: #1D4ED8; }
+    .blue-kpi .kpi-icon { color: #2563EB; width:40px; height:40px; background:#DBEAFE; border-radius:50%; display:flex; align-items:center; justify-content:center; }
+    .green-kpi { background: #ECFDF5; border-color: #D1FAE5; color: #047857; }
+    .green-kpi .kpi-icon { color: #059669; width:40px; height:40px; background:#D1FAE5; border-radius:50%; display:flex; align-items:center; justify-content:center; }
+    .purple-kpi { background: #FAF5FF; border-color: #F3E8FF; color: #6D28D9; }
+    .purple-kpi .kpi-icon { color: #7C3AED; width:40px; height:40px; background:#F3E8FF; border-radius:50%; display:flex; align-items:center; justify-content:center; }
+    .yellow-kpi { background: #FFFBEB; border-color: #FEF3C7; color: #B45309; }
+    .yellow-kpi .kpi-icon { color: #D97706; width:40px; height:40px; background:#FEF3C7; border-radius:50%; display:flex; align-items:center; justify-content:center; }
+
+    /* Summaries */
+    .exec-summary {
+      background: #F9FAFB; border-left: 4px solid #ea5073;
+      padding: 24px; border-radius: 0 16px 16px 0; margin-bottom: 32px;
+    }
+    .exec-summary h3 { font-size: 14px; font-weight: 800; color: #1A1A2E; text-transform: uppercase; margin: 0 0 12px; display: flex; align-items: center; }
+    .exec-summary p { margin: 0; font-size: 14px; color: #374151; line-height: 1.6; font-weight: 500; }
+
+    .livrables-summary {
+      background: #FAFAF9; border: 1px solid #E5E7EB; padding: 24px; border-radius: 16px; margin-bottom: 32px;
+    }
+    .livrables-summary h3 { font-size: 14px; font-weight: 800; color: #4338CA; text-transform: uppercase; margin: 0 0 12px; display: flex; align-items: center; }
+    .livrables-summary p { margin: 0; font-size: 14px; color: #4B5563; line-height: 1.6; }
+
+    .section-title { font-size: 14px; font-weight: 800; text-transform: uppercase; display: flex; align-items: center; gap: 8px; margin: 0 0 16px; }
+    .green-title { color: #059669; }
+    .red-title { color: #DC2626; }
+    .blue-title { color: #2563EB; }
+
+    .highlight-item {
+      display: flex; align-items: flex-start; gap: 12px; padding: 16px; border-radius: 16px;
+      background: #fff; border: 1px solid #ECFDF5; box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+      font-size: 14px; color: #374151; font-weight: 500; line-height: 1.5;
+    }
+    .dot-green { width: 8px; height: 8px; border-radius: 50%; background: #10B981; margin-top: 6px; flex-shrink: 0; }
+
+    .alert-item {
+      display: flex; align-items: flex-start; gap: 12px; padding: 16px; border-radius: 16px;
+      background: #FEF2F2; border: 1px solid #FEE2E2; color: #7F1D1D;
+    }
+    .alert-item i { color: #EF4444; margin-top: 2px; font-size: 18px; }
+    .alert-type { display: block; font-size: 10px; font-weight: 900; color: #DC2626; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+    .alert-msg { font-size: 14px; font-weight: 500; line-height: 1.4; }
+
+    .reco-item {
+      padding: 16px; border-radius: 16px; background: #EFF6FF; border: 1px solid #DBEAFE;
+      color: #1E3A8A; font-size: 14px; font-weight: 500; line-height: 1.6;
+    }
+
+    /* Table */
+    .history-table { width: 100%; border-collapse: collapse; }
+    .history-table th {
+      text-align: left; padding: 16px 20px; font-size: 12px; font-weight: 700; color: #6B7280;
+      text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #E5E7EB; background: #F9FAFB;
+    }
+    .history-table td { padding: 16px 20px; border-bottom: 1px solid #F3F4F6; }
+    .history-table tr:last-child td { border-bottom: none; }
+    .history-table tr:hover td { background: #F9FAFB; }
+
+    .btn-sm {
+      padding: 8px 12px; border-radius: 8px; font-size: 14px; color: #3B82F6;
+      border: none; background: transparent; cursor: pointer; transition: background .2s;
+    }
+    .btn-sm:hover { background: #EFF6FF; }
+    .btn-sm-danger { color: #F87171; }
+    .btn-sm-danger:hover { background: #FEF2F2; color: #EF4444; }
+
+    @media (max-width: 768px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .kpi-grid { grid-template-columns: 1fr 1fr; }
+      .matching-header { flex-direction: column; gap: 12px; }
+      .report-header { flex-direction: column; align-items: flex-start; gap: 16px; }
+    }
   `]
 })
 export class AdminReportingIaComponent implements OnInit {
@@ -506,3 +628,4 @@ export class AdminReportingIaComponent implements OnInit {
     }
   }
 }
+
