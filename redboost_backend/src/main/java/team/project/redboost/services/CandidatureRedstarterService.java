@@ -223,9 +223,9 @@ public class CandidatureRedstarterService {
             
             // Try to pull email from dynamicAnswers if null
             if (emailToUse == null || emailToUse.isEmpty()) {
-                Map<String, Object> answers = getDynamicAnswersMap(candidature);
-                if (answers != null) {
-                    for (Map.Entry<String, Object> entry : answers.entrySet()) {
+                Map<String, Object> answersForEmail = getDynamicAnswersMap(candidature);
+                if (answersForEmail != null) {
+                    for (Map.Entry<String, Object> entry : answersForEmail.entrySet()) {
                         if (entry.getKey().toLowerCase().contains("email")) {
                             emailToUse = entry.getValue().toString();
                             break;
@@ -234,62 +234,90 @@ public class CandidatureRedstarterService {
                 }
             }
 
-            if (emailToUse != null && userRepository.findByEmail(emailToUse) == null) {
-                User user = new User();
-                user.setEmail(emailToUse);
-                
-                String nomPrenom = candidature.getNomPrenom();
-                String phone = candidature.getNumeroTelephone();
-                String startup = candidature.getNomEntreprise();
-                
-                Map<String, Object> answers = getDynamicAnswersMap(candidature);
-                if (answers != null) {
-                    for (Map.Entry<String, Object> entry : answers.entrySet()) {
-                        String key = entry.getKey().toLowerCase();
-                        if (nomPrenom == null && (key.contains("nom et prénom") || key.contains("nom complet"))) nomPrenom = entry.getValue().toString();
-                        if (phone == null && (key.contains("téléphone") || key.contains("phone") || key.contains("numéro"))) phone = entry.getValue().toString();
-                        if (startup == null && (key.contains("startup") || key.contains("entreprise"))) startup = entry.getValue().toString();
+            if (emailToUse != null) {
+                log.info("Tentative de création de compte pour: {}", emailToUse);
+                if (userRepository.findByEmail(emailToUse) == null) {
+                    log.info("Email {} n'existe pas encore. Création en cours...", emailToUse);
+                    User user = new User();
+                    user.setEmail(emailToUse);
+                    
+                    String nomPrenom = candidature.getNomPrenom();
+                    String phone = candidature.getNumeroTelephone();
+                    String startup = candidature.getNomEntreprise();
+                    
+                    Map<String, Object> answers = getDynamicAnswersMap(candidature);
+                    if (answers != null) {
+                        for (Map.Entry<String, Object> entry : answers.entrySet()) {
+                            String key = entry.getKey().toLowerCase();
+                            if (nomPrenom == null && (key.contains("nom et prénom") || key.contains("nom complet"))) nomPrenom = entry.getValue().toString();
+                            if (phone == null && (key.contains("téléphone") || key.contains("phone") || key.contains("numéro"))) phone = entry.getValue().toString();
+                            if (startup == null && (key.contains("startup") || key.contains("entreprise"))) startup = entry.getValue().toString();
+                        }
                     }
-                }
-                
-                if (nomPrenom != null && nomPrenom.contains(" ")) {
-                    int firstSpace = nomPrenom.indexOf(" ");
-                    user.setFirstName(nomPrenom.substring(0, firstSpace));
-                    user.setLastName(nomPrenom.substring(firstSpace + 1));
+                    
+                    if (nomPrenom != null && nomPrenom.trim().contains(" ")) {
+                        String cleanNom = nomPrenom.trim();
+                        int firstSpace = cleanNom.indexOf(" ");
+                        String firstN = cleanNom.substring(0, firstSpace).trim();
+                        String lastN = cleanNom.substring(firstSpace + 1).trim();
+                        user.setFirstName(firstN.length() < 2 ? firstN + "_" : firstN);
+                        user.setLastName(lastN.length() < 2 ? lastN + "_" : lastN);
+                    } else {
+                        String cleanName = nomPrenom != null ? nomPrenom.trim() : "Candidat";
+                        user.setFirstName(cleanName.length() < 2 ? cleanName + "_" : cleanName);
+                        user.setLastName("Redboost");
+                    }
+                    
+                    user.setPhoneNumber(phone != null ? phone : "00000000");
+                    user.setActive(true);
+                    
+                    // Determine Role
+                    Role[] roleRef = new Role[]{Role.ENTREPRENEUR};
+                    if (candidature.getFormTemplateId() != null) {
+                        formTemplateRepository.findById(candidature.getFormTemplateId()).ifPresent(t -> {
+                            if ("coach".equalsIgnoreCase(t.getProfileType()) || "coaches".equalsIgnoreCase(t.getProfileType())) {
+                                roleRef[0] = Role.COACH;
+                            }
+                        });
+                    } else if ("coach".equalsIgnoreCase(candidature.getRoleEntreprise()) || "coaches".equalsIgnoreCase(candidature.getRoleEntreprise())) {
+                        roleRef[0] = Role.COACH;
+                    }
+                    
+                    // Fallback scan on dynamicAnswers (equivalent to frontend logic)
+                    if (roleRef[0] == Role.ENTREPRENEUR && answers != null) {
+                        for (Map.Entry<String, Object> entry : answers.entrySet()) {
+                            String val = entry.getValue() != null ? entry.getValue().toString().toLowerCase() : "";
+                            if (val.contains("coach")) {
+                                roleRef[0] = Role.COACH;
+                                break;
+                            } else if (val.contains("entrepreneur")) {
+                                roleRef[0] = Role.ENTREPRENEUR;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    log.info("Rôle déterminé pour {}: {}", emailToUse, roleRef[0]);
+                    user.setRole(roleRef[0]);
+                    
+                    if (roleRef[0] == Role.ENTREPRENEUR) {
+                        user.setStartupName(startup != null ? startup : "Startup");
+                    } else {
+                        user.setExpertise(startup);
+                        user.setYearsOfExperience(1);
+                    }
+                    
+                    String tempPassword = UUID.randomUUID().toString().substring(0, 8);
+                    user.setPassword(tempPassword);
+                    
+                    userService.addUser(user);
+                    
+                    if (!emailContent.contains(tempPassword)) {
+                        emailContent += "\n\n=== Accès Plateforme ===\nEmail: " + user.getEmail() + "\nMot de passe temporaire: " + tempPassword + "\n\nMerci de le modifier lors de votre première connexion.";
+                    }
+                    log.info("Compte utilisateur créé avec succès pour {} avec rôle {}", emailToUse, roleRef[0]);
                 } else {
-                    user.setFirstName(nomPrenom != null ? nomPrenom : "Candidat");
-                    user.setLastName("Redboost");
-                }
-                
-                user.setPhoneNumber(phone != null ? phone : "00000000");
-                user.setActive(true);
-                
-                // Determine Role
-                Role[] roleRef = new Role[]{Role.ENTREPRENEUR};
-                if (candidature.getFormTemplateId() != null) {
-                    formTemplateRepository.findById(candidature.getFormTemplateId()).ifPresent(t -> {
-                         if ("coach".equalsIgnoreCase(t.getProfileType())) {
-                           roleRef[0] = Role.COACH;
-                         }
-                    });
-                } else if ("coaches".equals(candidature.getRoleEntreprise())) {
-                    roleRef[0] = Role.COACH;
-                }
-                user.setRole(roleRef[0]);
-                
-                if (roleRef[0] == Role.ENTREPRENEUR) {
-                    user.setStartupName(startup != null ? startup : "Startup");
-                } else {
-                    user.setExpertise(startup); // fallback for coach
-                }
-                
-                String tempPassword = UUID.randomUUID().toString().substring(0, 8);
-                user.setPassword(tempPassword); 
-                
-                userService.addUser(user); 
-                
-                if (!emailContent.contains(tempPassword)) {
-                    emailContent += "\n\n=== Accès Plateforme ===\nEmail: " + user.getEmail() + "\nMot de passe temporaire: " + tempPassword + "\n\nMerci de le modifier lors de votre première connexion.";
+                    log.info("Le compte {} existe déjà. Ignorer la création.", emailToUse);
                 }
             }
         }

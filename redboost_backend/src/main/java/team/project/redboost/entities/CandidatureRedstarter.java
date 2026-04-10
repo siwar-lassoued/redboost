@@ -152,7 +152,6 @@ public class CandidatureRedstarter {
         PRE_SELECTIONNE,
         ACCEPTE,
         REJETE,
-        // Legacy support to prevent 500 errors with existing data
         EN_REVISION,
         PRESELECTIONNE,
         REFUSE
