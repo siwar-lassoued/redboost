@@ -202,7 +202,7 @@ public class AiReportingService {
             throw new RuntimeException("Validation Echouee: La clé API Gemini (gemini.api.key) n'est pas configurée ou est invalide sur ce serveur.");
         }
 
-        String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=" + geminiApiKey;
+        String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + geminiApiKey;
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -243,7 +243,7 @@ public class AiReportingService {
                             .totalLivrables(totalLivrables)
                             .livrablesApproved(livrablesApproved)
                             .averageRating(0.0) // Mock rating
-                            .generatedBy("IA RedBoost (Gemini 3 Flash Preview)")
+                            .generatedBy("IA RedBoost (Gemini 1.5 Flash)")
                             .resumeExecutif((String) aiData.get("resume_executif"))
                             .analyseLivrables((String) aiData.get("analyse_livrables"))
                             .tendances((String) aiData.get("tendances"))

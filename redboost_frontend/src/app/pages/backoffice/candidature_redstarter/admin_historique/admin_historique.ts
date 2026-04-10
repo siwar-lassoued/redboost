@@ -164,8 +164,8 @@ export class AdminHistoriqueComponent implements OnInit {
     switch (type) {
       case 'text-court': return 'file-text';
       case 'text-long':  return 'file-text';
-      case 'qcm':        return 'check-circle';
-      case 'qcu':        return 'check-circle';
+      case 'qcm':        return 'circle-check';
+      case 'qcu':        return 'circle-check';
       case 'upload':     return 'download';
       default:           return 'clipboard-list';
     }
