@@ -149,6 +149,13 @@ public class CoachService {
                 .limit(5)
                 .collect(Collectors.toList());
     }
+    public CoachDashboardOverviewDTO getDashboardOverview(Long coachId) {
+        return CoachDashboardOverviewDTO.builder()
+                .stats(getDashboardStats(coachId))
+                .entrepreneurs(getCoachEntrepreneurs(coachId))
+                .sessions(getUpcomingSessions(coachId))
+                .build();
+    }
 
     public CoachEntrepreneurDetailDTO getEntrepreneurDetail(Long coachId, Long entrepreneurId) {
         User ent = userRepository.findById(entrepreneurId)
