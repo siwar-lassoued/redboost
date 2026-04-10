@@ -55,29 +55,37 @@ public class MatchingIaService {
             thematique = thematiqueRepo.findById(thematiqueId).orElse(null);
         }
 
-        // 1. Get coaches (all active coaches)
         List<User> coaches = userRepo.findAll().stream()
                 .filter(u -> u.getRole() == Role.COACH && u.isActive())
                 .collect(Collectors.toList());
 
+        log.info("Coaches trouvés dans la base users: {}", coaches.size());
+        coaches.forEach(c -> log.info("  Coach: {} {} (id={})", c.getFirstName(), c.getLastName(), c.getId()));
+
         if (coaches.isEmpty()) {
-            throw new RuntimeException("Aucun coach actif disponible");
+            throw new RuntimeException("Aucun coach actif trouvé. Vérifiez que des utilisateurs avec le rôle COACH existent dans la base.");
         }
 
-        // 2. Get accepted entrepreneurs for this programme who are NOT already matched
-        List<CandidatureRedstarter> acceptedCandidatures = candidatureRepo
-                .findByFormTemplateIdNotNullAndStatut(CandidatureRedstarter.StatutCandidature.ACCEPTE);
+        Set<Long> coachCandidatureIds = candidatureRepo
+                .findAcceptedCoaches(CandidatureRedstarter.StatutCandidature.ACCEPTE)
+                .stream().map(CandidatureRedstarter::getId).collect(Collectors.toSet());
+        log.info("Candidatures coach à exclure du pool entrepreneur: {}", coachCandidatureIds.size());
 
-        // Filter to entrepreneurs not already matched for this programme
+        // 3. Get ALL accepted candidatures, exclude coaches, exclude already matched
+        List<CandidatureRedstarter> acceptedCandidatures = candidatureRepo
+                .findAllByStatut(CandidatureRedstarter.StatutCandidature.ACCEPTE);
+
         List<CandidatureRedstarter> unmatchedCandidatures = acceptedCandidatures.stream()
+                .filter(c -> !coachCandidatureIds.contains(c.getId()))
                 .filter(c -> !matchingRepo.isEntrepreneurActivelyMatched(c.getId(), programmeId))
                 .collect(Collectors.toList());
+
+        log.info("Entrepreneurs à matcher: {} (sur {} candidatures acceptées)", unmatchedCandidatures.size(), acceptedCandidatures.size());
 
         if (unmatchedCandidatures.isEmpty()) {
             throw new RuntimeException("Aucun entrepreneur non-matché à traiter pour ce programme.");
         }
-
-        // 3. Build ENRICHED data for AI — include ALL available profile fields
+    
         List<Map<String, Object>> coachesData = coaches.stream().map(c -> {
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("id", c.getId());
@@ -91,19 +99,15 @@ public class MatchingIaService {
             m.put("entreprise", c.getEntreprise());
             m.put("industry", c.getIndustry());
             m.put("linkedin", c.getLinkedinUrl());
-            // Academic & professional qualifications
             m.put("formation_academique", c.getFormationAcademNom());
             m.put("formation_academique_realisations", c.getFormationAcademRealisations());
             m.put("competences_pro", c.getCompetencesProNom());
             m.put("competences_pro_certificat", c.getCompetencesProCertificat());
-            // Coaching track record
             m.put("nb_entrepreneurs_coaches", c.getNbEntreCoaches());
             m.put("succes_client", c.getSuccesClient());
             m.put("engagement_communautaire", c.getEngagementCommunautaire());
-            // Count current active matchings for this coach
             long activeCount = matchingRepo.findByCoachIdAndStatut(c.getId(), Matching.StatutMatching.VALIDE).size();
             m.put("nb_entrepreneurs_actifs", activeCount);
-            // Remove null values to keep prompt clean
             m.values().removeIf(Objects::isNull);
             return m;
         }).collect(Collectors.toList());
@@ -377,9 +381,15 @@ public class MatchingIaService {
     public Map<String, Integer> getMatchingStats(Long programmeId) {
         List<Matching> active = matchingRepo.findActiveByProgramme(programmeId);
 
+        // Same logic as runMatchingIA: exclude coach candidatures
+        Set<Long> coachCandidatureIds = candidatureRepo
+                .findAcceptedCoaches(CandidatureRedstarter.StatutCandidature.ACCEPTE)
+                .stream().map(CandidatureRedstarter::getId).collect(Collectors.toSet());
+
         List<CandidatureRedstarter> acceptedCandidatures = candidatureRepo
-                .findByFormTemplateIdNotNullAndStatut(CandidatureRedstarter.StatutCandidature.ACCEPTE);
+                .findAllByStatut(CandidatureRedstarter.StatutCandidature.ACCEPTE);
         long unmatchedCount = acceptedCandidatures.stream()
+                .filter(c -> !coachCandidatureIds.contains(c.getId()))
                 .filter(c -> !matchingRepo.isEntrepreneurActivelyMatched(c.getId(), programmeId))
                 .count();
 
