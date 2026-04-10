@@ -1,0 +1,126 @@
+package team.project.redboost.controllers;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import team.project.redboost.dto.*;
+import team.project.redboost.services.CoachService;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/coach")
+@CrossOrigin("*")
+public class CoachController {
+
+    @Autowired
+    private CoachService coachService;
+
+    // --- DISPONIBILITE ---
+
+    @GetMapping("/{coachId}/disponibilites")
+    public ResponseEntity<List<DisponibiliteDTO>> getDisponibilites(@PathVariable Long coachId) {
+        return ResponseEntity.ok(coachService.getDisponibilitesByCoach(coachId));
+    }
+
+    @PostMapping("/{coachId}/disponibilites/{thematiqueId}")
+    public ResponseEntity<DisponibiliteDTO> addDisponibilite(
+            @PathVariable Long coachId, 
+            @PathVariable Long thematiqueId) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(coachService.addDisponibilite(coachId, thematiqueId));
+    }
+
+    @DeleteMapping("/disponibilites/{id}")
+    public ResponseEntity<Void> deleteDisponibilite(@PathVariable Long id) {
+        coachService.deleteDisponibilite(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    // --- SESSION COACH ---
+
+    @GetMapping("/disponibilites/{dispoId}/sessions")
+    public ResponseEntity<List<SessionCoachDTO>> getSessionsByDisponibilite(@PathVariable Long dispoId) {
+        return ResponseEntity.ok(coachService.getSessionsByDisponibilite(dispoId));
+    }
+
+    @GetMapping("/{coachId}/sessions")
+    public ResponseEntity<List<SessionCoachDTO>> getAllSessionsByCoach(@PathVariable Long coachId) {
+        return ResponseEntity.ok(coachService.getSessionsByCoach(coachId));
+    }
+
+    @PostMapping("/disponibilites/{dispoId}/sessions")
+    public ResponseEntity<SessionCoachDTO> addSession(
+            @PathVariable Long dispoId, 
+            @RequestBody SessionCoachDTO dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(coachService.addSession(dispoId, dto));
+    }
+
+    @DeleteMapping("/sessions/{id}")
+    public ResponseEntity<Void> deleteSession(@PathVariable Long id) {
+        coachService.deleteSession(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    // --- SEANCE EXCEPTIONNELLE ---
+
+    @GetMapping("/{coachId}/seances-exceptionnelles")
+    public ResponseEntity<List<SeanceExceptionnelleDTO>> getSeancesExceptionnelles(@PathVariable Long coachId) {
+        return ResponseEntity.ok(coachService.getSeancesExceptionnellesByCoach(coachId));
+    }
+
+    @PostMapping("/{coachId}/seances-exceptionnelles/{entrepreneurId}")
+    public ResponseEntity<SeanceExceptionnelleDTO> addSeanceExceptionnelle(
+            @PathVariable Long coachId, 
+            @PathVariable Long entrepreneurId, 
+            @RequestBody SeanceExceptionnelleDTO dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(coachService.addSeanceExceptionnelle(coachId, entrepreneurId, dto));
+    }
+
+    // --- RECLAMATION ---
+
+    @GetMapping("/{coachId}/reclamations")
+    public ResponseEntity<List<ReclamationDTO>> getReclamations(@PathVariable Long coachId) {
+        return ResponseEntity.ok(coachService.getReclamationsByCoach(coachId));
+    }
+
+    @PostMapping("/{coachId}/reclamations/{entrepreneurId}")
+    public ResponseEntity<ReclamationDTO> addReclamation(
+            @PathVariable Long coachId, 
+            @PathVariable Long entrepreneurId, 
+            @RequestBody ReclamationDTO dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(coachService.addReclamation(coachId, entrepreneurId, dto));
+    }
+
+    // --- DASHBOARD OVERVIEW ---
+
+    @GetMapping("/{coachId}/dashboard-stats")
+    public ResponseEntity<DashboardStatsDTO> getDashboardStats(@PathVariable Long coachId) {
+        return ResponseEntity.ok(coachService.getDashboardStats(coachId));
+    }
+
+    @GetMapping("/{coachId}/entrepreneurs")
+    public ResponseEntity<List<CoachEntrepreneurDTO>> getCoachEntrepreneurs(@PathVariable Long coachId) {
+        return ResponseEntity.ok(coachService.getCoachEntrepreneurs(coachId));
+    }
+
+    @GetMapping("/{coachId}/upcoming-sessions")
+    public ResponseEntity<List<UpcomingSessionDTO>> getUpcomingSessions(@PathVariable Long coachId) {
+        return ResponseEntity.ok(coachService.getUpcomingSessions(coachId));
+    }
+    @GetMapping("/{coachId}/dashboard-overview")
+    public ResponseEntity<CoachDashboardOverviewDTO> getDashboardOverview(@PathVariable Long coachId) {
+        return ResponseEntity.ok(coachService.getDashboardOverview(coachId));
+    }
+    @GetMapping("/{coachId}/entrepreneurs/{entrepreneurId}/details")
+    public ResponseEntity<CoachEntrepreneurDetailDTO> getEntrepreneurDetail(
+            @PathVariable Long coachId, 
+            @PathVariable Long entrepreneurId) {
+        return ResponseEntity.ok(coachService.getEntrepreneurDetail(coachId, entrepreneurId));
+    }
+
+    @GetMapping("/{coachId}/programmes")
+    public ResponseEntity<List<ProgrammeDTO>> getCoachProgrammes(@PathVariable Long coachId) {
+        return ResponseEntity.ok(coachService.getCoachProgrammes(coachId));
+    }
+}

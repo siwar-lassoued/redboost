@@ -77,6 +77,64 @@ export interface ProgrammeDTO {
   couleurTheme?: string;
 }
 
+export interface CoachEntrepreneurDTO {
+  id: number;
+  firstName: string;
+  lastName: string;
+  entreprise?: string;
+  secteur?: string;
+  profilePictureUrl?: string;
+  completionRate?: number;
+  delayedTasksCount?: number;
+}
+
+export interface DashboardStatsDTO {
+  nbRendezVous: number;
+  nbTaches: number;
+  nbPhases: number;
+  nbProjet: number;
+  completionRate?: number;
+  activity?: Array<{ time: string; text: string }>;
+}
+
+export interface UpcomingSessionDTO {
+  id: number;
+  entrepreneurName: string;
+  dateSession: string;
+  heureDebut: string;
+  statut: string;
+  meetingLink?: string;
+}
+
+export interface CoachEntrepreneurDetailDTO {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber: string;
+  entreprise: string;
+  secteur: string;
+  profilePictureUrl: string;
+  startupDescription: string;
+  completionRate: number;
+  tasks: any[];
+  livrables: Array<{
+    id: number;
+    nom: string;
+    dateUpload: string;
+    typeFichier: string;
+    tailleFichier: number;
+    url: string;
+    tacheTitre: string;
+  }>;
+  notes: Array<{
+    id: number;
+    date: string;
+    synthese: string;
+    appreciation: string;
+  }>;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -148,5 +206,52 @@ export class CoachService {
   // COACH PROFILE (current user)
   getCoachProfile(): Observable<UserDTO> {
     return this.http.get<UserDTO>(`${environment.apiUrl}/users/profile`);
+  }
+
+  // DASHBOARD STATS - Dynamic data loading
+  getDashboardStats(coachId: number): Observable<DashboardStatsDTO> {
+    return this.http.get<DashboardStatsDTO>(`${this.apiUrl}/${coachId}/dashboard-stats`);
+  }
+
+  // Get entrepreneurs assigned to the coach
+  getCoachEntrepreneurs(coachId: number): Observable<CoachEntrepreneurDTO[]> {
+    return this.http.get<CoachEntrepreneurDTO[]>(`${this.apiUrl}/${coachId}/entrepreneurs`);
+  }
+
+  // Get upcoming sessions for the coach
+  getUpcomingSessions(coachId: number): Observable<UpcomingSessionDTO[]> {
+    return this.http.get<UpcomingSessionDTO[]>(`${this.apiUrl}/${coachId}/upcoming-sessions`);
+  }
+
+  // Get dashboard overview (combines stats, entrepreneurs, and sessions)
+  getDashboardOverview(coachId: number): Observable<{
+    stats: DashboardStatsDTO;
+    entrepreneurs: CoachEntrepreneurDTO[];
+    sessions: UpcomingSessionDTO[];
+  }> {
+    return this.http.get<{
+      stats: DashboardStatsDTO;
+      entrepreneurs: CoachEntrepreneurDTO[];
+      sessions: UpcomingSessionDTO[];
+    }>(`${this.apiUrl}/${coachId}/dashboard-overview`);
+  }
+
+  // Get details for a specific entrepreneur
+  getEntrepreneurDetail(coachId: number, entrepreneurId: number): Observable<CoachEntrepreneurDetailDTO> {
+    return this.http.get<CoachEntrepreneurDetailDTO>(`${this.apiUrl}/${coachId}/entrepreneurs/${entrepreneurId}/details`);
+  }
+
+  /**
+   * Create or update a session report (Note de synthèse)
+   */
+  saveNote(note: any): Observable<any> {
+    return this.http.post(`${environment.apiUrl}/notes`, note);
+  }
+
+  /**
+   * Get programs assigned to the coach
+   */
+  getCoachProgrammes(coachId: number): Observable<ProgrammeDTO[]> {
+    return this.http.get<ProgrammeDTO[]>(`${this.apiUrl}/${coachId}/programmes`);
   }
 }

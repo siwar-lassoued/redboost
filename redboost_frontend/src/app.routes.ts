@@ -56,6 +56,7 @@ import { SessionsComponent } from './app/pages/dashboard/coachDashboard/sessions
 import { CoachChatComponent } from './app/pages/dashboard/coachDashboard/coach-chat.component';
 import { CoachRapportMissionsComponent } from './app/pages/dashboard/coachDashboard/coach-rapport-missions.component';
 import { CoachLivrablesComponent } from './app/pages/dashboard/coachDashboard/coach-livrables.component';
+import { NoteDeSyntheseCreateComponent } from './app/pages/dashboard/coachDashboard/note-de-synthese-create.component';
 
 // New dynamic KPI and Form features
 import { AdminKpiFormsComponent } from './app/pages/backoffice/kpi_forms/admin-kpi-forms.component';
@@ -148,6 +149,7 @@ export const appRoutes: Routes = [
             { path: 'rapport-missions', component: CoachRapportMissionsComponent },
             { path: 'coach-entrep-deliverable', component: CoachLivrablesComponent },
             { path: 'coach-livrables', component: CoachLivrablesComponent },
+            { path: 'note-de-synthese-create/:id', component: NoteDeSyntheseCreateComponent },
             { path: 'messagerie-reclamation', component: ReclamationsComponent },
 
             // New KPI and Form features

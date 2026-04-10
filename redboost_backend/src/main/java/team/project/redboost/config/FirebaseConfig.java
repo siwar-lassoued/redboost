@@ -17,15 +17,19 @@ public class FirebaseConfig {
     private Resource firebaseCredentials;
 
     @Bean
-    public FirebaseApp firebaseApp() throws IOException {
-        FirebaseOptions options = FirebaseOptions.builder()
-                .setCredentials(GoogleCredentials.fromStream(firebaseCredentials.getInputStream()))
-                .build();
-
-        if (FirebaseApp.getApps().isEmpty()) {
-            return FirebaseApp.initializeApp(options);
-        } else {
-            return FirebaseApp.getInstance();
-        }
+public FirebaseApp firebaseApp() throws IOException {
+    if (!firebaseCredentials.exists()) {
+        System.out.println("⚠️  firebase-service-account.json not found, Firebase disabled.");
+        return null;
     }
+    FirebaseOptions options = FirebaseOptions.builder()
+            .setCredentials(GoogleCredentials.fromStream(firebaseCredentials.getInputStream()))
+            .build();
+
+    if (FirebaseApp.getApps().isEmpty()) {
+        return FirebaseApp.initializeApp(options);
+    } else {
+        return FirebaseApp.getInstance();
+    }
+}
 }

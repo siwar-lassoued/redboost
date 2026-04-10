@@ -1,4 +1,3 @@
-import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 import { MessageService } from 'primeng/api';
@@ -14,6 +13,7 @@ import {
 import { environment } from '../../../../environment';
 import { Auth, signInWithPopup, GoogleAuthProvider } from '@angular/fire/auth'; // Import Auth from AngularFire
 import { jwtDecode } from 'jwt-decode';
+import { HttpClient } from '@angular/common/http';
 
 @Injectable({
     providedIn: 'root',

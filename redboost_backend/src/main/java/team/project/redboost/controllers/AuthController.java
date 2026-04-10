@@ -38,7 +38,7 @@ public class AuthController {
 
     @Autowired
     private AuthenticationManager authenticationManager;
-    
+
     private static final Logger log = LoggerFactory.getLogger(AuthController.class);
 
     @Autowired
@@ -73,20 +73,21 @@ public class AuthController {
         try {
             FirebaseToken decodedToken = firebaseService.verifyIdToken(idToken);
             String email = decodedToken.getEmail();
-            
+
             // Check if user exists
             User user = userService.findByEmail(email);
 
             if (user == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
                         "message", "User not found. Please register first.",
-                        "errorCode", "AUTH008"
-                ));
+                        "errorCode", "AUTH008"));
             }
 
             // Generate JWT tokens
-            final String accessToken = jwtUtil.generateToken(user.getEmail(), String.valueOf(user.getId()), user.getAuthorities());
-            final String refreshToken = jwtUtil.generateRefreshToken(user.getEmail(), String.valueOf(user.getId()), user.getAuthorities());
+            final String accessToken = jwtUtil.generateToken(user.getEmail(), String.valueOf(user.getId()),
+                    user.getAuthorities());
+            final String refreshToken = jwtUtil.generateRefreshToken(user.getEmail(), String.valueOf(user.getId()),
+                    user.getAuthorities());
 
             // Set tokens as HTTP-only cookies
             Cookie accessTokenCookie = new Cookie("accessToken", accessToken);
@@ -109,8 +110,7 @@ public class AuthController {
                     "roles", user.getAuthorities().stream()
                             .map(GrantedAuthority::getAuthority)
                             .collect(Collectors.toList()),
-                    "user", user
-            ));
+                    "user", user));
         } catch (FirebaseAuthException e) {
             return ResponseEntity.status(401).body(Map.of("message", "Invalid ID token", "error", e.getMessage()));
         } catch (Exception e) {
@@ -130,16 +130,14 @@ public class AuthController {
             if (user == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
                         "message", "User not found with email: " + email,
-                        "errorCode", "AUTH008"
-                ));
+                        "errorCode", "AUTH008"));
             }
 
             // Check if user is active (email confirmed)
             if (!user.isActive()) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
                         "message", "Please confirm your email before logging in!",
-                        "errorCode", "AUTH017"
-                ));
+                        "errorCode", "AUTH017"));
             }
 
             // Authenticate user
@@ -149,8 +147,10 @@ public class AuthController {
             final UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
             // Generate JWT token
-            final String accessToken = jwtUtil.generateToken(userDetails.getUsername(), String.valueOf(user.getId()), userDetails.getAuthorities());
-            final String refreshToken = jwtUtil.generateRefreshToken(userDetails.getUsername(), String.valueOf(user.getId()), userDetails.getAuthorities());
+            final String accessToken = jwtUtil.generateToken(userDetails.getUsername(), String.valueOf(user.getId()),
+                    userDetails.getAuthorities());
+            final String refreshToken = jwtUtil.generateRefreshToken(userDetails.getUsername(),
+                    String.valueOf(user.getId()), userDetails.getAuthorities());
 
             // Set tokens as HTTP-only cookies
             Cookie accessTokenCookie = new Cookie("accessToken", accessToken);
@@ -171,19 +171,16 @@ public class AuthController {
             return ResponseEntity.ok(Map.of(
                     "accessToken", accessToken,
                     "refreshToken", refreshToken,
-                    "message", "Login successful"
-            ));
+                    "message", "Login successful"));
 
         } catch (BadCredentialsException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
                     "message", "Password incorrect",
-                    "errorCode", "AUTH010"
-            ));
+                    "errorCode", "AUTH010"));
         } catch (AuthenticationException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
                     "message", e.getMessage(),
-                    "errorCode", "AUTH009"
-            ));
+                    "errorCode", "AUTH009"));
         }
     }
 
@@ -191,8 +188,7 @@ public class AuthController {
     public ResponseEntity<?> refreshToken(
             @RequestBody(required = false) Map<String, String> refreshRequest,
             HttpServletRequest request,
-            HttpServletResponse response
-    ) {
+            HttpServletResponse response) {
         String refreshToken = null;
 
         // Check for refresh token in the request body
@@ -217,8 +213,7 @@ public class AuthController {
         if (refreshToken == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
                     "message", "Refresh token not found",
-                    "errorCode", "AUTH003"
-            ));
+                    "errorCode", "AUTH003"));
         }
 
         try {
@@ -226,8 +221,7 @@ public class AuthController {
             if (!jwtUtil.validateToken(refreshToken)) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
                         "message", "Invalid or expired refresh token",
-                        "errorCode", "AUTH005"
-                ));
+                        "errorCode", "AUTH005"));
             }
 
             // Extract email and userId
@@ -241,8 +235,7 @@ public class AuthController {
             } catch (UsernameNotFoundException e) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
                         "message", "User not found",
-                        "errorCode", "AUTH008"
-                ));
+                        "errorCode", "AUTH008"));
             }
 
             // Generate new access token
@@ -269,15 +262,13 @@ public class AuthController {
             return ResponseEntity.ok(Map.of(
                     "accessToken", newAccessToken,
                     "refreshToken", newRefreshToken,
-                    "message", "Token refreshed successfully"
-            ));
+                    "message", "Token refreshed successfully"));
 
         } catch (Exception e) {
             log.error("Error refreshing token: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
                     "message", "Failed to refresh token",
-                    "errorCode", "AUTH007"
-            ));
+                    "errorCode", "AUTH007"));
         }
     }
 
@@ -292,26 +283,24 @@ public class AuthController {
             Role role = Role.valueOf(registrationRequest.get("role"));
 
             // Validate required fields
-            if (email == null || password == null || firstName == null || lastName == null || phoneNumber == null || role == null) {
+            if (email == null || password == null || firstName == null || lastName == null || phoneNumber == null
+                    || role == null) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
                         "message", "All fields are required!",
-                        "errorCode", "AUTH010"
-                ));
+                        "errorCode", "AUTH010"));
             }
 
             if (!email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
                 return ResponseEntity.badRequest().body(Map.of(
                         "message", "Invalid email format!",
-                        "errorCode", "AUTH012"
-                ));
+                        "errorCode", "AUTH012"));
             }
 
             // Check if user already exists
             if (userService.findByEmail(email) != null) {
                 return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
                         "message", "User already exists!",
-                        "errorCode", "AUTH011"
-                ));
+                        "errorCode", "AUTH011"));
             }
 
             // Create new user (all roles use the same User entity)
@@ -326,7 +315,7 @@ public class AuthController {
             String confirmationCode = user.generateConfirmationCode();
             user.setConfirm_code(confirmationCode);
             user.setActive(false);
-            
+
             System.out.println("Generated confirmation code: " + confirmationCode);
 
             User savedUser = userService.addUser(user);
@@ -348,8 +337,7 @@ public class AuthController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
                     "message", "Registration failed",
-                    "error", e.getMessage()
-            ));
+                    "error", e.getMessage()));
         }
     }
 
@@ -363,8 +351,7 @@ public class AuthController {
             if (user == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
                         "message", "User not found!",
-                        "errorCode", "AUTH013"
-                ));
+                        "errorCode", "AUTH013"));
             }
 
             if (user.getConfirm_code().equals(code)) {
@@ -374,14 +361,12 @@ public class AuthController {
             } else {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
                         "message", "Invalid confirmation code!",
-                        "errorCode", "AUTH014"
-                ));
+                        "errorCode", "AUTH014"));
             }
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
                     "message", "Email confirmation failed",
-                    "error", e.getMessage()
-            ));
+                    "error", e.getMessage()));
         }
     }
 
@@ -393,23 +378,20 @@ public class AuthController {
             if (email == null || email.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
                         "message", "Email is required!",
-                        "errorCode", "AUTH015"
-                ));
+                        "errorCode", "AUTH015"));
             }
 
             User user = userService.findByEmail(email);
             if (user == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
                         "message", "User not found!",
-                        "errorCode", "AUTH013"
-                ));
+                        "errorCode", "AUTH013"));
             }
 
             if (user.isActive()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
                         "message", "Email is already confirmed!",
-                        "errorCode", "AUTH016"
-                ));
+                        "errorCode", "AUTH016"));
             }
 
             String confirmationCode = user.getConfirm_code();
@@ -430,8 +412,7 @@ public class AuthController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
                     "message", "Failed to resend confirmation email",
-                    "error", e.getMessage()
-            ));
+                    "error", e.getMessage()));
         }
     }
 
@@ -446,18 +427,15 @@ public class AuthController {
                 return ResponseEntity.ok(Map.of(
                         "message", "Token is valid",
                         "email", jwtUtil.extractEmail(token),
-                        "userId", jwtUtil.extractUserId(token)
-                ));
+                        "userId", jwtUtil.extractUserId(token)));
             } else {
                 return ResponseEntity.status(401).body(Map.of(
-                        "message", "Invalid or expired token"
-                ));
+                        "message", "Invalid or expired token"));
             }
         } catch (Exception e) {
             return ResponseEntity.status(500).body(Map.of(
                     "message", "Failed to verify token",
-                    "error", e.getMessage()
-            ));
+                    "error", e.getMessage()));
         }
     }
 
@@ -491,16 +469,14 @@ public class AuthController {
             if (email == null || email.isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of(
                         "message", "Email is required",
-                        "errorCode", "AUTH015"
-                ));
+                        "errorCode", "AUTH015"));
             }
 
             User user = userService.findByEmail(email);
             if (user == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
                         "message", "User not found",
-                        "errorCode", "AUTH013"
-                ));
+                        "errorCode", "AUTH013"));
             }
 
             String resetToken = userService.generatePasswordResetToken(user);
@@ -520,13 +496,11 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
                     "message", "Failed to send reset email. Please try again later.",
                     "errorCode", "AUTH018",
-                    "error", e.getMessage()
-            ));
+                    "error", e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
                     "message", "Failed to process password reset request",
-                    "error", e.getMessage()
-            ));
+                    "error", e.getMessage()));
         }
     }
 
@@ -539,8 +513,7 @@ public class AuthController {
             if (token == null || token.isEmpty() || newPassword == null || newPassword.isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of(
                         "message", "Token and new password are required",
-                        "errorCode", "AUTH016"
-                ));
+                        "errorCode", "AUTH016"));
             }
 
             // Validate token and get user
@@ -548,8 +521,7 @@ public class AuthController {
             if (user == null) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
                         "message", "Invalid or expired token",
-                        "errorCode", "AUTH017"
-                ));
+                        "errorCode", "AUTH017"));
             }
 
             // Update password and activate user
@@ -562,13 +534,11 @@ public class AuthController {
         } catch (UserService.InvalidTokenException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
                     "message", e.getMessage(),
-                    "errorCode", "AUTH017"
-            ));
+                    "errorCode", "AUTH017"));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
                     "message", "Failed to reset password",
-                    "error", e.getMessage()
-            ));
+                    "error", e.getMessage()));
         }
     }
 
