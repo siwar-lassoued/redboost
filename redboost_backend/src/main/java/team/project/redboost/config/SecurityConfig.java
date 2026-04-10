@@ -36,7 +36,7 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/Auth/**", "/ws/**", "/api/coach/submit", "/api/coach/binome","/api/projets/GetAllPublic","/api/contact","/api/projets/count", "/api/users/coaches/count","/api/users/entrepreneurs/count","/api/files/**","/error","/api/candidatures/**","/api/form-templates/**").permitAll()
+                        .requestMatchers("/api/Auth/**", "/ws/**", "/api/ws/**", "/api/coach/submit", "/api/coach/binome","/api/projets/GetAllPublic","/api/contact","/api/projets/count", "/api/users/coaches/count","/api/users/entrepreneurs/count","/api/files/**","/error","/api/candidatures/**","/api/form-templates/**").permitAll()
                         .requestMatchers("/uploads/**", "/api/documents/**").permitAll()
                         .requestMatchers(
                                 "/v3/api-docs/**",          

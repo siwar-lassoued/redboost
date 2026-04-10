@@ -31,7 +31,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
         String path = request.getServletPath();
         // Skip filtering for public endpoints
-        return path.startsWith("/api/Auth/") || path.startsWith("/ws/");
+        return path.startsWith("/api/Auth/") || path.startsWith("/ws/") || path.startsWith("/api/ws");
     }
 
     @Override
