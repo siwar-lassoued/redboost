@@ -22,7 +22,7 @@ export interface AppNotification {
 export class NotificationWebSocketService {
   // backend endpoints
   private apiUrl = 'https://redboost.tn/api/notifications';
-  private wsUrl = 'wss://redboost.tn/ws';
+  private wsUrl = 'wss://redboost.tn/api/ws';
 
   private stompClient: Client | null = null;
   
