@@ -4,7 +4,6 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { Router } from '@angular/router';
-import SockJS from 'sockjs-client';
 import { Client, IMessage } from '@stomp/stompjs';
 
 // Matches the backend Entity/DTO
@@ -23,7 +22,7 @@ export interface AppNotification {
 export class NotificationWebSocketService {
   // backend endpoints
   private apiUrl = 'https://redboost.tn/api/notifications';
-  private wsUrl = 'https://redboost.tn/ws';
+  private wsUrl = 'wss://redboost.tn/ws';
 
   private stompClient: Client | null = null;
   
@@ -70,9 +69,7 @@ export class NotificationWebSocketService {
 
     
     this.stompClient = new Client({
-      webSocketFactory: () => {
-        return new SockJS(this.wsUrl) as any;
-      },
+      brokerURL: this.wsUrl,
       connectHeaders: {
         Authorization: `Bearer ${token}`
       },
