@@ -5,6 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { Router } from '@angular/router';
 import { Client, IMessage } from '@stomp/stompjs';
+import SockJS from 'sockjs-client';
 
 // Matches the backend Entity/DTO
 export interface AppNotification {
@@ -22,7 +23,7 @@ export interface AppNotification {
 export class NotificationWebSocketService {
   // backend endpoints
   private apiUrl = 'https://redboost.tn/api/notifications';
-  private wsUrl = 'wss://redboost.tn/api/ws';
+  private wsUrl = 'https://redboost.tn/api/ws';
 
   private stompClient: Client | null = null;
   
@@ -63,13 +64,13 @@ export class NotificationWebSocketService {
     const token = localStorage.getItem('accessToken');
     
     if (!token) {
-      console.error('❌ No access token found');
+      console.error(' No access token found');
       return;
     }
 
     
     this.stompClient = new Client({
-      brokerURL: this.wsUrl,
+      webSocketFactory: () => new SockJS(this.wsUrl),
       connectHeaders: {
         Authorization: `Bearer ${token}`
       },
@@ -96,12 +97,12 @@ export class NotificationWebSocketService {
       },
       
       onStompError: (frame) => {
-        console.error('❌ STOMP Error:', frame);
+        console.error(' STOMP Error:', frame);
         this.connectionStatusSubject.next(false);
       },
       
       onWebSocketError: (event) => {
-        console.error('❌ WebSocket Error:', event);
+        console.error(' WebSocket Error:', event);
         this.connectionStatusSubject.next(false);
       },
       
