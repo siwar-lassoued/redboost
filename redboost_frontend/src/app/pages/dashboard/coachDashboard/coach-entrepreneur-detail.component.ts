@@ -59,7 +59,7 @@ import { ToastrService } from 'ngx-toastr';
             <!-- Tâches View -->
             <div *ngIf="activeTab === 'taches'">
                 <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-xl font-bold text-[#2D3748]">Plan d'action ({{ entrepreneur.tasks?.length || 0 }} tâches)</h2>
+                    <h2 class="text-xl font-bold text-[#2D3748]">Plan d'action ({{ entrepreneur.tasks.length || 0 }} tâches)</h2>
                     <button class="btn-primary" (click)="showTaskModal = true">
                         <i class="pi pi-plus"></i> Ajouter une tâche
                     </button>

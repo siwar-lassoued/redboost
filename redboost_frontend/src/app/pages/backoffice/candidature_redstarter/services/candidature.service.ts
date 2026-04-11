@@ -140,13 +140,31 @@ export class CandidatureService {
                         else if (rol.includes('entrepreneur')) deductedProfile = 'entrepreneurs';
                     }
 
+                    // Determine phone from dynamicAnswers if invalid/missing
+                    let phoneStr = c.numeroTelephone;
+                    if (phoneStr === 'undefined' || phoneStr === 'null' || phoneStr === null || phoneStr === '00000000' || phoneStr === '000000000') {
+                        phoneStr = '';
+                    }
+                    if (!phoneStr && formAnswers.length > 0) {
+                        const phoneAnswer = formAnswers.find((a: any) => {
+                            if (!a.answer || a.type === 'upload' || a.type === 'qcm' || a.type === 'qcu') return false;
+                            const q = a.question.toLowerCase();
+                            return q.includes('téléphone') || q.includes('telephone') || q.includes('phone') || q.includes('tel');
+                        });
+                        if (phoneAnswer) {
+                            let val = phoneAnswer.answer;
+                            if (Array.isArray(val)) val = val[0];
+                            if (typeof val === 'string') phoneStr = val;
+                        }
+                    }
+
                     return {
                         id: c.id,
                         type: resolvedType,
                         deductedProfile: deductedProfile,
-                        nom: c.nomPrenom || 'Inconnu',
-                        email: c.email || 'N/A',
-                        phone: c.numeroTelephone || '—',
+                        nom: c.nomPrenom && c.nomPrenom !== 'undefined' ? c.nomPrenom : 'Inconnu',
+                        email: c.email && c.email !== 'undefined' ? c.email : 'N/A',
+                        phone: phoneStr || '—',
                         statut: c.statut,
                         submittedAt: c.dateCreationCandidature || c.dateSoumission || null,
                         programme: c.programme || null,

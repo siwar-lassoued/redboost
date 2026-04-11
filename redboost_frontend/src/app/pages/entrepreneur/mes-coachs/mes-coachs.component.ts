@@ -32,7 +32,7 @@ import { SessionBookingService } from '../../../core/services/session-booking.se
               <div class="text-center mb-6">
                 <div class="w-24 h-24 rounded-3xl flex items-center justify-center text-white text-3xl font-black mx-auto mb-4 shadow-2xl shadow-sky-400/30"
                   style="background: linear-gradient(135deg, #00d2ff, #3aafff)">
-                  {{ coach.nom?.[0] }}
+                  {{ coach.nom[0] }}
                 </div>
                 <div class="flex items-center justify-center gap-2 mb-1">
                   <h2 class="text-xl font-black text-[#1A1A2E]">{{ coach.nom }}</h2>

@@ -91,9 +91,14 @@ type Step = 'choice' | 'templates' | 'form';
                   <lucide-icon name="trash-2" [size]="14"></lucide-icon>
                 </button>
               </div>
-              <div class="fl-template-link">
-                <lucide-icon name="link" [size]="14" style="flex-shrink:0;"></lucide-icon>
-                <a [href]="'/redstarter?templateId=' + template.id" target="_blank">Lien direct</a>
+              <div class="fl-template-link" style="display:flex; align-items:center; justify-content:space-between; gap: 8px;">
+                <div style="display:flex; align-items:center; gap: 8px; overflow: hidden;">
+                  <lucide-icon name="link" [size]="14" style="flex-shrink:0;"></lucide-icon>
+                  <a [href]="'/redstarter?templateId=' + template.id" target="_blank">Lien direct</a>
+                </div>
+                <button (click)="copyLink(template.id)" style="background:none; border:none; cursor:pointer; color:#64748b; padding:4px;" title="Copier le lien">
+                  <lucide-icon name="copy" [size]="14"></lucide-icon>
+                </button>
               </div>
             </div>
           </div>
@@ -468,6 +473,16 @@ export class AdminFormLauncherComponent implements OnChanges {
     operation.subscribe({
       next: () => { this.publishing = false; this.successMessage = `Formulaire "${this.formTitle}" ${this.editingTemplateId ? 'mis à jour' : 'publié'} avec succès !`; setTimeout(() => { this.successMessage = ''; this.onClose(); this.loadTemplates(); }, 1800); },
       error: (err) => { this.publishing = false; console.error('Failed to publish form:', err); alert('Erreur lors de la sauvegarde du formulaire.'); }
+    });
+  }
+
+  copyLink(templateId: string | number): void {
+    const url = window.location.origin + '/redstarter?templateId=' + templateId;
+    navigator.clipboard.writeText(url).then(() => {
+      // Show short feedback (optional)
+      alert("Lien du formulaire copié dans le presse-papier !");
+    }).catch(() => {
+      alert("Erreur lors de la copie du lien.");
     });
   }
 
