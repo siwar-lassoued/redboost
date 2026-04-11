@@ -28,6 +28,8 @@ export interface MatchingItem {
     pointsForts?: string;
     pointsAttention?: string;
     recommandationSession1?: string;
+    decisionSupport?: string;
+    rankTop?: number;
     statut: 'PROPOSE' | 'VALIDE' | 'TERMINE' | 'LIBERE';
     dateValidation?: string;
 }

@@ -70,7 +70,7 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
                 </option>
               </select>
               <p class="hint warning-hint" *ngIf="selectedProgId && thematiques.length > 0 && !selectedThematiqueId">
-                ⚠️ La thématique est obligatoire pour lancer le matching IA
+                 La thématique est obligatoire pour lancer le matching IA
               </p>
               <p class="hint" *ngIf="!selectedProgId || thematiques.length === 0">Sélectionnez un programme avec des thématiques actives</p>
               <p class="hint success-hint" *ngIf="selectedThematiqueId">✓ Thématique sélectionnée — l'IA va prioriser les coachs compatibles</p>
@@ -93,7 +93,7 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
               <p><strong>Félicitations !</strong> Tous les entrepreneurs ont déjà un coaching actif.</p>
             </div>
             <div *ngIf="errorMessage" class="error-box">
-              <p><strong>🚨 Erreur IA Backend :</strong> {{ errorMessage }}</p>
+              <p><strong> Erreur IA Backend :</strong> {{ errorMessage }}</p>
             </div>
 
             <div *ngIf="selectedProgId && thematiques.length === 0" class="info-box">
@@ -267,142 +267,7 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
           </div>
         </div>
       </div>
-                  <div class="rc-info-item" *ngIf="m.entrepreneur?.email">
-                    <span class="rc-info-label">Email</span>
-                    <span class="rc-info-value">{{ m.entrepreneur.email }}</span>
-                  </div>
-                  <div class="rc-info-item" *ngIf="m.entrepreneur?.telephone">
-                    <span class="rc-info-label">Téléphone</span>
-                    <span class="rc-info-value">{{ m.entrepreneur.telephone }}</span>
-                  </div>
-                  <div class="rc-info-item" *ngIf="m.entrepreneur?.entreprise">
-                    <span class="rc-info-label">Entreprise</span>
-                    <span class="rc-info-value">{{ m.entrepreneur.entreprise }}</span>
-                  </div>
-                  <div class="rc-info-item" *ngIf="m.entrepreneur?.secteur">
-                    <span class="rc-info-label">Secteur</span>
-                    <span class="rc-info-value">{{ m.entrepreneur.secteur }}</span>
-                  </div>
-                  <div class="rc-info-item" *ngIf="m.entrepreneur?.phaseMaturite">
-                    <span class="rc-info-label">Phase de maturité</span>
-                    <span class="rc-info-value">{{ m.entrepreneur.phaseMaturite }}</span>
-                  </div>
-                  <div class="rc-info-item" *ngIf="m.entrepreneur?.region">
-                    <span class="rc-info-label">Région</span>
-                    <span class="rc-info-value">{{ m.entrepreneur.region }}</span>
-                  </div>
-                  <div class="rc-info-item rc-info-full" *ngIf="m.entrepreneur?.description">
-                    <span class="rc-info-label">Description</span>
-                    <span class="rc-info-value">{{ m.entrepreneur.description }}</span>
-                  </div>
-                  <div class="rc-info-item rc-info-full" *ngIf="m.entrepreneur?.innovation">
-                    <span class="rc-info-label">Innovation</span>
-                    <span class="rc-info-value">{{ m.entrepreneur.innovation }}</span>
-                  </div>
-                  <div class="rc-info-item rc-info-full" *ngIf="m.entrepreneur?.besoinsAccompagnement?.length">
-                    <span class="rc-info-label">Besoins d'accompagnement</span>
-                    <div class="rc-tags">
-                      <span class="rc-tag rc-tag-ent" *ngFor="let b of m.entrepreneur.besoinsAccompagnement">{{ b }}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
 
-              <!-- Arrow -->
-              <div class="rc-arrow-col">
-                <div class="rc-arrow-wrapper">
-                  <i class="pi pi-arrow-right"></i>
-                </div>
-              </div>
-
-              <!-- Coach Profile -->
-              <div class="rc-profile-card rc-coach">
-                <div class="rc-profile-header">
-                  <span class="rc-role-badge rc-role-coach">Coach</span>
-                  <span class="rc-charge-badge" *ngIf="m.coach?.nbEntrepreneursActifs != null">
-                    {{ m.coach.nbEntrepreneursActifs }} actif(s)
-                  </span>
-                </div>
-                <h4 class="rc-name">{{ m.coach?.prenom }} {{ m.coach?.nom }}</h4>
-                <div class="rc-info-grid">
-                  <div class="rc-info-item" *ngIf="m.coach?.email">
-                    <span class="rc-info-label">Email</span>
-                    <span class="rc-info-value">{{ m.coach.email }}</span>
-                  </div>
-                  <div class="rc-info-item" *ngIf="m.coach?.phoneNumber">
-                    <span class="rc-info-label">Téléphone</span>
-                    <span class="rc-info-value">{{ m.coach.phoneNumber }}</span>
-                  </div>
-                  <div class="rc-info-item" *ngIf="m.coach?.expertise">
-                    <span class="rc-info-label">Expertise</span>
-                    <span class="rc-info-value">{{ m.coach.expertise }}</span>
-                  </div>
-                  <div class="rc-info-item" *ngIf="m.coach?.secteur">
-                    <span class="rc-info-label">Secteur</span>
-                    <span class="rc-info-value">{{ m.coach.secteur }}</span>
-                  </div>
-                  <div class="rc-info-item" *ngIf="m.coach?.skills">
-                    <span class="rc-info-label">Compétences</span>
-                    <span class="rc-info-value">{{ m.coach.skills }}</span>
-                  </div>
-                  <div class="rc-info-item" *ngIf="m.coach?.yearsOfExperience">
-                    <span class="rc-info-label">Expérience</span>
-                    <span class="rc-info-value">{{ m.coach.yearsOfExperience }} ans</span>
-                  </div>
-                  <div class="rc-info-item rc-info-full" *ngIf="m.coach?.bio">
-                    <span class="rc-info-label">Bio</span>
-                    <span class="rc-info-value">{{ m.coach.bio }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Expandable Details -->
-            <div *ngIf="expandedCards[i]" class="rc-details">
-              <!-- Score Details -->
-              <div class="rc-detail-section" *ngIf="m.parsedScoresDetail">
-                <h5 class="rc-detail-title"><i class="pi pi-chart-bar"></i> Détail des Scores</h5>
-                <div class="rc-scores-grid">
-                  <div class="rc-score-item" *ngFor="let entry of objectEntries(m.parsedScoresDetail)">
-                    <span class="rc-score-item-label">{{ formatScoreLabel(entry[0]) }}</span>
-                    <div class="rc-score-bar-bg">
-                      <div class="rc-score-bar" [style.width.%]="entry[1]" [style.background]="scoreColor(entry[1])"></div>
-                    </div>
-                    <span class="rc-score-item-value">{{ entry[1] }}%</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Points Forts -->
-              <div class="rc-detail-section" *ngIf="m.parsedPointsForts?.length">
-                <h5 class="rc-detail-title rc-detail-success"><i class="pi pi-check-circle"></i> Points Forts</h5>
-                <div class="rc-tags">
-                  <span class="rc-tag rc-tag-success" *ngFor="let p of m.parsedPointsForts">{{ p }}</span>
-                </div>
-              </div>
-
-              <!-- Points Attention -->
-              <div class="rc-detail-section" *ngIf="m.parsedPointsAttention?.length">
-                <h5 class="rc-detail-title rc-detail-warning"><i class="pi pi-exclamation-triangle"></i> Points d'Attention</h5>
-                <div class="rc-tags">
-                  <span class="rc-tag rc-tag-warning" *ngFor="let p of m.parsedPointsAttention">{{ p }}</span>
-                </div>
-              </div>
-
-              <!-- Recommandation -->
-              <div class="rc-detail-section" *ngIf="m.recommandationSession1">
-                <h5 class="rc-detail-title"><i class="pi pi-comments"></i> Recommandation 1ère Session</h5>
-                <p class="rc-recommandation">{{ m.recommandationSession1 }}</p>
-              </div>
-            </div>
-
-            <!-- Justification always visible -->
-            <div class="rc-ia-box" *ngIf="m.justification">
-              <span class="rc-ia-label">Analyse IA : </span>{{ m.justification }}
-            </div>
-          </div>
-        </div>
-      </div>
 
       <!-- ════════════════════════════════════════════════════ -->
       <!-- TAB: Thématiques                                     -->
