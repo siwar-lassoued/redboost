@@ -60,16 +60,20 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
               </select>
             </div>
 
-            <!-- Thématique -->
+            <!-- Thématique OBLIGATOIRE -->
             <div class="form-group">
-              <label>Thématique du matching</label>
-              <select [(ngModel)]="selectedThematiqueId" class="form-select">
-                <option [ngValue]="0">Toutes les thématiques...</option>
+              <label>Thématique du matching <span class="required">*</span></label>
+              <select [(ngModel)]="selectedThematiqueId" class="form-select" [class.select-error]="selectedProgId && thematiques.length > 0 && !selectedThematiqueId">
+                <option [ngValue]="0">-- Sélectionnez une thématique --</option>
                 <option *ngFor="let t of thematiques" [ngValue]="t.id">
                   {{ t.nom }} ({{ t.dateDebut }} → {{ t.dateFin }})
                 </option>
               </select>
-              <p class="hint">Optionnel : la thématique influence le score IA (30% du poids)</p>
+              <p class="hint warning-hint" *ngIf="selectedProgId && thematiques.length > 0 && !selectedThematiqueId">
+                ⚠️ La thématique est obligatoire pour lancer le matching IA
+              </p>
+              <p class="hint" *ngIf="!selectedProgId || thematiques.length === 0">Sélectionnez un programme avec des thématiques actives</p>
+              <p class="hint success-hint" *ngIf="selectedThematiqueId">✓ Thématique sélectionnée — l'IA va prioriser les coachs compatibles</p>
             </div>
           </div>
 
@@ -92,62 +96,177 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
               <p><strong>🚨 Erreur IA Backend :</strong> {{ errorMessage }}</p>
             </div>
 
+            <div *ngIf="selectedProgId && thematiques.length === 0" class="info-box">
+              <i class="pi pi-info-circle"></i>
+              <p>Aucune thématique n'existe pour ce programme. Créez-en une dans l'onglet <strong>Thématiques</strong> avant de lancer le matching.</p>
+            </div>
+
             <button *ngIf="!stats || stats.unmatchedCount > 0"
-              class="btn-launch" (click)="runMatching()" [disabled]="isLoading">
+              class="btn-launch" (click)="runMatching()"
+              [disabled]="isLoading || !selectedThematiqueId">
               {{ isLoading ? loadingText : launchText }}
             </button>
-            <p class="hint" *ngIf="!stats || stats.unmatchedCount > 0">
-              L'IA propose le meilleur coach pour chaque entrepreneur du programme.
+            <p class="hint" *ngIf="(!stats || stats.unmatchedCount > 0) && selectedThematiqueId">
+              L'IA va proposer un <strong>TOP 3 de coachs</strong> pour chaque entrepreneur de ce programme, classés par score décroissant.
             </p>
           </div>
         </div>
 
-        <!-- ── Résultats ── -->
+        <!-- ── Résultats: Top 3 groupés par entrepreneur ── -->
         <div *ngIf="currentSession" class="results-section">
           <div class="results-header">
             <div>
-              <h3>Propositions de Matching</h3>
-              <p class="results-meta">Session #{{ currentSession.id }} • {{ enrichedResults.length }} matchings générés</p>
+              <h3>Propositions de Matching — TOP 3</h3>
+              <p class="results-meta">Session #{{ currentSession.id }} • {{ groupedResults.length }} entrepreneur(s) • {{ totalPropositions }} propositions générées</p>
             </div>
             <button class="btn-validate-all" (click)="validateSession()" [disabled]="bulkLoading">
-              {{ bulkLoading ? 'Validation...' : 'Tout Valider (' + enrichedResults.length + ')' }}
+              {{ bulkLoading ? 'Validation...' : 'Valider tous les Rangs 1 (' + groupedResults.length + ')' }}
             </button>
           </div>
 
-          <!-- Enriched Matching Cards -->
-          <div *ngFor="let m of enrichedResults; let i = index" class="result-card" [style.border-left-color]="scoreColor(m.scoreIa)">
+          <!-- Entrepreneur Group Card -->
+          <div *ngFor="let group of groupedResults; let gi = index" class="entrepreneur-group">
 
-            <!-- Card Header: Score + Actions -->
-            <div class="rc-header">
-              <div class="rc-score-section">
-                <div class="rc-score-circle" [style.background]="scoreColor(m.scoreIa)">
-                  {{ m.scoreIa | number:'1.0-0' }}%
-                </div>
-                <div>
-                  <p class="rc-score-label">Score IA</p>
-                  <p class="rc-score-level" [style.color]="scoreColor(m.scoreIa)">{{ scoreLabel(m.scoreIa) }}</p>
+            <!-- Entrepreneur Header -->
+            <div class="eg-header">
+              <div class="eg-avatar">{{ (group.entrepreneur?.nom || '?')[0] }}</div>
+              <div>
+                <h4 class="eg-name">{{ group.entrepreneur?.nom || 'Entrepreneur #' + group.entrepreneurId }}</h4>
+                <div class="eg-meta">
+                  <span *ngIf="group.entrepreneur?.entreprise">🏢 {{ group.entrepreneur.entreprise }}</span>
+                  <span *ngIf="group.entrepreneur?.secteur">📌 {{ group.entrepreneur.secteur }}</span>
+                  <span *ngIf="group.entrepreneur?.phaseMaturite">🚀 {{ group.entrepreneur.phaseMaturite }}</span>
                 </div>
               </div>
-              <div class="rc-actions">
-                <button class="btn-expand" (click)="toggleExpand(i)">
-                  <i [class]="expandedCards[i] ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"></i>
-                  {{ expandedCards[i] ? 'Réduire' : 'Détails' }}
-                </button>
-                <button class="btn-action-validate" (click)="validateSingle(m.matchingId)" [disabled]="singleLoading[m.matchingId]">
-                  {{ singleLoading[m.matchingId] ? '...' : 'Valider' }}
-                </button>
-              </div>
+              <div class="eg-badge">{{ group.propositions.length }} coach(s) proposé(s)</div>
             </div>
 
-            <!-- Profiles Side by Side -->
-            <div class="rc-profiles">
-              <!-- Entrepreneur Profile -->
-              <div class="rc-profile-card rc-ent">
-                <div class="rc-profile-header">
-                  <span class="rc-role-badge rc-role-ent">Entrepreneur</span>
+            <!-- Top 3 Coach Propositions -->
+            <div class="eg-propositions">
+              <div *ngFor="let m of group.propositions" class="prop-card"
+                [class.prop-rank1]="m.rankTop === 1"
+                [class.prop-rank2]="m.rankTop === 2"
+                [class.prop-rank3]="m.rankTop === 3">
+
+                <!-- Rank Badge + Score -->
+                <div class="prop-header">
+                  <div class="prop-rank" [class.rank-gold]="m.rankTop === 1" [class.rank-silver]="m.rankTop === 2" [class.rank-bronze]="m.rankTop === 3">
+                    <span class="rank-icon">{{ m.rankTop === 1 ? '🥇' : m.rankTop === 2 ? '🥈' : '🥉' }}</span>
+                    <span class="rank-label">{{ m.rankTop === 1 ? 'Recommandé' : 'Alternative ' + m.rankTop }}</span>
+                  </div>
+                  <div class="prop-score">
+                    <div class="rc-score-circle small-circle" [style.background]="scoreColor(m.scoreIa)">
+                      {{ m.scoreIa | number:'1.0-0' }}%
+                    </div>
+                    <span class="prop-score-label" [style.color]="scoreColor(m.scoreIa)">{{ scoreLabel(m.scoreIa) }}</span>
+                  </div>
+                  <div class="prop-actions">
+                    <button class="btn-expand btn-sm" (click)="toggleExpand(m.matchingId)">
+                      <i [class]="expandedCards[m.matchingId] ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"></i>
+                      {{ expandedCards[m.matchingId] ? 'Moins' : 'Détails' }}
+                    </button>
+                    <button class="btn-action-validate" (click)="validateSingle(m.matchingId)" [disabled]="singleLoading[m.matchingId]">
+                      {{ singleLoading[m.matchingId] ? '...' : 'Choisir ce coach' }}
+                    </button>
+                  </div>
                 </div>
-                <h4 class="rc-name">{{ m.entrepreneur?.nom || 'N/A' }}</h4>
-                <div class="rc-info-grid">
+
+                <!-- Coach Summary -->
+                <div class="prop-coach-summary">
+                  <div class="coach-avatar">{{ (m.coach?.prenom || '?')[0] }}{{ (m.coach?.nom || '')[0] }}</div>
+                  <div class="coach-info">
+                    <div class="coach-name">{{ m.coach?.prenom }} {{ m.coach?.nom }}</div>
+                    <div class="coach-meta">
+                      <span *ngIf="m.coach?.expertise">{{ m.coach.expertise }}</span>
+                      <span *ngIf="m.coach?.secteur"> • {{ m.coach.secteur }}</span>
+                      <span *ngIf="m.coach?.yearsOfExperience"> • {{ m.coach.yearsOfExperience }} ans exp.</span>
+                    </div>
+                    <div class="coach-load">
+                      <span class="load-badge" [class.load-warn]="m.coach?.nbEntrepreneursActifs >= 3">
+                        {{ m.coach?.nbEntrepreneursActifs || 0 }}/5 actifs
+                      </span>
+                      <span *ngIf="m.coach?.noteMoyenneRating" class="rating-badge">⭐ {{ m.coach.noteMoyenneRating }}/5</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Justification IA toujours visible -->
+                <div class="rc-ia-box" *ngIf="m.justification">
+                  <span class="rc-ia-label">Analyse IA : </span>{{ m.justification }}
+                </div>
+
+                <!-- Détails extensibles -->
+                <div *ngIf="expandedCards[m.matchingId]" class="rc-details">
+
+                  <!-- Panel aide à la décision (decision_support) -->
+                  <div class="rc-detail-section decision-support" *ngIf="m.parsedDecisionSupport">
+                    <h5 class="rc-detail-title"><i class="pi pi-compass"></i> Aide à la décision admin</h5>
+                    <div class="ds-items">
+                      <div class="ds-item ds-positive">
+                        <i class="pi pi-check-circle"></i>
+                        <div>
+                          <strong>Pourquoi ce coach ?</strong>
+                          <p>{{ m.parsedDecisionSupport.pourquoi_ce_coach }}</p>
+                        </div>
+                      </div>
+                      <div class="ds-item ds-warning">
+                        <i class="pi pi-exclamation-triangle"></i>
+                        <div>
+                          <strong>Points non idéaux</strong>
+                          <p>{{ m.parsedDecisionSupport.pourquoi_pas_ideal }}</p>
+                        </div>
+                      </div>
+                      <div class="ds-item ds-info">
+                        <i class="pi pi-info-circle"></i>
+                        <div>
+                          <strong>Choisir malgré son rang si...</strong>
+                          <p>{{ m.parsedDecisionSupport.cas_ou_choisir_ce_coach }}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Score Details -->
+                  <div class="rc-detail-section" *ngIf="m.parsedScoresDetail">
+                    <h5 class="rc-detail-title"><i class="pi pi-chart-bar"></i> Détail des scores pondérés</h5>
+                    <div class="rc-scores-grid">
+                      <div class="rc-score-item" *ngFor="let entry of objectEntries(m.parsedScoresDetail)">
+                        <span class="rc-score-item-label">{{ formatScoreLabel(entry[0]) }}</span>
+                        <div class="rc-score-bar-bg">
+                          <div class="rc-score-bar" [style.width.%]="entry[1]" [style.background]="scoreColor(entry[1])"></div>
+                        </div>
+                        <span class="rc-score-item-value">{{ entry[1] }}%</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Points Forts -->
+                  <div class="rc-detail-section" *ngIf="m.parsedPointsForts?.length">
+                    <h5 class="rc-detail-title rc-detail-success"><i class="pi pi-check-circle"></i> Points Forts</h5>
+                    <div class="rc-tags">
+                      <span class="rc-tag rc-tag-success" *ngFor="let p of m.parsedPointsForts">{{ p }}</span>
+                    </div>
+                  </div>
+
+                  <!-- Points Attention -->
+                  <div class="rc-detail-section" *ngIf="m.parsedPointsAttention?.length">
+                    <h5 class="rc-detail-title rc-detail-warning"><i class="pi pi-exclamation-triangle"></i> Points d'Attention</h5>
+                    <div class="rc-tags">
+                      <span class="rc-tag rc-tag-warning" *ngFor="let p of m.parsedPointsAttention">{{ p }}</span>
+                    </div>
+                  </div>
+
+                  <!-- Recommandation Session 1 -->
+                  <div class="rc-detail-section" *ngIf="m.recommandationSession1">
+                    <h5 class="rc-detail-title"><i class="pi pi-comments"></i> Recommandation 1ère session</h5>
+                    <p class="rc-recommandation">{{ m.recommandationSession1 }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
                   <div class="rc-info-item" *ngIf="m.entrepreneur?.email">
                     <span class="rc-info-label">Email</span>
                     <span class="rc-info-value">{{ m.entrepreneur.email }}</span>
@@ -492,6 +611,16 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
       }
       .form-actions { display: flex; gap: 12px; margin-top: 12px; }
 
+      .select-error { border-color: #EF4444 !important; }
+      .warning-hint { color: #D97706 !important; font-style: normal !important; font-weight: 600; }
+      .success-hint { color: #16a34a !important; font-style: normal !important; font-weight: 600; }
+
+      .info-box {
+        display: flex; align-items: flex-start; gap: 10px; margin-bottom: 15px;
+        padding: 12px 16px; background: #EFF6FF; border-left: 4px solid #3B82F6; border-radius: 12px;
+      }
+      .info-box p { margin: 0; color: #1D4ED8; font-size: 13px; }
+
       .error-box {
         margin-bottom: 15px; padding: 12px 16px; background: #FEF2F2;
         border-left: 4px solid #EF4444; border-radius: 12px;
@@ -513,13 +642,87 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
       .results-header h3 { font-size: 22px; font-weight: 800; color: #1A1A2E; margin: 0; }
       .results-meta { font-size: 13px; color: #9CA3AF; margin-top: 4px; }
 
-      /* ══════════ Result Card ══════════ */
-      .result-card {
+      /* ══════════ Entrepreneur Group ══════════ */
+      .entrepreneur-group {
         background: #fff; border-radius: 20px; overflow: hidden;
-        box-shadow: 0 2px 16px rgba(0,0,0,0.07); margin-bottom: 20px;
-        border-left: 5px solid #ea5073; transition: box-shadow .2s;
+        box-shadow: 0 2px 16px rgba(0,0,0,0.07); margin-bottom: 28px;
+        border: 1px solid #E5E7EB;
       }
-      .result-card:hover { box-shadow: 0 4px 24px rgba(0,0,0,0.1); }
+      .eg-header {
+        display: flex; align-items: center; gap: 16px; padding: 20px 24px;
+        background: linear-gradient(135deg, #1A1A2E, #2d2d4e);
+        color: #fff;
+      }
+      .eg-avatar {
+        width: 48px; height: 48px; border-radius: 50%; background: rgba(234,80,115,0.8);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 22px; font-weight: 800; flex-shrink: 0;
+      }
+      .eg-name { font-size: 18px; font-weight: 800; margin: 0 0 4px; }
+      .eg-meta { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: #CBD5E1; }
+      .eg-badge {
+        margin-left: auto; padding: 6px 14px; background: rgba(234,80,115,0.2);
+        border: 1px solid rgba(234,80,115,0.4); border-radius: 20px;
+        font-size: 12px; font-weight: 700; color: #FDA4AF; white-space: nowrap;
+      }
+
+      .eg-propositions { display: flex; flex-direction: column; gap: 0; }
+
+      /* ══════════ Proposition Card ══════════ */
+      .prop-card {
+        border-bottom: 1px solid #F3F4F6; padding: 20px 24px;
+        transition: background .15s;
+      }
+      .prop-card:last-child { border-bottom: none; }
+      .prop-rank1 { background: #FFFBEB; }
+      .prop-rank2 { background: #FAFAFA; }
+      .prop-rank3 { background: #F9FAFB; }
+
+      .prop-header { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; flex-wrap: wrap; }
+      .prop-rank { display: flex; align-items: center; gap: 8px; min-width: 150px; }
+      .rank-icon { font-size: 20px; }
+      .rank-label { font-size: 13px; font-weight: 700; }
+      .rank-gold .rank-label { color: #B45309; }
+      .rank-silver .rank-label { color: #6B7280; }
+      .rank-bronze .rank-label { color: #92400E; }
+
+      .prop-score { display: flex; align-items: center; gap: 10px; }
+      .small-circle { width: 44px !important; height: 44px !important; font-size: 13px !important; }
+      .prop-score-label { font-size: 12px; font-weight: 700; }
+
+      .prop-actions { display: flex; gap: 8px; margin-left: auto; }
+
+      .prop-coach-summary { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
+      .coach-avatar {
+        width: 42px; height: 42px; border-radius: 50%;
+        background: linear-gradient(135deg, #2a7b8c, #1a4d5c);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 15px; font-weight: 800; color: #fff; flex-shrink: 0;
+      }
+      .coach-info { flex: 1; }
+      .coach-name { font-size: 16px; font-weight: 700; color: #1A1A2E; }
+      .coach-meta { font-size: 12px; color: #6B7280; margin-top: 2px; }
+      .coach-load { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+      .load-badge {
+        font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 12px;
+        background: #D1FAE5; color: #065F46;
+      }
+      .load-badge.load-warn { background: #FEF3C7; color: #92400E; }
+      .rating-badge { font-size: 11px; font-weight: 700; color: #92400E; }
+
+      /* Decision support panel */
+      .decision-support { background: #F0FDF4; border: 1px solid #BBF7D0 !important; }
+      .ds-items { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+      .ds-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-radius: 10px; }
+      .ds-item i { font-size: 16px; margin-top: 2px; flex-shrink: 0; }
+      .ds-item strong { display: block; font-size: 12px; font-weight: 700; margin-bottom: 2px; }
+      .ds-item p { margin: 0; font-size: 13px; line-height: 1.5; color: #374151; }
+      .ds-positive { background: #F0FFF4; border: 1px solid #C6F6D5; }
+      .ds-positive i { color: #16a34a; }
+      .ds-warning { background: #FFFBEB; border: 1px solid #FDE68A; }
+      .ds-warning i { color: #D97706; }
+      .ds-info { background: #EFF6FF; border: 1px solid #BFDBFE; }
+      .ds-info i { color: #2563EB; }
 
       .rc-header {
         display: flex; justify-content: space-between; align-items: center;
@@ -715,7 +918,7 @@ export class AdminMatchingComponent implements OnInit {
     isLoading = false;
     errorMessage: string | null = null;
     loadingText = "L'IA analyse les profils...";
-    launchText = 'Lancer le matching';
+    launchText = '🚀 Lancer le matching IA';
     bulkLoading = false;
     historyLoading = false;
     singleLoading: Record<number, boolean> = {};
@@ -723,6 +926,8 @@ export class AdminMatchingComponent implements OnInit {
     stats: { activeCount: number; unmatchedCount: number } | null = null;
     currentSession: MatchingSession | null = null;
     enrichedResults: any[] = [];
+    groupedResults: any[] = []; // Groupés par entrepreneur (Top 3)
+    totalPropositions = 0;
     expandedCards: Record<number, boolean> = {};
     history: any[] = [];
 
@@ -781,22 +986,26 @@ export class AdminMatchingComponent implements OnInit {
         this.matchingSvc.runMatchingIA(this.selectedProgId, thId).subscribe({
             next: (session) => {
                 this.currentSession = session;
-                // Fetch enriched details
                 this.matchingSvc.getSessionDetails(session.id).subscribe({
                     next: (enriched) => {
                         this.enrichedResults = enriched.map(m => this.parseEnrichedResult(m));
+                        this.groupedResults = this.buildGroupedResults(this.enrichedResults);
+                        this.totalPropositions = this.enrichedResults.length;
                         this.isLoading = false;
                     },
                     error: () => {
-                        // Fallback to basic data
                         if (session.matchings && session.matchings.length > 0) {
                             this.enrichedResults = session.matchings.map(m => ({
                                 matchingId: m.id,
                                 scoreIa: m.scoreIa,
                                 justification: m.justification,
+                                rankTop: m.rankTop || 1,
+                                entrepreneurId: m.entrepreneurId,
                                 entrepreneur: { nom: 'Entrepreneur #' + m.entrepreneurId },
                                 coach: { nom: 'Coach #' + m.coachId }
                             }));
+                            this.groupedResults = this.buildGroupedResults(this.enrichedResults);
+                            this.totalPropositions = this.enrichedResults.length;
                         }
                         this.isLoading = false;
                     }
@@ -823,11 +1032,32 @@ export class AdminMatchingComponent implements OnInit {
 
     parseEnrichedResult(m: any): any {
         const result = { ...m };
-        // Parse JSON strings
         try { result.parsedScoresDetail = typeof m.scoresDetail === 'string' ? JSON.parse(m.scoresDetail) : m.scoresDetail; } catch { result.parsedScoresDetail = null; }
         try { result.parsedPointsForts = typeof m.pointsForts === 'string' ? JSON.parse(m.pointsForts) : m.pointsForts; } catch { result.parsedPointsForts = null; }
         try { result.parsedPointsAttention = typeof m.pointsAttention === 'string' ? JSON.parse(m.pointsAttention) : m.pointsAttention; } catch { result.parsedPointsAttention = null; }
+        try { result.parsedDecisionSupport = typeof m.decisionSupport === 'string' ? JSON.parse(m.decisionSupport) : m.decisionSupport; } catch { result.parsedDecisionSupport = null; }
         return result;
+    }
+
+    /** Grouper les matchings plats en groupes par entrepreneur avec leurs Top 3 */
+    buildGroupedResults(flatResults: any[]): any[] {
+        const map = new Map<number, any>();
+        for (const m of flatResults) {
+            const entId = m.entrepreneurId;
+            if (!map.has(entId)) {
+                map.set(entId, {
+                    entrepreneurId: entId,
+                    entrepreneur: m.entrepreneur,
+                    propositions: []
+                });
+            }
+            map.get(entId).propositions.push(m);
+        }
+        // Trier propositions par rank
+        map.forEach(group => {
+            group.propositions.sort((a: any, b: any) => (a.rankTop || 99) - (b.rankTop || 99));
+        });
+        return Array.from(map.values());
     }
 
     validateSession(): void {
@@ -846,14 +1076,24 @@ export class AdminMatchingComponent implements OnInit {
 
     validateSingle(matchingId: number): void {
         this.singleLoading[matchingId] = true;
+        const selectedMatching = this.enrichedResults.find(r => r.matchingId === matchingId);
         this.matchingSvc.validateSingle(matchingId, 1).subscribe({
             next: () => {
-                this.enrichedResults = this.enrichedResults.filter(r => r.matchingId !== matchingId);
+                // Retire tous les rangs du même entrepreneur du groupe
+                if (selectedMatching?.entrepreneurId) {
+                    this.enrichedResults = this.enrichedResults.filter(
+                        r => r.entrepreneurId !== selectedMatching.entrepreneurId
+                    );
+                } else {
+                    this.enrichedResults = this.enrichedResults.filter(r => r.matchingId !== matchingId);
+                }
+                this.groupedResults = this.buildGroupedResults(this.enrichedResults);
+                this.totalPropositions = this.enrichedResults.length;
                 this.singleLoading[matchingId] = false;
                 if (this.selectedProgId) {
                     this.matchingSvc.getMatchingStats(this.selectedProgId).subscribe(s => this.stats = s);
                 }
-                if (this.enrichedResults.length === 0) {
+                if (this.groupedResults.length === 0) {
                     this.currentSession = null;
                     this.setTab('historique');
                 }
@@ -935,11 +1175,14 @@ export class AdminMatchingComponent implements OnInit {
 
     formatScoreLabel(key: string): string {
         const labels: Record<string, string> = {
-            'alignement_thematique': 'Alignement thématique',
-            'alignement_sectoriel': 'Alignement sectoriel',
-            'competences_complementaires': 'Compétences complémentaires',
-            'stade_maturite': 'Stade de maturité',
-            'charge_coach': 'Charge du coach'
+            'alignement_global':             'Alignement global (thématique + secteur) · 30%',
+            'competences_complementaires':   'Compétences complémentaires · 25%',
+            'stade_maturite':                'Stade de maturité · 20%',
+            'compatibilite_humaine':         'Compatibilité humaine · 15%',
+            'charge_coach':                  'Charge du coach · 10%',
+            // Anciens labels (rétrocompatibilité)
+            'alignement_thematique':         'Alignement thématique · 30%',
+            'alignement_sectoriel':          'Alignement sectoriel'
         };
         return labels[key] || key.replace(/_/g, ' ');
     }

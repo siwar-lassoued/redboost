@@ -54,6 +54,14 @@ public class Matching {
     @Column(name = "recommandation_session_1", columnDefinition = "TEXT")
     private String recommandationSession1;
 
+    /** Rang dans le TOP 3 proposé pour cet entrepreneur (1=recommandé, 2, 3) */
+    @Column(name = "rank_top")
+    private Integer rankTop;
+
+    /** Bloc JSON decision_support généré par l'IA pour aider l'admin */
+    @Column(name = "decision_support", columnDefinition = "TEXT")
+    private String decisionSupport;
+
     @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

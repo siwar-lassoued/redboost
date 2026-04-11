@@ -42,4 +42,15 @@ public interface MatchingRepository extends JpaRepository<Matching, Long> {
     @Modifying
     @Query("UPDATE MatchingSession ms SET ms.statut = 'ARCHIVE' WHERE ms.programmeId = :programmeId AND ms.id <> :activeSessionId AND ms.statut = 'EN_ATTENTE'")
     void archiveOtherPendingSessions(@Param("programmeId") Long programmeId, @Param("activeSessionId") Long activeSessionId);
+
+    /** Libère les propositions non sélectionnées (rangs 2 et 3) quand l'admin valide un rang */
+    @Modifying
+    @Query("UPDATE Matching m SET m.statut = 'LIBERE' WHERE m.entrepreneurId = :entId AND m.thematiqueId = :thematiqueId AND m.rankTop <> :validatedRank AND m.statut = 'PROPOSE'")
+    void liberateNonSelectedRanks(@Param("entId") Long entId,
+                                   @Param("thematiqueId") Long thematiqueId,
+                                   @Param("validatedRank") Integer validatedRank);
+
+    /** Vérifie si un entrepreneur a déjà un match VALIDE pour ce programme+thématique */
+    boolean existsByEntrepreneurIdAndProgrammeIdAndThematiqueIdAndStatut(
+            Long entrepreneurId, Long programmeId, Long thematiqueId, Matching.StatutMatching statut);
 }

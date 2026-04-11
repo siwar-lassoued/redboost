@@ -31,6 +31,7 @@ public class MatchingIaService {
     private final ProgrammeRepository programmeRepo;
     private final ThematiqueRepository thematiqueRepo;
     private final CandidatureRedstarterRepository candidatureRepo;
+    private final CoachRatingRepository coachRatingRepo;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final RestTemplate restTemplate = new RestTemplate();
 
@@ -47,49 +48,64 @@ public class MatchingIaService {
 
     @Transactional
     public MatchingSession runMatchingIA(Long programmeId, Long thematiqueId) {
-        Programme programme = programmeRepo.findById(programmeId)
-                .orElseThrow(() -> new RuntimeException("Programme introuvable"));
 
-        ThematiqueCoaching thematique = null;
-        if (thematiqueId != null) {
-            thematique = thematiqueRepo.findById(thematiqueId).orElse(null);
+        // ── 1. Validation obligatoire de la thématique ──────────────
+        if (thematiqueId == null) {
+            throw new RuntimeException("Une thématique de coaching est obligatoire pour lancer le matching. Veuillez sélectionner une thématique active.");
         }
 
+        Programme programme = programmeRepo.findById(programmeId)
+                .orElseThrow(() -> new RuntimeException("Programme introuvable : " + programmeId));
+
+        ThematiqueCoaching thematique = thematiqueRepo.findById(thematiqueId)
+                .orElseThrow(() -> new RuntimeException("Thématique introuvable : " + thematiqueId));
+
+        if (thematique.getStatut() != ThematiqueCoaching.StatutThematique.ACTIVE) {
+            throw new RuntimeException("La thématique '" + thematique.getNom() + "' n'est pas active. Seules les thématiques ACTIVE peuvent être utilisées pour le matching.");
+        }
+
+        log.info("=== DÉMARRAGE MATCHING IA === Programme: {} | Thématique: {}", programme.getNom(), thematique.getNom());
+
+        // ── 2. Récupérer les coachs actifs ───────────────────────────
         List<User> coaches = userRepo.findAll().stream()
                 .filter(u -> u.getRole() == Role.COACH && u.isActive())
                 .collect(Collectors.toList());
 
-        log.info("Coaches trouvés dans la base users: {}", coaches.size());
+        log.info("Coaches actifs trouvés: {}", coaches.size());
         coaches.forEach(c -> log.info("  Coach: {} {} (id={})", c.getFirstName(), c.getLastName(), c.getId()));
 
         if (coaches.isEmpty()) {
             throw new RuntimeException("Aucun coach actif trouvé. Vérifiez que des utilisateurs avec le rôle COACH existent dans la base.");
         }
 
+        // ── 3. Récupérer les entrepreneurs non encore matchés ─────────
         Set<Long> coachCandidatureIds = candidatureRepo
                 .findAcceptedCoaches(CandidatureRedstarter.StatutCandidature.ACCEPTE)
                 .stream().map(CandidatureRedstarter::getId).collect(Collectors.toSet());
-        log.info("Candidatures coach à exclure du pool entrepreneur: {}", coachCandidatureIds.size());
 
-        // 3. Get ALL accepted candidatures, exclude coaches, exclude already matched
+        log.info("Candidatures coach à exclure: {}", coachCandidatureIds.size());
+
         List<CandidatureRedstarter> acceptedCandidatures = candidatureRepo
                 .findAllByStatut(CandidatureRedstarter.StatutCandidature.ACCEPTE);
 
         List<CandidatureRedstarter> unmatchedCandidatures = acceptedCandidatures.stream()
                 .filter(c -> !coachCandidatureIds.contains(c.getId()))
-                .filter(c -> !matchingRepo.isEntrepreneurActivelyMatched(c.getId(), programmeId))
+                // Vérifie pas déjà un VALIDE sur CE programme + CETTE thématique
+                .filter(c -> !matchingRepo.existsByEntrepreneurIdAndProgrammeIdAndThematiqueIdAndStatut(
+                        c.getId(), programmeId, thematiqueId, Matching.StatutMatching.VALIDE))
                 .collect(Collectors.toList());
 
-        log.info("Entrepreneurs à matcher: {} (sur {} candidatures acceptées)", unmatchedCandidatures.size(), acceptedCandidatures.size());
+        log.info("Entrepreneurs à matcher: {} / {} acceptés", unmatchedCandidatures.size(), acceptedCandidatures.size());
 
         if (unmatchedCandidatures.isEmpty()) {
-            throw new RuntimeException("Aucun entrepreneur non-matché à traiter pour ce programme.");
+            throw new RuntimeException("Aucun entrepreneur sans coaching actif pour cette thématique. Tous ont déjà un match VALIDE.");
         }
-    
+
+        // ── 4. Construire le profil enrichi de chaque coach ──────────
         List<Map<String, Object>> coachesData = coaches.stream().map(c -> {
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("id", c.getId());
-            m.put("nom", (c.getFirstName() != null ? c.getFirstName() : "") + " " + (c.getLastName() != null ? c.getLastName() : ""));
+            m.put("nom", ((c.getFirstName() != null ? c.getFirstName() : "") + " " + (c.getLastName() != null ? c.getLastName() : "")).trim());
             m.put("expertise", c.getExpertise());
             m.put("skills", c.getSkills());
             m.put("secteur", c.getSecteur());
@@ -98,20 +114,29 @@ public class MatchingIaService {
             m.put("bio", c.getBio());
             m.put("entreprise", c.getEntreprise());
             m.put("industry", c.getIndustry());
-            m.put("linkedin", c.getLinkedinUrl());
             m.put("formation_academique", c.getFormationAcademNom());
             m.put("formation_academique_realisations", c.getFormationAcademRealisations());
             m.put("competences_pro", c.getCompetencesProNom());
             m.put("competences_pro_certificat", c.getCompetencesProCertificat());
-            m.put("nb_entrepreneurs_coaches", c.getNbEntreCoaches());
+            m.put("nb_entrepreneurs_coaches_historique", c.getNbEntreCoaches());
             m.put("succes_client", c.getSuccesClient());
             m.put("engagement_communautaire", c.getEngagementCommunautaire());
+
+            // Charge réelle du coach
             long activeCount = matchingRepo.findByCoachIdAndStatut(c.getId(), Matching.StatutMatching.VALIDE).size();
+            double ratingMoyen = coachRatingRepo.findAverageRatingByCoachId(c.getId()).orElse(3.0);
+            // Formule: (1 - nb_actifs/5) * 70 + (rating/5) * 30
+            double scoreChargePrecalcule = Math.max(0, (1.0 - (double) activeCount / 5.0)) * 70.0 + (ratingMoyen / 5.0) * 30.0;
+
             m.put("nb_entrepreneurs_actifs", activeCount);
+            m.put("note_moyenne_coaching_rating", Math.round(ratingMoyen * 10.0) / 10.0);
+            m.put("score_charge_precalcule", (int) Math.round(scoreChargePrecalcule));
+
             m.values().removeIf(Objects::isNull);
             return m;
         }).collect(Collectors.toList());
 
+        // ── 5. Construire le profil enrichi de chaque entrepreneur ───
         List<Map<String, Object>> entrepreneursData = unmatchedCandidatures.stream().map(c -> {
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("id", c.getId());
@@ -133,101 +158,167 @@ public class MatchingIaService {
             m.put("role_entreprise", c.getRoleEntreprise());
             m.put("experience_equipe", c.getExperienceEquipeFondatrice());
             m.put("nb_cofondateurs", c.getNombreCoFondateurs());
-            m.put("nb_emplois_crees", c.getNombreEmploisCrees());
             m.put("a_beneficie_accompagnement", c.getBeneficieAccompagnement());
             m.put("details_accompagnement", c.getDetailsAccompagnement());
-            // Include dynamicAnswers data — this is the richest source of information
+
+            // Réponses dynamiques du formulaire (source la plus riche)
             if (c.getDynamicAnswers() != null && !c.getDynamicAnswers().isEmpty()) {
                 try {
                     Map<String, Object> dynRoot = objectMapper.readValue(c.getDynamicAnswers(), Map.class);
                     Object answers = dynRoot.get("answers");
-                    if (answers instanceof Map) {
-                        m.put("reponses_formulaire", answers);
-                    } else {
-                        m.put("reponses_formulaire", dynRoot);
-                    }
+                    m.put("reponses_formulaire", (answers instanceof Map) ? answers : dynRoot);
                 } catch (Exception e) {
-                    log.warn("Failed to parse dynamicAnswers for candidature {}: {}", c.getId(), e.getMessage());
+                    log.warn("Impossible de parser dynamicAnswers pour candidature {}: {}", c.getId(), e.getMessage());
                 }
             }
-            
-            // Extract text from uploaded documents (CVs, Pitch Decks, etc.)
+
+            // Extraits de documents PDF (CV, Pitch, etc.) avec troncature ciblée
             if (c.getDocuments() != null && !c.getDocuments().isEmpty()) {
                 List<String> extraits = new ArrayList<>();
                 for (String docName : c.getDocuments()) {
                     String extracted = extractTextFromDocument(docName);
                     if (extracted != null && !extracted.isEmpty()) {
-                        extraits.add("Document '" + docName + "' :\n" + extracted);
+                        // CV = 2000 chars, lettre/pitch = 1000 chars
+                        String nomLower = docName.toLowerCase();
+                        int maxChars = (nomLower.contains("cv") || nomLower.contains("resume") || nomLower.contains("curriculum")) ? 2000 : 1000;
+                        if (extracted.length() > maxChars) {
+                            extracted = extracted.substring(0, maxChars) + "\n... [extrait tronqué]";
+                        }
+                        extraits.add("Document '" + docName + "':\n" + extracted);
                     }
                 }
-                if (!extraits.isEmpty()) {
-                    m.put("documents_extrait", extraits);
-                }
+                if (!extraits.isEmpty()) m.put("documents_extrait", extraits);
             }
 
-            // Remove null values to keep prompt clean
             m.values().removeIf(Objects::isNull);
             return m;
         }).collect(Collectors.toList());
 
-        Map<String, Object> programmeData = new LinkedHashMap<>();
-        programmeData.put("id", programme.getId());
-        programmeData.put("nom", programme.getNom());
-        programmeData.put("description", programme.getDescription());
-        programmeData.put("type", programme.getTypeProgramme());
-        programmeData.put("dateDebut", programme.getDateDebut() != null ? programme.getDateDebut().toString() : null);
-        programmeData.put("dateFin", programme.getDateFin() != null ? programme.getDateFin().toString() : null);
+        // ── 6. Construire & envoyer le prompt Gemini ─────────────────
 
-        Map<String, Object> thematiqueData = null;
-        if (thematique != null) {
-            thematiqueData = new LinkedHashMap<>();
-            thematiqueData.put("nom", thematique.getNom());
-            thematiqueData.put("description", thematique.getDescription());
-            thematiqueData.put("dateDebut", thematique.getDateDebut().toString());
-            thematiqueData.put("dateFin", thematique.getDateFin().toString());
-        }
-
-        // 4. Construct Prompt and Call Gemini Direct
-        String thematiqueContext = "";
-        if (thematique != null) {
-            thematiqueContext = "THÉMATIQUE DE COACHING : " + thematique.getNom() + "\n" +
-                    "Description : " + thematique.getDescription() + "\n" +
-                    "Le matching doit PRIORISER les coaches dont l'expertise correspond directement à cette thématique. Le critère 'Alignement thématique' vaut 30% du score.";
-        }
-
-        String systemPrompt = "Tu es un expert RH spécialisé dans le coaching de startups en Tunisie. Tu effectues le matching entre des coachs et des entrepreneurs pour le programme RedBoost.\n" +
-                thematiqueContext + "\n\n" +
-                "INSTRUCTIONS IMPORTANTES :\n" +
-                "- Analyse TOUS les champs fournis pour chaque profil, y compris 'reponses_formulaire' qui contient les réponses détaillées du formulaire de candidature.\n" +
-                "- Si certains champs sont absents ou vides pour un coach, évalue sur la base des données DISPONIBLES et pénalise uniquement les critères où l'information est réellement manquante.\n" +
-                "- Ne donne PAS un score de 0% pour un critère juste parce qu'une donnée est manquante. Utilise 50% comme valeur neutre si tu ne peux pas évaluer un critère.\n" +
-                "- Exploite les descriptions, bio, compétences, succès clients, formations et certifications pour enrichir ton analyse.\n\n" +
-                "Tu calcules un score de compatibilité 0-100 selon 5 critères pondérés :\n" +
-                "1. Alignement thématique (30%) : Le coach a-t-il l'expertise/formation/certifications en lien avec le thème ou le secteur de l'entrepreneur ?\n" +
-                "2. Alignement sectoriel (25%) : Le secteur, l'industrie ou l'expérience du coach correspondent-ils au domaine de la startup ?\n" +
-                "3. Compétences complémentaires (20%) : Les compétences du coach (skills, expertise, formations) répondent-elles aux besoins d'accompagnement et de formation de l'entrepreneur ?\n" +
-                "4. Stade de maturité (15%) : L'expérience du coach (nombre d'entrepreneurs coachés, années d'expérience, succès clients) est-elle adaptée à la phase de maturité de la startup ?\n" +
-                "5. Charge coach (10%) : Score = max(0, (1 - nb_entrepreneurs_actifs/5)) * 100. Un coach sans charge a 100%.\n\n" +
-                "Propose LE MEILLEUR coach pour chaque entrepreneur.\n" +
-                "Si score < 40 → ajoute une alerte SCORE_FAIBLE avec explication.\n" +
-                "Si charge >= 5 → ajoute une alerte COACH_SURCHARGE.\n" +
-                "RÈGLE ABSOLUE : Retourne UNIQUEMENT du JSON valide. Zéro texte avant ou après le bloc JSON.";
+        String systemPrompt = buildSystemPrompt(thematique, programme);
 
         String coachesStr, entrepreneursStr;
         try {
             coachesStr = objectMapper.writeValueAsString(coachesData.subList(0, Math.min(20, coachesData.size())));
             entrepreneursStr = objectMapper.writeValueAsString(entrepreneursData.subList(0, Math.min(20, entrepreneursData.size())));
         } catch (Exception e) {
-            throw new RuntimeException("Erreur de formatage JSON", e);
+            throw new RuntimeException("Erreur de sérialisation JSON des profils", e);
         }
 
-        String userPrompt = "Programme : " + programme.getNom() + "\n" +
-                "COACHES DISPONIBLES :\n" + coachesStr + "\n\n" +
-                "ENTREPRENEURS :\n" + entrepreneursStr + "\n\n" +
-                "Schéma attendu JSON :\n" +
-                "{ \"matchings\": [ { \"entrepreneur_id\": 0, \"coach_id\": 0, \"score_final\": 0, \"scores_detail\": { \"alignement_thematique\": 0, \"alignement_sectoriel\": 0, \"competences_complementaires\": 0, \"stade_maturite\": 0, \"charge_coach\": 0 }, \"justification\": \"...\", \"points_forts\": [\"...\"], \"points_attention\": [\"...\"], \"recommandation_session_1\": \"...\" } ], \"alertes\": [] }";
-
+        String userPrompt = buildUserPrompt(programme.getNom(), coachesStr, entrepreneursStr);
         String finalPrompt = systemPrompt + "\n\n" + userPrompt;
+
+        log.info("Prompt envoyé à Gemini: {} chars | {} coachs | {} entrepreneurs",
+                finalPrompt.length(), coachesData.size(), entrepreneursData.size());
+
+        // ── 7. Appel API Gemini ───────────────────────────────────────
+        String aiResponse = callGeminiApi(finalPrompt);
+
+        // ── 8. Parser la réponse et sauvegarder les matchings ────────
+        return parseAndSaveTop3(aiResponse, programme, thematique, programmeId, thematiqueId);
+    }
+
+    // ─── Prompt Builder ───────────────────────────────────────────
+
+    private String buildSystemPrompt(ThematiqueCoaching thematique, Programme programme) {
+        return "Tu es un expert RH senior spécialisé dans l'accompagnement de startups en Tunisie (contexte MENA).\n" +
+               "Tu effectues le matching coach/entrepreneur pour le programme RedBoost.\n\n" +
+               "━━━ CONTEXTE LOCAL TUNISIE ━━━\n" +
+               "Favorise les coachs ayant :\n" +
+               "- Expérience avec startups tunisiennes / écosystème MENA\n" +
+               "- Connaissance : Startup Act, BFPME, SICAR, mécanismes de financement locaux\n" +
+               "- Réseau actif (incubateurs tunisiens, investisseurs, corporate)\n\n" +
+               "━━━ THÉMATIQUE ACTIVE (OBLIGATOIRE) ━━━\n" +
+               "Nom : " + thematique.getNom() + "\n" +
+               "Description : " + (thematique.getDescription() != null ? thematique.getDescription() : "N/A") + "\n" +
+               "Période : " + thematique.getDateDebut() + " → " + thematique.getDateFin() + "\n\n" +
+               "⚠️ PRIORITÉ ABSOLUE : L'expertise du coach DOIT correspondre à cette thématique.\n" +
+               "   Si non couverte → score alignement_global plafonné à 60/100 maximum.\n" +
+               "   Si secteur incompatible → score alignement_global plafonné à 50/100 maximum.\n\n" +
+               "━━━ SCORING — 5 CRITÈRES PONDÉRÉS (total 100 points) ━━━\n\n" +
+               "1. alignement_global (30%)\n" +
+               "   Combine thématique (prioritaire) + secteur/industrie.\n\n" +
+               "2. competences_complementaires (25%)\n" +
+               "   Skills coach ↔ besoins_accompagnement + besoins_formation de l'entrepreneur.\n" +
+               "   Analyse : formulaire, documents, bio, certifications.\n\n" +
+               "3. stade_maturite (20%)\n" +
+               "   Phase startup ↔ expérience coach (stades déjà accompagnés, années, succès clients).\n\n" +
+               "4. compatibilite_humaine (15%)\n" +
+               "   Style coaching déduit (directif/participatif) ↔ personnalité entrepreneur (déduite des réponses).\n" +
+               "   Capacité d'accompagnement réel avec la charge actuelle.\n\n" +
+               "5. charge_coach (10%)\n" +
+               "   = score_charge_precalcule déjà calculé et fourni dans les données du coach.\n" +
+               "   Formule appliquée : (1 - nb_actifs/5) * 70 + (rating_moyen/5) * 30\n\n" +
+               "━━━ RÈGLES D'ANALYSE ━━━\n" +
+               "- Analyse TOUS les champs fournis (bio, reponses_formulaire, documents_extrait)\n" +
+               "- Données manquantes → utiliser score neutre 50 (JAMAIS 0 sauf incompatibilité évidente)\n" +
+               "- Déduire la maturité réelle et la personnalité entrepreneur des réponses formulaire\n" +
+               "- score_final = somme pondérée : (alignement*0.30) + (competences*0.25) + (maturite*0.20) + (humaine*0.15) + (charge*0.10)\n" +
+               "- Tous les scores entre 0 et 100. Éviter les scores > 95 sans justification forte.\n\n" +
+               "━━━ DÉTECTION DES RISQUES (OBLIGATOIRE) ━━━\n" +
+               "Ajouter une alerte dans 'alertes' si :\n" +
+               "- score_final < 40 → type: \"SCORE_FAIBLE\"\n" +
+               "- nb_entrepreneurs_actifs >= 5 → type: \"COACH_SURCHARGE\"\n" +
+               "- secteurs clairement incompatibles → type: \"MISMATCH_SECTORIEL\"\n" +
+               "- compétences insuffisantes par rapport aux besoins → type: \"MISMATCH_COMPETENCES\"\n" +
+               "- aucune expérience coach identifiable → type: \"EXPERIENCE_INSUFFISANTE\"\n" +
+               "- coach sans bio ou expertise renseignée → type: \"PROFIL_INCOMPLET_COACH\"\n" +
+               "- entrepreneur sans description ou besoins → type: \"PROFIL_INCOMPLET_ENTREPRENEUR\"\n" +
+               "Format alerte : { \"type\": \"...\", \"coach_id\": X, \"entrepreneur_id\": Y, \"message\": \"...\" }\n\n" +
+               "━━━ SORTIE OBLIGATOIRE — TOP 3 PAR ENTREPRENEUR ━━━\n" +
+               "Pour CHAQUE entrepreneur, évaluer TOUS les coachs et retourner les 3 meilleurs.\n" +
+               "Trier par score_final décroissant. Rank 1 = meilleur recommandé.\n" +
+               "Si moins de 3 coachs disponibles, retourner ceux disponibles.\n\n" +
+               "RÈGLE ABSOLUE : Retourne UNIQUEMENT du JSON valide, zéro texte avant ou après.";
+    }
+
+    private String buildUserPrompt(String programmeName, String coachesStr, String entrepreneursStr) {
+        String schema = "{\n" +
+            "  \"matchings\": [\n" +
+            "    {\n" +
+            "      \"entrepreneur_id\": 0,\n" +
+            "      \"propositions\": [\n" +
+            "        {\n" +
+            "          \"rank\": 1,\n" +
+            "          \"coach_id\": 0,\n" +
+            "          \"score_final\": 0,\n" +
+            "          \"scores_detail\": {\n" +
+            "            \"alignement_global\": 0,\n" +
+            "            \"competences_complementaires\": 0,\n" +
+            "            \"stade_maturite\": 0,\n" +
+            "            \"compatibilite_humaine\": 0,\n" +
+            "            \"charge_coach\": 0\n" +
+            "          },\n" +
+            "          \"justification\": \"Explication synthétique du matching\",\n" +
+            "          \"points_forts\": [\"...\"],\n" +
+            "          \"points_attention\": [\"...\"],\n" +
+            "          \"recommandation_session_1\": \"Suggestion concrète pour la première séance\",\n" +
+            "          \"decision_support\": {\n" +
+            "            \"pourquoi_ce_coach\": \"Raison principale de recommandation\",\n" +
+            "            \"pourquoi_pas_ideal\": \"Limites ou risques à considérer\",\n" +
+            "            \"cas_ou_choisir_ce_coach\": \"Dans quel cas choisir ce coach malgré son rang\"\n" +
+            "          }\n" +
+            "        }\n" +
+            "      ]\n" +
+            "    }\n" +
+            "  ],\n" +
+            "  \"alertes\": []\n" +
+            "}";
+
+        return "Programme : " + programmeName + "\n\n" +
+               "COACHES DISPONIBLES :\n" + coachesStr + "\n\n" +
+               "ENTREPRENEURS :\n" + entrepreneursStr + "\n\n" +
+               "Schéma JSON attendu (respecter EXACTEMENT cette structure) :\n" + schema;
+    }
+
+    // ─── Gemini API Call ──────────────────────────────────────────
+
+    @SuppressWarnings("unchecked")
+    private String callGeminiApi(String finalPrompt) {
+        if ("unconfigured".equals(geminiApiKey) || geminiApiKey.isEmpty()) {
+            throw new RuntimeException("La clé API Gemini (gemini.api.key) n'est pas configurée dans application.properties.");
+        }
 
         Map<String, Object> geminiRequest = new LinkedHashMap<>();
         Map<String, Object> part = new LinkedHashMap<>();
@@ -236,76 +327,115 @@ public class MatchingIaService {
         content.put("parts", List.of(part));
         geminiRequest.put("contents", List.of(content));
 
-        String aiResponse = null;
-        try {
-            if ("unconfigured".equals(geminiApiKey) || geminiApiKey.isEmpty()) {
-                throw new RuntimeException("La clé API Gemini (gemini.api.key) n'est pas configurée dans le backend.");
-            }
+        // Ask Gemini to return JSON directly
+        Map<String, Object> generationConfig = new LinkedHashMap<>();
+        generationConfig.put("responseMimeType", "application/json");
+        geminiRequest.put("generationConfig", generationConfig);
 
+        try {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(geminiRequest, headers);
 
-            String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=" + geminiApiKey;
+            String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-latest:generateContent?key=" + geminiApiKey;
             ResponseEntity<Map> response = restTemplate.postForEntity(url, entity, Map.class);
-            
+
             Map<String, Object> body = response.getBody();
             if (body != null && body.containsKey("candidates")) {
                 List<Map<String, Object>> candidates = (List<Map<String, Object>>) body.get("candidates");
                 if (!candidates.isEmpty()) {
                     List<Map<String, Object>> parts = (List<Map<String, Object>>) ((Map<String, Object>) candidates.get(0).get("content")).get("parts");
-                    if (!parts.isEmpty()) aiResponse = (String) parts.get(0).get("text");
+                    if (!parts.isEmpty()) {
+                        String aiResponse = (String) parts.get(0).get("text");
+                        if (aiResponse != null) {
+                            return aiResponse.replace("```json", "").replace("```", "").trim();
+                        }
+                    }
                 }
             }
-            if (aiResponse == null) throw new RuntimeException("Réponse vide de Gemini");
-
-            aiResponse = aiResponse.replace("```json", "").replace("```", "").trim();
+            throw new RuntimeException("Réponse vide de Gemini");
         } catch (Exception e) {
-            log.error("AI Service call failed: {}", e.getMessage());
+            log.error("Erreur appel API Gemini: {}", e.getMessage());
             throw new RuntimeException("Erreur de l'API Gemini : " + e.getMessage());
         }
+    }
 
-       
+    // ─── Parse Top-3 Response & Save ─────────────────────────────
+
+    @SuppressWarnings("unchecked")
+    private MatchingSession parseAndSaveTop3(String aiResponse, Programme programme, ThematiqueCoaching thematique,
+                                              Long programmeId, Long thematiqueId) {
         try {
             Map<String, Object> responseMap = objectMapper.readValue(aiResponse, Map.class);
             List<Map<String, Object>> matchingsData = (List<Map<String, Object>>) responseMap.get("matchings");
             List<Map<String, Object>> alertesData = (List<Map<String, Object>>) responseMap.get("alertes");
 
+            int totalPropositions = matchingsData != null
+                    ? matchingsData.stream().mapToInt(md -> {
+                        List<?> props = (List<?>) md.get("propositions");
+                        return props != null ? props.size() : 0;
+                      }).sum()
+                    : 0;
+
+            log.info("Réponse IA: {} entrepreneurs matchés, {} propositions totales", 
+                     matchingsData != null ? matchingsData.size() : 0, totalPropositions);
+
             MatchingSession session = MatchingSession.builder()
                     .programmeId(programmeId)
                     .thematiqueId(thematiqueId)
                     .statut(MatchingSession.StatutSession.EN_ATTENTE)
-                    .nbMatchings(matchingsData != null ? matchingsData.size() : 0)
+                    .nbMatchings(totalPropositions)
                     .dateMatching(LocalDateTime.now())
                     .alertesJson(alertesData != null ? objectMapper.writeValueAsString(alertesData) : "[]")
                     .build();
             session = sessionRepo.save(session);
 
             List<Matching> createdMatchings = new ArrayList<>();
+
             if (matchingsData != null) {
                 for (Map<String, Object> md : matchingsData) {
-                    Matching matching = Matching.builder()
-                            .matchingSession(session)
-                            .coachId(toLong(md.get("coach_id")))
-                            .entrepreneurId(toLong(md.get("entrepreneur_id")))
-                            .programmeId(programmeId)
-                            .thematiqueId(thematiqueId)
-                            .scoreIa(toDouble(md.get("score_final")))
-                            .scoresDetail(objectMapper.writeValueAsString(md.get("scores_detail")))
-                            .justification((String) md.get("justification"))
-                            .pointsForts(objectMapper.writeValueAsString(md.get("points_forts")))
-                            .pointsAttention(objectMapper.writeValueAsString(md.get("points_attention")))
-                            .recommandationSession1((String) md.get("recommandation_session_1"))
-                            .statut(Matching.StatutMatching.PROPOSE)
-                            .build();
-                    createdMatchings.add(matchingRepo.save(matching));
+                    Long entrepreneurId = toLong(md.get("entrepreneur_id"));
+                    List<Map<String, Object>> propositions = (List<Map<String, Object>>) md.get("propositions");
+
+                    if (propositions == null || propositions.isEmpty()) {
+                        log.warn("Aucune proposition pour entrepreneur_id={}", entrepreneurId);
+                        continue;
+                    }
+
+                    for (Map<String, Object> prop : propositions) {
+                        Integer rank = prop.get("rank") instanceof Number ? ((Number) prop.get("rank")).intValue() : 1;
+                        Map<String, Object> decisionSupport = (Map<String, Object>) prop.get("decision_support");
+
+                        Matching matching = Matching.builder()
+                                .matchingSession(session)
+                                .coachId(toLong(prop.get("coach_id")))
+                                .entrepreneurId(entrepreneurId)
+                                .programmeId(programmeId)
+                                .thematiqueId(thematiqueId)
+                                .scoreIa(toDouble(prop.get("score_final")))
+                                .scoresDetail(objectMapper.writeValueAsString(prop.get("scores_detail")))
+                                .justification((String) prop.get("justification"))
+                                .pointsForts(objectMapper.writeValueAsString(prop.get("points_forts")))
+                                .pointsAttention(objectMapper.writeValueAsString(prop.get("points_attention")))
+                                .recommandationSession1((String) prop.get("recommandation_session_1"))
+                                .decisionSupport(decisionSupport != null ? objectMapper.writeValueAsString(decisionSupport) : null)
+                                .rankTop(rank)
+                                .statut(Matching.StatutMatching.PROPOSE)
+                                .build();
+
+                        createdMatchings.add(matchingRepo.save(matching));
+                        log.info("  → Matching sauvé: entrepreneur={} coach={} rank={} score={}",
+                                entrepreneurId, prop.get("coach_id"), rank, prop.get("score_final"));
+                    }
                 }
             }
+
             session.setMatchings(createdMatchings);
             return session;
 
         } catch (Exception e) {
-            log.error("Failed to process AI Matching response: {}", e.getMessage());
+            log.error("Erreur traitement réponse IA: {}", e.getMessage());
+            log.error("Réponse brute reçue:\n{}", aiResponse.substring(0, Math.min(1000, aiResponse.length())));
             throw new RuntimeException("Erreur lors du traitement de la réponse IA : " + e.getMessage());
         }
     }
@@ -322,21 +452,38 @@ public class MatchingIaService {
 
         matchingRepo.archiveOtherPendingSessions(session.getProgrammeId(), sessionId);
 
+        // Valide uniquement les rangs 1 (recommandés) — libère les rangs 2 et 3
         List<Matching> matchings = matchingRepo.findByMatchingSessionId(sessionId);
         for (Matching m : matchings) {
-            m.setStatut(Matching.StatutMatching.VALIDE);
-            m.setDateValidation(LocalDateTime.now());
-            matchingRepo.save(m);
+            if (m.getRankTop() != null && m.getRankTop() == 1) {
+                m.setStatut(Matching.StatutMatching.VALIDE);
+                m.setDateValidation(LocalDateTime.now());
+                matchingRepo.save(m);
+                // Libère les autres rangs pour cet entrepreneur + thématique
+                if (m.getThematiqueId() != null) {
+                    matchingRepo.liberateNonSelectedRanks(m.getEntrepreneurId(), m.getThematiqueId(), 1);
+                }
+            } else if (m.getStatut() == Matching.StatutMatching.PROPOSE) {
+                m.setStatut(Matching.StatutMatching.LIBERE);
+                matchingRepo.save(m);
+            }
         }
     }
 
     @Transactional
     public void validateSingleMatching(Long matchingId, Long adminId) {
         Matching m = matchingRepo.findById(matchingId)
-                .orElseThrow(() -> new RuntimeException("Matching introuvable"));
+                .orElseThrow(() -> new RuntimeException("Matching introuvable : " + matchingId));
+
         m.setStatut(Matching.StatutMatching.VALIDE);
         m.setDateValidation(LocalDateTime.now());
         matchingRepo.save(m);
+
+        // Libère automatiquement les autres rangs pour cet entrepreneur + thématique
+        if (m.getThematiqueId() != null && m.getRankTop() != null) {
+            matchingRepo.liberateNonSelectedRanks(m.getEntrepreneurId(), m.getThematiqueId(), m.getRankTop());
+            log.info("Rangs non sélectionnés libérés pour entrepreneur={} thematique={}", m.getEntrepreneurId(), m.getThematiqueId());
+        }
 
         MatchingSession session = m.getMatchingSession();
         if (session != null && session.getStatut() == MatchingSession.StatutSession.EN_ATTENTE) {
@@ -358,6 +505,7 @@ public class MatchingIaService {
             view.put("statut", m.getStatut());
             view.put("dateValidation", m.getDateValidation());
             view.put("justification", m.getJustification());
+            view.put("rankTop", m.getRankTop());
 
             userRepo.findById(m.getCoachId()).ifPresent(c -> {
                 Map<String, String> coach = new HashMap<>();
@@ -366,7 +514,6 @@ public class MatchingIaService {
                 view.put("coach", coach);
             });
 
-            // Entrepreneur is a candidature ID
             view.put("entrepreneurId", m.getEntrepreneurId());
             candidatureRepo.findById(m.getEntrepreneurId()).ifPresent(c -> {
                 Map<String, String> ent = new HashMap<>();
@@ -381,20 +528,22 @@ public class MatchingIaService {
     public Map<String, Integer> getMatchingStats(Long programmeId) {
         List<Matching> active = matchingRepo.findActiveByProgramme(programmeId);
 
-        // Same logic as runMatchingIA: exclude coach candidatures
         Set<Long> coachCandidatureIds = candidatureRepo
                 .findAcceptedCoaches(CandidatureRedstarter.StatutCandidature.ACCEPTE)
                 .stream().map(CandidatureRedstarter::getId).collect(Collectors.toSet());
 
         List<CandidatureRedstarter> acceptedCandidatures = candidatureRepo
                 .findAllByStatut(CandidatureRedstarter.StatutCandidature.ACCEPTE);
+
         long unmatchedCount = acceptedCandidatures.stream()
                 .filter(c -> !coachCandidatureIds.contains(c.getId()))
                 .filter(c -> !matchingRepo.isEntrepreneurActivelyMatched(c.getId(), programmeId))
                 .count();
 
         return Map.of(
-                "activeCount", active.size(),
+                "activeCount", active.stream()
+                    .filter(m -> m.getRankTop() == null || m.getRankTop() == 1)
+                    .mapToInt(m -> 1).sum(),
                 "unmatchedCount", (int) unmatchedCount
         );
     }
@@ -413,6 +562,8 @@ public class MatchingIaService {
             view.put("pointsAttention", m.getPointsAttention());
             view.put("recommandationSession1", m.getRecommandationSession1());
             view.put("scoresDetail", m.getScoresDetail());
+            view.put("rankTop", m.getRankTop());
+            view.put("decisionSupport", m.getDecisionSupport());
 
             // Coach full profile
             userRepo.findById(m.getCoachId()).ifPresent(c -> {
@@ -429,6 +580,8 @@ public class MatchingIaService {
                 coach.put("phoneNumber", c.getPhoneNumber());
                 long activeCount = matchingRepo.findByCoachIdAndStatut(c.getId(), Matching.StatutMatching.VALIDE).size();
                 coach.put("nbEntrepreneursActifs", activeCount);
+                double ratingMoyen = coachRatingRepo.findAverageRatingByCoachId(c.getId()).orElse(0.0);
+                coach.put("noteMoyenneRating", Math.round(ratingMoyen * 10.0) / 10.0);
                 view.put("coach", coach);
             });
 
@@ -474,21 +627,12 @@ public class MatchingIaService {
             Path filePath = Paths.get(uploadDir, "candidatures", filename).toAbsolutePath().normalize();
             File file = filePath.toFile();
             if (!file.exists() || !file.isFile()) return null;
-
-            // Process only PDFs to avoid binary garbage and unsupported formats crashing the stripper
             if (!filename.toLowerCase().endsWith(".pdf")) return null;
 
             try (PDDocument document = PDDocument.load(file)) {
                 PDFTextStripper stripper = new PDFTextStripper();
                 String text = stripper.getText(document);
-                if (text != null && !text.trim().isEmpty()) {
-                    text = text.trim();
-                    // Limit characters to avoid overwhelming the LLM API token limits
-                    if (text.length() > 3000) {
-                        text = text.substring(0, 3000) + "\n... [Fin de l'extrait, texte tronqué]";
-                    }
-                    return text;
-                }
+                return (text != null && !text.trim().isEmpty()) ? text.trim() : null;
             }
         } catch (Exception e) {
             log.warn("Impossible de lire le document PDF {}: {}", filename, e.getMessage());

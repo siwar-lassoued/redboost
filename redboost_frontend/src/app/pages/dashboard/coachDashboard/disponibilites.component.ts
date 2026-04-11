@@ -27,6 +27,27 @@ import { AuthService } from '../../frontoffice/service/auth.service';
           </div>
       </div>
 
+      <!-- Thématique Filter Banner -->
+      <div class="thematique-filter" *ngIf="thematiques.length > 0">
+        <div class="tf-label"><i class="pi pi-calendar-clock"></i> Afficher les disponibilités pour :</div>
+        <div class="tf-options">
+          <button class="tf-option" [class.active]="!selectedFilterThematiqueId" (click)="setFilterThematique(null)">
+            Toutes les thématiques
+          </button>
+          <button *ngFor="let t of thematiques" class="tf-option" [class.active]="selectedFilterThematiqueId === t.id" (click)="setFilterThematique(t.id!)">
+            {{ t.nom }}
+            <span class="tf-dates">({{ t.dateDebut | date:'dd/MM' }} → {{ t.dateFin | date:'dd/MM' }})</span>
+          </button>
+        </div>
+      </div>
+      <div class="thematique-info-bar" *ngIf="activeFilterThematique">
+        <i class="pi pi-info-circle"></i>
+        <span>Disponibilités pour : <strong>{{ activeFilterThematique.nom }}</strong> &mdash;
+          {{ activeFilterThematique.dateDebut | date:'dd MMMM yyyy' }} → {{ activeFilterThematique.dateFin | date:'dd MMMM yyyy' }}
+        </span>
+        <span class="tib-hint">Les dates en dehors de cette période sont grisées</span>
+      </div>
+
       <!-- Main Content: Calendar + Sidebar -->
       <div class="main-layout">
           <!-- Calendar Grid -->
@@ -42,7 +63,10 @@ import { AuthService } from '../../frontoffice/service/auth.service';
                   <div class="day-header" *ngFor="let d of dayLabels">{{d}}</div>
               </div>
               <div class="calendar-grid">
-                  <div *ngFor="let cell of calendarCells" class="calendar-cell" [class.other-month]="!cell.currentMonth" [class.today]="cell.isToday">
+                  <div *ngFor="let cell of calendarCells" class="calendar-cell"
+                    [class.other-month]="!cell.currentMonth"
+                    [class.today]="cell.isToday"
+                    [class.out-of-range]="isOutOfRange(cell.fullDate)">
                       <div class="cell-day" [class.today-circle]="cell.isToday">{{cell.day}}</div>
                       <div class="cell-events">
                           <div *ngFor="let ev of getEventsForDay(cell.fullDate)" class="event-chip" [style.background]="ev.color">
@@ -239,6 +263,22 @@ import { AuthService } from '../../frontoffice/service/auth.service';
     .btn-remove-slot { margin-top: 0.7rem; border: 1px solid #FECACA; background: #FFF1F2; color: #E11D48; border-radius: 10px; padding: 0.45rem 0.7rem; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
     .loading-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.7); z-index: 999; display: flex; align-items: center; justify-content: center; }
     .spinner { width: 40px; height: 40px; border: 4px solid #EDF2F7; border-top-color: #FF4D85; border-radius: 50%; animation: spin 0.8s linear infinite; }
+    .out-of-range { background: #F7F7F7 !important; opacity: 0.45; pointer-events: none; }
+    .out-of-range .cell-day { color: #CBD5E0 !important; }
+
+    /* Thematique filter bar */
+    .thematique-filter { display: flex; align-items: center; gap: 16px; padding: 14px 20px; background: #fff; border-radius: 16px; margin-bottom: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.04); flex-wrap: wrap; }
+    .tf-label { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: #4A5568; white-space: nowrap; }
+    .tf-options { display: flex; flex-wrap: wrap; gap: 8px; }
+    .tf-option { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; border: 1px solid #E2E8F0; background: #F8FAFC; color: #4A5568; cursor: pointer; transition: all .2s; }
+    .tf-option.active { background: linear-gradient(135deg, #FF4D85, #C0392B); color: #fff; border-color: transparent; box-shadow: 0 2px 8px rgba(255,77,133,0.3); }
+    .tf-option:hover:not(.active) { background: #EDF2F7; }
+    .tf-dates { font-size: 10px; opacity: 0.8; margin-left: 4px; }
+
+    .thematique-info-bar { display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: #FFF5F7; border: 1px solid #FFD0DE; border-radius: 12px; margin-bottom: 12px; font-size: 13px; color: #C0392B; }
+    .thematique-info-bar i { font-size: 16px; flex-shrink: 0; }
+    .tib-hint { margin-left: auto; font-size: 11px; color: #A0AEC0; font-style: italic; }
+
     @keyframes spin { to { transform: rotate(360deg); } }
     @keyframes slide-up { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
   `]
@@ -252,6 +292,9 @@ export class DisponibilitesComponent implements OnInit {
   availabilityDates: string[] = [''];
   timeSlots: { start: string; end: string }[] = [{ start: '', end: '' }];
   sessionDuration: string = '1h';
+
+  selectedFilterThematiqueId: number | null = null;
+  activeFilterThematique: ThematiqueCoachingDTO | null = null;
 
   disponibilites: DisponibiliteDTO[] = [];
   sessions: SessionCoachDTO[] = [];
@@ -422,6 +465,20 @@ export class DisponibilitesComponent implements OnInit {
       this.calendarCells.push({ day: d, currentMonth: false, isToday: false, fullDate: this.formatDate(y, m, d) });
     }
   }
+  setFilterThematique(id: number | null) {
+    this.selectedFilterThematiqueId = id;
+    this.activeFilterThematique = id ? (this.thematiques.find(t => t.id === id) || null) : null;
+  }
+
+  /** Returns true if date is outside the selected thematique's range */
+  isOutOfRange(dateStr: string): boolean {
+    if (!this.activeFilterThematique) return false;
+    const d = new Date(dateStr);
+    const start = new Date(this.activeFilterThematique.dateDebut);
+    const end = new Date(this.activeFilterThematique.dateFin);
+    return d < start || d > end;
+  }
+
   formatDate(year: number, month: number, day: number): string { return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`; }
   getEventsForDay(dateStr: string): any[] { return this.calendarEvents.filter(e => e.date === dateStr); }
 }
