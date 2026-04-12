@@ -240,7 +240,7 @@ export class EntrepreneurSessionsComponent implements OnInit {
       }
       
       if (confirm('Voulez-vous vraiment demander la reprogrammation de cette session ?')) {
-        this.sessionSvc.requestReschedule(session.id, newDateStr, user.id).subscribe({
+        this.sessionSvc.requestReschedule(session.id, newDateStr, Number(user.id)).subscribe({
           next: () => {
              alert('Demande de reprogrammation envoyée au coach.');
              this.ngOnInit(); // Refresh list

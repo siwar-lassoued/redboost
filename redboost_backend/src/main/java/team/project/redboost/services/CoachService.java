@@ -77,7 +77,6 @@ public class CoachService {
                     .count();
         }
         
-        // Activity log mockup
         List<DashboardStatsDTO.ActivityDTO> activities = new ArrayList<>();
         activities.add(DashboardStatsDTO.ActivityDTO.builder()
                 .time("Il y a 2h")
@@ -247,8 +246,6 @@ public class CoachService {
                 .notes(notes)
                 .build();
     }
-
-    // --- DISPONIBILITE ---
     
     public List<DisponibiliteDTO> getDisponibilitesByCoach(Long coachId) {
         return disponibiliteRepository.findByCoachId(coachId).stream().map(this::mapToDTO).collect(Collectors.toList());

@@ -262,7 +262,7 @@ export class MesCoachsComponent implements OnInit {
     if (!slot || !userId || !coach) return;
 
     this.isBooking.set(true);
-    this.coachSvc.bookSession(slot.id!, userId).subscribe({
+    this.coachSvc.bookSession(Number(slot.id), Number(userId)).subscribe({
       next: () => {
         this.isBooking.set(false);
         this.cancelBooking();

@@ -131,7 +131,7 @@ import { AuthService } from '../../frontoffice/service/auth.service';
     .modal-content { background: white; border-radius: 20px; width: 100%; max-width: 500px; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; animation: slide-up 0.3s ease-out; }
     .modal-header { padding: 1.5rem 2rem; border-bottom: 1px solid #EDF2F7; display: flex; justify-content: space-between; align-items: center; }
     .modal-header h2 { margin: 0; font-size: 1.2rem; font-weight: 700; color: #2D3748; display: flex; align-items: center; gap: 0.5rem; }
-    .close-btn { background: #F7FAFC; border: none; width: 32px; height: 32px; border-radius: 50%; color: #A0AEC0; cursor: pointer; display: flex; items-center; justify-content: center; }
+    .close-btn { background: #F7FAFC; border: none; width: 32px; height: 32px; border-radius: 50%; color: #A0AEC0; cursor: pointer; display: flex; align-items: center; justify-content: center; }
     .close-btn:hover { background: #EDF2F7; color: #4A5568; }
     .modal-body { padding: 1.5rem 2rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; }
     .booking-item { padding: 1rem; border: 1px solid #EDF2F7; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; background: #FAFBFC; }
