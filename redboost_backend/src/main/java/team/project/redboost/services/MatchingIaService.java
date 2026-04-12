@@ -98,20 +98,24 @@ public class MatchingIaService {
                 .map(String::toLowerCase)
                 .collect(Collectors.toSet());
 
-        List<CandidatureRedstarter> acceptedCandidatures = candidatureRepo
+        List<CandidatureRedstarter> acceptedCandidaturesProgramme = candidatureRepo
                 .findAllByStatut(CandidatureRedstarter.StatutCandidature.ACCEPTE)
                 .stream()
                 .filter(c -> c.getEmail() != null && emailsEntrepreneursProgramme.contains(c.getEmail().toLowerCase()))
                 .collect(Collectors.toList());
 
-        List<CandidatureRedstarter> unmatchedCandidatures = acceptedCandidatures.stream()
+        List<CandidatureRedstarter> spontaneesAcceptees = candidatureRepo
+                .findSpontaneesByStatut(CandidatureRedstarter.StatutCandidature.ACCEPTE);
+
+        Set<CandidatureRedstarter> candidaturesCombine = new HashSet<>(acceptedCandidaturesProgramme);
+        candidaturesCombine.addAll(spontaneesAcceptees);
+
+        List<CandidatureRedstarter> unmatchedCandidatures = candidaturesCombine.stream()
                 .filter(c -> !coachCandidatureIds.contains(c.getId()))
-         
-                .filter(c -> !matchingRepo.existsByEntrepreneurIdAndProgrammeIdAndThematiqueIdAndStatut(
-                        c.getId(), programmeId, thematiqueId, Matching.StatutMatching.VALIDE))
+                .filter(c -> !matchingRepo.isEntrepreneurActivelyMatched(c.getId(), programmeId))
                 .collect(Collectors.toList());
 
-        log.info("Entrepreneurs du programme à matcher: {} / {} acceptés", unmatchedCandidatures.size(), acceptedCandidatures.size());
+        log.info("Entrepreneurs à matcher: {} / {} acceptés", unmatchedCandidatures.size(), candidaturesCombine.size());
 
         if (unmatchedCandidatures.isEmpty()) {
             throw new RuntimeException("Aucun entrepreneur sans coaching actif pour cette thématique. Tous ont déjà un match VALIDE.");
@@ -659,7 +663,7 @@ public class MatchingIaService {
             throw new RuntimeException("La thématique n'appartient pas à ce programme.");
         }
 
-        // ── Entrepreneurs du programme sans matching VALIDE pour ce programme+thématique ──
+        // ── Entrepreneurs du programme sans matching VALIDE pour ce programme ──
         List<User> entrepreneursUtilisateurs = userRepo.findAll().stream()
                 .filter(u -> u.getRole() == Role.ENTREPRENEUR)
                 .filter(u -> u.getProgrammes().stream().anyMatch(p -> p.getId().equals(programmeId)))
@@ -669,20 +673,26 @@ public class MatchingIaService {
                 .map(User::getEmail).filter(Objects::nonNull).map(String::toLowerCase)
                 .collect(Collectors.toSet());
 
-        List<CandidatureRedstarter> candidaturesAcceptees = candidatureRepo
+        List<CandidatureRedstarter> candidaturesAccepteesProgramme = candidatureRepo
                 .findAllByStatut(CandidatureRedstarter.StatutCandidature.ACCEPTE).stream()
                 .filter(c -> c.getEmail() != null && emailsEntrepreneurs.contains(c.getEmail().toLowerCase()))
                 .collect(Collectors.toList());
+
+        List<CandidatureRedstarter> spontaneesAcceptees = candidatureRepo
+                .findSpontaneesByStatut(CandidatureRedstarter.StatutCandidature.ACCEPTE);
+
+        Set<CandidatureRedstarter> candidaturesCombine = new HashSet<>(candidaturesAccepteesProgramme);
+        candidaturesCombine.addAll(spontaneesAcceptees);
 
         Set<Long> coachCandidatureIds = candidatureRepo
                 .findAcceptedCoaches(CandidatureRedstarter.StatutCandidature.ACCEPTE)
                 .stream().map(CandidatureRedstarter::getId).collect(Collectors.toSet());
 
-        List<Map<String, Object>> entrepreneursList = candidaturesAcceptees.stream()
+        List<Map<String, Object>> entrepreneursList = candidaturesCombine.stream()
                 .filter(c -> !coachCandidatureIds.contains(c.getId()))
-                // Exclure ceux déjà matchés (VALIDE) pour ce programme+thématique précis
-                .filter(c -> !matchingRepo.existsByEntrepreneurIdAndProgrammeIdAndThematiqueIdAndStatut(
-                        c.getId(), programmeId, thematiqueId, Matching.StatutMatching.VALIDE))
+                // Exclure ceux qui ont un coaching ACTIF (VALIDE) dans ce programme.
+                // S'ils ont terminé leur coaching (statut TERMINE), ils sont disponibles pour une nouvelle thématique.
+                .filter(c -> !matchingRepo.isEntrepreneurActivelyMatched(c.getId(), programmeId))
                 .map(c -> {
                     Map<String, Object> e = new LinkedHashMap<>();
                     e.put("id", c.getId());
