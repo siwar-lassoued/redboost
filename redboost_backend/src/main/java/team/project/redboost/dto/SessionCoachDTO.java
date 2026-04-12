@@ -12,4 +12,6 @@ public class SessionCoachDTO {
     private LocalDate dateSession;
     private LocalTime heureDebut;
     private LocalTime heureFin;
+    private String typeSession; // EN_LIGNE or PRESENTIEL
 }
+

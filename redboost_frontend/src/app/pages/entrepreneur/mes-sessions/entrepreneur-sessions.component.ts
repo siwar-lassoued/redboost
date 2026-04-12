@@ -227,18 +227,27 @@ export class EntrepreneurSessionsComponent implements OnInit {
   }
 
   rescheduleSession(session: any): void {
-    // Basic reschedule prompt for now
-    const note = prompt("Veuillez indiquer vos nouvelles préférences de créneau :");
-    if (note) {
+    const user = this.authSvc.currentUser$.value;
+    if (!user) return;
+
+    // Simple prompt for now, could be upgraded to a modal with datetime picker
+    const newDateStr = prompt("Veuillez indiquer la nouvelle date souhaitée (format: YYYY-MM-DDTHH:mm, ex: 2026-05-10T14:30) :");
+    if (newDateStr) {
+      // Basic validation
+      if (newDateStr.length < 16) {
+        alert("Format de date invalide. Veuillez utiliser AAAA-MM-JJTHH:mm");
+        return;
+      }
+      
       if (confirm('Voulez-vous vraiment demander la reprogrammation de cette session ?')) {
-        this.sessionSvc.requestReschedule(session.id, note).subscribe({
+        this.sessionSvc.requestReschedule(session.id, newDateStr, user.id).subscribe({
           next: () => {
-             alert('Demande de reprogrammation envoyée.');
+             alert('Demande de reprogrammation envoyée au coach.');
              this.ngOnInit(); // Refresh list
           },
           error: (err: any) => {
              console.error(err);
-             alert('Erreur: ' + (err.error?.message || 'Contactez l\'administration'));
+             alert('Erreur: ' + (err.error?.error || 'Contactez l\'administration'));
           }
         });
       }

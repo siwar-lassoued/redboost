@@ -19,6 +19,7 @@ export interface SessionCoachDTO {
   dateSession: string;
   heureDebut: string;
   heureFin: string;
+  typeSession?: string; // EN_LIGNE or PRESENTIEL
 }
 
 export interface SeanceExceptionnelleDTO {
@@ -253,5 +254,19 @@ export class CoachService {
    */
   getCoachProgrammes(coachId: number): Observable<ProgrammeDTO[]> {
     return this.http.get<ProgrammeDTO[]>(`${this.apiUrl}/${coachId}/programmes`);
+  }
+
+  // BOOKING (Entrepreneur)
+  bookSession(sessionCoachId: number, entrepreneurId: number): Observable<any> {
+    return this.http.post(`${this.apiUrl}/sessions/${sessionCoachId}/book?entrepreneurId=${entrepreneurId}`, {});
+  }
+  rescheduleSession(sessionId: string, newDate: string, entrepreneurId: number): Observable<any> {
+    return this.http.put(`${this.apiUrl}/sessions/${sessionId}/reschedule?newDate=${newDate}&entrepreneurId=${entrepreneurId}`, {});
+  }
+  getSessionBookings(sessionCoachId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/sessions/${sessionCoachId}/bookings`);
+  }
+  getAvailableSessionsForEntrepreneur(coachId: number): Observable<SessionCoachDTO[]> {
+    return this.http.get<SessionCoachDTO[]>(`${this.apiUrl}/${coachId}/available-sessions`);
   }
 }

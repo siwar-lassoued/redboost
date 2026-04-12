@@ -53,4 +53,8 @@ public interface MatchingRepository extends JpaRepository<Matching, Long> {
     /** Vérifie si un entrepreneur a déjà un match VALIDE pour ce programme+thématique */
     boolean existsByEntrepreneurIdAndProgrammeIdAndThematiqueIdAndStatut(
             Long entrepreneurId, Long programmeId, Long thematiqueId, Matching.StatutMatching statut);
+
+    /** Tous les matchings actifs (VALIDE) — utilisé par le scheduler de clôture */
+    @Query("SELECT m FROM Matching m WHERE m.statut = 'VALIDE'")
+    List<Matching> findAllValide();
 }

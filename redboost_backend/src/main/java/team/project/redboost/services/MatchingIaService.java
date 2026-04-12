@@ -32,6 +32,7 @@ public class MatchingIaService {
     private final ThematiqueRepository thematiqueRepo;
     private final CandidatureRedstarterRepository candidatureRepo;
     private final CoachRatingRepository coachRatingRepo;
+    private final NotificationService notificationService;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final RestTemplate restTemplate = new RestTemplate();
 
@@ -481,6 +482,8 @@ public class MatchingIaService {
                 if (m.getThematiqueId() != null) {
                     matchingRepo.liberateNonSelectedRanks(m.getEntrepreneurId(), m.getThematiqueId(), 1);
                 }
+                // ── Notifications ──
+                sendMatchingNotifications(m);
             } else if (m.getStatut() == Matching.StatutMatching.PROPOSE) {
                 m.setStatut(Matching.StatutMatching.LIBERE);
                 matchingRepo.save(m);
@@ -510,6 +513,9 @@ public class MatchingIaService {
             session.setValideParId(adminId);
             sessionRepo.save(session);
         }
+
+        // ── Notifications ──
+        sendMatchingNotifications(m);
     }
 
     // ─── History & Stats ──────────────────────────────────────────
@@ -789,6 +795,9 @@ public class MatchingIaService {
 
         log.info("Matching manuel créé : entrepreneur={} ↔ coach={} programme={}", entrepreneurId, coachId, programmeId);
 
+        // ── Notifications ──
+        sendMatchingNotifications(matching);
+
         // Résumé retourné au frontend
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("matchingId", matching.getId());
@@ -799,6 +808,57 @@ public class MatchingIaService {
         candidatureRepo.findById(entrepreneurId).ifPresent(c -> result.put("entrepreneurNom", c.getNomPrenom()));
         userRepo.findById(coachId).ifPresent(c -> result.put("coachNom", c.getFirstName() + " " + c.getLastName()));
         return result;
+    }
+
+    // ─── Notification Helper ─────────────────────────────────────
+
+    private void sendMatchingNotifications(Matching m) {
+        try {
+            // Resolve coach name
+            User coach = userRepo.findById(m.getCoachId()).orElse(null);
+            String coachName = coach != null ? (coach.getFirstName() + " " + coach.getLastName()) : "Coach";
+
+            // Resolve entrepreneur name and User ID via candidature email
+            String entrepreneurName = "Entrepreneur";
+            Long entrepreneurUserId = null;
+            CandidatureRedstarter cand = candidatureRepo.findById(m.getEntrepreneurId()).orElse(null);
+            if (cand != null) {
+                entrepreneurName = cand.getNomPrenom() != null ? cand.getNomPrenom() : "Entrepreneur";
+                if (cand.getEmail() != null) {
+                    User entUser = userRepo.findByEmail(cand.getEmail());
+                    if (entUser != null) entrepreneurUserId = entUser.getId();
+                }
+            }
+
+            // Resolve programme name
+            String programmeName = "";
+            Programme prog = programmeRepo.findById(m.getProgrammeId()).orElse(null);
+            if (prog != null) programmeName = prog.getNom();
+
+            // Notify coach
+            if (coach != null) {
+                notificationService.createAndSendNotification(
+                    coach.getId(),
+                    "Vous avez été assigné à " + entrepreneurName + (cand != null && cand.getNomEntreprise() != null ? " (" + cand.getNomEntreprise() + ")" : ""),
+                    "MATCHING_ASSIGN",
+                    m.getId()
+                );
+            }
+
+            // Notify entrepreneur
+            if (entrepreneurUserId != null) {
+                notificationService.createAndSendNotification(
+                    entrepreneurUserId,
+                    "Votre coach est " + coachName + " — Programme " + programmeName,
+                    "MATCHING_ASSIGN",
+                    m.getId()
+                );
+            }
+
+            log.info("Notifications matching envoyées : coach={} entrepreneur={}", m.getCoachId(), entrepreneurUserId);
+        } catch (Exception e) {
+            log.error("Erreur envoi notifications matching : {}", e.getMessage());
+        }
     }
 
     // ─── Helpers ──────────────────────────────────────────────────

@@ -65,7 +65,10 @@ export class SessionService {
         return this.http.delete<void>(`${this.baseUrl}/${id}`);
     }
 
-    requestReschedule(id: string, note: string): Observable<void> {
-        return this.http.post<void>(`${this.baseUrl}/${id}/reschedule`, { note });
+    requestReschedule(sessionId: string, newDate: string, entrepreneurId: number): Observable<any> {
+        return this.http.put<any>(
+            `${environment.apiUrl}/coach/sessions/${sessionId}/reschedule?newDate=${newDate}&entrepreneurId=${entrepreneurId}`, 
+            {}
+        );
     }
 }

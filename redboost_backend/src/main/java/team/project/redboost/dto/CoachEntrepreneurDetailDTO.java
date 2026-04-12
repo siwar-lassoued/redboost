@@ -35,6 +35,7 @@ public class CoachEntrepreneurDetailDTO {
         private String description;
         private String status;
         private String dateLimite;
+        private List<DocumentDTO> documents;
     }
 
     @Data

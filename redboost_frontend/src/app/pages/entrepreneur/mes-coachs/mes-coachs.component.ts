@@ -6,8 +6,7 @@ import { DropdownModule } from 'primeng/dropdown';
 import { ButtonModule } from 'primeng/button';
 import { MatchingService, MatchingView } from '../../../core/services/matching.service';
 import { AuthService } from '../../../core/services/auth.service';
-import { DisponibiliteService, DisponibiliteSlot } from '../../../core/services/disponibilite.service';
-import { SessionBookingService } from '../../../core/services/session-booking.service';
+import { CoachService, SessionCoachDTO } from '../../dashboard/coachDashboard/services/coach.service';
 
 @Component({
   selector: 'rb-mes-coachs',
@@ -157,11 +156,11 @@ import { SessionBookingService } from '../../../core/services/session-booking.se
               <div class="p-4 bg-gray-50 rounded-2xl border border-gray-100">
                 <div class="flex items-center gap-3 mb-2">
                   <i class="pi pi-calendar text-[#C0392B]"></i>
-                  <span class="font-bold text-sm">{{ selectedSlotToBook()?.dateDebut | date:'fullDate' }}</span>
+                  <span class="font-bold text-sm">{{ selectedSlotToBook()?.dateSession | date:'fullDate' }}</span>
                 </div>
                 <div class="flex items-center gap-3">
                   <i class="pi pi-clock text-[#C0392B]"></i>
-                  <span class="font-bold text-sm">{{ selectedSlotToBook()?.dateDebut | date:'HH:mm' }} ({{ selectedSlotToBook()?.dureeMinutes }} min)</span>
+                  <span class="font-bold text-sm">{{ selectedSlotToBook()?.heureDebut }} à {{ selectedSlotToBook()?.heureFin }}</span>
                 </div>
               </div>
 
@@ -196,15 +195,14 @@ import { SessionBookingService } from '../../../core/services/session-booking.se
 })
 export class MesCoachsComponent implements OnInit {
   private matchSvc = inject(MatchingService);
-  private dispoSvc = inject(DisponibiliteService);
-  private bookingSvc = inject(SessionBookingService);
+  private coachSvc = inject(CoachService);
   private authSvc = inject(AuthService);
 
   matchings = signal<MatchingView[]>([]);
   allSlots: { [coachId: string]: any[] } = {};
   selectedSlots: { [coachId: string]: any } = {};
   
-  selectedSlotToBook = signal<DisponibiliteSlot | null>(null);
+  selectedSlotToBook = signal<SessionCoachDTO | null>(null);
   selectedCoachForBooking = signal<MatchingView | null>(null);
   bookingNotes = '';
   isBooking = signal(false);
@@ -231,11 +229,11 @@ export class MesCoachsComponent implements OnInit {
   }
 
   loadSlots(coachId: string, programmeId: string): void {
-    this.dispoSvc.getLibreSlots(coachId, programmeId).subscribe(slots => {
+    this.coachSvc.getAvailableSessionsForEntrepreneur(Number(coachId)).subscribe(slots => {
       // Format them for prime dropdown
       this.allSlots[coachId] = slots.map(s => ({
          ...s,
-         label: `${new Date(s.dateDebut!).toLocaleString('fr-FR', {weekday: 'short', day: '2-digit', month: 'short', hour:'2-digit', minute:'2-digit'})} (${s.dureeMinutes} min)`
+         label: `${new Date(s.dateSession).toLocaleString('fr-FR', {weekday: 'short', day: '2-digit', month: 'short'})} ${s.heureDebut} - ${s.heureFin}`
       }));
     });
   }
@@ -264,7 +262,7 @@ export class MesCoachsComponent implements OnInit {
     if (!slot || !userId || !coach) return;
 
     this.isBooking.set(true);
-    this.bookingSvc.book(userId, slot.id, this.bookingNotes).subscribe({
+    this.coachSvc.bookSession(slot.id!, userId).subscribe({
       next: () => {
         this.isBooking.set(false);
         this.cancelBooking();
@@ -274,6 +272,7 @@ export class MesCoachsComponent implements OnInit {
       error: (e) => {
         console.error(e);
         this.isBooking.set(false);
+        alert(e.error?.error || "Erreur lors de la réservation");
       }
     });
   }

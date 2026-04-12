@@ -81,6 +81,14 @@ public class Session {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    @Builder.Default
+    @Column(name = "reminder_24h_sent")
+    private Boolean reminder24hSent = false;
+
+    @Builder.Default
+    @Column(name = "reminder_2h_sent")
+    private Boolean reminder2hSent = false;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

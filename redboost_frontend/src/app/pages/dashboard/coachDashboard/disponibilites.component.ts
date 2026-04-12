@@ -177,6 +177,18 @@ import { AuthService } from '../../frontoffice/service/auth.service';
                     <input type="text" class="premium-input" [(ngModel)]="sessionDuration" placeholder="1h">
                     <p class="field-help">Exemples : 30 min, 45 min, 1h, 1h30, 2h</p>
                   </div>
+
+                  <div class="form-group">
+                    <label>Type de session *</label>
+                    <div class="type-session-selector">
+                      <button class="type-btn" [class.active]="newSessionType === 'EN_LIGNE'" (click)="newSessionType = 'EN_LIGNE'">
+                        <i class="pi pi-video"></i> En ligne
+                      </button>
+                      <button class="type-btn" [class.active]="newSessionType === 'PRESENTIEL'" (click)="newSessionType = 'PRESENTIEL'">
+                        <i class="pi pi-building"></i> Présentiel
+                      </button>
+                    </div>
+                  </div>
               </div>
               <div class="modal-actions">  
                       <button class="btn-outline" (click)="showDispoModal = false">Annuler</button>
@@ -281,6 +293,12 @@ import { AuthService } from '../../frontoffice/service/auth.service';
 
     @keyframes spin { to { transform: rotate(360deg); } }
     @keyframes slide-up { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    .type-session-selector { display: flex; gap: 0.75rem; }
+    .type-btn { flex: 1; padding: 0.8rem 1rem; border-radius: 12px; border: 2px solid #E2E8F0; background: white; font-family: inherit; font-size: 0.9rem; color: #4A5568; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-weight: 500; transition: all 0.2s ease; }
+    .type-btn:hover { border-color: #FF4D85; color: #FF4D85; }
+    .type-btn.active { background: linear-gradient(135deg, #FF4D85, #FF6B9E); color: white; border-color: transparent; box-shadow: 0 4px 12px rgba(255,77,133,0.3); }
+    .type-btn.active i { color: white; }
   `]
 })
 export class DisponibilitesComponent implements OnInit {
@@ -292,6 +310,7 @@ export class DisponibilitesComponent implements OnInit {
   availabilityDates: string[] = [''];
   timeSlots: { start: string; end: string }[] = [{ start: '', end: '' }];
   sessionDuration: string = '1h';
+  newSessionType: string = 'EN_LIGNE';
 
   selectedFilterThematiqueId: number | null = null;
   activeFilterThematique: ThematiqueCoachingDTO | null = null;
@@ -419,6 +438,7 @@ export class DisponibilitesComponent implements OnInit {
     this.availabilityDates = [''];
     this.timeSlots = [{ start: '', end: '' }];
     this.sessionDuration = '1h';
+    this.newSessionType = 'EN_LIGNE';
     this.showDispoModal = false;
   }
 

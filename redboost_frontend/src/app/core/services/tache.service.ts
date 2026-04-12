@@ -66,4 +66,20 @@ export class TacheService {
     delete(id: string): Observable<void> {
         return this.http.delete<void>(`${this.baseUrl}/${id}`);
     }
+
+    uploadDocuments(tacheId: number, files: File[], uploadedById: number): Observable<any[]> {
+        const formData = new FormData();
+        files.forEach(file => formData.append('files', file));
+        formData.append('uploadedById', uploadedById.toString());
+
+        return this.http.post<any[]>(`${this.baseUrl}/documents/upload/${tacheId}`, formData);
+    }
+
+    getDocumentsByTache(tacheId: number): Observable<any[]> {
+        return this.http.get<any[]>(`${this.baseUrl}/documents/${tacheId}`);
+    }
+
+    deleteDocument(documentId: number): Observable<void> {
+        return this.http.delete<void>(`${this.baseUrl}/documents/${documentId}`);
+    }
 }

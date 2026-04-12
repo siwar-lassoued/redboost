@@ -1,5 +1,6 @@
 package team.project.redboost.services;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -9,11 +10,12 @@ import team.project.redboost.entities.*;
 import team.project.redboost.repositories.*;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
+import java.time.LocalDateTime;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class CoachService {
 
     @Autowired
@@ -41,10 +43,22 @@ public class CoachService {
     private TacheRepository tacheRepository;
 
     @Autowired
+    private TacheDocumentRepository tacheDocumentRepository;
+
+    @Autowired
     private NoteDeSyntheseRepository noteRepository;
 
     @Autowired
-    private TacheDocumentRepository tacheDocumentRepository;
+    private SessionRepository sessionRepository;
+
+    @Autowired
+    private NotificationService notificationService;
+
+    @Autowired
+    private EmailService emailService;
+
+    @Autowired
+    private ProgrammeRepository programmeRepository;
 
     // --- DASHBOARD OVERVIEW ---
 
@@ -193,13 +207,28 @@ public class CoachService {
         int progress = total > 0 ? (int)(done * 100 / total) : 0;
 
         List<CoachEntrepreneurDetailDTO.TacheDTO> taskDtos = tasks.stream()
-                .map(t -> CoachEntrepreneurDetailDTO.TacheDTO.builder()
+                .map(t -> {
+                    List<DocumentDTO> docDtos = tacheDocumentRepository.findByTacheId(t.getId()).stream()
+                            .map(d -> DocumentDTO.builder()
+                                    .id(d.getId())
+                                    .nom(d.getNom())
+                                    .cheminFichier(d.getCheminFichier())
+                                    .typeFichier(d.getTypeFichier())
+                                    .tailleFichier(d.getTailleFichier())
+                                    .dateUpload(d.getDateUpload())
+                                    .uploadedById(d.getUploadedById())
+                                    .build())
+                            .collect(Collectors.toList());
+                    
+                    return CoachEntrepreneurDetailDTO.TacheDTO.builder()
                         .id(t.getId())
                         .titre(t.getTitre())
                         .description(t.getDescription())
                         .status(t.getStatus().toString())
                         .dateLimite(t.getDateLimite() != null ? t.getDateLimite().toString() : null)
-                        .build())
+                        .documents(docDtos)
+                        .build();
+                })
                 .collect(Collectors.toList());
 
         return CoachEntrepreneurDetailDTO.builder()
@@ -271,12 +300,19 @@ public class CoachService {
             throw new ValidationException("L'heure de début doit être avant l'heure de fin");
         }
 
+        // Parse typeSession
+        SessionCoach.TypeSession type = SessionCoach.TypeSession.EN_LIGNE;
+        if (dto.getTypeSession() != null) {
+            try { type = SessionCoach.TypeSession.valueOf(dto.getTypeSession()); } catch (Exception ignored) {}
+        }
+
         SessionCoach session = SessionCoach.builder()
                 .disponibilite(dispo)
                 .titre(dto.getTitre())
                 .dateSession(sessionDate)
                 .heureDebut(dto.getHeureDebut())
                 .heureFin(dto.getHeureFin())
+                .typeSession(type)
                 .build();
 
         SessionCoach saved = sessionCoachRepository.save(session);
@@ -362,6 +398,7 @@ public class CoachService {
         dto.setDateSession(s.getDateSession());
         dto.setHeureDebut(s.getHeureDebut());
         dto.setHeureFin(s.getHeureFin());
+        dto.setTypeSession(s.getTypeSession() != null ? s.getTypeSession().name() : "EN_LIGNE");
         return dto;
     }
 
@@ -395,12 +432,141 @@ public class CoachService {
         User coach = userRepository.findById(coachId)
                 .orElseThrow(() -> new RuntimeException("Coach non trouvé"));
         
-        return coach.getProgrammes().stream()
-                .map(p -> ProgrammeDTO.builder()
+        List<Matching> matchings = matchingRepository.findByCoachIdAndStatut(coachId, Matching.StatutMatching.VALIDE);
+        Set<Long> programmeIds = matchings.stream()
+                .map(Matching::getProgrammeId)
+                .collect(Collectors.toSet());
+
+        List<ProgrammeDTO> programmes = new ArrayList<>();
+        for (Long pid : programmeIds) {
+            Programme p = programmeRepository.findById(pid).orElse(null);
+            if (p != null) {
+                programmes.add(ProgrammeDTO.builder()
                         .id(p.getId())
                         .nom(p.getNom())
                         .annee(p.getAnnee())
-                        .build())
+                        .build());
+            }
+        }
+        return programmes;
+    }
+
+    // --- BOOKING (entrepreneur reserves a coach session) ---
+
+    @Transactional
+    public Map<String, Object> bookSession(Long sessionCoachId, Long entrepreneurId) {
+        SessionCoach sc = sessionCoachRepository.findById(sessionCoachId)
+                .orElseThrow(() -> new ValidationException("Session non trouvée"));
+        User entrepreneur = userRepository.findById(entrepreneurId)
+                .orElseThrow(() -> new ValidationException("Entrepreneur non trouvé"));
+        User coach = sc.getDisponibilite().getCoach();
+        Disponibilite dispo = sc.getDisponibilite();
+
+        // Check not already booked by this entrepreneur
+        List<Session> existing = sessionRepository.findByEntrepreneurIdAndCoachIdAndStatut(
+                entrepreneurId, coach.getId(), Session.Statut.CONFIRMEE);
+        boolean alreadyBooked = existing.stream()
+                .anyMatch(s -> s.getDisponibiliteId() != null && s.getDisponibiliteId().equals(String.valueOf(sc.getId())));
+        if (alreadyBooked) {
+            throw new ValidationException("Vous avez déjà réservé ce créneau.");
+        }
+
+        // Create the Session entity
+        Session session = Session.builder()
+                .titre(sc.getTitre())
+                .description("Réservation pour session : " + sc.getTitre())
+                .coach(coach)
+                .entrepreneur(entrepreneur)
+                .date(sc.getDateSession().atTime(sc.getHeureDebut()))
+                .dureeMinutes((int) java.time.Duration.between(sc.getHeureDebut(), sc.getHeureFin()).toMinutes())
+                .statut(Session.Statut.CONFIRMEE)
+                .bookingStatut(Session.BookingStatut.CONFIRME)
+                .bookePar(entrepreneur)
+                .dateBooking(LocalDateTime.now())
+                .disponibiliteId(String.valueOf(sc.getId()))
+                .build();
+        Session saved = sessionRepository.save(session);
+
+        // Notifications
+        notificationService.createAndSendNotification(
+                coach.getId(),
+                entrepreneur.getFirstName() + " " + entrepreneur.getLastName() + " a réservé la session \"" + sc.getTitre() + "\"",
+                "SESSION_BOOKING", null);
+        notificationService.createAndSendNotification(
+                entrepreneurId,
+                "Réservation confirmée pour \"" + sc.getTitre() + "\" avec " + coach.getFirstName() + " " + coach.getLastName(),
+                "SESSION_BOOKING", null);
+
+        // Email entrepreneur
+        try {
+            emailService.sendEmail(entrepreneur.getEmail(),
+                    "Réservation de session confirmée",
+                    "Bonjour " + entrepreneur.getFirstName() + ",\n\n" +
+                    "Votre réservation pour la session \"" + sc.getTitre() + "\" le " + sc.getDateSession() + 
+                    " de " + sc.getHeureDebut() + " à " + sc.getHeureFin() + " est confirmée.\n\n" +
+                    "Coach : " + coach.getFirstName() + " " + coach.getLastName() + "\n\nCordialement,\nRedBoost");
+        } catch (Exception e) {
+            log.warn("Email booking confirmation failed: {}", e.getMessage());
+        }
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("sessionId", saved.getId());
+        result.put("status", "CONFIRME");
+        result.put("meetLink", saved.getMeetLink());
+        return result;
+    }
+
+    @Transactional
+    public Map<String, Object> rescheduleSession(String sessionId, LocalDateTime newDate, Long entrepreneurId) {
+        Session session = sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new ValidationException("Session non trouvée"));
+
+        if (!session.getEntrepreneur().getId().equals(entrepreneurId)) {
+            throw new ValidationException("Vous ne pouvez pas reprogrammer cette session.");
+        }
+
+        session.setDate(newDate);
+        session.setStatut(Session.Statut.DEMANDEE);
+        sessionRepository.save(session);
+
+        // Notify coach
+        notificationService.createAndSendNotification(
+                session.getCoach().getId(),
+                session.getEntrepreneur().getFirstName() + " a demandé la reprogrammation de \"" + session.getTitre() + "\"",
+                "SESSION_RESCHEDULE", null);
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("sessionId", session.getId());
+        result.put("newDate", newDate.toString());
+        result.put("status", "DEMANDEE");
+        return result;
+    }
+
+    public List<Map<String, Object>> getSessionBookings(Long sessionCoachId) {
+        List<Session> sessions = sessionRepository.findByCoachIdAndDisponibiliteId(
+                null, String.valueOf(sessionCoachId));
+        // Get all sessions linked to this sessionCoach slot
+        List<Session> allBookings = sessionRepository.findAll().stream()
+                .filter(s -> String.valueOf(sessionCoachId).equals(s.getDisponibiliteId()))
+                .collect(Collectors.toList());
+
+        return allBookings.stream().map(s -> {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("sessionId", s.getId());
+            m.put("entrepreneurId", s.getEntrepreneur().getId());
+            m.put("entrepreneurName", s.getEntrepreneur().getFirstName() + " " + s.getEntrepreneur().getLastName());
+            m.put("dateBooking", s.getDateBooking());
+            m.put("statut", s.getBookingStatut().name());
+            m.put("meetLink", s.getMeetLink());
+            return m;
+        }).collect(Collectors.toList());
+    }
+
+    // --- Available sessions for entrepreneur (from a specific coach) ---
+    public List<SessionCoachDTO> getAvailableSessionsForEntrepreneur(Long coachId) {
+        return sessionCoachRepository.findByDisponibiliteCoachId(coachId).stream()
+                .filter(s -> !s.getDateSession().isBefore(LocalDate.now())) // Only future sessions
+                .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }
 }

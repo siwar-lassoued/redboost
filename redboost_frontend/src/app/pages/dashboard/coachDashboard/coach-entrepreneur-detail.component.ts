@@ -1,7 +1,8 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute } from '@angular/router';
 import { CoachService, CoachEntrepreneurDetailDTO } from './services/coach.service';
+import { TacheService } from '../../../core/services/tache.service';
 import { AuthService } from '../../frontoffice/service/auth.service';
 import { ToastrService } from 'ngx-toastr';
 
@@ -78,7 +79,29 @@ import { ToastrService } from 'ngx-toastr';
                     </div>
                     <div class="task-content flex-1">
                         <h4 class="font-semibold text-gray-800 m-0">{{ task.titre }}</h4>
-                        <p class="text-sm text-gray-500 mt-1">{{ task.description }}</p>
+                        <p class="text-sm text-gray-500 mt-1 mb-2">{{ task.description }}</p>
+                        
+                        <div class="task-documents" *ngIf="task.documents && task.documents.length > 0">
+                            <div class="text-xs font-bold text-gray-500 mb-1">Documents attachés :</div>
+                            <div *ngFor="let doc of task.documents" class="flex items-center gap-2 text-xs bg-gray-50 p-2 rounded mb-1">
+                                <i class="pi pi-file text-blue-500"></i>
+                                <span class="flex-1 truncate">{{ doc.nom }}</span>
+                                <a [href]="doc.cheminFichier" target="_blank" class="text-blue-500 hover:underline">Voir</a>
+                                <button (click)="deleteTaskDocument(task, doc.id)" class="text-red-500 hover:text-red-700 ml-2" title="Supprimer">
+                                    <i class="pi pi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="mt-2">
+                           <input type="file" #fileInput [id]="'file_' + task.id" class="hidden" 
+                                  (change)="onTaskFileSelected($event, task)" multiple />
+                           <button class="text-xs font-bold text-[#FF4D85] bg-pink-50 px-3 py-1.5 rounded-full hover:bg-pink-100 transition-colors flex items-center gap-1"
+                                   (click)="triggerFileInput(task.id)">
+                               <i class="pi pi-paperclip"></i>
+                               {{ uploadingTaskId === task.id ? 'Téléchargement...' : 'Joindre un fichier' }}
+                           </button>
+                        </div>
                     </div>
                     <div class="task-meta">
                         <span class="badge" [class.badge-success]="task.status === 'TERMINEE'" 
@@ -620,9 +643,13 @@ export class CoachEntrepreneurDetailComponent implements OnInit {
   isLoading: boolean = true;
   coachId: number | null = null;
 
+  isUploading: boolean = false;
+  uploadingTaskId: number | null = null;
+
   constructor(
     private route: ActivatedRoute,
     private coachService: CoachService,
+    private tacheService: TacheService,
     private authService: AuthService,
     private toastr: ToastrService,
     private cdr: ChangeDetectorRef
@@ -656,6 +683,53 @@ export class CoachEntrepreneurDetailComponent implements OnInit {
         this.isLoading = false;
         this.toastr.error('Erreur lors du chargement des détails', 'Erreur');
         this.cdr.detectChanges();
+      }
+    });
+  }
+  triggerFileInput(taskId: number): void {
+    const el = document.getElementById('file_' + taskId) as HTMLInputElement;
+    if (el) el.click();
+  }
+
+  onTaskFileSelected(event: any, task: any): void {
+    const files: FileList = event.target.files;
+    if (!files || files.length === 0 || !this.coachId) return;
+
+    const filesArray = Array.from(files);
+    this.uploadingTaskId = task.id;
+
+    this.tacheService.uploadDocuments(task.id, filesArray, this.coachId).subscribe({
+      next: (uploadedDocs) => {
+        if (!task.documents) task.documents = [];
+        task.documents.push(...uploadedDocs);
+        this.uploadingTaskId = null;
+        this.toastr.success('Documents chargés avec succès', 'Succès');
+        this.cdr.detectChanges();
+        // Reset input
+        event.target.value = '';
+      },
+      error: (err) => {
+        console.error(err);
+        this.uploadingTaskId = null;
+        this.toastr.error('Erreur lors du chargement des documents', 'Erreur');
+        this.cdr.detectChanges();
+        event.target.value = '';
+      }
+    });
+  }
+
+  deleteTaskDocument(task: any, docId: number): void {
+    if (!confirm('Supprimer ce document ?')) return;
+
+    this.tacheService.deleteDocument(docId).subscribe({
+      next: () => {
+        task.documents = task.documents.filter((d: any) => d.id !== docId);
+        this.toastr.success('Document supprimé', 'Succès');
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error(err);
+        this.toastr.error('Erreur lors de la suppression', 'Erreur');
       }
     });
   }

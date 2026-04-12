@@ -47,6 +47,8 @@ import { CalendarComponent } from './app/pages/backoffice/event_organizer/calend
 import { DashboardGlobalComponent } from './app/pages/backoffice/dashboard_global/dashboard_global';
 import { DashboardViewComponent } from './app/pages/backoffice/programmes/Gestion_sprint/SprintDashboard/dashoard/dashboard-overview';
 
+import { AdminPlanningComponent } from './app/pages/backoffice/admin-planning/admin-planning.component';
+
 import { CoachDashboardComponent } from './app/pages/dashboard/coachDashboard/CoachDashboard';
 import { DisponibilitesComponent } from './app/pages/dashboard/coachDashboard/disponibilites.component';
 import { ReclamationsComponent } from './app/pages/dashboard/coachDashboard/reclamations.component';
@@ -121,6 +123,7 @@ export const appRoutes: Routes = [
             { path: 'admin_historique', component: AdminHistoriqueComponent },
             { path: 'admin_matching', component: AdminMatchingComponent },
             { path: 'admin_reporting_ia', component: AdminReportingIaComponent },
+            { path: 'admin_planning', component: AdminPlanningComponent },
             {path: 'gestion-entrepreneur',component: EntrepreneursManagementComponent},
             { path: 'workflow', component: RapportRedactionComponent },
            // { path: 'sprintdash', component: SprintDashboardComponent },

@@ -43,11 +43,20 @@ public class SessionCoach {
     @JsonFormat(pattern = "HH:mm:ss")
     private LocalTime heureFin;
 
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(name = "type_session")
+    private TypeSession typeSession = TypeSession.EN_LIGNE;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
+    }
+
+    public enum TypeSession {
+        EN_LIGNE, PRESENTIEL
     }
 }

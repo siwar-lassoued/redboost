@@ -123,4 +123,40 @@ public class CoachController {
     public ResponseEntity<List<ProgrammeDTO>> getCoachProgrammes(@PathVariable Long coachId) {
         return ResponseEntity.ok(coachService.getCoachProgrammes(coachId));
     }
+
+    // --- BOOKING (Entrepreneur) ---
+
+    @PostMapping("/sessions/{sessionCoachId}/book")
+    public ResponseEntity<?> bookSession(
+            @PathVariable Long sessionCoachId,
+            @RequestParam Long entrepreneurId) {
+        try {
+            return ResponseEntity.ok(coachService.bookSession(sessionCoachId, entrepreneurId));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PutMapping("/sessions/{sessionId}/reschedule")
+    public ResponseEntity<?> rescheduleSession(
+            @PathVariable String sessionId,
+            @RequestParam String newDate,
+            @RequestParam Long entrepreneurId) {
+        try {
+            java.time.LocalDateTime dt = java.time.LocalDateTime.parse(newDate);
+            return ResponseEntity.ok(coachService.rescheduleSession(sessionId, dt, entrepreneurId));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/sessions/{sessionCoachId}/bookings")
+    public ResponseEntity<?> getSessionBookings(@PathVariable Long sessionCoachId) {
+        return ResponseEntity.ok(coachService.getSessionBookings(sessionCoachId));
+    }
+
+    @GetMapping("/{coachId}/available-sessions")
+    public ResponseEntity<List<SessionCoachDTO>> getAvailableSessionsForEntrepreneur(@PathVariable Long coachId) {
+        return ResponseEntity.ok(coachService.getAvailableSessionsForEntrepreneur(coachId));
+    }
 }

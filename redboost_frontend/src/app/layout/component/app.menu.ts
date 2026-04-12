@@ -146,9 +146,20 @@ export class AppMenu implements OnInit {
                 ],
             },
             {
-                label: 'CALENDRIER',
+                label: 'CALENDRIER & PLANNING',
                 icon: 'pi pi-fw pi-calendar',
-                routerLink: ['/calendar'],
+                items: [
+                    {
+                        label: 'Événements',
+                        icon: 'pi pi-fw pi-calendar-plus',
+                        routerLink: ['/calendar'],
+                    },
+                    {
+                        label: 'Planning de coaching',
+                        icon: 'pi pi-fw pi-calendar-clock',
+                        routerLink: ['/admin_planning'],
+                    },
+                ],
             },
             {
                 label: 'PROGRAMMES',

@@ -11,13 +11,12 @@ export class SessionBookingService {
     private readonly http = inject(HttpClient);
     private readonly baseUrl = `${environment.apiUrl}/sessions/booking`;
 
-    book(entrepreneurId: string, disponibiliteId: string, notes: string): Observable<Session> {
-        return this.http.post<ApiResponse<Session>>(this.baseUrl, {
-            entrepreneurId, disponibiliteId, notes
-        }).pipe(map(res => res.data));
+    book(entrepreneurId: string, disponibiliteId: string, notes: string): Observable<any> {
+        return this.http.post<any>(`${environment.apiUrl}/coach/sessions/${disponibiliteId}/book?entrepreneurId=${entrepreneurId}`, { notes });
     }
 
     cancel(sessionId: string, requesterId: string, motif?: string): Observable<void> {
+        // Fallback for cancellation not yet migrated to new API
         return this.http.delete<ApiResponse<void>>(`${this.baseUrl}/${sessionId}`, {
             params: { requesterId, motif: motif || '' }
         }).pipe(map(res => res.data));
