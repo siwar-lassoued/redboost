@@ -69,4 +69,15 @@ export class MatchingService {
     getMatchingStats(programmeId: number): Observable<{ activeCount: number, unmatchedCount: number }> {
         return this.http.get<{ activeCount: number, unmatchedCount: number }>(`${this.baseUrl}/stats/${programmeId}`);
     }
+
+    getManualCandidates(programmeId: number, thematiqueId: number): Observable<{ programme: string; thematique: string; entrepreneurs: any[]; coaches: any[] }> {
+        return this.http.get<any>(`${this.baseUrl}/manual/candidates/${programmeId}`, { params: { thematiqueId } });
+    }
+
+    createManualMatching(entrepreneurId: number, coachId: number, programmeId: number,
+                         thematiqueId: number, note?: string): Observable<any> {
+        const params: any = { entrepreneurId, coachId, programmeId, thematiqueId };
+        if (note) params.note = note;
+        return this.http.post<any>(`${this.baseUrl}/manual`, null, { params });
+    }
 }

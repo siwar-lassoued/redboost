@@ -69,7 +69,6 @@ export class AppComponent implements OnInit, OnDestroy {
     }
 
     ngOnDestroy() {
-        // ✅ Disconnect WebSocket when app is destroyed
         this.notificationService.disconnect();
     }
 
@@ -118,7 +117,7 @@ export class AppComponent implements OnInit, OnDestroy {
     private handleAuthFailure() {
         this.clearTokens();
         this.userService.setUser(null);
-        this.notificationService.disconnect(); // ✅ Disconnect WebSocket on auth failure
+        this.notificationService.disconnect(); 
         this.router.navigate(['/']);
     }
 
@@ -133,7 +132,7 @@ export class AppComponent implements OnInit, OnDestroy {
                 next: (response: any) => {
                     this.userService.setUser(response);
                     
-                    // ✅ Connect WebSocket after successful authentication
+                
                     if (response?.id && response?.email) {
                         this.notificationService.connect(response.id, response.email);
                         this.notificationService.requestNotificationPermission();

@@ -69,39 +69,54 @@ public class MatchingIaService {
         // ── 2. Récupérer les coachs actifs ───────────────────────────
         List<User> coaches = userRepo.findAll().stream()
                 .filter(u -> u.getRole() == Role.COACH && u.isActive())
+                .filter(u -> u.getProgrammes().stream().anyMatch(p -> p.getId().equals(programmeId)))
                 .collect(Collectors.toList());
 
-        log.info("Coaches actifs trouvés: {}", coaches.size());
+        log.info("Coaches actifs pour le programme trouvé: {}", coaches.size());
         coaches.forEach(c -> log.info("  Coach: {} {} (id={})", c.getFirstName(), c.getLastName(), c.getId()));
 
         if (coaches.isEmpty()) {
-            throw new RuntimeException("Aucun coach actif trouvé. Vérifiez que des utilisateurs avec le rôle COACH existent dans la base.");
+            throw new RuntimeException("Aucun coach actif trouvé pour ce programme. Vérifiez que des coachs sont affectés à ce programme.");
         }
 
-        // ── 3. Récupérer les entrepreneurs non encore matchés ─────────
+
         Set<Long> coachCandidatureIds = candidatureRepo
                 .findAcceptedCoaches(CandidatureRedstarter.StatutCandidature.ACCEPTE)
                 .stream().map(CandidatureRedstarter::getId).collect(Collectors.toSet());
 
         log.info("Candidatures coach à exclure: {}", coachCandidatureIds.size());
 
+        // Récupérer les entrepreneurs affectés à ce programme
+        List<User> entrepreneursDuProgramme = userRepo.findAll().stream()
+                .filter(u -> u.getRole() == Role.ENTREPRENEUR)
+                .filter(u -> u.getProgrammes().stream().anyMatch(p -> p.getId().equals(programmeId)))
+                .collect(Collectors.toList());
+
+        Set<String> emailsEntrepreneursProgramme = entrepreneursDuProgramme.stream()
+                .map(User::getEmail)
+                .filter(Objects::nonNull)
+                .map(String::toLowerCase)
+                .collect(Collectors.toSet());
+
         List<CandidatureRedstarter> acceptedCandidatures = candidatureRepo
-                .findAllByStatut(CandidatureRedstarter.StatutCandidature.ACCEPTE);
+                .findAllByStatut(CandidatureRedstarter.StatutCandidature.ACCEPTE)
+                .stream()
+                .filter(c -> c.getEmail() != null && emailsEntrepreneursProgramme.contains(c.getEmail().toLowerCase()))
+                .collect(Collectors.toList());
 
         List<CandidatureRedstarter> unmatchedCandidatures = acceptedCandidatures.stream()
                 .filter(c -> !coachCandidatureIds.contains(c.getId()))
-                // Vérifie pas déjà un VALIDE sur CE programme + CETTE thématique
+         
                 .filter(c -> !matchingRepo.existsByEntrepreneurIdAndProgrammeIdAndThematiqueIdAndStatut(
                         c.getId(), programmeId, thematiqueId, Matching.StatutMatching.VALIDE))
                 .collect(Collectors.toList());
 
-        log.info("Entrepreneurs à matcher: {} / {} acceptés", unmatchedCandidatures.size(), acceptedCandidatures.size());
+        log.info("Entrepreneurs du programme à matcher: {} / {} acceptés", unmatchedCandidatures.size(), acceptedCandidatures.size());
 
         if (unmatchedCandidatures.isEmpty()) {
             throw new RuntimeException("Aucun entrepreneur sans coaching actif pour cette thématique. Tous ont déjà un match VALIDE.");
         }
 
-        // ── 4. Construire le profil enrichi de chaque coach ──────────
         List<Map<String, Object>> coachesData = coaches.stream().map(c -> {
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("id", c.getId());
@@ -122,7 +137,6 @@ public class MatchingIaService {
             m.put("succes_client", c.getSuccesClient());
             m.put("engagement_communautaire", c.getEngagementCommunautaire());
 
-            // Charge réelle du coach
             long activeCount = matchingRepo.findByCoachIdAndStatut(c.getId(), Matching.StatutMatching.VALIDE).size();
             double ratingMoyen = coachRatingRepo.findAverageRatingByCoachId(c.getId()).orElse(3.0);
             // Formule: (1 - nb_actifs/5) * 70 + (rating/5) * 30
@@ -233,7 +247,7 @@ public class MatchingIaService {
                "Nom : " + thematique.getNom() + "\n" +
                "Description : " + (thematique.getDescription() != null ? thematique.getDescription() : "N/A") + "\n" +
                "Période : " + thematique.getDateDebut() + " → " + thematique.getDateFin() + "\n\n" +
-               "⚠️ PRIORITÉ ABSOLUE : L'expertise du coach DOIT correspondre à cette thématique.\n" +
+               "PRIORITÉ ABSOLUE : L'expertise du coach DOIT correspondre à cette thématique.\n" +
                "   Si non couverte → score alignement_global plafonné à 60/100 maximum.\n" +
                "   Si secteur incompatible → score alignement_global plafonné à 50/100 maximum.\n\n" +
                "━━━ SCORING — 5 CRITÈRES PONDÉRÉS (total 100 points) ━━━\n\n" +
@@ -599,12 +613,182 @@ public class MatchingIaService {
                 ent.put("region", c.getRegionBasee());
                 ent.put("innovation", c.getComposanteInnovation());
                 ent.put("besoinsAccompagnement", c.getBesoinsAccompagnement());
+                ent.put("besoinsFormation", c.getBesoinsFormation());
                 ent.put("roleEntreprise", c.getRoleEntreprise());
+                ent.put("viabiliteCommerciale", c.getViabiliteCommerciale());
+                ent.put("impactEnvironnemental", c.getImpactEnvironnemental());
+                ent.put("impactSocial", c.getImpactSocial());
+                ent.put("experienceEquipe", c.getExperienceEquipeFondatrice());
+                ent.put("marchePersonnasCibles", c.getMarchePersonnasCibles());
+                // Dynamic form answers
+                if (c.getDynamicAnswers() != null && !c.getDynamicAnswers().isEmpty()) {
+                    try {
+                        Map<String, Object> dynRoot = objectMapper.readValue(c.getDynamicAnswers(), Map.class);
+                        Object answers = dynRoot.get("answers");
+                        ent.put("reponsesFormulaire", (answers instanceof Map) ? answers : dynRoot);
+                    } catch (Exception e) {
+                        log.warn("Could not parse dynamicAnswers for candidature {}", c.getId());
+                    }
+                }
+                // Documents list (filenames only — frontend will build download links)
+                if (c.getDocuments() != null && !c.getDocuments().isEmpty()) {
+                    ent.put("documents", c.getDocuments());
+                }
                 view.put("entrepreneur", ent);
             });
 
             return view;
         }).collect(Collectors.toList());
+    }
+
+    // ─── Manual Matching ──────────────────────────────────────────
+
+    /**
+     * Returns entrepreneurs (not yet matched for this programme+thematique)
+     * and coaches (active in this programme).
+     * thematiqueId is REQUIRED — reflects business rule.
+     */
+    public Map<String, Object> getManualMatchingCandidates(Long programmeId, Long thematiqueId) {
+        Programme programme = programmeRepo.findById(programmeId)
+                .orElseThrow(() -> new RuntimeException("Programme introuvable : " + programmeId));
+
+        ThematiqueCoaching thematique = thematiqueRepo.findById(thematiqueId)
+                .orElseThrow(() -> new RuntimeException("Thématique introuvable : " + thematiqueId));
+
+        if (!thematique.getProgrammeId().equals(programmeId)) {
+            throw new RuntimeException("La thématique n'appartient pas à ce programme.");
+        }
+
+        // ── Entrepreneurs du programme sans matching VALIDE pour ce programme+thématique ──
+        List<User> entrepreneursUtilisateurs = userRepo.findAll().stream()
+                .filter(u -> u.getRole() == Role.ENTREPRENEUR)
+                .filter(u -> u.getProgrammes().stream().anyMatch(p -> p.getId().equals(programmeId)))
+                .collect(Collectors.toList());
+
+        Set<String> emailsEntrepreneurs = entrepreneursUtilisateurs.stream()
+                .map(User::getEmail).filter(Objects::nonNull).map(String::toLowerCase)
+                .collect(Collectors.toSet());
+
+        List<CandidatureRedstarter> candidaturesAcceptees = candidatureRepo
+                .findAllByStatut(CandidatureRedstarter.StatutCandidature.ACCEPTE).stream()
+                .filter(c -> c.getEmail() != null && emailsEntrepreneurs.contains(c.getEmail().toLowerCase()))
+                .collect(Collectors.toList());
+
+        Set<Long> coachCandidatureIds = candidatureRepo
+                .findAcceptedCoaches(CandidatureRedstarter.StatutCandidature.ACCEPTE)
+                .stream().map(CandidatureRedstarter::getId).collect(Collectors.toSet());
+
+        List<Map<String, Object>> entrepreneursList = candidaturesAcceptees.stream()
+                .filter(c -> !coachCandidatureIds.contains(c.getId()))
+                // Exclure ceux déjà matchés (VALIDE) pour ce programme+thématique précis
+                .filter(c -> !matchingRepo.existsByEntrepreneurIdAndProgrammeIdAndThematiqueIdAndStatut(
+                        c.getId(), programmeId, thematiqueId, Matching.StatutMatching.VALIDE))
+                .map(c -> {
+                    Map<String, Object> e = new LinkedHashMap<>();
+                    e.put("id", c.getId());
+                    e.put("nom", c.getNomPrenom());
+                    e.put("email", c.getEmail());
+                    e.put("telephone", c.getNumeroTelephone());
+                    e.put("entreprise", c.getNomEntreprise());
+                    e.put("secteur", c.getEntrepriseEst());
+                    e.put("phaseMaturite", c.getPhaseMaturite());
+                    e.put("description", c.getBreveDescription());
+                    e.put("region", c.getRegionBasee());
+                    e.put("besoinsAccompagnement", c.getBesoinsAccompagnement());
+                    return e;
+                }).collect(Collectors.toList());
+
+        // ── Coachs actifs du programme ──
+        List<User> coaches = userRepo.findAll().stream()
+                .filter(u -> u.getRole() == Role.COACH && u.isActive())
+                .filter(u -> u.getProgrammes().stream().anyMatch(p -> p.getId().equals(programmeId)))
+                .collect(Collectors.toList());
+
+        List<Map<String, Object>> coachesList = coaches.stream().map(c -> {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("id", c.getId());
+            m.put("nom", c.getLastName());
+            m.put("prenom", c.getFirstName());
+            m.put("email", c.getEmail());
+            m.put("expertise", c.getExpertise());
+            m.put("skills", c.getSkills());
+            m.put("secteur", c.getSecteur());
+            m.put("bio", c.getBio());
+            m.put("yearsOfExperience", c.getYearsOfExperience());
+            m.put("phoneNumber", c.getPhoneNumber());
+            long activeCount = matchingRepo.findByCoachIdAndStatut(c.getId(), Matching.StatutMatching.VALIDE).size();
+            m.put("nbEntrepreneursActifs", activeCount);
+            double rating = coachRatingRepo.findAverageRatingByCoachId(c.getId()).orElse(0.0);
+            m.put("noteMoyenneRating", Math.round(rating * 10.0) / 10.0);
+            m.put("disponible", activeCount < 5);
+            return m;
+        }).collect(Collectors.toList());
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("programme", programme.getNom());
+        result.put("thematique", thematique.getNom());
+        result.put("entrepreneurs", entrepreneursList);
+        result.put("coaches", coachesList);
+        return result;
+    }
+
+    /**
+     * Creates a manual validated matching between an entrepreneur and a coach,
+     * bypassing the AI engine entirely.
+     */
+    @Transactional
+    public Map<String, Object> createManualMatching(Long entrepreneurId, Long coachId,
+                                                     Long programmeId, Long thematiqueId,
+                                                     String note) {
+        // Vérifie que la thématique est fournie (règle métier)
+        if (thematiqueId == null) {
+            throw new RuntimeException("La thématique est obligatoire pour créer un matching.");
+        }
+        // Vérifie que l'entrepreneur n'a pas déjà un matching actif pour ce programme+thématique
+        if (matchingRepo.existsByEntrepreneurIdAndProgrammeIdAndThematiqueIdAndStatut(
+                entrepreneurId, programmeId, thematiqueId, Matching.StatutMatching.VALIDE)) {
+            throw new RuntimeException("Cet entrepreneur a déjà un coaching actif pour cette thématique.");
+        }
+
+        // Crée une session manuelle dédiée
+        MatchingSession session = MatchingSession.builder()
+                .programmeId(programmeId)
+                .thematiqueId(thematiqueId)
+                .statut(MatchingSession.StatutSession.VALIDE)
+                .nbMatchings(1)
+                .dateMatching(LocalDateTime.now())
+                .dateValidation(LocalDateTime.now())
+                .alertesJson("[]")
+                .build();
+        session = sessionRepo.save(session);
+
+        // Crée le matching directement en statut VALIDE
+        Matching matching = Matching.builder()
+                .matchingSession(session)
+                .coachId(coachId)
+                .entrepreneurId(entrepreneurId)
+                .programmeId(programmeId)
+                .thematiqueId(thematiqueId)
+                .scoreIa(0.0)   // pas de score IA pour un matching manuel
+                .justification(note != null && !note.isBlank() ? note : "Matching effectué manuellement par l'administrateur.")
+                .rankTop(1)
+                .statut(Matching.StatutMatching.VALIDE)
+                .dateValidation(LocalDateTime.now())
+                .build();
+        matchingRepo.save(matching);
+
+        log.info("Matching manuel créé : entrepreneur={} ↔ coach={} programme={}", entrepreneurId, coachId, programmeId);
+
+        // Résumé retourné au frontend
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("matchingId", matching.getId());
+        result.put("sessionId", session.getId());
+        result.put("entrepreneurId", entrepreneurId);
+        result.put("coachId", coachId);
+        result.put("statut", "VALIDE");
+        candidatureRepo.findById(entrepreneurId).ifPresent(c -> result.put("entrepreneurNom", c.getNomPrenom()));
+        userRepo.findById(coachId).ifPresent(c -> result.put("coachNom", c.getFirstName() + " " + c.getLastName()));
+        return result;
     }
 
     // ─── Helpers ──────────────────────────────────────────────────

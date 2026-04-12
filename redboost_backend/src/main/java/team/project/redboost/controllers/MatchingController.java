@@ -55,6 +55,23 @@ public class MatchingController {
         return ResponseEntity.ok(matchingService.getMatchingStats(programmeId));
     }
 
+    @GetMapping("/manual/candidates/{programmeId}")
+    public ResponseEntity<Map<String, Object>> getManualCandidates(
+            @PathVariable Long programmeId,
+            @RequestParam Long thematiqueId) {
+        return ResponseEntity.ok(matchingService.getManualMatchingCandidates(programmeId, thematiqueId));
+    }
+
+    @PostMapping("/manual")
+    public ResponseEntity<Map<String, Object>> createManualMatching(
+            @RequestParam Long entrepreneurId,
+            @RequestParam Long coachId,
+            @RequestParam Long programmeId,
+            @RequestParam Long thematiqueId,
+            @RequestParam(required = false) String note) {
+        return ResponseEntity.ok(matchingService.createManualMatching(entrepreneurId, coachId, programmeId, thematiqueId, note));
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, String>> handleRuntimeException(RuntimeException ex) {
         return ResponseEntity.badRequest().body(Collections.singletonMap("message", ex.getMessage()));

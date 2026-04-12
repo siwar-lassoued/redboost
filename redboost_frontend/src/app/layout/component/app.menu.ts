@@ -105,8 +105,7 @@ export class AppMenu implements OnInit {
     }
 
     private buildCoachMenuFromBackend(headers: HttpHeaders): void {
-        // Backend API endpoints for these statistics are not yet implemented.
-        // Fallback directly to the static coach menu to avoid 404 console errors.
+
         this.model = this.getCoachMenu();
     }
 
@@ -263,7 +262,7 @@ export class AppMenu implements OnInit {
                 ],
             },
             {
-                label: 'MATCHING IA',
+                label: 'MATCHING',
                 icon: 'pi pi-fw pi-bolt',
                 routerLink: ['/admin_matching'],
             },
