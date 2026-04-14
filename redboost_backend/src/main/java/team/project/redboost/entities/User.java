@@ -170,6 +170,10 @@ public class User implements UserDetails {
 
     private boolean isActive = false;
 
+    /** Force le changement de mot de passe à la prochaine connexion */
+    @Column(name = "must_change_pwd")
+    private boolean mustChangePwd = false;
+
     private String provider;
     private String providerId;
 

@@ -5,7 +5,10 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "coach_ratings")
+@Table(name = "coach_ratings",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uq_coach_rating_session_entrepreneur",
+                columnNames = {"entrepreneur_id", "session_id"}))
 public class CoachRating {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

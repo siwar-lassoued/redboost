@@ -22,7 +22,7 @@ public interface SessionRepository extends JpaRepository<Session, String> {
     long countByProgrammeIdAndStatutAndDateBetween(Long programmeId, Session.Statut statut, LocalDateTime start, LocalDateTime end);
 
     /** Sessions in a time range — used by reminder scheduler */
-    @Query("SELECT s FROM Session s WHERE s.date BETWEEN :rangeStart AND :rangeEnd AND s.statut IN ('PLANIFIEE', 'CONFIRMEE')")
+    @Query("SELECT s FROM Session s WHERE s.date BETWEEN :rangeStart AND :rangeEnd AND s.statut IN ('PLANIFIE', 'CONFIRME')")
     List<Session> findSessionsInTimeRange(@Param("rangeStart") LocalDateTime rangeStart,
                                           @Param("rangeEnd") LocalDateTime rangeEnd);
 

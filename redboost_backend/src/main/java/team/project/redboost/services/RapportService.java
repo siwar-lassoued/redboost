@@ -58,6 +58,11 @@ public class RapportService {
     private final ProgrammeKpiRepository programmeKpiRepository;
     private final GoogleDriveService googleDriveService;
     private final ActiviteKpiHistoryRepository activiteKpiHistoryRepository;
+    private final team.project.redboost.repositories.SessionRepository sessionRepository;
+    private final team.project.redboost.repositories.UserRepository userRepository;
+    private final team.project.redboost.repositories.TacheRepository tacheRepository;
+    private final team.project.redboost.repositories.TacheDocumentRepository tacheDocumentRepository;
+    private final team.project.redboost.repositories.MatchingRepository matchingRepository;
 
     public RapportDTO createRapport(RapportDTO rapportDTO) {
         Programme programme = programmeRepository.findById(rapportDTO.getProgrammeId())
@@ -3507,6 +3512,218 @@ public class RapportService {
         left.setVal(STBorder.SINGLE);
         left.setSz(new BigInteger(sizeTwip));
         left.setColor(hexColor);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // MODULE 7.3 — Rapport Consolidé Entrepreneur
+    // ═══════════════════════════════════════════════════════════════
+
+    /**
+     * PDF consolidé d'un entrepreneur : informations, matchings actifs,
+     * sessions de coaching, tâches et livrables.
+     */
+    public byte[] generateConsolidatedEntrepreneurReport(
+            Long entrepreneurId, LocalDate startDate, LocalDate endDate) {
+
+        team.project.redboost.entities.User ent = userRepository.findById(entrepreneurId)
+                .orElseThrow(() -> new RuntimeException("Entrepreneur introuvable : " + entrepreneurId));
+
+        List<team.project.redboost.entities.Session> sessions =
+                sessionRepository.findByEntrepreneurId(entrepreneurId);
+        if (startDate != null && endDate != null) {
+            sessions = sessions.stream()
+                    .filter(s -> s.getDate() != null
+                            && !s.getDate().toLocalDate().isBefore(startDate)
+                            && !s.getDate().toLocalDate().isAfter(endDate))
+                    .collect(Collectors.toList());
+        }
+
+        List<team.project.redboost.entities.Tache> taches =
+                tacheRepository.findByResponsableId(entrepreneurId);
+
+        List<team.project.redboost.entities.Matching> matchings =
+                matchingRepository.findByEntrepreneurIdAndStatut(
+                        entrepreneurId,
+                        team.project.redboost.entities.Matching.StatutMatching.VALIDE);
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        Document document = new Document(PageSize.A4, 45, 45, 60, 55);
+        try {
+            PdfWriter.getInstance(document, out);
+            document.open();
+
+            Color NAVY   = new Color(0,   49, 137);
+            Color GOLD   = new Color(200, 168, 75);
+            Color DARK   = new Color(20,  30,  50);
+            Color MUTED  = new Color(100, 115, 140);
+            Color BG_ROW = new Color(244, 246, 250);
+            Color BORDER = new Color(200, 210, 230);
+
+            Font titleFont  = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 18, NAVY);
+            Font hdrFont    = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10, Color.WHITE);
+            Font boldFont   = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10, DARK);
+            Font normalFont = FontFactory.getFont(FontFactory.HELVETICA, 10, DARK);
+            Font mutedFont  = FontFactory.getFont(FontFactory.HELVETICA, 9,  MUTED);
+
+            // ── Titre ──────────────────────────────────────────────
+            Paragraph titlePar = new Paragraph("RAPPORT CONSOLIDÉ — ENTREPRENEUR", titleFont);
+            titlePar.setAlignment(Element.ALIGN_CENTER);
+            titlePar.setSpacingAfter(4);
+            document.add(titlePar);
+
+            String periodTxt = (startDate != null && endDate != null)
+                    ? "Période : " + startDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                      + " → " + endDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                    : "Généré le " + LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+            Paragraph periodPar = new Paragraph(periodTxt, mutedFont);
+            periodPar.setAlignment(Element.ALIGN_CENTER);
+            periodPar.setSpacingAfter(16);
+            document.add(periodPar);
+
+            // ── I. Informations ────────────────────────────────────
+            addConsolidatedSectionHeader(document, "I. Informations Entrepreneur", NAVY, GOLD, hdrFont);
+            PdfPTable infoTable = new PdfPTable(new float[]{3, 7});
+            infoTable.setWidthPercentage(100);
+            infoTable.setSpacingAfter(12);
+            String[][] rows = {
+                    {"Nom",        ent.getFirstName() + " " + ent.getLastName()},
+                    {"Email",      ent.getEmail()},
+                    {"Téléphone",  ent.getPhoneNumber() != null ? ent.getPhoneNumber() : "—"},
+                    {"Entreprise", ent.getEntreprise()  != null ? ent.getEntreprise()  : "—"},
+                    {"Secteur",    ent.getSecteur()     != null ? ent.getSecteur()     : "—"},
+                    {"Région",     ent.getRegion()      != null ? ent.getRegion()      : "—"}
+            };
+            for (int i = 0; i < rows.length; i++) {
+                addConsolidatedRow(infoTable, rows[i][0], rows[i][1],
+                        boldFont, normalFont, i % 2 == 0, BG_ROW, BORDER);
+            }
+            document.add(infoTable);
+
+            // ── II. Matchings actifs ───────────────────────────────
+            addConsolidatedSectionHeader(document, "II. Matchings actifs", NAVY, GOLD, hdrFont);
+            if (matchings.isEmpty()) {
+                document.add(new Paragraph("Aucun matching actif.", mutedFont));
+            } else {
+                PdfPTable mTable = new PdfPTable(new float[]{5, 5, 2});
+                mTable.setWidthPercentage(100);
+                mTable.setSpacingAfter(12);
+                for (String h : new String[]{"Programme", "Coach", "Statut"}) {
+                    PdfPCell hc = new PdfPCell(new Phrase(h, hdrFont));
+                    hc.setBackgroundColor(NAVY); hc.setPadding(5); hc.setBorder(Rectangle.NO_BORDER);
+                    mTable.addCell(hc);
+                }
+                for (team.project.redboost.entities.Matching m : matchings) {
+                    String progName  = programmeRepository.findById(m.getProgrammeId())
+                            .map(p -> p.getNom()).orElse("—");
+                    String coachName = userRepository.findById(m.getCoachId())
+                            .map(c -> c.getFirstName() + " " + c.getLastName()).orElse("—");
+                    mTable.addCell(new Phrase(progName,  normalFont));
+                    mTable.addCell(new Phrase(coachName, normalFont));
+                    mTable.addCell(new Phrase(m.getStatut().name(), normalFont));
+                }
+                document.add(mTable);
+            }
+
+            // ── III. Sessions ──────────────────────────────────────
+            addConsolidatedSectionHeader(document,
+                    "III. Sessions de Coaching (" + sessions.size() + ")", NAVY, GOLD, hdrFont);
+            if (sessions.isEmpty()) {
+                document.add(new Paragraph("Aucune session pour la période.", mutedFont));
+            } else {
+                PdfPTable sTable = new PdfPTable(new float[]{5, 2, 2, 5});
+                sTable.setWidthPercentage(100);
+                sTable.setSpacingAfter(12);
+                for (String h : new String[]{"Titre", "Date", "Statut", "Lien Meet"}) {
+                    PdfPCell hc = new PdfPCell(new Phrase(h, hdrFont));
+                    hc.setBackgroundColor(NAVY); hc.setPadding(5); hc.setBorder(Rectangle.NO_BORDER);
+                    sTable.addCell(hc);
+                }
+                for (team.project.redboost.entities.Session s : sessions) {
+                    sTable.addCell(new Phrase(s.getTitre() != null ? s.getTitre() : "—", normalFont));
+                    sTable.addCell(new Phrase(s.getDate() != null
+                            ? s.getDate().format(DateTimeFormatter.ofPattern("dd/MM/yy HH:mm")) : "—", normalFont));
+                    sTable.addCell(new Phrase(s.getStatut() != null ? s.getStatut().name() : "—", normalFont));
+                    sTable.addCell(new Phrase(s.getMeetLink() != null ? s.getMeetLink() : "—", normalFont));
+                }
+                document.add(sTable);
+            }
+
+            // ── IV. Tâches & Livrables ─────────────────────────────
+            addConsolidatedSectionHeader(document,
+                    "IV. Tâches & Livrables (" + taches.size() + ")", NAVY, GOLD, hdrFont);
+            if (taches.isEmpty()) {
+                document.add(new Paragraph("Aucune tâche assignée.", mutedFont));
+            } else {
+                PdfPTable tTable = new PdfPTable(new float[]{5, 2, 3});
+                tTable.setWidthPercentage(100);
+                tTable.setSpacingAfter(12);
+                for (String h : new String[]{"Titre", "Statut", "Date limite"}) {
+                    PdfPCell hc = new PdfPCell(new Phrase(h, hdrFont));
+                    hc.setBackgroundColor(NAVY); hc.setPadding(5); hc.setBorder(Rectangle.NO_BORDER);
+                    tTable.addCell(hc);
+                }
+                for (team.project.redboost.entities.Tache t : taches) {
+                    tTable.addCell(new Phrase(t.getTitre(), normalFont));
+                    tTable.addCell(new Phrase(t.getStatus()     != null ? t.getStatus().name() : "—", normalFont));
+                    tTable.addCell(new Phrase(t.getDateLimite() != null
+                            ? t.getDateLimite().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : "—", normalFont));
+                    List<team.project.redboost.entities.TacheDocument> docs =
+                            tacheDocumentRepository.findByTacheId(t.getId());
+                    if (!docs.isEmpty()) {
+                        PdfPCell docsCell = new PdfPCell();
+                        docsCell.setColspan(3);
+                        docsCell.setPaddingLeft(20);
+                        docsCell.setPaddingBottom(4);
+                        StringBuilder sb = new StringBuilder("↳ Livrables : ");
+                        docs.forEach(d -> sb.append(d.getNom()).append("  |  "));
+                        docsCell.addElement(new Phrase(sb.toString(), mutedFont));
+                        docsCell.setBorder(Rectangle.BOTTOM);
+                        tTable.addCell(docsCell);
+                    }
+                }
+                document.add(tTable);
+            }
+
+        } catch (Exception e) {
+            throw new RuntimeException(
+                    "Erreur génération rapport consolidé entrepreneur " + entrepreneurId
+                            + " : " + e.getMessage(), e);
+        } finally {
+            if (document.isOpen()) document.close();
+        }
+        return out.toByteArray();
+    }
+
+    private void addConsolidatedSectionHeader(Document doc, String text,
+                                               Color bg, Color accent, Font font)
+            throws DocumentException {
+        PdfPTable t = new PdfPTable(new float[]{1, 20});
+        t.setWidthPercentage(100);
+        t.setSpacingBefore(14);
+        t.setSpacingAfter(6);
+        PdfPCell ac = new PdfPCell();
+        ac.setBackgroundColor(accent);
+        ac.setBorder(Rectangle.NO_BORDER);
+        t.addCell(ac);
+        PdfPCell tc = new PdfPCell(new Phrase(" " + text, font));
+        tc.setBackgroundColor(bg);
+        tc.setBorder(Rectangle.NO_BORDER);
+        tc.setPadding(6);
+        t.addCell(tc);
+        doc.add(t);
+    }
+
+    private void addConsolidatedRow(PdfPTable table, String label, String value,
+                                    Font bold, Font normal, boolean shade,
+                                    Color shadeColor, Color borderColor) {
+        PdfPCell lc = new PdfPCell(new Phrase(label, bold));
+        lc.setPadding(5); lc.setBorderColor(borderColor);
+        if (shade) lc.setBackgroundColor(shadeColor);
+        table.addCell(lc);
+        PdfPCell vc = new PdfPCell(new Phrase(value != null ? value : "—", normal));
+        vc.setPadding(5); vc.setBorderColor(borderColor);
+        if (shade) vc.setBackgroundColor(shadeColor);
+        table.addCell(vc);
     }
 
 }

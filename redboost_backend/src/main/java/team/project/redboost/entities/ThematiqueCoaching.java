@@ -37,6 +37,9 @@ public class ThematiqueCoaching {
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate dateFin;
 
+    @Column(name = "nb_sessions_max")
+    private Integer nbSessionsMax;
+
     @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

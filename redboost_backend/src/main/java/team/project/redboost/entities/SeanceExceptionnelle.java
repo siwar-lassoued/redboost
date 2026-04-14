@@ -47,6 +47,19 @@ public class SeanceExceptionnelle {
     @JsonFormat(pattern = "HH:mm:ss")
     private LocalTime heureFin;
 
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(name = "type_session")
+    private TypeSession typeSession = TypeSession.EN_LIGNE;
+
+    /** Adresse physique (obligatoire si typeSession == PRESENTIEL) */
+    @Column(name = "adresse")
+    private String adresse;
+
+    public enum TypeSession {
+        EN_LIGNE, PRESENTIEL
+    }
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

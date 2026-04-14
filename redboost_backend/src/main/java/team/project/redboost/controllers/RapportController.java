@@ -6,6 +6,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import team.project.redboost.dto.*;
 import team.project.redboost.services.GoogleDriveService;
@@ -18,6 +19,7 @@ import java.util.List;
 @RequestMapping("/api/rapports")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
+@PreAuthorize("isAuthenticated()")
 public class RapportController {
 
     private final RapportService rapportService;
@@ -210,5 +212,28 @@ public class RapportController {
         
         GoogleDriveService.DriveUploadResult result = rapportService.generateAndUploadRapportDocx(id, startDate, endDate, template);
         return ResponseEntity.ok(result);
+    }
+
+    /**
+     * MODULE 7.3 — Rapport consolidé par entrepreneur
+     * Génère un PDF agrégeant toutes les sessions, tâches et livrables d'un entrepreneur.
+     * Accessible par ADMIN ou COACH uniquement.
+     */
+    @PreAuthorize("hasAnyRole('ADMIN','COACH')")
+    @GetMapping("/entrepreneur/{entrepreneurId}/consolidated")
+    public ResponseEntity<byte[]> getConsolidatedReport(
+            @PathVariable Long entrepreneurId,
+            @RequestParam(value = "startDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(value = "endDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+
+        byte[] pdfBytes = rapportService.generateConsolidatedEntrepreneurReport(entrepreneurId, startDate, endDate);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDispositionFormData("attachment",
+                "Rapport_Consolide_Entrepreneur_" + entrepreneurId + ".pdf");
+        headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
+
+        return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
     }
 }

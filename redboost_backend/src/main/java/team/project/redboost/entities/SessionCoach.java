@@ -48,6 +48,10 @@ public class SessionCoach {
     @Column(name = "type_session")
     private TypeSession typeSession = TypeSession.EN_LIGNE;
 
+    /** Adresse physique (obligatoire si typeSession == PRESENTIEL) */
+    @Column(name = "adresse")
+    private String adresse;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

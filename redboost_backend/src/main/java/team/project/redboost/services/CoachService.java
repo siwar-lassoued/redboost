@@ -60,6 +60,9 @@ public class CoachService {
     @Autowired
     private ProgrammeRepository programmeRepository;
 
+    @Autowired
+    private GoogleCalendarService googleCalendarService;
+
     // --- DASHBOARD OVERVIEW ---
 
     public DashboardStatsDTO getDashboardStats(Long coachId) {
@@ -105,11 +108,11 @@ public class CoachService {
             long done = tasks.stream().filter(t -> t.getStatus() == Tache.StatusTache.TERMINEE).count();
             int progress = total > 0 ? (int)(done * 100 / total) : 0;
             
-            long delayed = tasks.stream()
-                    .filter(t -> t.getStatus() != Tache.StatusTache.TERMINEE 
-                              && t.getDateLimite() != null 
-                              && t.getDateLimite().isBefore(LocalDate.now()))
-                    .count();
+        long delayed = tasks.stream()
+                .filter(t -> t.getStatus() != Tache.StatusTache.TERMINEE 
+                          && t.getDateLimite() != null 
+                          && t.getDateLimite().isBefore(LocalDate.now()))
+                .count();
             
             return CoachEntrepreneurDTO.builder()
                     .id(ent.getId())
@@ -313,6 +316,21 @@ public class CoachService {
                 .build();
 
         SessionCoach saved = sessionCoachRepository.save(session);
+
+        // Notify all entrepreneurs linked to this coach (matching VALIDE) about new slot
+        List<Matching> matchings = matchingRepository.findByCoachIdAndStatut(
+                dispo.getCoach().getId(), Matching.StatutMatching.VALIDE);
+        for (Matching m : matchings) {
+            try {
+                notificationService.createAndSendNotification(
+                        m.getEntrepreneurId(),
+                        "Nouveau créneau disponible : \"" + dto.getTitre() + "\" le " + sessionDate,
+                        "SESSION_SLOT_ADDED", saved.getId());
+            } catch (Exception e) {
+                log.warn("Notification failed for entrepreneur {}: {}", m.getEntrepreneurId(), e.getMessage());
+            }
+        }
+
         return mapToDTO(saved);
     }
     
@@ -371,6 +389,28 @@ public class CoachService {
                 .build();
 
         Reclamation saved = reclamationRepository.save(rec);
+
+        // Notify all ADMIN users
+        userRepository.findAll().stream()
+                .filter(u -> u.getRole() == team.project.redboost.entities.Role.ADMIN)
+                .forEach(admin -> {
+                    try {
+                        notificationService.createAndSendNotification(
+                                admin.getId(),
+                                "Nouvelle réclamation de " + coach.getFirstName() + " " + coach.getLastName()
+                                        + " concernant " + entrepreneur.getFirstName() + " " + entrepreneur.getLastName(),
+                                "RECLAMATION_NEW", saved.getId());
+                        emailService.sendEmail(admin.getEmail(),
+                                "[RedBoost] Nouvelle réclamation coach",
+                                "Coach : " + coach.getFirstName() + " " + coach.getLastName()
+                                        + "\nEntrepreneur : " + entrepreneur.getFirstName() + " " + entrepreneur.getLastName()
+                                        + "\nSujet : " + dto.getSujet()
+                                        + "\nDescription : " + dto.getDescription());
+                    } catch (Exception e) {
+                        log.warn("Admin notification for reclamation failed: {}", e.getMessage());
+                    }
+                });
+
         return mapToDTO(saved);
     }
 
@@ -452,7 +492,7 @@ public class CoachService {
 
     @Transactional
     public Map<String, Object> bookSession(Long sessionCoachId, Long entrepreneurId) {
-        SessionCoach sc = sessionCoachRepository.findById(sessionCoachId)
+        SessionCoach sc = sessionCoachRepository.findByIdWithLock(sessionCoachId)
                 .orElseThrow(() -> new ValidationException("Session non trouvée"));
         User entrepreneur = userRepository.findById(entrepreneurId)
                 .orElseThrow(() -> new ValidationException("Entrepreneur non trouvé"));
@@ -461,7 +501,7 @@ public class CoachService {
 
         // Check not already booked by this entrepreneur
         List<Session> existing = sessionRepository.findByEntrepreneurIdAndCoachIdAndStatut(
-                entrepreneurId, coach.getId(), Session.Statut.CONFIRMEE);
+                entrepreneurId, coach.getId(), Session.Statut.CONFIRME);
         boolean alreadyBooked = existing.stream()
                 .anyMatch(s -> s.getDisponibiliteId() != null && s.getDisponibiliteId().equals(String.valueOf(sc.getId())));
         if (alreadyBooked) {
@@ -476,7 +516,7 @@ public class CoachService {
                 .entrepreneur(entrepreneur)
                 .date(sc.getDateSession().atTime(sc.getHeureDebut()))
                 .dureeMinutes((int) java.time.Duration.between(sc.getHeureDebut(), sc.getHeureFin()).toMinutes())
-                .statut(Session.Statut.CONFIRMEE)
+                .statut(Session.Statut.CONFIRME)
                 .bookingStatut(Session.BookingStatut.CONFIRME)
                 .bookePar(entrepreneur)
                 .dateBooking(LocalDateTime.now())
@@ -523,7 +563,28 @@ public class CoachService {
         }
 
         session.setDate(newDate);
-        session.setStatut(Session.Statut.DEMANDEE);
+        session.setStatut(Session.Statut.DEMANDE);
+
+        // Update Google Calendar: cancel old event, create new one
+        if (session.getGoogleEventId() != null) {
+            try {
+                googleCalendarService.cancelCalendarEvent(session.getGoogleEventId());
+                LocalDateTime end = newDate.plusMinutes(session.getDureeMinutes() != null ? session.getDureeMinutes() : 60);
+                GoogleCalendarService.GoogleEventResult newEvent = googleCalendarService.createMeetEvent(
+                        session.getTitre(),
+                        newDate,
+                        end,
+                        session.getCoach().getEmail(),
+                        session.getEntrepreneur().getEmail());
+                if (newEvent != null) {
+                    session.setMeetLink(newEvent.getMeetLink());
+                    session.setGoogleEventId(newEvent.getEventId());
+                }
+            } catch (Exception e) {
+                log.warn("Google Calendar reschedule failed for session {}: {}", sessionId, e.getMessage());
+            }
+        }
+
         sessionRepository.save(session);
 
         // Notify coach
@@ -535,7 +596,7 @@ public class CoachService {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("sessionId", session.getId());
         result.put("newDate", newDate.toString());
-        result.put("status", "DEMANDEE");
+        result.put("status", "DEMANDE");
         return result;
     }
 

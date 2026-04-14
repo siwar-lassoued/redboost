@@ -12,6 +12,8 @@ import team.project.redboost.dto.CandidatureRedstarterDTO;
 import team.project.redboost.entities.CandidatureRedstarter;
 import team.project.redboost.entities.CandidatureRedstarter.StatutCandidature;
 import team.project.redboost.repositories.CandidatureRedstarterRepository;
+import team.project.redboost.repositories.ProgrammeRepository;
+import team.project.redboost.entities.Programme;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -39,6 +41,7 @@ public class CandidatureRedstarterService {
     private final CandidatureLogRepository logRepository;
     private final FormTemplateRepository formTemplateRepository;
     private final EmailService emailService;
+    private final ProgrammeRepository programmeRepository;
     private static final com.fasterxml.jackson.databind.ObjectMapper MAPPER = new com.fasterxml.jackson.databind.ObjectMapper();
 
     private final Path candidatureUploadPath;
@@ -51,6 +54,7 @@ public class CandidatureRedstarterService {
             CandidatureLogRepository logRepository,
             FormTemplateRepository formTemplateRepository,
             EmailService emailService,
+            ProgrammeRepository programmeRepository,
             @org.springframework.beans.factory.annotation.Value("${file.upload-dir:uploads}") String uploadDir) {
         this.candidatureRepository = candidatureRepository;
         this.notificationService = notificationService;
@@ -59,6 +63,7 @@ public class CandidatureRedstarterService {
         this.logRepository = logRepository;
         this.formTemplateRepository = formTemplateRepository;
         this.emailService = emailService;
+        this.programmeRepository = programmeRepository;
         this.candidatureUploadPath = Paths.get(uploadDir, "candidatures").toAbsolutePath().normalize();
         log.info("Candidature upload path resolved to: {}", this.candidatureUploadPath);
     }
@@ -244,39 +249,71 @@ public class CandidatureRedstarterService {
                     String nomPrenom = candidature.getNomPrenom();
                     String phone = candidature.getNumeroTelephone();
                     String startup = candidature.getNomEntreprise();
+                    String bio = candidature.getBreveDescription();
+                    String region = candidature.getRegionBasee();
+                    String linkedin = candidature.getLienReseauxSociaux();
+                    String secteur = candidature.getMarchePersonnasCibles();
+                    String skills = "";
+                    String expertise = "";
                     
                     Map<String, Object> answers = getDynamicAnswersMap(candidature);
                     if (answers != null) {
                         for (Map.Entry<String, Object> entry : answers.entrySet()) {
                             String key = entry.getKey().toLowerCase();
-                            if (nomPrenom == null && (key.contains("nom et prénom") || key.contains("nom complet"))) nomPrenom = entry.getValue().toString();
-                            if (phone == null && (key.contains("téléphone") || key.contains("phone") || key.contains("numéro"))) phone = entry.getValue().toString();
-                            if (startup == null && (key.contains("startup") || key.contains("entreprise"))) startup = entry.getValue().toString();
+                            String val = entry.getValue() != null ? entry.getValue().toString() : "";
+                            
+                            if (nomPrenom == null && (key.contains("nom et prénom") || key.contains("nom complet") || key.contains("name"))) nomPrenom = val;
+                            if (phone == null && (key.contains("téléphone") || key.contains("phone") || key.contains("numéro") || key.contains("whatsapp"))) phone = val;
+                            if (startup == null && (key.contains("startup") || key.contains("entreprise") || key.contains("company") || key.contains("projet"))) startup = val;
+                            if (bio == null && (key.contains("bio") || key.contains("description"))) bio = val;
+                            if (region == null && (key.contains("région") || key.contains("region") || key.contains("ville") || key.contains("gouvernorat"))) region = val;
+                            if (linkedin == null && (key.contains("linkedin") || key.contains("réseau") || key.contains("social"))) linkedin = val;
+                            if (secteur == null && (key.contains("secteur") || key.contains("industry") || key.contains("domaine"))) secteur = val;
+                            
+                            // For coaches
+                            if (key.contains("compétence") || key.contains("skill")) skills = val;
+                            if (expertise.isEmpty() && (key.contains("expertise") || key.contains("domaine d'intervention"))) expertise = val;
                         }
                     }
                     
-                    if (nomPrenom != null && nomPrenom.trim().contains(" ")) {
+                    if (nomPrenom != null && !nomPrenom.trim().isEmpty()) {
                         String cleanNom = nomPrenom.trim();
                         int firstSpace = cleanNom.indexOf(" ");
-                        String firstN = cleanNom.substring(0, firstSpace).trim();
-                        String lastN = cleanNom.substring(firstSpace + 1).trim();
-                        user.setFirstName(firstN.length() < 2 ? firstN + "_" : firstN);
-                        user.setLastName(lastN.length() < 2 ? lastN + "_" : lastN);
+                        if (firstSpace > 0) {
+                            String firstN = cleanNom.substring(0, firstSpace).trim();
+                            String lastN = cleanNom.substring(firstSpace + 1).trim();
+                            user.setFirstName(firstN.length() < 2 ? firstN + "_" : firstN);
+                            user.setLastName(lastN.length() < 2 ? lastN + "_" : lastN);
+                        } else {
+                            user.setFirstName(cleanNom.length() < 2 ? cleanNom + "_" : cleanNom);
+                            user.setLastName("Redboost"); // fallback for single names
+                        }
                     } else {
-                        String cleanName = nomPrenom != null ? nomPrenom.trim() : "Candidat";
-                        user.setFirstName(cleanName.length() < 2 ? cleanName + "_" : cleanName);
+                        user.setFirstName("Candidat");
                         user.setLastName("Redboost");
                     }
                     
-                    user.setPhoneNumber(phone != null ? phone : "00000000");
+                    user.setPhoneNumber(phone != null && !phone.trim().isEmpty() ? phone : "00000000");
+                    user.setBio(bio);
+                    user.setRegion(region);
+                    user.setLinkedinUrl(linkedin);
+                    user.setSecteur(secteur);
                     user.setActive(true);
                     
-                    // Determine Role
+                    // Determine Role and Programme
                     Role[] roleRef = new Role[]{Role.ENTREPRENEUR};
+                    Programme[] progRef = new Programme[]{null};
+
                     if (candidature.getFormTemplateId() != null) {
                         formTemplateRepository.findById(candidature.getFormTemplateId()).ifPresent(t -> {
                             if ("coach".equalsIgnoreCase(t.getProfileType()) || "coaches".equalsIgnoreCase(t.getProfileType())) {
                                 roleRef[0] = Role.COACH;
+                            }
+                            if (t.getProgram() != null) {
+                                programmeRepository.findAll().stream()
+                                    .filter(p -> p.getNom().equalsIgnoreCase(t.getProgram()))
+                                    .findFirst()
+                                    .ifPresent(p -> progRef[0] = p);
                             }
                         });
                     } else if ("coach".equalsIgnoreCase(candidature.getRoleEntreprise()) || "coaches".equalsIgnoreCase(candidature.getRoleEntreprise())) {
@@ -302,13 +339,21 @@ public class CandidatureRedstarterService {
                     
                     if (roleRef[0] == Role.ENTREPRENEUR) {
                         user.setStartupName(startup != null ? startup : "Startup");
+                        user.setEntreprise(startup != null ? startup : "Startup");
                     } else {
-                        user.setExpertise(startup);
+                        user.setExpertise(expertise != null && !expertise.isEmpty() ? expertise : (startup != null ? startup : "Non spécifié"));
+                        user.setSkills(skills);
                         user.setYearsOfExperience(1);
                     }
                     
                     String tempPassword = UUID.randomUUID().toString().substring(0, 8);
                     user.setPassword(tempPassword);
+                    
+                    if (progRef[0] != null) {
+                        Set<Programme> newPrograms = new HashSet<>();
+                        newPrograms.add(progRef[0]);
+                        user.setProgrammes(newPrograms);
+                    }
                     
                     userService.addUser(user);
                     

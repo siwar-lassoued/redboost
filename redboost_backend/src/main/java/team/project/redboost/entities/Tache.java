@@ -60,8 +60,17 @@ public class Tache {
 
     // Add to existing Tache.java
     @OneToMany(mappedBy = "tache", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnoreProperties({"tache", "hibernateLazyInitializer", "handler"})
+    @JsonIgnoreProperties("tache")
     private List<TacheDocument> documents = new ArrayList<>();
+
+    // Alias for entrepreneurId requested in specification
+    public Long getEntrepreneurId() {
+        return this.responsableId;
+    }
+
+    public void setEntrepreneurId(Long entrepreneurId) {
+        this.responsableId = entrepreneurId;
+    }
 
     public enum StatusTache {
         NON_DEMARREE,

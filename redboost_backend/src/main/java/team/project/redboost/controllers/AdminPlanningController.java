@@ -2,6 +2,7 @@ package team.project.redboost.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import team.project.redboost.entities.*;
 import team.project.redboost.repositories.*;
@@ -12,6 +13,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/admin/planning")
 @CrossOrigin("*")
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminPlanningController {
 
     @Autowired private SessionRepository sessionRepository;

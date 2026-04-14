@@ -32,8 +32,17 @@ public class Reclamation {
     @Column(nullable = false)
     private String sujet;
 
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(name = "type_reclamation")
+    private TypeReclamation typeReclamation = TypeReclamation.AUTRE;
+
     @Column(columnDefinition = "TEXT", nullable = false)
     private String description;
+
+    public enum TypeReclamation {
+        COMPORTEMENT, RETARD, AUTRE
+    }
     
     @Builder.Default
     @Enumerated(EnumType.STRING)

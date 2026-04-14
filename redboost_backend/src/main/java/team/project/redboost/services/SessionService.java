@@ -1,6 +1,7 @@
 package team.project.redboost.services;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import team.project.redboost.entities.Session;
@@ -14,6 +15,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class SessionService {
 
     private final SessionRepository sessionRepository;
@@ -93,11 +95,20 @@ public class SessionService {
     @Transactional
     public Session updateStatut(String id, Session.Statut statut, String motif) {
         Session s = getById(id);
-        if (statut == Session.Statut.ANNULEE) {
+        if (statut == Session.Statut.ANNULE) {
             if (motif == null || motif.trim().isEmpty()) {
                 throw new IllegalArgumentException("Un motif est obligatoire pour annuler une session");
             }
             s.setAnnulationMotif(motif);
+            // Cancel Google Calendar event if linked
+            if (s.getGoogleEventId() != null) {
+                try {
+                    googleCalendarService.cancelCalendarEvent(s.getGoogleEventId());
+                    log.info("Google Calendar event cancelled for session {}", id);
+                } catch (Exception e) {
+                    log.warn("Failed to cancel Google Calendar event for session {}: {}", id, e.getMessage());
+                }
+            }
         }
         s.setStatut(statut);
         return sessionRepository.save(s);
@@ -109,7 +120,7 @@ public class SessionService {
 
     public boolean shouldPromptRating(Long entrepreneurId, String sessionId) {
         Session s = getById(sessionId);
-        if (s.getStatut() != Session.Statut.TERMINEE) return false;
+        if (s.getStatut() != Session.Statut.TERMINE) return false;
         return !coachRatingRepository.existsByEntrepreneurIdAndSessionId(entrepreneurId, sessionId);
     }
 }

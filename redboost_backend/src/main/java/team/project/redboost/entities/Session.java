@@ -46,13 +46,18 @@ public class Session {
 
     @Builder.Default
     @Enumerated(EnumType.STRING)
-    private Statut statut = Statut.PLANIFIEE;
+    private Statut statut = Statut.PLANIFIE;
 
     @Column(name = "google_event_id")
     private String googleEventId;
 
-    @Column(name = "meet_link")
+    @Column(name = "google_meet_link")
     private String meetLink;
+
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(name = "type_session")
+    private TypeSession typeSession = TypeSession.EN_LIGNE;
 
     @Column(name = "notes_coach", columnDefinition = "TEXT")
     private String notesCoach;
@@ -95,10 +100,14 @@ public class Session {
     }
 
     public enum Statut {
-        PLANIFIEE, CONFIRMEE, EN_COURS, TERMINEE, TERMINE, ANNULEE, DEMANDEE, PLANIFIE
+        PLANIFIE, CONFIRME, EN_COURS, TERMINE, ANNULE, DEMANDE
     }
 
     public enum BookingStatut {
         EN_ATTENTE, CONFIRME, ANNULE, TERMINE
+    }
+
+    public enum TypeSession {
+        EN_LIGNE, PRESENTIEL
     }
 }

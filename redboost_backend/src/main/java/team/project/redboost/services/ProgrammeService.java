@@ -714,8 +714,8 @@ public class ProgrammeService {
         List<User> entrepreneurs = userRepository.findAllById(entrepreneurIds);
 
         for (User entrepreneur : entrepreneurs) {
-            if (entrepreneur.getRole() != Role.ENTREPRENEUR) {
-                continue; // Skip if not an entrepreneur
+            if (entrepreneur.getRole() != Role.ENTREPRENEUR && entrepreneur.getRole() != Role.COACH) {
+                continue; // Skip if not an entrepreneur or coach
             }
 
             // Add program to user's set of programs
