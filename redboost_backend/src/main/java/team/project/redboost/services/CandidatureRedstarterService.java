@@ -309,11 +309,31 @@ public class CandidatureRedstarterService {
                             if ("coach".equalsIgnoreCase(t.getProfileType()) || "coaches".equalsIgnoreCase(t.getProfileType())) {
                                 roleRef[0] = Role.COACH;
                             }
-                            if (t.getProgram() != null) {
-                                programmeRepository.findAll().stream()
-                                    .filter(p -> p.getNom().equalsIgnoreCase(t.getProgram()))
+                            if (t.getProgram() != null && !t.getProgram().trim().isEmpty()) {
+                                String progVal = t.getProgram().trim();
+                                
+                                // Essaie de trouver par Nom
+                                Programme matchedProg = programmeRepository.findAll().stream()
+                                    .filter(p -> p.getNom() != null && p.getNom().trim().equalsIgnoreCase(progVal))
                                     .findFirst()
-                                    .ifPresent(p -> progRef[0] = p);
+                                    .orElse(null);
+                                    
+                                // Si introuvable, essaie de parser la chaîne comme un ID
+                                if (matchedProg == null) {
+                                    try {
+                                        Long progId = Long.parseLong(progVal);
+                                        matchedProg = programmeRepository.findById(progId).orElse(null);
+                                    } catch(NumberFormatException e) {
+                                        // Ignore, ce n'est pas un ID valide
+                                    }
+                                }
+                                
+                                if (matchedProg != null) {
+                                    progRef[0] = matchedProg;
+                                    log.info("Programme trouvé et associé: {}", matchedProg.getNom());
+                                } else {
+                                    log.warn("Impossible d'associer le programme. Valeur du template: {}", progVal);
+                                }
                             }
                         });
                     } else if ("coach".equalsIgnoreCase(candidature.getRoleEntreprise()) || "coaches".equalsIgnoreCase(candidature.getRoleEntreprise())) {
