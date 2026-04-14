@@ -168,11 +168,12 @@ public class User implements UserDetails {
     @Column(name = "reset_token_expiry")
     private LocalDateTime resetTokenExpiry;
 
-    private boolean isActive = false;
+    @Column(name = "is_active")
+    private Boolean isActive = false;
 
     /** Force le changement de mot de passe à la prochaine connexion */
-    @Column(name = "must_change_pwd")
-    private boolean mustChangePwd = false;
+    @Column(name = "must_change_pwd", columnDefinition = "boolean default false")
+    private Boolean mustChangePwd = false;
 
     private String provider;
     private String providerId;
@@ -206,10 +207,10 @@ public class User implements UserDetails {
     public boolean isEnabled() { return true; }
 
     public boolean isActive() {
-        return isActive;
+        return Boolean.TRUE.equals(isActive);
     }
 
-    public void setActive(boolean isActive) {
+    public void setActive(Boolean isActive) {
         this.isActive = isActive;
     }
 
