@@ -98,7 +98,7 @@
         <div class="table-card">
           <table class="hist-table">
             <thead>
-              <tr><th>Candidat</th><th>Profil</th><th>Programme</th><th>Statut</th><th>Parcours</th><th>Date</th></tr>
+              <tr><th>Candidat</th><th>Profil</th><th>Programme</th><th>Statut</th><th>Parcours</th><th>Date</th><th style="width: 40px;"></th></tr>
             </thead>
             <tbody>
               @for (c of filtered(); track c.id) {
@@ -137,6 +137,11 @@
                     </div>
                   </td>
                   <td class="date-txt">{{ formatDate(c.submittedAt) }}</td>
+                  <td>
+                    <button class="btn-icon-danger" (click)="$event.stopPropagation(); deleteCandidature(c.id)" title="Supprimer" style="background: none; border: none; color: #EF4444; cursor: pointer; opacity: 0.7; transition: opacity 0.2s;">
+                      <lucide-icon name="trash-2" [size]="16"></lucide-icon>
+                    </button>
+                  </td>
                 </tr>
               }
             </tbody>
@@ -335,6 +340,10 @@
               <lucide-icon name="x" [size]="14"></lucide-icon> Rejeter
             </button>
           }
+          
+          <button (click)="deleteCandidature(selected()!.id)" class="btn-action btn-reject-outline" style="border-color: #EF4444; color: #EF4444; margin-left: auto;">
+            <lucide-icon name="trash-2" [size]="14"></lucide-icon> Supprimer
+          </button>
         </div>
       </div>
     }

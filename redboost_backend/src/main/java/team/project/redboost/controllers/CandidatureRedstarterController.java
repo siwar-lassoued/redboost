@@ -217,10 +217,7 @@ public class CandidatureRedstarterController {
         }
     }
     
-    /**
-     * Search candidatures (Admin)
-     * GET /api/candidatures/admin/search
-     */
+   
     @GetMapping("/admin/search")
     public ResponseEntity<Page<team.project.redboost.dto.CandidatureRedstarterResponseDTO>> searchCandidatures(
             @RequestParam String query,
@@ -239,10 +236,7 @@ public class CandidatureRedstarterController {
         }
     }
     
-    /**
-     * Get statistics (Admin)
-     * GET /api/candidatures/admin/statistics
-     */
+   
     @GetMapping("/admin/statistics")
     public ResponseEntity<Map<String, Long>> getStatistics() {
         try {
@@ -266,10 +260,7 @@ public class CandidatureRedstarterController {
         }
     }
     
-    /**
-     * Delete candidature (Admin)
-     * DELETE /api/candidatures/admin/{id}
-     */
+   
     @DeleteMapping("/admin/{id}")
     public ResponseEntity<?> deleteCandidature(@PathVariable Long id) {
         try {
@@ -284,10 +275,7 @@ public class CandidatureRedstarterController {
         }
     }
 
-    /**
-     * Migrate legacy statuses (Admin)
-     * POST /api/candidatures/admin/migrate-legacy
-     */
+   
     @PostMapping("/admin/migrate-legacy")
     public ResponseEntity<?> migrateLegacy() {
         try {
@@ -300,10 +288,6 @@ public class CandidatureRedstarterController {
         }
     }
     
-    /**
-     * Delete anonymous candidatures (Admin)
-     * DELETE /api/candidatures/admin/cleanup-anonymous
-     */
     @DeleteMapping("/admin/cleanup-anonymous")
     public ResponseEntity<?> cleanupAnonymous() {
         try {
@@ -316,10 +300,7 @@ public class CandidatureRedstarterController {
         }
     }
     
-    /**
-     * Get candidature historique logs (Admin)
-     * GET /api/candidatures/{id}/historique
-     */
+
     @GetMapping("/{id}/historique")
     public ResponseEntity<List<CandidatureLog>> getHistorique(@PathVariable Long id) {
         try {

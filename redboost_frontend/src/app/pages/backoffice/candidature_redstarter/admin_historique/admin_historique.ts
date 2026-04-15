@@ -233,6 +233,23 @@ export class AdminHistoriqueComponent implements OnInit {
     });
   }
 
+  deleteCandidature(id: string | number): void {
+    if (confirm('Êtes-vous sûr de vouloir supprimer définitivement cette candidature ? Cette action est irréversible.')) {
+      this.svc.delete(id.toString()).subscribe({
+        next: () => {
+          if (this.selected()?.id === id.toString() || this.selected()?.id === id) {
+             this.selected.set(null);
+          }
+          this.loadCandidatures();
+        },
+        error: (err) => {
+          console.error(err);
+          alert('Erreur lors de la suppression: ' + (err.error?.message || err.message));
+        }
+      });
+    }
+  }
+
   exportExcel(): void {
     const rows = this.filtered();
     const csv = 'Nom,Email,Statut,Date\n' +
