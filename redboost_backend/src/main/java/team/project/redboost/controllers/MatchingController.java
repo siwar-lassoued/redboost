@@ -79,6 +79,15 @@ public class MatchingController {
         return ResponseEntity.ok(matchingService.createManualMatching(entrepreneurId, coachId, programmeId, thematiqueId, note));
     }
 
+    @PutMapping("/manual/{matchingId}")
+    public ResponseEntity<Map<String, Object>> updateManualMatching(
+            @PathVariable Long matchingId,
+            @RequestParam(required = false) Long coachId,
+            @RequestParam(required = false) Long entrepreneurId,
+            @RequestParam(required = false) String note) {
+        return ResponseEntity.ok(matchingService.updateManualMatching(matchingId, coachId, entrepreneurId, note));
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, String>> handleRuntimeException(RuntimeException ex) {
         return ResponseEntity.badRequest().body(Collections.singletonMap("message", ex.getMessage()));

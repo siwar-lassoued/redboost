@@ -847,6 +847,50 @@ public class MatchingIaService {
         return result;
     }
 
+    @Transactional
+    public Map<String, Object> updateManualMatching(Long matchingId, Long newCoachId, Long newEntrepreneurId, String note) {
+        Matching matching = matchingRepo.findById(matchingId)
+                .orElseThrow(() -> new RuntimeException("Matching introuvable : " + matchingId));
+
+        if (matching.getStatut() != Matching.StatutMatching.VALIDE && matching.getStatut() != Matching.StatutMatching.PROPOSE) {
+            throw new RuntimeException("Impossible de modifier ce matching car son statut est : " + matching.getStatut());
+        }
+
+        if (newEntrepreneurId != null && !newEntrepreneurId.equals(matching.getEntrepreneurId())) {
+            if (matchingRepo.existsByEntrepreneurIdAndProgrammeIdAndThematiqueIdAndStatut(
+                    newEntrepreneurId, matching.getProgrammeId(), matching.getThematiqueId(), Matching.StatutMatching.VALIDE)) {
+                throw new RuntimeException("Cet entrepreneur a déjà un coaching actif pour cette thématique.");
+            }
+            matching.setEntrepreneurId(newEntrepreneurId);
+        }
+
+        if (newCoachId != null) {
+            matching.setCoachId(newCoachId);
+        }
+
+        String prefix = "Modifié manuellement par l'administrateur le " + LocalDateTime.now().toLocalDate();
+        if (note != null && !note.trim().isEmpty()) {
+            matching.setJustification(prefix + ". Note: " + note);
+        } else {
+            matching.setJustification(prefix + ".");
+        }
+
+        matchingRepo.save(matching);
+
+        log.info("Matching {} modifié : entrepreneur={} ↔ coach={}", matchingId, matching.getEntrepreneurId(), matching.getCoachId());
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("message", "Matching modifié avec succès.");
+        result.put("matchingId", matching.getId());
+        result.put("entrepreneurId", matching.getEntrepreneurId());
+        result.put("coachId", matching.getCoachId());
+        
+        candidatureRepo.findById(matching.getEntrepreneurId()).ifPresent(c -> result.put("entrepreneurNom", c.getNomPrenom()));
+        userRepo.findById(matching.getCoachId()).ifPresent(c -> result.put("coachNom", c.getFirstName() + " " + c.getLastName()));
+
+        return result;
+    }
+
     // ─── Notification Helper ─────────────────────────────────────
 
     private void sendMatchingNotifications(Matching m) {

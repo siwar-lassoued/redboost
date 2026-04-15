@@ -84,4 +84,12 @@ export class MatchingService {
         if (note) params.note = note;
         return this.http.post<any>(`${this.baseUrl}/manual`, null, { params });
     }
+
+    updateManualMatching(matchingId: number, coachId?: number, entrepreneurId?: number, note?: string): Observable<any> {
+        const params: any = {};
+        if (coachId) params.coachId = coachId;
+        if (entrepreneurId) params.entrepreneurId = entrepreneurId;
+        if (note) params.note = note;
+        return this.http.put<any>(`${this.baseUrl}/manual/${matchingId}`, null, { params });
+    }
 }

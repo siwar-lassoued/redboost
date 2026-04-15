@@ -321,6 +321,9 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
                   <p class="hc-score" [style.color]="scoreColor(m.scoreIa)">{{ m.scoreIa ? (m.scoreIa + '%') : 'Manuel' }}</p>
                   <p class="hc-score-label">Score</p>
                   <span class="status-badge" [class.active]="m.statut === 'VALIDE'" [class.proposed]="m.statut === 'PROPOSE'" [class.expired]="m.statut === 'TERMINE' || m.statut === 'LIBERE'">{{ m.statut }}</span>
+                  <button *ngIf="m.statut === 'VALIDE' || m.statut === 'PROPOSE'" class="btn-sm" style="margin-top: 8px; display: block; margin-left: auto; margin-right: auto;" (click)="editMatching(m)" title="Modifier ce matching">
+                    <i class="pi pi-pencil"></i> Modifier
+                  </button>
                 </div>
               </div>
             </div>
@@ -596,6 +599,7 @@ export class AdminMatchingComponent implements OnInit {
 
     // Manual Matching
     showManualPanel = false;
+    editingMatchingId: number | null = null;
     manualEntrepreneurs: any[] = [];
     manualCoaches: any[] = [];
     manualLoading = false;
@@ -653,6 +657,7 @@ export class AdminMatchingComponent implements OnInit {
         this.groupedResults = [];
         this.errorMessage = null;
         this.showManualPanel = false;
+        this.editingMatchingId = null;
         this.manualEntrepreneurs = [];
         this.manualCoaches = [];
         this.selectedEntrepreneur = null;
@@ -748,8 +753,42 @@ export class AdminMatchingComponent implements OnInit {
     // ─── Manual Matching ───
     toggleManualPanel(): void {
         this.showManualPanel = !this.showManualPanel;
+        this.editingMatchingId = null;
+        this.selectedEntrepreneur = null;
+        this.selectedCoach = null;
         if (this.showManualPanel && this.manualEntrepreneurs.length === 0 && this.manualCoaches.length === 0) {
             this.loadManualCandidates();
+        }
+    }
+
+    editMatching(m: any): void {
+        this.editingMatchingId = m.matchingId || m.id;
+        this.showManualPanel = true;
+        this.manualError = null;
+        this.manualSuccess = null;
+        
+        this.selectedEntrepreneur = { id: m.entrepreneurId, nom: m.entrepreneur?.nom, email: m.entrepreneur?.email };
+        this.selectedCoach = { id: m.coach?.id || m.coachId, prenom: m.coach?.prenom, nom: m.coach?.nom, disponible: true };
+
+        if (this.manualEntrepreneurs.length === 0 && this.manualCoaches.length === 0) {
+            this.loadManualCandidates();
+        } else {
+            this.injectEditedCandidates();
+        }
+        
+        window.scrollTo({ top: 300, behavior: 'smooth' });
+    }
+
+    private injectEditedCandidates(): void {
+        if (this.editingMatchingId && this.selectedEntrepreneur) {
+            if (!this.manualEntrepreneurs.find(e => e.id === this.selectedEntrepreneur.id)) {
+                this.manualEntrepreneurs.unshift(this.selectedEntrepreneur);
+            }
+        }
+        if (this.editingMatchingId && this.selectedCoach) {
+            if (!this.manualCoaches.find(c => c.id === this.selectedCoach.id)) {
+                this.manualCoaches.unshift(this.selectedCoach);
+            }
         }
     }
 
@@ -761,6 +800,7 @@ export class AdminMatchingComponent implements OnInit {
             next: (data) => {
                 this.manualEntrepreneurs = data.entrepreneurs || [];
                 this.manualCoaches = data.coaches || [];
+                this.injectEditedCandidates();
                 this.manualLoading = false;
             },
             error: (e) => {
@@ -784,24 +824,45 @@ export class AdminMatchingComponent implements OnInit {
         if (!this.selectedEntrepreneur || !this.selectedCoach || !this.selectedProgId || !this.selectedThematiqueId) return;
         this.manualSaving = true;
         this.manualError = null;
-        this.matchingSvc.createManualMatching(
-            this.selectedEntrepreneur.id, this.selectedCoach.id,
-            this.selectedProgId, this.selectedThematiqueId,
-            this.manualNote || undefined
-        ).subscribe({
-            next: (result) => {
-                this.manualSuccess = result;
-                this.manualSaving = false;
-                this.manualNote = '';
-                this.manualEntrepreneurs = this.manualEntrepreneurs.filter(e => e.id !== this.selectedEntrepreneur.id);
-                const coach = this.manualCoaches.find(c => c.id === this.selectedCoach.id);
-                if (coach) { coach.nbEntrepreneursActifs = (coach.nbEntrepreneursActifs || 0) + 1; coach.disponible = coach.nbEntrepreneursActifs < 5; }
-                this.selectedEntrepreneur = null;
-                this.selectedCoach = null;
-                this.loadThematiqueMatchings();
-            },
-            error: (e) => { this.manualError = e.error?.message || 'Erreur.'; this.manualSaving = false; }
-        });
+
+        if (this.editingMatchingId) {
+            this.matchingSvc.updateManualMatching(
+                this.editingMatchingId, this.selectedCoach.id,
+                this.selectedEntrepreneur.id, this.manualNote || undefined
+            ).subscribe({
+                next: (result) => {
+                    this.manualSuccess = result;
+                    this.manualSaving = false;
+                    this.manualNote = '';
+                    this.editingMatchingId = null;
+                    const coach = this.manualCoaches.find(c => c.id === this.selectedCoach.id);
+                    if (coach) { coach.nbEntrepreneursActifs = (coach.nbEntrepreneursActifs || 0) + 1; coach.disponible = coach.nbEntrepreneursActifs < 5; }
+                    this.selectedEntrepreneur = null;
+                    this.selectedCoach = null;
+                    this.loadThematiqueMatchings();
+                },
+                error: (e) => { this.manualError = e.error?.message || 'Erreur lors de la modification.'; this.manualSaving = false; }
+            });
+        } else {
+            this.matchingSvc.createManualMatching(
+                this.selectedEntrepreneur.id, this.selectedCoach.id,
+                this.selectedProgId, this.selectedThematiqueId,
+                this.manualNote || undefined
+            ).subscribe({
+                next: (result) => {
+                    this.manualSuccess = result;
+                    this.manualSaving = false;
+                    this.manualNote = '';
+                    this.manualEntrepreneurs = this.manualEntrepreneurs.filter(e => e.id !== this.selectedEntrepreneur.id);
+                    const coach = this.manualCoaches.find(c => c.id === this.selectedCoach.id);
+                    if (coach) { coach.nbEntrepreneursActifs = (coach.nbEntrepreneursActifs || 0) + 1; coach.disponible = coach.nbEntrepreneursActifs < 5; }
+                    this.selectedEntrepreneur = null;
+                    this.selectedCoach = null;
+                    this.loadThematiqueMatchings();
+                },
+                error: (e) => { this.manualError = e.error?.message || 'Erreur.'; this.manualSaving = false; }
+            });
+        }
     }
 
     // ─── Thématique CRUD ───
