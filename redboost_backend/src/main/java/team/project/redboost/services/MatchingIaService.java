@@ -549,6 +549,43 @@ public class MatchingIaService {
         }).collect(Collectors.toList());
     }
 
+    public List<Map<String, Object>> getHistoryByThematique(Long programmeId, Long thematiqueId) {
+        List<Matching> matchings = matchingRepo.findByProgrammeAndThematique(programmeId, thematiqueId);
+        return matchings.stream().map(m -> {
+            Map<String, Object> view = new LinkedHashMap<>();
+            view.put("id", m.getId());
+            view.put("matchingId", m.getId());
+            view.put("scoreIa", m.getScoreIa());
+            view.put("statut", m.getStatut());
+            view.put("dateValidation", m.getDateValidation());
+            view.put("justification", m.getJustification());
+            view.put("rankTop", m.getRankTop());
+            view.put("thematiqueId", m.getThematiqueId());
+
+            userRepo.findById(m.getCoachId()).ifPresent(c -> {
+                Map<String, Object> coach = new LinkedHashMap<>();
+                coach.put("id", c.getId());
+                coach.put("nom", c.getLastName());
+                coach.put("prenom", c.getFirstName());
+                coach.put("email", c.getEmail());
+                coach.put("expertise", c.getExpertise());
+                view.put("coach", coach);
+            });
+
+            view.put("entrepreneurId", m.getEntrepreneurId());
+            candidatureRepo.findById(m.getEntrepreneurId()).ifPresent(c -> {
+                Map<String, Object> ent = new LinkedHashMap<>();
+                ent.put("id", c.getId());
+                ent.put("nom", c.getNomPrenom());
+                ent.put("email", c.getEmail());
+                ent.put("entreprise", c.getNomEntreprise());
+                view.put("entrepreneur", ent);
+            });
+
+            return view;
+        }).collect(Collectors.toList());
+    }
+
     public Map<String, Integer> getMatchingStats(Long programmeId) {
         List<Matching> active = matchingRepo.findActiveByProgramme(programmeId);
 

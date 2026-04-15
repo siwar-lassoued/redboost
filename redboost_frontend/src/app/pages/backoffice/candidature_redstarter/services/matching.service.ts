@@ -66,6 +66,10 @@ export class MatchingService {
         return this.http.get<any[]>(`${this.baseUrl}/history/${programmeId}`);
     }
 
+    getHistoryByThematique(programmeId: number, thematiqueId: number): Observable<any[]> {
+        return this.http.get<any[]>(`${this.baseUrl}/history/${programmeId}/thematique/${thematiqueId}`);
+    }
+
     getMatchingStats(programmeId: number): Observable<{ activeCount: number, unmatchedCount: number }> {
         return this.http.get<{ activeCount: number, unmatchedCount: number }>(`${this.baseUrl}/stats/${programmeId}`);
     }
