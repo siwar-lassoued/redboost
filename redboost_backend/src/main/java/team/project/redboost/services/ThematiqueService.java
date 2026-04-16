@@ -9,6 +9,10 @@ import team.project.redboost.repositories.ThematiqueRepository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import team.project.redboost.entities.Matching;
+import team.project.redboost.repositories.MatchingRepository;
 
 @Service
 @RequiredArgsConstructor
@@ -16,6 +20,7 @@ import java.util.List;
 public class ThematiqueService {
 
     private final ThematiqueRepository thematiqueRepo;
+    private final MatchingRepository matchingRepository;
 
     @Transactional
     public ThematiqueCoaching create(ThematiqueCoaching thematique) {
@@ -32,6 +37,15 @@ public class ThematiqueService {
 
     public List<ThematiqueCoaching> getActiveByProgramme(Long programmeId) {
         return thematiqueRepo.findByProgrammeIdAndStatut(programmeId, ThematiqueCoaching.StatutThematique.ACTIVE);
+    }
+
+    public List<ThematiqueCoaching> getThematiquesForCoach(Long coachId) {
+        List<Matching> matchings = matchingRepository.findByCoachIdAndStatut(coachId, Matching.StatutMatching.VALIDE);
+        Set<Long> thematiqueIds = matchings.stream()
+                .map(Matching::getThematiqueId)
+                .filter(id -> id != null)
+                .collect(Collectors.toSet());
+        return thematiqueRepo.findAllById(thematiqueIds);
     }
 
     @Transactional

@@ -168,7 +168,7 @@ interface NoteDeSynthese {
                 <div class=" entrepreneurs-section">
                     <div class="section-header">
                         <h2>Mes Entrepreneurs</h2>
-                        <a href="javascript:void(0)" class="voir-tous">Voir tous ></a>
+                        <a href="javascript:void(0)" class="voir-tous" (click)="router.navigate(['/coach-entrepreneurs'])">Voir tous ></a>
                     </div>
                     <div class="entrepreneurs-list">
                         <!-- Dynamic entrepreneurs loaded from backend -->
@@ -214,7 +214,7 @@ interface NoteDeSynthese {
                 <div class="sessions-section">
                     <div class="section-header">
                         <h2>Prochaines Sessions</h2>
-                        <a href="javascript:void(0)" class="voir-tous">Voir tout</a>
+                        <a href="javascript:void(0)" class="voir-tous" (click)="router.navigate(['/mes-sessions'])">Voir tout</a>
                     </div>
                     <div class="sessions-list">
                         <!-- Dynamic sessions loaded from backend -->
@@ -763,7 +763,7 @@ export class CoachDashboardComponent implements OnInit, OnDestroy {
         private webSocketService: WebSocketService,
         private toastr: ToastrService,
         private cdr: ChangeDetectorRef,
-        private router: Router,
+        public router: Router,
         private coachService: CoachService,
     ) {}
 

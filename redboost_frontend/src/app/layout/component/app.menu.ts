@@ -396,12 +396,17 @@ export class AppMenu implements OnInit {
                     {
                         label: 'Calendrier & Disponibilité',
                         icon: 'pi pi-fw pi-calendar',
-                        routerLink: ['/disponibilites'], // Temporarily point to this for the calendar view map
+                        routerLink: ['/disponibilites'],
                     },
                     {
                         label: 'Mes Sessions',
                         icon: 'pi pi-fw pi-users',
-                        routerLink: ['/mes-sessions'], // Needs to be created/mapped
+                        routerLink: ['/mes-sessions'],
+                    },
+                    {
+                        label: 'Séance Exceptionnelle',
+                        icon: 'pi pi-fw pi-star',
+                        routerLink: ['/seance-exceptionnelle'],
                     },
                     {
                         label: 'Livrables',

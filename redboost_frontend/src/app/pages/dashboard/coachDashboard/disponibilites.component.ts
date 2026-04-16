@@ -126,13 +126,20 @@ import { AuthService } from '../../frontoffice/service/auth.service';
                   </div>
 
                   <div class="form-group">
-                      <label>Programme *</label>
-                      <select class="premium-input" [(ngModel)]="selectedThematiqueId">
-                           <option [ngValue]="null">Sélectionner un programme...</option>
+                      <label>Thématique *</label>
+                      <select class="premium-input" [(ngModel)]="selectedThematiqueId" (ngModelChange)="onThematiqueSelected()">
+                           <option [ngValue]="null">Sélectionner une thématique...</option>
                           <option *ngFor="let t of thematiques" [ngValue]="t.id">
                             {{t.nom}} ({{t.dateDebut | date:'shortDate'}} - {{t.dateFin | date:'shortDate'}})
                           </option>
                       </select>
+                  </div>
+                  <div *ngIf="selectedThematiqueObj" class="thematique-dates-banner">
+                      <i class="pi pi-info-circle"></i>
+                      <span>Disponibilités du <strong>{{ selectedThematiqueObj.dateDebut | date:'dd/MM/yyyy' }}</strong> au <strong>{{ selectedThematiqueObj.dateFin | date:'dd/MM/yyyy' }}</strong></span>
+                  </div>
+                  <div *ngIf="dispoValidationError" class="error-banner">
+                      <i class="pi pi-exclamation-triangle"></i> {{ dispoValidationError }}
                   </div>
                    <div class="form-group">
                       <label>Date(s) *</label>
@@ -299,6 +306,11 @@ import { AuthService } from '../../frontoffice/service/auth.service';
     .type-btn:hover { border-color: #FF4D85; color: #FF4D85; }
     .type-btn.active { background: linear-gradient(135deg, #FF4D85, #FF6B9E); color: white; border-color: transparent; box-shadow: 0 4px 12px rgba(255,77,133,0.3); }
     .type-btn.active i { color: white; }
+
+    .thematique-dates-banner { display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: #F0FFF4; border: 1px solid #C6F6D5; border-radius: 12px; font-size: 13px; color: #276749; margin-top: -0.5rem; }
+    .thematique-dates-banner i { font-size: 16px; flex-shrink: 0; }
+    .error-banner { display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: #FFF5F5; border: 1px solid #FED7D7; border-radius: 12px; font-size: 13px; color: #E53E3E; margin-top: -0.5rem; }
+    .error-banner i { font-size: 16px; flex-shrink: 0; }
   `]
 })
 export class DisponibilitesComponent implements OnInit {
@@ -311,6 +323,7 @@ export class DisponibilitesComponent implements OnInit {
   timeSlots: { start: string; end: string }[] = [{ start: '', end: '' }];
   sessionDuration: string = '1h';
   newSessionType: string = 'EN_LIGNE';
+  dispoValidationError: string | null = null;
 
   selectedFilterThematiqueId: number | null = null;
   activeFilterThematique: ThematiqueCoachingDTO | null = null;
@@ -405,6 +418,22 @@ export class DisponibilitesComponent implements OnInit {
 
   addDisponibilite() {
     if (!this.selectedThematiqueId) return;
+    // Validate dates against thematique range
+    const thematique = this.thematiques.find(t => t.id === this.selectedThematiqueId);
+    if (thematique) {
+      const thStart = new Date(thematique.dateDebut);
+      const thEnd = new Date(thematique.dateFin);
+      for (const dateStr of this.availabilityDates) {
+        if (dateStr) {
+          const d = new Date(dateStr);
+          if (d < thStart || d > thEnd) {
+            this.dispoValidationError = `La date ${d.toLocaleDateString('fr-FR')} est en dehors de la plage autorisée (${thStart.toLocaleDateString('fr-FR')} — ${thEnd.toLocaleDateString('fr-FR')}). Veuillez corriger.`;
+            return;
+          }
+        }
+      }
+    }
+    this.dispoValidationError = null;
     this.coachService.addDisponibilite(this.coachId, this.selectedThematiqueId).subscribe({
       next: (data) => {
         this.disponibilites.push(data);
@@ -413,6 +442,19 @@ export class DisponibilitesComponent implements OnInit {
       },
       error: () => {}
     });
+  }
+
+  get selectedThematiqueObj(): ThematiqueCoachingDTO | null {
+    if (!this.selectedThematiqueId) return null;
+    return this.thematiques.find(t => t.id === this.selectedThematiqueId) || null;
+  }
+
+  onThematiqueSelected(): void {
+    this.dispoValidationError = null;
+    const th = this.selectedThematiqueObj;
+    if (th) {
+      this.availabilityDates = [th.dateDebut];
+    }
   }
   addAvailabilityDate() {
     this.availabilityDates.push('');

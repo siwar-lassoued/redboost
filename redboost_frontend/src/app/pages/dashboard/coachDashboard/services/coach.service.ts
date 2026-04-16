@@ -192,7 +192,7 @@ export class CoachService {
 
   // THEMATIQUES
   getThematiquesAssignedToCoach(coachId: number): Observable<ThematiqueCoachingDTO[]> {
-    return this.http.get<ThematiqueCoachingDTO[]>(`${environment.apiUrl}/thematique`);
+    return this.http.get<ThematiqueCoachingDTO[]>(`${environment.apiUrl}/thematiques/coach/${coachId}`);
   }
 
   // USERS / ENTREPRENEURS

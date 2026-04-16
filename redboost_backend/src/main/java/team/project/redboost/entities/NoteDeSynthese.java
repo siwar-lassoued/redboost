@@ -27,6 +27,15 @@ public class NoteDeSynthese {
     @Column(columnDefinition = "TEXT")
     private String recommendation;
 
+    @Column(columnDefinition = "TEXT")
+    private String objectifSession;
+
+    @Column(columnDefinition = "TEXT")
+    private String resultats;
+
+    @Column(columnDefinition = "TEXT")
+    private String problematiques;
+
     @Column(name = "date_creation", nullable = false)
     private LocalDateTime dateCreation;
 
