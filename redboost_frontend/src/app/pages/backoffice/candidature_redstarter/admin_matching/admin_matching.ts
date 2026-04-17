@@ -27,14 +27,14 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
         <div class="form-group" style="max-width:480px">
           <label>Programme <span class="required">*</span></label>
           <select [(ngModel)]="selectedProgId" (change)="onProgChange()" class="form-select">
-            <option [ngValue]="0">Sélectionnez un programme...</option>
+            <option [ngValue]="0">Tous les programmes (Filtre)</option>
             <option *ngFor="let p of programmes" [ngValue]="p.id">{{ p.nom }}</option>
           </select>
         </div>
       </div>
 
-      <!-- Everything below requires a programme -->
-      <ng-container *ngIf="selectedProgId">
+      <!-- Everything is displayed by default, programme filters thematiques -->
+      <ng-container>
 
         <!-- ═══ Thématique Selector + Add ═══ -->
         <div class="card thematique-selector-card">
@@ -55,6 +55,12 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
           <div *ngIf="showAddForm" class="thematique-add-form">
             <h4>{{ editingThematique ? 'Modifier la thématique' : 'Nouvelle thématique' }}</h4>
             <div class="form-grid-3">
+              <div class="form-group"><label>Programme *</label>
+                <select [(ngModel)]="newThematique.programmeId" class="form-select">
+                  <option disabled [value]="undefined">Sélectionnez...</option>
+                  <option *ngFor="let p of programmes" [ngValue]="p.id">{{ p.nom }}</option>
+                </select>
+              </div>
               <div class="form-group"><label>Nom *</label><input [(ngModel)]="newThematique.nom" placeholder="Ex: Business Model" class="form-input" /></div>
               <div class="form-group"><label>Date de début *</label><input type="date" [(ngModel)]="newThematique.dateDebut" class="form-input" /></div>
               <div class="form-group"><label>Date de fin *</label><input type="date" [(ngModel)]="newThematique.dateFin" class="form-input" /></div>
@@ -73,7 +79,6 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
             <!-- Header -->
             <div class="th-card-header" *ngIf="selectedThematiqueObj">
               <div class="th-card-title-row">
-                <div class="th-card-icon">📌</div>
                 <div class="th-card-info">
                   <h3 class="th-name">{{ selectedThematiqueObj.nom }}</h3>
                   <p class="th-dates">{{ selectedThematiqueObj.dateDebut }} → {{ selectedThematiqueObj.dateFin }}</p>
@@ -339,7 +344,6 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
 
           <div *ngFor="let t of thematiques" class="th-overview-card" (click)="selectedThematiqueId = t.id!; onThematiqueChange()">
             <div class="th-overview-left">
-              <div class="th-overview-icon">📌</div>
               <div>
                 <h3 class="th-overview-name">{{ t.nom }}</h3>
                 <p class="th-overview-dates">{{ t.dateDebut }} → {{ t.dateFin }}</p>
@@ -580,9 +584,10 @@ export class AdminMatchingComponent implements OnInit {
     selectedProgId = 0;
     selectedThematiqueId = 0;
     thematiques: ThematiqueCoaching[] = [];
+    allThematiques: ThematiqueCoaching[] = [];
 
     showAddForm = false;
-    newThematique: Partial<ThematiqueCoaching> = { nom: '', description: '', dateDebut: '', dateFin: '' };
+    newThematique: Partial<ThematiqueCoaching> = { nom: '', description: '', dateDebut: '', dateFin: '', programmeId: undefined };
     editingThematique: ThematiqueCoaching | null = null;
 
     // IA Matching
@@ -625,6 +630,25 @@ export class AdminMatchingComponent implements OnInit {
             next: (data) => this.programmes = data,
             error: (e) => console.error('Failed to load programmes', e)
         });
+        
+        this.loadAllThematiques();
+    }
+
+    loadAllThematiques(): void {
+        this.thematiqueSvc.getAll().subscribe({
+            next: (t) => {
+                this.allThematiques = t;
+                this.applyProgFilter();
+            }
+        });
+    }
+
+    applyProgFilter(): void {
+        if (this.selectedProgId) {
+            this.thematiques = this.allThematiques.filter(t => t.programmeId === this.selectedProgId);
+        } else {
+            this.thematiques = this.allThematiques;
+        }
     }
 
     get selectedThematiqueObj(): ThematiqueCoaching | null {
@@ -636,18 +660,12 @@ export class AdminMatchingComponent implements OnInit {
         this.currentSession = null;
         this.enrichedResults = [];
         this.groupedResults = [];
-        this.thematiques = [];
         this.selectedThematiqueId = 0;
         this.thematiqueMatchings = [];
         this.showManualPanel = false;
         this.errorMessage = null;
 
-        if (this.selectedProgId) {
-            this.thematiqueSvc.getByProgramme(this.selectedProgId).subscribe({
-                next: (t) => this.thematiques = t,
-                error: () => {}
-            });
-        }
+        this.applyProgFilter();
     }
 
     // ─── Thématique change ───
@@ -666,14 +684,17 @@ export class AdminMatchingComponent implements OnInit {
         this.manualError = null;
         this.thematiqueMatchings = [];
 
-        if (this.selectedThematiqueId && this.selectedProgId) {
+        if (this.selectedThematiqueId) {
             this.loadThematiqueMatchings();
         }
     }
 
     loadThematiqueMatchings(): void {
+        const pId = this.selectedThematiqueObj?.programmeId || this.selectedProgId;
+        if (!pId) return;
+
         this.thematiqueMatchingsLoading = true;
-        this.matchingSvc.getHistoryByThematique(this.selectedProgId, this.selectedThematiqueId).subscribe({
+        this.matchingSvc.getHistoryByThematique(pId, this.selectedThematiqueId).subscribe({
             next: (data) => { this.thematiqueMatchings = data; this.thematiqueMatchingsLoading = false; },
             error: () => { this.thematiqueMatchings = []; this.thematiqueMatchingsLoading = false; }
         });
@@ -685,11 +706,12 @@ export class AdminMatchingComponent implements OnInit {
 
     // ─── Run IA ───
     runMatchingIA(): void {
-        if (!this.selectedProgId || !this.selectedThematiqueId) return;
+        const pId = this.selectedThematiqueObj?.programmeId || this.selectedProgId;
+        if (!pId || !this.selectedThematiqueId) return;
         this.isLoading = true;
         this.errorMessage = null;
 
-        this.matchingSvc.runMatchingIA(this.selectedProgId, this.selectedThematiqueId).subscribe({
+        this.matchingSvc.runMatchingIA(pId, this.selectedThematiqueId).subscribe({
             next: (session) => {
                 this.currentSession = session;
                 this.matchingSvc.getSessionDetails(session.id).subscribe({
@@ -793,10 +815,11 @@ export class AdminMatchingComponent implements OnInit {
     }
 
     loadManualCandidates(): void {
-        if (!this.selectedProgId || !this.selectedThematiqueId) return;
+        const pId = this.selectedThematiqueObj?.programmeId || this.selectedProgId;
+        if (!pId || !this.selectedThematiqueId) return;
         this.manualLoading = true;
         this.manualError = null;
-        this.matchingSvc.getManualCandidates(this.selectedProgId, this.selectedThematiqueId).subscribe({
+        this.matchingSvc.getManualCandidates(pId, this.selectedThematiqueId).subscribe({
             next: (data) => {
                 this.manualEntrepreneurs = data.entrepreneurs || [];
                 this.manualCoaches = data.coaches || [];
@@ -821,7 +844,8 @@ export class AdminMatchingComponent implements OnInit {
     }
 
     confirmManualMatch(): void {
-        if (!this.selectedEntrepreneur || !this.selectedCoach || !this.selectedProgId || !this.selectedThematiqueId) return;
+        const pId = this.selectedThematiqueObj?.programmeId || this.selectedProgId;
+        if (!this.selectedEntrepreneur || !this.selectedCoach || !pId || !this.selectedThematiqueId) return;
         this.manualSaving = true;
         this.manualError = null;
 
@@ -846,7 +870,7 @@ export class AdminMatchingComponent implements OnInit {
         } else {
             this.matchingSvc.createManualMatching(
                 this.selectedEntrepreneur.id, this.selectedCoach.id,
-                this.selectedProgId, this.selectedThematiqueId,
+                pId, this.selectedThematiqueId,
                 this.manualNote || undefined
             ).subscribe({
                 next: (result) => {
@@ -867,23 +891,27 @@ export class AdminMatchingComponent implements OnInit {
 
     // ─── Thématique CRUD ───
     saveThematique(): void {
-        if (!this.selectedProgId || !this.newThematique.nom || !this.newThematique.dateDebut || !this.newThematique.dateFin) return;
-        const th: ThematiqueCoaching = { programmeId: this.selectedProgId, nom: this.newThematique.nom!, description: this.newThematique.description, dateDebut: this.newThematique.dateDebut!, dateFin: this.newThematique.dateFin! };
+        const pId = this.newThematique.programmeId || this.selectedProgId;
+        if (!pId || !this.newThematique.nom || !this.newThematique.dateDebut || !this.newThematique.dateFin) {
+            alert('Veuillez remplir tous les champs obligatoires (Programme, Nom, Dates).');
+            return;
+        }
+        const th: ThematiqueCoaching = { programmeId: pId, nom: this.newThematique.nom!, description: this.newThematique.description, dateDebut: this.newThematique.dateDebut!, dateFin: this.newThematique.dateFin! };
         if (this.editingThematique) {
-            this.thematiqueSvc.update(this.editingThematique.id!, th).subscribe({ next: () => { this.cancelEditThematique(); this.showAddForm = false; this.onProgChange(); }, error: (e) => console.error(e) });
+            this.thematiqueSvc.update(this.editingThematique.id!, th).subscribe({ next: () => { this.cancelEditThematique(); this.showAddForm = false; this.loadAllThematiques(); }, error: (e) => console.error(e) });
         } else {
-            this.thematiqueSvc.create(th).subscribe({ next: () => { this.newThematique = { nom: '', description: '', dateDebut: '', dateFin: '' }; this.showAddForm = false; this.onProgChange(); }, error: (e) => console.error(e) });
+            this.thematiqueSvc.create(th).subscribe({ next: () => { this.newThematique = { nom: '', description: '', dateDebut: '', dateFin: '', programmeId: undefined }; this.showAddForm = false; this.loadAllThematiques(); }, error: (e) => console.error(e) });
         }
     }
 
     editThematique(t: ThematiqueCoaching): void {
         this.editingThematique = t;
-        this.newThematique = { nom: t.nom, description: t.description, dateDebut: t.dateDebut, dateFin: t.dateFin };
+        this.newThematique = { nom: t.nom, description: t.description, dateDebut: t.dateDebut, dateFin: t.dateFin, programmeId: t.programmeId };
         this.showAddForm = true;
     }
 
-    cancelEditThematique(): void { this.editingThematique = null; this.newThematique = { nom: '', description: '', dateDebut: '', dateFin: '' }; }
-    deleteThematique(id: number): void { if (!confirm('Supprimer cette thématique ?')) return; this.thematiqueSvc.delete(id).subscribe({ next: () => this.onProgChange(), error: (e) => console.error(e) }); }
+    cancelEditThematique(): void { this.editingThematique = null; this.newThematique = { nom: '', description: '', dateDebut: '', dateFin: '', programmeId: undefined }; }
+    deleteThematique(id: number): void { if (!confirm('Supprimer cette thématique ?')) return; this.thematiqueSvc.delete(id).subscribe({ next: () => this.loadAllThematiques(), error: (e) => console.error(e) }); }
 
     // ─── Helpers ───
     parseEnrichedResult(m: any): any {

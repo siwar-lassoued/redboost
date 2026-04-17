@@ -20,6 +20,11 @@ public class ThematiqueController {
         return ResponseEntity.status(201).body(thematiqueService.create(thematique));
     }
 
+    @GetMapping
+    public ResponseEntity<List<ThematiqueCoaching>> getAll() {
+        return ResponseEntity.ok(thematiqueService.getAll());
+    }
+
     @GetMapping("/programme/{programmeId}")
     public ResponseEntity<List<ThematiqueCoaching>> getByProgramme(@PathVariable Long programmeId) {
         return ResponseEntity.ok(thematiqueService.getByProgramme(programmeId));

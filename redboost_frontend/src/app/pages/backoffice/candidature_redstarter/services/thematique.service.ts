@@ -24,6 +24,10 @@ export class ThematiqueService {
         return this.http.post<ThematiqueCoaching>(this.baseUrl, thematique);
     }
 
+    getAll(): Observable<ThematiqueCoaching[]> {
+        return this.http.get<ThematiqueCoaching[]>(this.baseUrl);
+    }
+
     getByProgramme(programmeId: number): Observable<ThematiqueCoaching[]> {
         return this.http.get<ThematiqueCoaching[]>(`${this.baseUrl}/programme/${programmeId}`);
     }

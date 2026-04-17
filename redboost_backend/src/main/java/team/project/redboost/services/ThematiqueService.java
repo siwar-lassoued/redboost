@@ -31,6 +31,10 @@ public class ThematiqueService {
         return thematiqueRepo.save(thematique);
     }
 
+    public List<ThematiqueCoaching> getAll() {
+        return thematiqueRepo.findAll();
+    }
+
     public List<ThematiqueCoaching> getByProgramme(Long programmeId) {
         return thematiqueRepo.findByProgrammeId(programmeId);
     }

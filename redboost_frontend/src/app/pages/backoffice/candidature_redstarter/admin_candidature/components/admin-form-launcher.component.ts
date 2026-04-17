@@ -65,6 +65,10 @@ type Step = 'choice' | 'templates' | 'form';
                   <p>{{ template.description }}</p>
                 </div>
               </div>
+              <div class="fl-template-meta" *ngIf="template.program">
+                <span class="fl-meta-label">Programme:</span>
+                <span class="fl-meta-badge" style="background:#EDE9FE; color:#6D28D9; font-weight:700;">{{ template.program }}</span>
+              </div>
               <div class="fl-template-meta">
                 <span class="fl-meta-label">Type:</span>
                 <span class="fl-meta-badge" [style.background]="template.profileType === 'coach' ? '#e5f3f4' : '#fceef1'"
