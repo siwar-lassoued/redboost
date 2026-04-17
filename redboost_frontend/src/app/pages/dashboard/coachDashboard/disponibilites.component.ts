@@ -126,6 +126,12 @@ interface DateSlotGroup {
               </div>
               <div class="modal-body">
                   <div class="form-group">
+                      <label>Titre de la disponibilité *</label>
+                      <input type="text" class="premium-input" [(ngModel)]="newDispoTitle" placeholder="Ex: Session individuelle Boost Tech">
+                      <p *ngIf="defaultTitle" class="field-help" style="color:#059669;"><i class="pi pi-check-circle" style="margin-right:4px;"></i> Pré-rempli depuis le programme : <strong>{{ defaultTitle }}</strong></p>
+                  </div>
+
+                  <div class="form-group">
                       <label>Thématique *</label>
                       <select class="premium-input" [(ngModel)]="selectedThematiqueId" (ngModelChange)="onThematiqueSelected()">
                            <option [ngValue]="null">Sélectionner une thématique...</option>
@@ -133,12 +139,6 @@ interface DateSlotGroup {
                             {{t.nom}} ({{t.dateDebut | date:'shortDate'}} - {{t.dateFin | date:'shortDate'}})
                           </option>
                       </select>
-                  </div>
-
-                  <div class="form-group">
-                      <label>Titre de la disponibilité *</label>
-                      <input type="text" class="premium-input" [(ngModel)]="newDispoTitle" placeholder="Ex: Session individuelle Boost Tech">
-                      <p *ngIf="defaultTitle" class="field-help" style="color:#059669;"><i class="pi pi-check-circle" style="margin-right:4px;"></i> Pré-rempli depuis le programme : <strong>{{ defaultTitle }}</strong></p>
                   </div>
 
                   <div *ngIf="selectedThematiqueObj" class="thematique-dates-banner">
@@ -193,11 +193,7 @@ interface DateSlotGroup {
                     </button>
                   </div>
 
-                  <div class="form-group">
-                    <label>Durée de session *</label>
-                    <input type="text" class="premium-input" [(ngModel)]="sessionDuration" placeholder="1h">
-                    <p class="field-help">Exemples : 30 min, 45 min, 1h, 1h30, 2h</p>
-                  </div>
+
 
                   <div class="form-group">
                     <label>Type de session *</label>

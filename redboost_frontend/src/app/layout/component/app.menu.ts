@@ -439,18 +439,6 @@ export class AppMenu implements OnInit {
                         routerLink: ['/rapport-missions'], // Needs to be created/mapped
                     },
                 ],
-            },
-            {
-                separator: true // Adds space before bottom section if needed
-            },
-            {
-                items: [
-                    {
-                        label: 'Paramètres',
-                        icon: 'pi pi-fw pi-cog',
-                        routerLink: ['/profile'], // Default link for settings
-                    }
-                ]
             }
         ];
     }
