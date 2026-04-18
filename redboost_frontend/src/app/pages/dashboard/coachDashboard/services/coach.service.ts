@@ -89,6 +89,15 @@ export interface CoachEntrepreneurDTO {
   delayedTasksCount?: number;
 }
 
+export interface CoachCalendarEventDTO {
+  id: string;
+  type: 'DISPONIBILITE_COACH' | 'SESSION_SLOT' | 'SESSION' | 'SEANCE_EXCEPTIONNELLE';
+  title: string;
+  date: string;
+  startTime?: string;
+  endTime?: string;
+  source?: 'coach' | 'entrepreneur';
+}
 export interface DashboardStatsDTO {
   nbRendezVous: number;
   nbTaches: number;
@@ -217,6 +226,9 @@ export class CoachService {
   // Get entrepreneurs assigned to the coach
   getCoachEntrepreneurs(coachId: number): Observable<CoachEntrepreneurDTO[]> {
     return this.http.get<CoachEntrepreneurDTO[]>(`${this.apiUrl}/${coachId}/entrepreneurs`);
+  }
+  getCalendarEvents(coachId: number): Observable<CoachCalendarEventDTO[]> {
+    return this.http.get<CoachCalendarEventDTO[]>(`${this.apiUrl}/${coachId}/calendar-events`);
   }
 
   // Get upcoming sessions for the coach

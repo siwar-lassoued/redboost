@@ -104,6 +104,12 @@ public class CoachController {
         return ResponseEntity.ok(coachService.getCoachEntrepreneurs(coachId));
     }
 
+    @GetMapping("/{coachId}/calendar-events")
+    public ResponseEntity<List<CoachCalendarEventDTO>> getCalendarEvents(@PathVariable Long coachId) {
+        return ResponseEntity.ok(coachService.getCalendarEvents(coachId));
+    }
+
+
     @GetMapping("/{coachId}/upcoming-sessions")
     public ResponseEntity<List<UpcomingSessionDTO>> getUpcomingSessions(@PathVariable Long coachId) {
         return ResponseEntity.ok(coachService.getUpcomingSessions(coachId));
