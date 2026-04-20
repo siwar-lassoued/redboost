@@ -95,8 +95,8 @@ export class ReclamationsComponent implements OnInit {
   }
 
   loadEntrepreneurs() {
-      this.coachService.getEntrepreneurs().subscribe({
-          next: (data) => this.entrepreneurs = data
+      this.coachService.getCoachEntrepreneurs(this.coachId).subscribe({
+          next: (data) => this.entrepreneurs = data as any[]
       });
   }
 

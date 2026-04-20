@@ -231,8 +231,12 @@ export class CoachLivrablesComponent implements OnInit {
   }
 
   loadEntrepreneurs() {
-    this.coachService.getEntrepreneurs().subscribe({
-      next: (data) => this.entrepreneurs = data.map(e => ({ ...e, selected: false })),
+    const rawCoachId = this.authService.getUserId();
+    const coachId = typeof rawCoachId === 'string' ? parseInt(rawCoachId, 10) : (rawCoachId ?? 0);
+    if (!coachId) return;
+
+    this.coachService.getCoachEntrepreneurs(coachId).subscribe({
+      next: (data) => this.entrepreneurs = data.map((e: any) => ({ ...e, selected: false })),
       error: () => {}
     });
   }

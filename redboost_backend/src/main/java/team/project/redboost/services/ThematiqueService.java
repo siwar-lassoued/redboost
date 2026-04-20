@@ -43,6 +43,11 @@ public class ThematiqueService {
         return thematiqueRepo.findByProgrammeIdAndStatut(programmeId, ThematiqueCoaching.StatutThematique.ACTIVE);
     }
 
+    public ThematiqueCoaching getById(Long id) {
+        return thematiqueRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Thématique introuvable"));
+    }
+
     public List<ThematiqueCoaching> getThematiquesForCoach(Long coachId) {
         List<Matching> matchings = matchingRepository.findByCoachIdAndStatut(coachId, Matching.StatutMatching.VALIDE);
         Set<Long> thematiqueIds = matchings.stream()

@@ -35,6 +35,11 @@ public class ThematiqueController {
         return ResponseEntity.ok(thematiqueService.getActiveByProgramme(programmeId));
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<ThematiqueCoaching> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(thematiqueService.getById(id));
+    }
+
     @GetMapping("/coach/{coachId}")
     public ResponseEntity<List<ThematiqueCoaching>> getThematiquesForCoach(@PathVariable Long coachId) {
         return ResponseEntity.ok(thematiqueService.getThematiquesForCoach(coachId));
