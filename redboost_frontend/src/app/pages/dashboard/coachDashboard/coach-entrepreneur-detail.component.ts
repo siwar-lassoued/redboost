@@ -150,7 +150,12 @@ import { ToastrService } from 'ngx-toastr';
             <div *ngIf="activeTab === 'reporting'">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-xl font-bold text-[#2D3748]">Reporting Sessions</h2>
-                    <button class="btn-primary"><i class="pi pi-plus"></i> Nouveau rapport</button>
+                    <div style="display: flex; gap: 1rem;">
+                        <button class="btn-secondary" (click)="downloadConsolidatedReports(entrepreneur.id)" *ngIf="entrepreneur.notes.length > 0" [disabled]="isDownloadingPdf">
+                            <i class="pi" [class.pi-spin]="isDownloadingPdf" [class.pi-spinner]="isDownloadingPdf" [class.pi-download]="!isDownloadingPdf"></i>
+                            {{ isDownloadingPdf ? 'Génération...' : 'Rapports consolidés' }}
+                        </button>
+                    </div>
                 </div>
 
                 <div *ngIf="entrepreneur.notes.length === 0" class="bg-white rounded-xl p-8 text-center text-gray-500 border border-dashed border-gray-300">
@@ -645,6 +650,7 @@ export class CoachEntrepreneurDetailComponent implements OnInit {
 
   isUploading: boolean = false;
   uploadingTaskId: number | null = null;
+  isDownloadingPdf: boolean = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -732,5 +738,43 @@ export class CoachEntrepreneurDetailComponent implements OnInit {
         this.toastr.error('Erreur lors de la suppression', 'Erreur');
       }
     });
+  }
+
+  downloadConsolidatedReports(entrepreneurId: number): void {
+      this.isDownloadingPdf = true;
+      // Depending on the backend we can call a service. We will use a standard fetch using auth headers if needed,
+      // but since we are using Angular HttpClient, we should use a service method.
+      // Since CoachService does not have getConsolidatedReport natively mapped, we'll manually fetch it from the Rapport backend
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token') || '';
+      
+      fetch(\`http://localhost:8082/api/rapports/entrepreneur/\${entrepreneurId}/consolidated\`, {
+          method: 'GET',
+          headers: {
+              'Authorization': \`Bearer \${token}\`
+          }
+      })
+      .then(response => {
+          if(!response.ok) throw new Error('Network response was not ok');
+          return response.blob();
+      })
+      .then(blob => {
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = \`Rapport_Consolide_Entrepreneur_\${entrepreneurId}.pdf\`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(url);
+          this.isDownloadingPdf = false;
+          this.toastr.success('Le fichier a été téléchargé avec succès');
+          this.cdr.detectChanges();
+      })
+      .catch(err => {
+          console.error(err);
+          this.isDownloadingPdf = false;
+          this.toastr.error('Erreur lors du téléchargement du document consolidé');
+          this.cdr.detectChanges();
+      });
   }
 }

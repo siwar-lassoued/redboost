@@ -281,4 +281,17 @@ export class CoachService {
   getAvailableSessionsForEntrepreneur(coachId: number): Observable<SessionCoachDTO[]> {
     return this.http.get<SessionCoachDTO[]>(`${this.apiUrl}/${coachId}/available-sessions`);
   }
+
+  // RAPPORT MISSION COACH
+  getRapportsMission(coachId: number, programmeId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${environment.apiUrl}/rapports-mission-coach/coach/${coachId}/programme/${programmeId}`);
+  }
+
+  saveRapportMission(payload: any): Observable<any> {
+    return this.http.post(`${environment.apiUrl}/rapports-mission-coach`, payload);
+  }
+
+  deleteRapportMission(id: number): Observable<void> {
+    return this.http.delete<void>(`${environment.apiUrl}/rapports-mission-coach/${id}`);
+  }
 }

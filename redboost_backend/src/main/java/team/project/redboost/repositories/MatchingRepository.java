@@ -67,4 +67,9 @@ public interface MatchingRepository extends JpaRepository<Matching, Long> {
     /** Tous les matchings actifs (VALIDE) — utilisé par le scheduler de clôture */
     @Query("SELECT m FROM Matching m WHERE m.statut = 'VALIDE'")
     List<Matching> findAllValide();
+
+    /** Efface la référence thematique_id d'un matching quand la thématique est supprimée */
+    @Modifying
+    @Query("UPDATE Matching m SET m.thematiqueId = null WHERE m.thematiqueId = :thematiqueId")
+    void nullifyThematiqueId(@Param("thematiqueId") Long thematiqueId);
 }

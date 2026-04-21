@@ -1,36 +1,38 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal, inject, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { CoachService, ProgrammeDTO } from './services/coach.service';
-import { AuthService } from '../../frontoffice/service/auth.service';
+import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
 import { ToastrService } from 'ngx-toastr';
+import { CoachService } from './services/coach.service';
+import { AuthService } from '../../frontoffice/service/auth.service';
+
+type PeriodType = 'LIBRE' | 'HEBDO' | 'MOIS';
+type HebdoOption = 'current' | 'last' | 'custom';
+type MoisOption = 'current' | 'last' | 'custom';
 
 @Component({
   selector: 'app-coach-rapport-missions',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule],
   template: `
     <div class="matching-page">
       <!-- ── Header ─────────────────────── -->
       <div class="matching-header">
         <div>
-          <h1 class="matching-title">Rapport de missions (Expert)</h1>
-          <p class="matching-subtitle">Template de Reporting d'Accompagnement — Sélectionnez un programme et une période</p>
-        </div>
-        <div class="header-actions">
-          <div class="ia-badge">
-            <i class="pi pi-file"></i> Rapport Expert
-          </div>
+          <h1 class="matching-title">Rapports d'Accompagnement (Missions)</h1>
+          <p class="matching-subtitle">Générez et documentez vos rapports de mission globaux par programme</p>
         </div>
       </div>
 
-      <!-- ── Configuration du rapport ─────────────────────── -->
-      <div class="card">
+      <!-- ── Générateur / Configuration ─────────────────────── -->
+      <div class="card" *ngIf="!editingReport">
         <div class="card-header-row">
           <div class="card-icon"><i class="pi pi-cog"></i></div>
           <div>
-            <h2 class="card-title">Configuration du rapport</h2>
-            <p class="hint" style="margin-top:2px;">Sélectionnez le programme et la période pour générer votre rapport de mission.</p>
+            <h2 class="card-title">Configuration du Rapport</h2>
+            <p class="hint" style="margin-top:2px;">Sélectionnez le programme et la période couverte par ce rapport d'accompagnement.</p>
           </div>
         </div>
 
@@ -38,25 +40,51 @@ import { ToastrService } from 'ngx-toastr';
           <!-- Left Column -->
           <div style="display:flex; flex-direction:column; gap:20px;">
             <div class="form-group">
-              <label>Programme d'accompagnement <span class="required">*</span></label>
-              <select [ngModel]="selectedProgramme" (ngModelChange)="selectedProgramme = $event" class="form-select">
-                <option value="" disabled>Choisir un programme...</option>
-                <option *ngFor="let prog of programs" [value]="prog.nom">{{prog.nom}} ({{prog.annee}})</option>
-                <option *ngIf="programs.length === 0" disabled>Aucun programme trouvé</option>
+              <label>Programme d'incubation <span class="required">*</span></label>
+              <select [(ngModel)]="selectedProgramId" class="form-select" (change)="loadHistory()">
+                <option [ngValue]="0" disabled>Choisir un programme...</option>
+                <option *ngFor="let p of programmes" [value]="p.id">{{ p.nom }}</option>
               </select>
             </div>
 
             <div class="form-group">
-              <label>Période d'analyse <span class="required">*</span></label>
-              <div style="display:flex; gap:16px;">
+              <label>Période couverte <span class="required">*</span></label>
+              <div class="period-tabs">
+                <button *ngFor="let pt of periodTypes"
+                    (click)="periodType = pt.id"
+                    class="period-btn"
+                    [class.active]="periodType === pt.id">
+                  {{ pt.label }}
+                </button>
+              </div>
+            </div>
+
+            <div class="form-group" style="min-height:80px;">
+              <div *ngIf="periodType === 'LIBRE'" style="display:flex; gap:16px;">
                 <div style="flex:1">
                   <label class="hint" style="display:block; margin-bottom:4px;">Du</label>
-                  <input type="date" [(ngModel)]="dateDebut" class="form-input">
+                  <input type="date" [(ngModel)]="dateFrom" class="form-input">
                 </div>
                 <div style="flex:1">
                   <label class="hint" style="display:block; margin-bottom:4px;">Au</label>
-                  <input type="date" [(ngModel)]="dateFin" class="form-input">
+                  <input type="date" [(ngModel)]="dateTo" class="form-input">
                 </div>
+              </div>
+
+              <div *ngIf="periodType === 'HEBDO'" style="display:flex; flex-wrap:wrap; gap:8px;">
+                <label *ngFor="let opt of hebdoOptions" class="opt-label" [class.active-opt]="hebdoOpt === opt.val">
+                  <input type="radio" name="hebdo" [value]="opt.val" [(ngModel)]="hebdoOpt" style="display:none;">
+                  {{ opt.label }}
+                </label>
+                <input *ngIf="hebdoOpt === 'custom'" type="week" [(ngModel)]="customWeek" class="form-input" style="margin-top:8px;">
+              </div>
+
+              <div *ngIf="periodType === 'MOIS'" style="display:flex; flex-wrap:wrap; gap:8px;">
+                <label *ngFor="let opt of moisOptions" class="opt-label" [class.active-opt]="moisOpt === opt.val">
+                  <input type="radio" name="mois" [value]="opt.val" [(ngModel)]="moisOpt" style="display:none;">
+                  {{ opt.label }}
+                </label>
+                <input *ngIf="moisOpt === 'custom'" type="month" [(ngModel)]="customMonth" class="form-input" style="margin-top:8px;">
               </div>
             </div>
           </div>
@@ -64,11 +92,11 @@ import { ToastrService } from 'ngx-toastr';
           <!-- Right Column -->
           <div>
             <div class="form-group">
-              <label>Données incluses dans le rapport</label>
+              <label>Structure de ce modèle (Template de Reporting)</label>
               <div style="display:flex; flex-direction:column; gap:12px; margin-top:8px;">
-                <div *ngFor="let inc of inclusionItems" class="data-item">
+                <div *ngFor="let inc of templateSections" class="data-item">
                   <div class="data-icon"><i class="pi pi-check"></i></div>
-                  <i [class]="'pi pi-' + inc.icon" style="color:#9CA3AF; margin-right:8px;"></i>
+                  <span style="font-weight:700; margin-right:8px;">{{ inc.num }}</span>
                   <span>{{ inc.label }}</span>
                 </div>
               </div>
@@ -77,391 +105,506 @@ import { ToastrService } from 'ngx-toastr';
         </div>
 
         <div class="launch-section">
-          <button (click)="chargerDonnees()" [disabled]="!selectedProgramme || !dateDebut || !dateFin" class="btn-launch" style="width:100%; justify-content:center;">
-            <i class="pi pi-refresh"></i>
-            Charger les données et Rédiger
+          <button (click)="initNewReport()" [disabled]="selectedProgramId === 0" class="btn-launch" style="width:100%; justify-content:center;">
+            <i class="pi pi-pencil"></i> Rédiger le rapport d'accompagnement
           </button>
         </div>
       </div>
 
-      <div *ngIf="donneesChargees" class="success-banner">
-        <i class="pi pi-check-circle"></i>
-        <span>Données chargées</span>
-        <span class="hint" style="margin-left:8px;">Programme : <b>{{selectedProgramme}}</b></span>
+      <!-- ── Rapport d'Activité / Éditeur ─────────────────────── -->
+      <div *ngIf="editingReport" class="card" style="padding:0; overflow:hidden; border-left:5px solid #FF4D85;">
+        <div class="report-header">
+          <div>
+            <h2 class="card-title" style="display:flex; align-items:center; gap:10px;">
+              <i class="pi pi-file" style="color:#FF4D85;"></i> Édition du Rapport de Mission
+            </h2>
+            <p class="hint" style="margin-top:6px;">
+              <span class="report-tag">{{ currentReport.periodType }}</span>
+              Période : {{ currentReport.dateDebut }} au {{ currentReport.dateFin }}
+            </p>
+          </div>
+          <div style="display:flex; gap:8px;">
+             <!-- Back button to cancel drafting -->
+             <button (click)="cancelEdit()" class="btn-cancel" style="padding:8px 12px;">
+               <i class="pi pi-arrow-left"></i> Retour
+             </button>
+             <button (click)="saveReport()" class="btn-launch" style="padding:8px 16px; font-size:13px; background: #10B981; box-shadow: none;">
+               <i class="pi" [ngClass]="isSaving ? 'pi-spinner pi-spin' : 'pi-save'"></i>
+               {{ isSaving ? 'Enregistrement...' : 'Enregistrer' }}
+             </button>
+             <!-- PDF button downloads the preview -->
+             <button (click)="downloadPdf()" [disabled]="isSaving" class="btn-launch" style="padding:8px 16px; font-size:13px;">
+               <i class="pi pi-file-pdf"></i> PDF
+             </button>
+          </div>
+        </div>
+
+        <!-- The Report content wrapper for PDF capture -->
+        <div id="reportToDownload" style="padding:24px; background: white;">
+          
+          <div class="report-pdf-header" style="margin-bottom: 24px; text-align: center; display: none;">
+             <!-- Hidden by default, displayed inline if downloading PDF to give it a nice title -->
+             <h2>Rapport d'Accompagnement</h2>
+             <p>Programme : {{ getProgramName(selectedProgramId) }} | Période : {{ currentReport.dateDebut }} au {{ currentReport.dateFin }}</p>
+          </div>
+
+          <div class="form-grid" style="grid-template-columns: 1fr;">
+
+            <!-- 1. Introduction -->
+            <div class="report-section">
+              <h3 class="section-title"><span class="sec-num">1</span> Introduction</h3>
+              <textarea class="rich-textarea" [(ngModel)]="currentReport.introduction" rows="5" 
+                placeholder="- Présentation du programme&#10;- Contexte et partenaires&#10;- Objectifs du programme&#10;- Objectif du présent rapport"></textarea>
+            </div>
+
+            <!-- 2. Présentation de la phase -->
+            <div class="report-section">
+              <h3 class="section-title"><span class="sec-num">2</span> Présentation de la phase / période</h3>
+              <textarea class="rich-textarea" [(ngModel)]="currentReport.presentationPhase" rows="4" 
+                placeholder="2.1 Objectifs de la phase&#10;2.2 Méthodologie d’accompagnement&#10;2.3 Organisation des séances"></textarea>
+            </div>
+
+            <!-- 3. Déroulement de l’accompagnement -->
+            <div class="report-section">
+              <h3 class="section-title"><span class="sec-num">3</span> Déroulement de l’accompagnement</h3>
+              <textarea class="rich-textarea" [(ngModel)]="currentReport.deroulementAccompagnement" rows="4" 
+                placeholder="- Description des activités réalisées&#10;- Thématiques abordées&#10;- Implication des bénéficiaires"></textarea>
+            </div>
+
+            <!-- 4. Résultats obtenus -->
+            <div class="report-section highlight-box">
+              <h3 class="section-title green-title"><i class="pi pi-chart-line"></i> 4. Résultats obtenus</h3>
+              <textarea class="rich-textarea no-border-area" [(ngModel)]="currentReport.resultatsObtenus" rows="4" 
+                placeholder="4.1 Résultats qualitatifs&#10;4.2 Résultats quantitatifs&#10;4.3 Cas concret / success story"></textarea>
+            </div>
+
+            <!-- 5. Suivi des bénéficiaires -->
+            <div class="report-section">
+              <h3 class="section-title"><span class="sec-num">5</span> Suivi des bénéficiaires</h3>
+              <textarea class="rich-textarea" [(ngModel)]="currentReport.suiviBeneficiaires" rows="4" 
+                placeholder="- Nom du projet&#10;- Niveau d’avancement&#10;- Besoins identifiés&#10;- Actions réalisées"></textarea>
+            </div>
+
+            <!-- 6. Planning des séances -->
+            <div class="report-section">
+              <h3 class="section-title"><span class="sec-num">6</span> Planning des séances</h3>
+              <textarea class="rich-textarea" [(ngModel)]="currentReport.planningSeances" rows="4" 
+                placeholder="- Date&#10;- Bénéficiaire&#10;- Durée"></textarea>
+            </div>
+
+            <!-- 7. Feedback des bénéficiaires -->
+            <div class="report-section">
+              <h3 class="section-title"><span class="sec-num">7</span> Feedback des bénéficiaires</h3>
+              <textarea class="rich-textarea" [(ngModel)]="currentReport.feedbackBeneficiaires" rows="3" 
+                placeholder="- Satisfaction&#10;- Points forts&#10;- Points d’amélioration"></textarea>
+            </div>
+
+            <!-- 8. Analyse & leçons apprises -->
+            <div class="report-section">
+              <h3 class="section-title"><span class="sec-num">8</span> Analyse & leçons apprises</h3>
+              <textarea class="rich-textarea" [(ngModel)]="currentReport.analyseLecons" rows="3" 
+                placeholder="- Difficultés rencontrées&#10;- Enseignements&#10;- Opportunités"></textarea>
+            </div>
+
+            <!-- 9. Recommandations & prochaines étapes -->
+            <div class="report-section alert-box">
+              <h3 class="section-title blue-title"><i class="pi pi-lightbulb"></i> 9. Recommandations & prochaines étapes</h3>
+              <textarea class="rich-textarea no-border-area" [(ngModel)]="currentReport.recommandationsEtapes" rows="4" 
+                placeholder="Détaillez les recommandations stratégiques et actions à mener"></textarea>
+            </div>
+
+            <!-- 10. Conclusion -->
+            <div class="report-section">
+              <h3 class="section-title"><span class="sec-num">10</span> Conclusion</h3>
+              <textarea class="rich-textarea" [(ngModel)]="currentReport.conclusion" rows="3" 
+                placeholder="Synthèse et impact global de cette période d'accompagnement"></textarea>
+            </div>
+
+          </div>
+        </div>
       </div>
 
-      <!-- ═══ Sections du rapport ═══ -->
-      <div *ngIf="donneesChargees" class="rapport-sections">
-
-        <!-- Section 1: Introduction -->
-        <div class="card report-card" style="padding:0; overflow:hidden; border-left:5px solid #ea5073;">
-          <div class="report-section-header">
-            <div class="section-num">1</div>
-            <h2 class="card-title">Introduction</h2>
-          </div>
-          <div class="report-section-body">
-            <div class="sub-section">
-              <h3 class="sub-title"><i class="pi pi-building" style="color:#ea5073; margin-right:8px;"></i> Présentation du programme</h3>
-              <textarea class="report-textarea" rows="3" [(ngModel)]="rapport.presentationProgramme"
-                  placeholder="Décrivez le programme d'accompagnement..."></textarea>
-            </div>
-
-            <div class="sub-section">
-              <h3 class="sub-title"><i class="pi pi-users" style="color:#ea5073; margin-right:8px;"></i> Contexte et partenaires</h3>
-              <textarea class="report-textarea" rows="3" [(ngModel)]="rapport.contextePartenaires"
-                  placeholder="Contexte de la mission et partenaires impliqués..."></textarea>
-            </div>
-
-            <div class="sub-section">
-              <h3 class="sub-title"><i class="pi pi-flag" style="color:#ea5073; margin-right:8px;"></i> Objectifs du programme</h3>
-              <textarea class="report-textarea" rows="3" [(ngModel)]="rapport.objectifsProgramme"
-                  placeholder="Exemple : • Structurer les modèles économiques&#10;• Développer les stratégies marketing"></textarea>
-            </div>
-
-            <div class="sub-section">
-              <h3 class="sub-title"><i class="pi pi-file" style="color:#ea5073; margin-right:8px;"></i> Objectif du présent rapport</h3>
-              <textarea class="report-textarea" rows="2" [(ngModel)]="rapport.objectifRapport"
-                  placeholder="Ce rapport a pour objectif de..."></textarea>
-            </div>
-          </div>
+      <!-- ── Historique ─────────────────────── -->
+      <div class="card" *ngIf="!editingReport">
+        <div class="card-header-row" style="margin-bottom:0;">
+          <div class="card-icon" style="background:#F3F4F6; color:#6B7280;"><i class="pi pi-history"></i></div>
+          <h2 class="card-title">Historique des Rapports ({{ history.length }})</h2>
         </div>
 
-        <!-- Section 2: Présentation de la phase/période -->
-        <div class="card report-card" style="padding:0; overflow:hidden; border-left:5px solid #3B82F6;">
-          <div class="report-section-header" style="background: linear-gradient(to right, #ffffff, #EFF6FF);">
-            <div class="section-num" style="background: linear-gradient(135deg, #3B82F6, #1D4ED8);">2</div>
-            <h2 class="card-title">Présentation de la phase / période</h2>
+        <div style="margin-top:20px;">
+          <div *ngIf="selectedProgramId === 0" class="empty-state-inline">
+            <p>Sélectionnez un programme pour voir l'historique des rapports.</p>
           </div>
-          <div class="report-section-body">
-            <div class="sub-section">
-              <h3 class="sub-title"><i class="pi pi-target" style="color:#3B82F6; margin-right:8px;"></i> 2.1 Objectifs de la phase</h3>
-              <textarea class="report-textarea" rows="3" [(ngModel)]="rapport.objectifsPhase"
-                  placeholder="Objectifs spécifiques de cette phase d'accompagnement..."></textarea>
-            </div>
-
-            <div class="sub-section">
-              <h3 class="sub-title"><i class="pi pi-sitemap" style="color:#3B82F6; margin-right:8px;"></i> 2.2 Méthodologie d'accompagnement</h3>
-              <textarea class="report-textarea" rows="3" [(ngModel)]="rapport.methodologie"
-                  placeholder="Les séances ont été organisées de manière hebdomadaire avec une durée moyenne de 1h à 2h par entrepreneur."></textarea>
-            </div>
-
-            <div class="sub-section">
-              <h3 class="sub-title"><i class="pi pi-calendar" style="color:#3B82F6; margin-right:8px;"></i> 2.3 Organisation des séances de coaching</h3>
-              <textarea class="report-textarea" rows="3" [(ngModel)]="rapport.organisationSeances"
-                  placeholder="Décrivez l'organisation, le nombre de séances, la fréquence..."></textarea>
-            </div>
-
-            <div class="sub-section">
-              <h3 class="sub-title"><i class="pi pi-play" style="color:#3B82F6; margin-right:8px;"></i> 2.4 Déroulement de la phase</h3>
-              <textarea class="report-textarea" rows="3" [(ngModel)]="rapport.deroulementPhase"
-                  placeholder="Décrivez les activités réalisées, les ateliers et les sessions individuelles..."></textarea>
-            </div>
-
-            <div class="sub-section">
-              <h3 class="sub-title"><i class="pi pi-chart-line" style="color:#059669; margin-right:8px;"></i> 2.5 Résultats obtenus</h3>
-              <textarea class="report-textarea" rows="4" [(ngModel)]="rapport.resultatsObtenus"
-                  placeholder="• Amélioration du business model&#10;• Validation du marché&#10;• Préparation des pitch decks"></textarea>
-            </div>
-
-            <div class="sub-section">
-              <h3 class="sub-title"><i class="pi pi-table" style="color:#3B82F6; margin-right:8px;"></i> 2.6 Planning des séances</h3>
-              <p class="hint" style="margin-bottom:16px;">Tableau de suivi automatique — les données sont extraites du système.</p>
-              <div class="planning-table-wrapper">
-                <table class="planning-table">
-                  <thead>
-                    <tr>
-                      <th class="sticky-col">Coach</th>
-                      <th *ngFor="let day of planningDays">{{day}}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr *ngFor="let coach of planningCoaches">
-                      <td class="sticky-col coach-name">{{coach.name}}</td>
-                      <td *ngFor="let day of planningDays" [class]="getCellClass(coach, day)">
-                        {{getCellValue(coach, day)}}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <div class="legend">
-                <span class="legend-title">Légende :</span>
-                <span class="legend-item"><span class="legend-color phase-identification"></span> Phase d'identification</span>
-                <span class="legend-item"><span class="legend-color phase-investigation"></span> Phase d'investigation</span>
-                <span class="legend-item"><span class="legend-color phase-synthese"></span> Phase de synthèse</span>
-              </div>
-            </div>
-
-            <div class="sub-section">
-              <h3 class="sub-title"><i class="pi pi-lightbulb" style="color:#D97706; margin-right:8px;"></i> 2.7 Leçons apprises</h3>
-              <textarea class="report-textarea" rows="4" [(ngModel)]="rapport.leconsApprises"
-                  placeholder="• Importance de la validation du marché&#10;• Nécessité d'un suivi régulier"></textarea>
-            </div>
+          <div *ngIf="history.length === 0 && selectedProgramId !== 0" class="empty-state-inline">
+            <p>Aucun rapport d'accompagnement n'a été créé pour ce programme.</p>
           </div>
-        </div>
 
-        <!-- Section 3: Conclusion -->
-        <div class="card report-card" style="padding:0; overflow:hidden; border-left:5px solid #059669;">
-          <div class="report-section-header" style="background: linear-gradient(to right, #ffffff, #ECFDF5);">
-            <div class="section-num" style="background: linear-gradient(135deg, #059669, #047857);">3</div>
-            <h2 class="card-title">Conclusion & Recommandations</h2>
-          </div>
-          <div class="report-section-body">
-            <textarea class="report-textarea" rows="5" [(ngModel)]="rapport.conclusion"
-                placeholder="Résumez l'impact global de la mission, les perspectives futures et les recommandations pour la prochaine phase."></textarea>
-          </div>
-        </div>
-
-        <!-- Action Buttons Footer -->
-        <div class="actions-footer">
-          <button class="btn-cancel" (click)="saveAsDraft()"><i class="pi pi-save"></i> Enregistrer brouillon</button>
-          <button class="btn-launch" (click)="generateReport()"><i class="pi pi-file-pdf"></i> Générer le rapport</button>
+          <table *ngIf="history.length > 0" class="history-table">
+            <thead>
+              <tr>
+                <th>Programme / ID</th>
+                <th>Période</th>
+                <th>Dernière modif.</th>
+                <th style="text-align:right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let h of history">
+                <td>
+                  <div style="font-weight:700; color:#1A1A2E;">{{ getProgramName(selectedProgramId) }}</div>
+                  <div class="hint">Rapport #{{ h.id }}</div>
+                </td>
+                <td>
+                  <span class="report-tag">{{ h.periodType }}</span>
+                  <div style="font-size:13px; margin-top:4px; font-weight:500;">{{ h.dateDebut }} au {{ h.dateFin }}</div>
+                </td>
+                <td>
+                   <div style="font-size:13px; color:#4B5563;">{{ h.dateCreation | date:'shortDate' }}</div>
+                </td>
+                <td style="text-align:right;">
+                  <button (click)="openReport(h)" class="btn-sm" title="Éditer / Consulter"><i class="pi pi-eye"></i></button>
+                  <button (click)="deleteReport(h.id)" class="btn-sm btn-sm-danger" style="margin-left:6px;"><i class="pi pi-trash"></i></button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
   `,
   styles: [`
     :host { display: block; }
-
-    /* ── Admin Reporting IA shared design system ── */
-    .matching-page { padding: 24px; background: #F5F6FA; min-height: 100vh; }
+    
+    /* Variables communes et structure (Mirroring Admin Workflow) */
+    .matching-page { padding: 24px; background: #F8FAFC; min-height: 100vh; font-family: var(--font-family); }
     .matching-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }
     .matching-title { font-size: 28px; font-weight: 800; color: #1A1A2E; margin: 0; }
     .matching-subtitle { color: #8a8a8a; font-size: 14px; margin-top: 4px; }
-    .header-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
-    .ia-badge {
-      display: flex; align-items: center; gap: 6px; padding: 8px 16px;
-      border-radius: 12px; font-size: 13px; font-weight: 700; color: #fff;
-      background: linear-gradient(135deg, #ea5073, #6d3345);
-    }
-    .card {
-      background: #fff; border-radius: 20px; padding: 24px;
-      box-shadow: 0 2px 16px rgba(0,0,0,0.07); margin-bottom: 20px;
-    }
+    
+    .card { background: #fff; border-radius: 20px; padding: 24px; box-shadow: 0 4px 16px rgba(0,0,0,0.04); margin-bottom: 20px; border: 1px solid #F1F5F9; }
     .card-header-row { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
     .card-icon {
-      width: 36px; height: 36px; border-radius: 10px; display: flex;
-      align-items: center; justify-content: center; font-size: 16px;
-      background: linear-gradient(135deg, #ea5073, #6d3345); color: white;
+      width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px;
+      background: linear-gradient(135deg, #FF6B9E, #FF3366); color: white;
     }
     .card-title { font-size: 18px; font-weight: 700; color: #1A1A2E; margin: 0; }
 
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
     .form-group { display: flex; flex-direction: column; gap: 8px; }
     .form-group label { font-size: 13px; font-weight: 600; color: #374151; }
-    .required { color: #ea5073; }
-    .form-select, .form-input {
-      width: 100%; padding: 12px 16px; border: 1px solid #E5E7EB; background: #F9FAFB;
-      border-radius: 12px; font-size: 14px; outline: none; font-weight: 500;
-      color: #333; transition: border-color .2s; box-sizing: border-box; font-family: inherit;
+    .required { color: #FF4D85; }
+    .form-select, .form-input, .rich-textarea {
+      width: 100%; padding: 12px 16px; border: 1px solid #E2E8F0; background: #F8FAFC;
+      border-radius: 12px; font-size: 14px; outline: none; font-weight: 500; font-family: inherit;
+      color: #1A202C; transition: all .2s; box-sizing: border-box;
     }
-    .form-select:focus, .form-input:focus { border-color: #ea5073; box-shadow: 0 0 0 3px rgba(234,80,115,0.1); }
+    .form-select:focus, .form-input:focus, .rich-textarea:focus { border-color: #FF4D85; box-shadow: 0 0 0 3px rgba(255,77,133,0.1); background: white; }
+    .rich-textarea { resize: vertical; line-height: 1.6; }
     .hint { font-size: 12px; color: #9CA3AF; margin-top: 4px; }
+    .empty-state-inline { text-align: center; padding: 32px; color: #6B7280; font-size: 14px; background: #F8FAFC; border-radius: 16px; border: 1px dashed #CBD5E0; }
 
-    /* Data items */
-    .data-item {
-      display: flex; align-items: center; padding: 12px; border-radius: 12px;
-      border: 1px solid #F3F4F6; background: #F9FAFB; font-size: 13px; font-weight: 600; color: #4B5563;
-    }
-    .data-icon {
-      width: 20px; height: 20px; border-radius: 4px; display: flex; align-items: center; justify-content: center;
-      background: linear-gradient(135deg, #ea5073, #6d3345); color: #fff; font-size: 10px; margin-right: 12px;
-    }
-
-    /* Buttons */
     .btn-launch {
-      display: inline-flex; align-items: center; gap: 8px; padding: 16px 24px;
-      border-radius: 12px; font-size: 15px; font-weight: 700; color: #fff;
-      background: linear-gradient(135deg, #ea5073, #6d3345); border: none;
-      cursor: pointer; transition: all .2s; box-shadow: 0 4px 12px rgba(234,80,115,0.3);
-      font-family: inherit;
+      display: inline-flex; align-items: center; gap: 8px; padding: 16px 24px; border-radius: 12px; font-size: 15px; font-weight: 700; color: #fff;
+      background: linear-gradient(135deg, #FF6B9E, #E83E8C); border: none; cursor: pointer; transition: all .2s; box-shadow: 0 4px 12px rgba(233, 30, 99, 0.3); font-family: inherit;
     }
-    .btn-launch:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
-    .btn-launch:disabled { opacity: 0.5; cursor: not-allowed; }
-    .btn-cancel {
-      padding: 14px 24px; border-radius: 12px; font-size: 14px; font-weight: 600;
-      background: #fff; color: #6B7280; border: 2px solid #E5E7EB; cursor: pointer;
-      transition: all .2s; font-family: inherit; display: inline-flex; align-items: center; gap: 8px;
+    .btn-launch:hover:not(:disabled) { transform: translateY(-2px); }
+    .btn-launch:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; transform: none; }
+    
+    .btn-cancel { padding: 10px 20px; border-radius: 12px; font-size: 14px; font-weight: 600; background: #F1F5F9; color: #475569; border: none; cursor: pointer; transition: background .2s; font-family: inherit; }
+    .btn-cancel:hover { background: #E2E8F0; }
+    .launch-section { margin-top: 32px; padding-top: 24px; border-top: 1px solid #F1F5F9; }
+
+    /* Period Tabs */
+    .period-tabs { display: flex; background: #F1F5F9; padding: 6px; border-radius: 12px; }
+    .period-btn { flex: 1; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; border: none; cursor: pointer; transition: all .2s; background: transparent; color: #64748B; font-family: inherit;}
+    .period-btn.active { background: linear-gradient(135deg, #FF6B9E, #E83E8C); color: #fff; box-shadow: 0 2px 4px rgba(255,77,133,0.2); }
+
+    .opt-label {
+      flex: 1; min-width: 100px; display: flex; align-items: center; justify-content: center; padding: 12px; border-radius: 12px; border: 2px solid #F1F5F9; background: #F8FAFC;
+      color: #64748B; font-size: 12px; font-weight: 700; cursor: pointer; transition: all .2s; text-align: center;
     }
-    .btn-cancel:hover { background: #F3F4F6; border-color: #D1D5DB; }
-    .launch-section { margin-top: 32px; padding-top: 24px; border-top: 1px solid #F3F4F6; }
+    .opt-label.active-opt { border-color: #FF4D85; background: #FFF5F7; color: #FF4D85; }
 
-    .success-banner {
-      padding: 14px 20px; background: #ECFDF5; border: 1px solid #A7F3D0;
-      border-radius: 16px; color: #065F46; display: flex; align-items: center;
-      gap: 10px; font-weight: 600; font-size: 14px; margin-bottom: 20px;
-      animation: fadeIn 0.3s ease-out;
-    }
+    /* Données incluses */
+    .data-item { display: flex; align-items: center; padding: 12px; border-radius: 12px; border: 1px solid #F1F5F9; background: #F8FAFC; font-size: 13px; font-weight: 600; color: #475569; }
+    .data-icon { width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #FF6B9E, #E83E8C); color: #fff; font-size: 10px; margin-right: 12px; }
 
-    /* ── Report Sections (admin reporting style) ── */
-    .rapport-sections { display: flex; flex-direction: column; gap: 20px; }
+    /* Report Details Header */
+    .report-header { padding: 20px 24px; border-bottom: 1px solid #F1F5F9; background: linear-gradient(to right, #ffffff, #FFF5F7); display: flex; justify-content: space-between; align-items: center; }
+    .report-tag { background: rgba(255,77,133,0.1); color: #FF4D85; font-weight: 800; padding: 4px 8px; border-radius: 6px; font-size: 10px; text-transform: uppercase; margin-right: 8px; }
 
-    .report-card { transition: all .2s; }
-    .report-card:hover { box-shadow: 0 4px 24px rgba(0,0,0,0.1); }
+    /* Report Sections Styles (The Editor) */
+    .report-section { margin-bottom: 1.5rem; }
+    .section-title { font-size: 14px; font-weight: 800; color: #1A202C; text-transform: uppercase; display: flex; align-items: center; gap: 8px; margin: 0 0 12px; }
+    .sec-num { background: #CBD5E0; color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink: 0; }
+    
+    .green-title { color: #059669; }
+    .blue-title { color: #2563EB; }
+    
+    .highlight-box { padding: 20px; border-radius: 16px; background: #F0FDF4; border: 1px solid #DCFCE7; }
+    .highlight-box .rich-textarea { background: white; border-color: #BBF7D0; }
+    
+    .alert-box { padding: 20px; border-radius: 16px; background: #EFF6FF; border: 1px solid #DBEAFE; }
+    .alert-box .rich-textarea { background: white; border-color: #BFDBFE; }
 
-    .report-section-header {
-      padding: 20px 24px; border-bottom: 1px solid #F3F4F6;
-      background: linear-gradient(to right, #ffffff, #FFF0F5);
-      display: flex; align-items: center; gap: 14px;
-    }
-    .section-num {
-      width: 36px; height: 36px;
-      background: linear-gradient(135deg, #ea5073, #6d3345);
-      color: white; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 16px; font-weight: 800; flex-shrink: 0;
-      box-shadow: 0 2px 8px rgba(234,80,115,0.3);
-    }
-    .report-section-body { padding: 24px; }
+    /* Table Historique */
+    .history-table { width: 100%; border-collapse: collapse; }
+    .history-table th { text-align: left; padding: 16px 20px; font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #E2E8F0; background: #F8FAFC; }
+    .history-table td { padding: 16px 20px; border-bottom: 1px solid #F1F5F9; }
+    .history-table tr:hover td { background: #F8FAFC; }
 
-    .sub-section { margin-bottom: 24px; }
-    .sub-section:last-child { margin-bottom: 0; }
-    .sub-title {
-      font-size: 14px; font-weight: 700; color: #1A1A2E; margin: 0 0 10px;
-      display: flex; align-items: center;
-    }
-
-    .report-textarea {
-      width: 100%; padding: 14px 18px; border-radius: 14px;
-      border: 2px solid #E5E7EB; background: #F9FAFB;
-      font-family: inherit; font-size: 14px; color: #1A1A2E;
-      outline: none; transition: all .25s ease; resize: vertical;
-      line-height: 1.6; box-sizing: border-box;
-    }
-    .report-textarea:focus {
-      border-color: #ea5073; background: #fff;
-      box-shadow: 0 0 0 4px rgba(234,80,115,0.08);
-    }
-    .report-textarea:hover:not(:focus) { border-color: #CBD5E0; }
-
-    /* Planning Table */
-    .planning-table-wrapper { overflow-x: auto; border-radius: 14px; border: 1px solid #E5E7EB; }
-    .planning-table { width: 100%; border-collapse: collapse; min-width: 800px; }
-    .planning-table th, .planning-table td {
-      padding: 12px 10px; text-align: center; border: 1px solid #EDF2F7; font-size: 13px;
-    }
-    .planning-table th { background: #F9FAFB; color: #4A5568; font-weight: 700; font-size: 12px; text-transform: uppercase; }
-    .sticky-col { position: sticky; left: 0; background: white; z-index: 1; text-align: left; font-weight: 600; min-width: 130px; }
-    .coach-name { color: #1A1A2E; }
-    .planning-table thead .sticky-col { background: #F9FAFB; }
-
-    .cell-identification { background: rgba(66,133,244,0.15); color: #1D4ED8; font-weight: 600; }
-    .cell-investigation { background: rgba(234,67,53,0.12); color: #DC2626; font-weight: 600; }
-    .cell-synthese { background: rgba(52,168,83,0.12); color: #059669; font-weight: 600; }
-
-    .legend { margin-top: 16px; display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
-    .legend-title { font-weight: 800; color: #374151; font-size: 12px; text-transform: uppercase; }
-    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #6B7280; font-weight: 500; }
-    .legend-color { width: 16px; height: 16px; border-radius: 4px; }
-    .phase-identification { background: rgba(66,133,244,0.35); }
-    .phase-investigation { background: rgba(234,67,53,0.25); }
-    .phase-synthese { background: rgba(52,168,83,0.25); }
-
-    .actions-footer {
-      display: flex; justify-content: center; gap: 16px; padding: 8px 0 24px;
-    }
-
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+    .btn-sm { padding: 8px 12px; border-radius: 8px; font-size: 14px; color: #3B82F6; border: none; background: transparent; cursor: pointer; transition: background .2s; }
+    .btn-sm:hover { background: #EFF6FF; }
+    .btn-sm-danger { color: #EF4444; }
+    .btn-sm-danger:hover { background: #FEF2F2; color: #EF4444; }
 
     @media (max-width: 768px) {
       .form-grid { grid-template-columns: 1fr; }
       .matching-header { flex-direction: column; gap: 12px; }
-      .report-section-header { flex-direction: row; }
-      .actions-footer { flex-direction: column; align-items: stretch; }
-      .btn-launch, .btn-cancel { width: 100%; justify-content: center; }
+      .report-header { flex-direction: column; align-items: flex-start; gap: 16px; }
     }
   `]
 })
 export class CoachRapportMissionsComponent implements OnInit {
-  selectedProgramme: string = '';
-  programs: ProgrammeDTO[] = [];
-  coachId: number | null = null;
-  dateDebut: string = '';
-  dateFin: string = '';
-  donneesChargees: boolean = false;
-
-  inclusionItems = [
-    { label: 'Sessions de Coaching réalisées', icon: 'calendar' },
-    { label: 'Tâches et Livrables', icon: 'check-square' },
-    { label: 'Suivi des entrepreneurs', icon: 'users' },
-    { label: 'Planning et organisation', icon: 'clock' }
+  
+  periodTypes = [
+    { id: 'LIBRE' as PeriodType, label: 'Personnalisé' },
+    { id: 'HEBDO' as PeriodType, label: 'Hebdo' },
+    { id: 'MOIS' as PeriodType, label: 'Mensuel' },
   ];
 
-  // Rapport form fields (matching Google Doc template)
-  rapport: any = {
-    // Section 1
-    presentationProgramme: '',
-    contextePartenaires: '',
-    objectifsProgramme: '',
-    objectifRapport: '',
-    // Section 2
-    objectifsPhase: '',
-    methodologie: '',
-    organisationSeances: '',
-    deroulementPhase: '',
-    resultatsObtenus: '',
-    leconsApprises: '',
-    // Section 3
-    conclusion: ''
-  };
-
-  // Planning grid data
-  planningDays: number[] = [13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25];
-  planningCoaches: any[] = [
-    { name: 'Coach 1', sessions: {} },
-    { name: 'Coach 2', sessions: {} },
+  hebdoOptions = [
+    { val: 'current' as HebdoOption, label: 'Cette semaine' },
+    { val: 'last' as HebdoOption, label: 'Semaine passée' },
+    { val: 'custom' as HebdoOption, label: 'Choisir semaine' },
   ];
+
+  moisOptions = [
+    { val: 'current' as MoisOption, label: 'Ce mois' },
+    { val: 'last' as MoisOption, label: 'Mois passé' },
+    { val: 'custom' as MoisOption, label: 'Choisir mois' },
+  ];
+
+  templateSections = [
+    { num: '1', label: 'Introduction & Objectifs' },
+    { num: '2', label: 'Présentation de la Phase' },
+    { num: '3', label: 'Déroulement de l’Accompagnement' },
+    { num: '4', label: 'Résultats Quali & Quanti' },
+    { num: '5', label: 'Suivi par Bénéficiaire' },
+    { num: '6', label: 'Planning des Séances' },
+    { num: '7', label: 'Feedback des Bénéficiaires' },
+    { num: '8', label: 'Analyse & Leçons Apprises' },
+    { num: '9', label: 'Recommandations Stratégiques' },
+    { num: '10', label: 'Conclusion & Impact Global' }
+  ];
+
+  programmes: any[] = [];
+  selectedProgramId: number = 0;
+  
+  periodType: PeriodType = 'MOIS';
+  dateFrom = '';
+  dateTo = '';
+  hebdoOpt: HebdoOption = 'current';
+  moisOpt: MoisOption = 'current';
+  customWeek = '';
+  customMonth = '';
+
+  coachId: number = 0;
+
+  // View state
+  editingReport = false;
+  isSaving = false;
+  
+  // Data State
+  history: any[] = [];
+
+  currentReport: any = {};
 
   constructor(
-      private coachService: CoachService,
-      private authService: AuthService,
-      private toastr: ToastrService
+    private coachService: CoachService,
+    private authService: AuthService,
+    private toastr: ToastrService,
+    private cdr: ChangeDetectorRef
   ) {}
 
-  ngOnInit(): void {
-    const rawId = this.authService.getUserId();
-    this.coachId = typeof rawId === 'string' ? parseInt(rawId, 10) : rawId;
+  ngOnInit() {
+    const cid = this.authService.getUserId();
+    this.coachId = typeof cid === 'string' ? parseInt(cid, 10) : cid;
 
-    if (this.coachId) {
-        this.loadPrograms();
+    this.coachService.getCoachProgrammes(this.coachId).subscribe(
+      (data) => {
+        this.programmes = data;
+        if(this.programmes.length > 0) {
+            this.selectedProgramId = this.programmes[0].id;
+            this.loadHistory();
+        }
+        this.cdr.detectChanges();
+      }
+    );
+  }
+
+  getProgramName(id: number): string {
+      const p = this.programmes.find(prog => prog.id === id);
+      return p ? p.nom : 'Programme inconnu';
+  }
+
+  loadHistory() {
+      if(this.selectedProgramId === 0 || !this.coachId) return;
+      this.coachService.getRapportsMission(this.coachId, this.selectedProgramId).subscribe({
+          next: (data) => {
+              this.history = data;
+              this.cdr.detectChanges();
+          },
+          error: () => {
+              this.toastr.error('Erreur lors du chargement de l\'historique');
+          }
+      });
+  }
+
+  initNewReport() {
+    if (this.selectedProgramId === 0) return;
+    const { start, end } = this.calculateDates();
+    if (!start || !end) {
+      this.toastr.warning("Veuillez vérifier les dates de la période."); return;
     }
+
+    this.currentReport = {
+        coachId: this.coachId,
+        programmeId: this.selectedProgramId,
+        periodType: this.periodType,
+        dateDebut: start,
+        dateFin: end,
+        
+        // Blank sections out
+        introduction: '',
+        presentationPhase: '',
+        deroulementAccompagnement: '',
+        resultatsObtenus: '',
+        suiviBeneficiaires: '',
+        planningSeances: '',
+        feedbackBeneficiaires: '',
+        analyseLecons: '',
+        recommandationsEtapes: '',
+        conclusion: ''
+    };
+
+    this.editingReport = true;
   }
 
-  loadPrograms() {
-    if (!this.coachId) return;
-    this.coachService.getCoachProgrammes(this.coachId).subscribe({
-        next: (data) => {
-            this.programs = data;
-            if (this.programs.length > 0) {
-                this.selectedProgramme = this.programs[0].nom;
-            }
-        },
-        error: (err) => console.error('Error loading programs:', err)
-    });
+  openReport(reportData: any) {
+      this.currentReport = { ...reportData };
+      this.currentReport.coachId = this.coachId;
+      this.currentReport.programmeId = this.selectedProgramId;
+      this.editingReport = true;
   }
 
-  chargerDonnees() {
-    this.donneesChargees = true;
-    // TODO: load actual session data for the planning grid
+  saveReport() {
+      this.isSaving = true;
+      this.coachService.saveRapportMission(this.currentReport).subscribe({
+          next: (res) => {
+              this.toastr.success('Rapport enregistré avec succès');
+              this.currentReport = res; // update ID if needed
+              this.isSaving = false;
+              this.loadHistory();
+              this.cdr.detectChanges();
+          },
+          error: (err) => {
+              console.error(err);
+              this.toastr.error('Erreur lors de la sauvegarde');
+              this.isSaving = false;
+              this.cdr.detectChanges();
+          }
+      })
   }
 
-  saveAsDraft() {
-    this.toastr.success('Brouillon enregistré !', 'Succès');
+  cancelEdit() {
+      if(confirm('Avez-vous bien sauvegardé vos modifications ?')) {
+          this.editingReport = false;
+      }
   }
 
-  generateReport() {
-    this.toastr.info('Génération du rapport PDF en cours...', 'Info');
-    // TODO: integrate PDF generation
+  deleteReport(id: number) {
+      if(confirm('Confirmer la suppression de ce rapport ?')) {
+          this.coachService.deleteRapportMission(id).subscribe({
+              next: () => {
+                  this.toastr.success('Rapport supprimé');
+                  this.loadHistory();
+              },
+              error: () => this.toastr.error('Erreur de suppression')
+          });
+      }
   }
 
-  getCellClass(coach: any, day: number): string {
-    const session = coach.sessions[day];
-    if (!session) return '';
-    return 'cell-' + session.phase;
+  private calculateDates(): { start: string | null, end: string | null } {
+    const pt = this.periodType;
+    const today = new Date();
+    const format = (d: Date) => d.toISOString().split('T')[0];
+    
+    if (pt === 'LIBRE') return { start: this.dateFrom || null, end: this.dateTo || null };
+    if (pt === 'HEBDO') {
+      const startW = new Date(today);
+      startW.setDate(today.getDate() - today.getDay() + 1);
+      const endW = new Date(startW); endW.setDate(startW.getDate() + 6);
+
+      if (this.hebdoOpt === 'current') return { start: format(startW), end: format(endW) };
+      if (this.hebdoOpt === 'last') {
+        startW.setDate(startW.getDate() - 7); endW.setDate(endW.getDate() - 7);
+        return { start: format(startW), end: format(endW) };
+      }
+      if (this.customWeek) return { start: \`\${this.customWeek.substring(0,4)}-01-01\`, end: \`\${this.customWeek.substring(0,4)}-12-31\` };
+    }
+    if (pt === 'MOIS') {
+      if (this.moisOpt === 'current') {
+        const startM = new Date(today.getFullYear(), today.getMonth(), 1);
+        const endM = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        return { start: format(startM), end: format(endM) };
+      }
+      if (this.moisOpt === 'last') {
+        const lM = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+        const lMEnd = new Date(today.getFullYear(), today.getMonth(), 0);
+        return { start: format(lM), end: format(lMEnd) };
+      }
+      if (this.customMonth) {
+        const [y, m] = this.customMonth.split('-');
+        const endM = new Date(Number(y), Number(m), 0);
+        return { start: \`\${this.customMonth}-01\`, end: format(endM) };
+      }
+    }
+    return { start: null, end: null };
   }
 
-  getCellValue(coach: any, day: number): string {
-    const session = coach.sessions[day];
-    return session ? session.value : '';
+  async downloadPdf() {
+    this.toastr.info("Génération du PDF en cours...");
+    
+    // Temporarily show header for PDF
+    const pdfHeader = document.querySelector('.report-pdf-header') as HTMLElement;
+    if (pdfHeader) pdfHeader.style.display = 'block';
+
+    try {
+      const element = document.getElementById('reportToDownload');
+      if (!element) return;
+
+      const canvas = await html2canvas(element, { 
+        scale: 2, 
+        useCORS: true,
+        backgroundColor: '#ffffff'
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      
+      const fileName = \`Rapport_Accompagnement_\${this.getProgramName(this.selectedProgramId)}.pdf\`;
+      pdf.save(fileName);
+      this.toastr.success("PDF téléchargé.");
+    } catch (e) {
+      console.error('Erreur de génération du PDF', e);
+      this.toastr.error("Erreur PDF.");
+    } finally {
+        if (pdfHeader) pdfHeader.style.display = 'none';
+    }
   }
 }
