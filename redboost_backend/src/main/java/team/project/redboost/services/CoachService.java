@@ -99,7 +99,11 @@ public class CoachService {
     public List<CoachEntrepreneurDTO> getCoachEntrepreneurs(Long coachId) {
         List<Matching> matchings = matchingRepository.findByCoachIdAndStatut(coachId, Matching.StatutMatching.VALIDE);
         
-        return matchings.stream().map(m -> {
+        Set<Long> seenIds = new HashSet<>();
+        
+        return matchings.stream()
+            .filter(m -> seenIds.add(m.getEntrepreneurId()))
+            .map(m -> {
             User ent = userRepository.findById(m.getEntrepreneurId()).orElse(null);
             if (ent == null) return null;
             
