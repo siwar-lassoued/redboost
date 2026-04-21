@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { CoachService, DisponibiliteDTO, SessionCoachDTO, ThematiqueCoachingDTO, ProgrammeDTO } from './services/coach.service';
+import { CoachService, DisponibiliteDTO, SessionCoachDTO, ThematiqueCoachingDTO, CoachCalendarEventDTO } from './services/coach.service';
 import { AuthService } from '../../frontoffice/service/auth.service';
 
 interface DateSlotGroup {
@@ -392,27 +392,31 @@ export class DisponibilitesComponent implements OnInit {
 
   loadData() {
     this.loading = true;
-    // Load disponibilités
     this.coachService.getDisponibilites(this.coachId).subscribe({
       next: (data) => {
         this.disponibilites = data;
-        this.buildCalendarEventsFromDispos();
-        this.loading = false;
-      },
-      error: () => { this.loading = false; }
-    });
-
-    // Load sessions
-    this.coachService.getAllSessionsByCoach(this.coachId).subscribe({
-      next: (data) => {
-        this.sessions = data;
-        this.buildCalendarEventsFromSessions();
-        this.buildUpcomingEvents();
       },
       error: () => {}
     });
 
-    // Load thématiques for modal
+    this.coachService.getAllSessionsByCoach(this.coachId).subscribe({
+      next: (data) => {
+        this.sessions = data;
+      },
+      error: () => {}
+    });
+
+    this.coachService.getCalendarEvents(this.coachId).subscribe({
+      next: (events) => {
+        this.calendarEvents = this.mapCalendarEvents(events);
+        this.buildUpcomingEvents();
+        this.loading = false;
+      },
+      error: () => {
+        this.loading = false;
+      }
+    });
+
     this.coachService.getThematiquesAssignedToCoach(this.coachId).subscribe({
       next: (data) => this.thematiques = data,
       error: () => {}
@@ -434,35 +438,40 @@ export class DisponibilitesComponent implements OnInit {
     }
   }
 
-  buildCalendarEventsFromDispos() {
-    const dispoEvents = this.disponibilites.map((d, i) => ({
-      title: 'Dispo: ' + (d.thematiqueNom || 'Thématique'),
-      date: d.dateDebut,
-      color: this.eventColors[i % this.eventColors.length]
-    }));
-    this.calendarEvents = [...this.calendarEvents.filter(e => !e.title.startsWith('Dispo:')), ...dispoEvents];
+  private normalizeCalendarDate(value: string): string {
+    if (!value) return '';
+    if (value.includes('T')) return value.split('T')[0];
+    return value.length >= 10 ? value.slice(0, 10) : value;
   }
+private mapCalendarEvents(events: CoachCalendarEventDTO[]): any[] {
+    const colorByType: Record<string, string> = {
+      DISPONIBILITE_COACH: '#FF4D85',
+      SESSION_SLOT: '#4299E1',
+      SESSION: '#38B2AC',
+      SEANCE_EXCEPTIONNELLE: '#ED8936'
+    };
 
-  buildCalendarEventsFromSessions() {
-    const sessionEvents = this.sessions.map((s, i) => ({
-      title: s.titre,
-      date: s.dateSession,
-      color: this.eventColors[(i + 2) % this.eventColors.length]
+    return events.map((ev) => ({
+      id: ev.id,
+      type: ev.type,
+      title: ev.title,
+      date: this.normalizeCalendarDate(ev.date),
+      time: (ev.startTime || '').slice(0, 5),
+      color: colorByType[ev.type] || '#805AD5'
     }));
-    this.calendarEvents = [...this.calendarEvents.filter(e => e.title.startsWith('Dispo:')), ...sessionEvents];
   }
 
   buildUpcomingEvents() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    this.upcomingEvents = this.sessions
-      .filter(s => new Date(s.dateSession) >= today)
-      .sort((a, b) => new Date(a.dateSession).getTime() - new Date(b.dateSession).getTime())
+    this.upcomingEvents = this.calendarEvents
+      .filter(e => new Date(e.date) >= today)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
       .slice(0, 5)
-      .map(s => ({
-        title: s.titre,
-        date: new Date(s.dateSession).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }),
-        time: s.heureDebut
+      .map(e => ({
+        title: e.title,
+        date: new Date(e.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }),
+        time: e.time || '—'
       }));
   }
 
@@ -487,8 +496,8 @@ export class DisponibilitesComponent implements OnInit {
     this.coachService.addDisponibilite(this.coachId, this.selectedThematiqueId).subscribe({
       next: (data) => {
         this.disponibilites.push(data);
-        this.buildCalendarEventsFromDispos();
         this.resetModalForm();
+        this.loadData();
       },
       error: () => {}
     });
@@ -548,7 +557,7 @@ export class DisponibilitesComponent implements OnInit {
       this.coachService.deleteDisponibilite(id).subscribe({
         next: () => {
           this.disponibilites = this.disponibilites.filter(d => d.id !== id);
-          this.buildCalendarEventsFromDispos();
+          this.loadData();
         }
       });
     }

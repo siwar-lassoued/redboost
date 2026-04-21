@@ -45,6 +45,10 @@ public class ThematiqueService {
         return thematiqueRepo.findByProgrammeId(programmeId);
     }
 
+    public List<ThematiqueCoaching> getAll() {
+        return thematiqueRepo.findAll();
+    }
+
     public List<ThematiqueCoaching> getActiveByProgramme(Long programmeId) {
         return thematiqueRepo.findByProgrammeIdAndStatut(programmeId, ThematiqueCoaching.StatutThematique.ACTIVE);
     }

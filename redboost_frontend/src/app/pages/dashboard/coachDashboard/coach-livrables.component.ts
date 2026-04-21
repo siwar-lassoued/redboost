@@ -3,8 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CoachService, ProgrammeDTO, UserDTO } from './services/coach.service';
 import { AuthService } from '../../frontoffice/service/auth.service';
-import { HttpClient } from '@angular/common/http';
-import { environment } from '../../../../environment';
+
 
 @Component({
   selector: 'app-coach-livrables',
@@ -204,6 +203,7 @@ export class CoachLivrablesComponent implements OnInit {
   showDepotModal: boolean = false;
   selectedFile: File | null = null;
   entrepreneurSearch: string = '';
+  coachId: number | null = null;
 
   newLivrable = { titre: '', programme: '' };
 
@@ -214,21 +214,27 @@ export class CoachLivrablesComponent implements OnInit {
 
   constructor(
     private coachService: CoachService,
-    private authService: AuthService,
-    private http: HttpClient
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
-    this.loadProgrammes();
-    this.loadEntrepreneurs();
+    const rawCoachId = this.authService.getUserId();
+    this.coachId = typeof rawCoachId === 'string' ? parseInt(rawCoachId, 10) : rawCoachId;
+    if (!this.coachId) {
+      return;
+    }
+
+    this.loadProgrammes(this.coachId);
+    this.loadEntrepreneurs(this.coachId);
   }
 
-  loadProgrammes() {
-    this.coachService.getProgrammes().subscribe({
+  loadProgrammes(coachId: number) {
+    this.coachService.getCoachProgrammes(coachId).subscribe({
       next: (data) => this.programmes = data,
-      error: () => {}
+      error: () => { this.programmes = []; }
     });
   }
+
 
   loadEntrepreneurs() {
     const rawCoachId = this.authService.getUserId();
@@ -238,6 +244,7 @@ export class CoachLivrablesComponent implements OnInit {
     this.coachService.getCoachEntrepreneurs(coachId).subscribe({
       next: (data) => this.entrepreneurs = data.map((e: any) => ({ ...e, selected: false })),
       error: () => {}
+
     });
   }
 

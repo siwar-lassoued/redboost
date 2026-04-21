@@ -128,6 +128,57 @@ public class CoachService {
         .filter(dto -> dto != null)
         .collect(Collectors.toList());
     }
+    public List<CoachCalendarEventDTO> getCalendarEvents(Long coachId) {
+        List<CoachCalendarEventDTO> events = new ArrayList<>();
+
+        disponibiliteRepository.findByCoachId(coachId).forEach(d -> events.add(
+                CoachCalendarEventDTO.builder()
+                        .id("dispo-" + d.getId())
+                        .type("DISPONIBILITE_COACH")
+                        .title("Disponibilité: " + (d.getThematique() != null ? d.getThematique().getNom() : "Thématique"))
+                        .date(String.valueOf(d.getDateDebut()))
+                        .source("coach")
+                        .build()
+        ));
+
+        sessionCoachRepository.findByDisponibiliteCoachId(coachId).forEach(s -> events.add(
+                CoachCalendarEventDTO.builder()
+                        .id("slot-" + s.getId())
+                        .type("SESSION_SLOT")
+                        .title(s.getTitre())
+                        .date(String.valueOf(s.getDateSession()))
+                        .startTime(String.valueOf(s.getHeureDebut()))
+                        .endTime(String.valueOf(s.getHeureFin()))
+                        .source("coach")
+                        .build()
+        ));
+
+        sessionRepository.findByCoachId(coachId).forEach(s -> events.add(
+                CoachCalendarEventDTO.builder()
+                        .id("session-" + s.getId())
+                        .type("SESSION")
+                        .title(s.getTitre())
+                        .date(String.valueOf(s.getDate().toLocalDate()))
+                        .startTime(String.valueOf(s.getDate().toLocalTime()))
+                        .source("entrepreneur")
+                        .build()
+        ));
+
+        seanceExceptionnelleRepository.findByCoachId(coachId).forEach(s -> events.add(
+                CoachCalendarEventDTO.builder()
+                        .id("seance-" + s.getId())
+                        .type("SEANCE_EXCEPTIONNELLE")
+                        .title(s.getTitre())
+                        .date(String.valueOf(s.getDateSeance()))
+                        .startTime(String.valueOf(s.getHeureDebut()))
+                        .endTime(String.valueOf(s.getHeureFin()))
+                        .source("coach")
+                        .build()
+        ));
+
+        events.sort(Comparator.comparing(CoachCalendarEventDTO::getDate));
+        return events;
+    }
 
     public List<UpcomingSessionDTO> getUpcomingSessions(Long coachId) {
         List<UpcomingSessionDTO> upcoming = new ArrayList<>();
