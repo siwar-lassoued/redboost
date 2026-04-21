@@ -6,6 +6,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import team.project.redboost.entities.ThematiqueCoaching;
 import team.project.redboost.repositories.ThematiqueRepository;
+import team.project.redboost.repositories.DisponibiliteRepository;
+import team.project.redboost.repositories.SessionCoachRepository;
+import team.project.redboost.repositories.NoteDeSyntheseRepository;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -21,6 +24,9 @@ public class ThematiqueService {
 
     private final ThematiqueRepository thematiqueRepo;
     private final MatchingRepository matchingRepository;
+    private final DisponibiliteRepository disponibiliteRepository;
+    private final SessionCoachRepository sessionCoachRepository;
+    private final NoteDeSyntheseRepository noteDeSyntheseRepository;
 
     @Transactional
     public ThematiqueCoaching create(ThematiqueCoaching thematique) {
@@ -71,7 +77,36 @@ public class ThematiqueService {
 
     @Transactional
     public void delete(Long id) {
+        // 1. Nullify thematiqueId references in Matching rows (column is nullable, no FK constraint)
+        matchingRepository.nullifyThematiqueId(id);
+
+        // 2. Find all Disponibilites linked to this thematique
+        List<team.project.redboost.entities.Disponibilite> dispos = disponibiliteRepository.findByThematiqueId(id);
+        if (!dispos.isEmpty()) {
+            List<Long> dispoIds = dispos.stream()
+                    .map(team.project.redboost.entities.Disponibilite::getId)
+                    .collect(Collectors.toList());
+
+            // 2a. Find all SessionCoach rows that belong to these disponibilites
+            List<Long> sessionIds = dispoIds.stream()
+                    .flatMap(dId -> sessionCoachRepository.findByDisponibiliteId(dId).stream())
+                    .map(s -> s.getId())
+                    .collect(Collectors.toList());
+
+            // 2b. Delete NoteDeSynthese rows that reference those sessions
+            if (!sessionIds.isEmpty()) {
+                noteDeSyntheseRepository.deleteByRendezVousIdIn(sessionIds);
+                // Delete the SessionCoach rows
+                sessionCoachRepository.deleteAllById(sessionIds);
+            }
+
+            // 2c. Delete the Disponibilite rows
+            disponibiliteRepository.deleteAll(dispos);
+        }
+
+        // 3. Finally delete the thematique itself
         thematiqueRepo.deleteById(id);
+        log.info("Thématique {} supprimée (avec {} disponibilité(s) nettoyée(s))", id, dispos.size());
     }
 
     /**

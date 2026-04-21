@@ -39,6 +39,42 @@ public class NoteDeSynthese {
     @Column(name = "date_creation", nullable = false)
     private LocalDateTime dateCreation;
 
+    @Column(columnDefinition = "TEXT")
+    private String entreprise;
+
+    @Column(columnDefinition = "TEXT")
+    private String secteur;
+
+    @Column(columnDefinition = "TEXT")
+    private String gouvernorat;
+
+    @Column(columnDefinition = "TEXT")
+    private String nomBeneficiaire;
+
+    @Column(columnDefinition = "TEXT")
+    private String nomCoach;
+
+    @Column(columnDefinition = "TEXT")
+    private String typeSession;
+
+    @Column(columnDefinition = "TEXT")
+    private String numeroSession;
+
+    @Column(columnDefinition = "TEXT")
+    private String dateSession;
+
+    @Column(columnDefinition = "TEXT")
+    private String apprentissage;
+
+    @Column(columnDefinition = "TEXT")
+    private String avancementActions;
+
+    @Column(columnDefinition = "TEXT")
+    private String travailAPreparer;
+
+    @Column(columnDefinition = "TEXT")
+    private String actionsSuivi;
+
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "rendez_vous_id")
     private SessionCoach rendezVous;
