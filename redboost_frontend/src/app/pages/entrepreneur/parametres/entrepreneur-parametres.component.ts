@@ -2,8 +2,6 @@ import { Component, ChangeDetectionStrategy, signal, inject, OnInit } from '@ang
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
-import { AuthService } from '../../frontoffice/service/auth.service';
-import { jwtDecode } from 'jwt-decode';
 import { AuthService } from '../../../core/services/auth.service';
 import { UserService } from '../../../core/services/user.service';
 
@@ -144,26 +142,23 @@ export class EntrepreneurParametresComponent implements OnInit {
   initials = signal('');
 
   ngOnInit() {
-    const token = this.authSvc.getToken();
-    const user: any = token ? jwtDecode(token as string) : null;
     const user = this.authSvc.currentUser$.value;
     if (user) {
-      this.form.name = `${user.prenom} ${user.nom}`;
+      this.form.name = `${user.prenom ?? ''} ${user.nom ?? ''}`.trim();
       this.form.phone = user.telephone || '';
       this.form.linkedinUrl = (user as any).linkedinUrl || '';
       this.userName.set(this.form.name);
-      this.initials.set(`${(user.prenom || '')[0]}${(user.nom || '')[0]}`);
+      this.initials.set(`${(user.prenom || '')[0] ?? ''}${(user.nom || '')[0] ?? ''}`);
     }
   }
 
   handleSave() {
-    const token = this.authSvc.getToken();
-    const user: any = token ? jwtDecode(token as string) : null;
     const user = this.authSvc.currentUser$.value;
     if (!user) return;
-    const parts = this.form.name.split(' ');
+    const parts = this.form.name.trim().split(' ');
     this.userSvc.update(user.id, {
-      prenom: parts[0], nom: parts.slice(1).join(' '),
+      prenom: parts[0] || '',
+      nom: parts.slice(1).join(' ') || '',
       telephone: this.form.phone
     }).subscribe(() => alert('Sauvegardé !'));
   }

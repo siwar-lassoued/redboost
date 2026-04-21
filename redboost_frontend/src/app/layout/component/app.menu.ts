@@ -375,6 +375,17 @@ export class AppMenu implements OnInit {
                     },
                 ],
             },
+            {
+                label: 'COMPTE',
+                icon: 'pi pi-fw pi-cog',
+                items: [
+                    {
+                        label: 'Paramètres',
+                        icon: 'pi pi-fw pi-sliders-v',
+                        routerLink: ['/entrepreneur/parametres'],
+                    }
+                ]
+            }
         ];
     }
 
