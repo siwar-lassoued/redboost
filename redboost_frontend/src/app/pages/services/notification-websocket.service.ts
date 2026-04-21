@@ -6,6 +6,7 @@ import { BehaviorSubject, Observable } from 'rxjs';
 import { Router } from '@angular/router';
 import { Client, IMessage } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
+import { environment } from '../../../../environment';
 
 // Matches the backend Entity/DTO
 export interface AppNotification {
@@ -22,8 +23,8 @@ export interface AppNotification {
 })
 export class NotificationWebSocketService {
   // backend endpoints
-  private apiUrl = 'https://redboost.tn/api/notifications';
-  private wsUrl = 'https://redboost.tn/api/ws';
+  private apiUrl = `${environment.apiUrl}/notifications`;
+  private wsUrl = environment.apiUrl.replace('http', 'ws') + '/ws'; // Convert http/https to ws/wss
 
   private stompClient: Client | null = null;
   

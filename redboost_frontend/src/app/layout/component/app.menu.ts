@@ -84,29 +84,7 @@ export class AppMenu implements OnInit {
     }
 
     private fetchMenuFromApi(role: string, headers: HttpHeaders): void {
-        if (role === 'COACH') {
-            this.fetchCoachMenuData(headers);
-        } else {
-            this.setMenuBasedOnRole(role);
-        }
-    }
-
-    private fetchCoachMenuData(headers: HttpHeaders): void {
-        this.http
-            .get<MenuItem[]>(`${environment.apiUrl}/coach/menu`, { headers })
-            .pipe(catchError(() => of(null)))
-            .subscribe((menu) => {
-                if (menu && menu.length > 0) {
-                    this.model = menu;
-                } else {
-                    this.buildCoachMenuFromBackend(headers);
-                }
-            });
-    }
-
-    private buildCoachMenuFromBackend(headers: HttpHeaders): void {
-
-        this.model = this.getCoachMenu();
+        this.setMenuBasedOnRole(role);
     }
 
     private setMenuBasedOnRole(role: string): void {
@@ -437,7 +415,7 @@ export class AppMenu implements OnInit {
                     {
                         label: 'Chat',
                         icon: 'pi pi-fw pi-comments',
-                        routerLink: ['/gestion_comm'],
+                        routerLink: ['/coach-chat'],
                     },
                 ],
             },

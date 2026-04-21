@@ -794,30 +794,9 @@ export class CoachDashboardComponent implements OnInit, OnDestroy {
                 }
             });
 
-            this.loadAcceptedRendezVous();
-
-            this.http
-                .get<
-                    TaskToValidateDTO[]
-                >(`${environment.apiUrl}/coach-dashboard/tasks/to-validate?coachId=${this.coachId}`)
-                .subscribe({
-                    next: (data) => {
-                        this.tasksToValidate = data;
-                        this.stats.activity = this.tasksToValidate.map(
-                            (task) => ({
-                                time: new Date().toLocaleTimeString('fr-FR', {
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                }),
-                                text: `Tâche à valider: ${task.title} (Projet: ${task.projetName}, Phase: ${task.phaseName})`,
-                            }),
-                        );
-                        this.cdr.detectChanges();
-                    },
-                    error: (err) => {
-                        console.error('Error fetching tasks to validate:', err);
-                    },
-                });
+            // Remove old mockup endpoints that trigger 404s
+            // this.loadAcceptedRendezVous();
+            // this.loadTasksToValidate();
 
             // Load dynamic entrepreneurs and upcoming sessions from backend
             this.loadCoachEntrepreneurs();
