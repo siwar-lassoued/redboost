@@ -361,6 +361,35 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
         </ng-container>
 
       </ng-container>
+
+      <!-- ═══ All Thématiques Overview ═══ -->
+      <ng-container *ngIf="!selectedThematiqueId">
+        <div *ngIf="thematiques.length === 0" class="empty-state-inline" style="margin-top:20px">
+          <i class="pi pi-info-circle" style="font-size:32px;color:#9CA3AF;display:block;margin-bottom:12px"></i>
+          <p *ngIf="selectedProgId">Aucune thématique créée pour ce programme. Utilisez le bouton <strong>+ Ajouter Thématique</strong> ci-dessus.</p>
+          <p *ngIf="!selectedProgId">Aucune thématique trouvée au total.</p>
+        </div>
+
+        <div *ngFor="let t of thematiques" class="th-overview-card" (click)="selectThematiqueFromOverview(t)">
+          <div class="th-overview-left">
+            <div class="th-overview-icon">📌</div>
+            <div>
+              <h3 class="th-overview-name">{{ t.nom }}</h3>
+              <p class="th-overview-prog"><i class="pi pi-folder" style="font-size:12px; margin-right:4px;"></i> {{ getProgrammeName(t.programmeId) }}</p>
+              <p class="th-overview-dates">{{ t.dateDebut }} → {{ t.dateFin }}</p>
+              <p class="th-overview-desc" *ngIf="t.description">{{ t.description }}</p>
+            </div>
+          </div>
+          <div class="th-overview-right">
+            <span class="status-badge" [class.active]="t.statut === 'ACTIVE'" [class.expired]="t.statut === 'TERMINEE'">{{ t.statut }}</span>
+            <div class="th-overview-actions">
+              <button class="btn-sm" (click)="$event.stopPropagation(); editThematique(t)"><i class="pi pi-pencil"></i></button>
+              <button class="btn-sm btn-sm-danger" (click)="$event.stopPropagation(); deleteThematique(t.id!)"><i class="pi pi-trash"></i></button>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+
     </div>
     `,
     styles: [`
@@ -561,6 +590,7 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
       .th-overview-name { font-size: 17px; font-weight: 700; color: #1A1A2E; margin: 0; }
       .th-overview-dates { font-size: 12px; color: #9CA3AF; margin: 4px 0 0; }
       .th-overview-desc { font-size: 13px; color: #6B7280; margin: 4px 0 0; }
+      .th-overview-prog { font-size: 13px; font-weight: 700; color: #ea5073; margin: 4px 0 0; display: flex; align-items: center; }
       .th-overview-right { display: flex; align-items: center; gap: 12px; }
       .th-overview-actions { display: flex; gap: 6px; }
 
@@ -627,7 +657,10 @@ export class AdminMatchingComponent implements OnInit {
 
     ngOnInit(): void {
         this.http.get<Programme[]>(`${environment.apiUrl}/backoffice/programmes`).subscribe({
-            next: (data) => this.programmes = data,
+            next: (data) => {
+                this.programmes = data;
+                this.loadAllThematiques();
+            },
             error: (e) => console.error('Failed to load programmes', e)
         });
         
@@ -651,6 +684,18 @@ export class AdminMatchingComponent implements OnInit {
         }
     }
 
+    loadAllThematiques(): void {
+        this.thematiqueSvc.getAll().subscribe({
+            next: (data) => this.thematiques = data,
+            error: (e) => console.error(e)
+        });
+    }
+
+    getProgrammeName(progId: number): string {
+        const p = this.programmes.find(prog => prog.id === progId);
+        return p ? p.nom : 'Programme inconnu';
+    }
+
     get selectedThematiqueObj(): ThematiqueCoaching | null {
         return this.thematiques.find(t => t.id === this.selectedThematiqueId) || null;
     }
@@ -665,7 +710,29 @@ export class AdminMatchingComponent implements OnInit {
         this.showManualPanel = false;
         this.errorMessage = null;
 
+<<<<<<< HEAD
         this.applyProgFilter();
+=======
+        if (this.selectedProgId) {
+            this.thematiqueSvc.getByProgramme(this.selectedProgId).subscribe({
+                next: (t) => this.thematiques = t,
+                error: () => {}
+            });
+        } else {
+            this.loadAllThematiques();
+        }
+>>>>>>> 146cef4 (show associated program under each theme)
+    }
+
+    selectThematiqueFromOverview(t: ThematiqueCoaching): void {
+        this.selectedProgId = t.programmeId;
+        this.selectedThematiqueId = t.id!;
+        this.thematiqueSvc.getByProgramme(this.selectedProgId).subscribe({
+            next: (progT) => {
+                this.thematiques = progT;
+                this.onThematiqueChange();
+            }
+        });
     }
 
     // ─── Thématique change ───
