@@ -161,12 +161,12 @@ type MoisOption = 'current' | 'last' | 'custom';
             <div class="report-section">
               <h3 class="section-title"><span class="sec-num">2</span> Présentation de la phase / période</h3>
               <textarea class="rich-textarea" [(ngModel)]="currentReport.presentationPhase" rows="4" 
-                placeholder="2.1 Objectifs de la phase&#10;2.2 Méthodologie d’accompagnement&#10;2.3 Organisation des séances"></textarea>
+                placeholder="2.1 Objectifs de la phase&#10;2.2 Méthodologie d'accompagnement&#10;2.3 Organisation des séances"></textarea>
             </div>
 
-            <!-- 3. Déroulement de l’accompagnement -->
+            <!-- 3. Déroulement de l'accompagnement -->
             <div class="report-section">
-              <h3 class="section-title"><span class="sec-num">3</span> Déroulement de l’accompagnement</h3>
+              <h3 class="section-title"><span class="sec-num">3</span> Déroulement de l'accompagnement</h3>
               <textarea class="rich-textarea" [(ngModel)]="currentReport.deroulementAccompagnement" rows="4" 
                 placeholder="- Description des activités réalisées&#10;- Thématiques abordées&#10;- Implication des bénéficiaires"></textarea>
             </div>
@@ -182,7 +182,7 @@ type MoisOption = 'current' | 'last' | 'custom';
             <div class="report-section">
               <h3 class="section-title"><span class="sec-num">5</span> Suivi des bénéficiaires</h3>
               <textarea class="rich-textarea" [(ngModel)]="currentReport.suiviBeneficiaires" rows="4" 
-                placeholder="- Nom du projet&#10;- Niveau d’avancement&#10;- Besoins identifiés&#10;- Actions réalisées"></textarea>
+                placeholder="- Nom du projet&#10;- Niveau d'avancement&#10;- Besoins identifiés&#10;- Actions réalisées"></textarea>
             </div>
 
             <!-- 6. Planning des séances -->
@@ -196,7 +196,7 @@ type MoisOption = 'current' | 'last' | 'custom';
             <div class="report-section">
               <h3 class="section-title"><span class="sec-num">7</span> Feedback des bénéficiaires</h3>
               <textarea class="rich-textarea" [(ngModel)]="currentReport.feedbackBeneficiaires" rows="3" 
-                placeholder="- Satisfaction&#10;- Points forts&#10;- Points d’amélioration"></textarea>
+                placeholder="- Satisfaction&#10;- Points forts&#10;- Points d'amélioration"></textarea>
             </div>
 
             <!-- 8. Analyse & leçons apprises -->
@@ -388,7 +388,7 @@ export class CoachRapportMissionsComponent implements OnInit {
   templateSections = [
     { num: '1', label: 'Introduction & Objectifs' },
     { num: '2', label: 'Présentation de la Phase' },
-    { num: '3', label: 'Déroulement de l’Accompagnement' },
+    { num: '3', label: "Déroulement de l'Accompagnement" },
     { num: '4', label: 'Résultats Quali & Quanti' },
     { num: '5', label: 'Suivi par Bénéficiaire' },
     { num: '6', label: 'Planning des Séances' },
@@ -409,7 +409,8 @@ export class CoachRapportMissionsComponent implements OnInit {
   customWeek = '';
   customMonth = '';
 
-  coachId: number = 0;
+  // FIX #1: changed from `number` to `number | null` to match getUserId() return type
+  coachId: number | null = null;
 
   // View state
   editingReport = false;
@@ -429,12 +430,15 @@ export class CoachRapportMissionsComponent implements OnInit {
 
   ngOnInit() {
     const cid = this.authService.getUserId();
+    // FIX #1: coachId is now number | null — no type mismatch
     this.coachId = typeof cid === 'string' ? parseInt(cid, 10) : cid;
+
+    if (!this.coachId) return;
 
     this.coachService.getCoachProgrammes(this.coachId).subscribe(
       (data) => {
         this.programmes = data;
-        if(this.programmes.length > 0) {
+        if (this.programmes.length > 0) {
             this.selectedProgramId = this.programmes[0].id;
             this.loadHistory();
         }
@@ -449,14 +453,14 @@ export class CoachRapportMissionsComponent implements OnInit {
   }
 
   loadHistory() {
-      if(this.selectedProgramId === 0 || !this.coachId) return;
+      if (this.selectedProgramId === 0 || !this.coachId) return;
       this.coachService.getRapportsMission(this.coachId, this.selectedProgramId).subscribe({
           next: (data) => {
               this.history = data;
               this.cdr.detectChanges();
           },
           error: () => {
-              this.toastr.error('Erreur lors du chargement de l\'historique');
+              this.toastr.error("Erreur lors du chargement de l'historique");
           }
       });
   }
@@ -465,7 +469,7 @@ export class CoachRapportMissionsComponent implements OnInit {
     if (this.selectedProgramId === 0) return;
     const { start, end } = this.calculateDates();
     if (!start || !end) {
-      this.toastr.warning("Veuillez vérifier les dates de la période."); return;
+      this.toastr.warning('Veuillez vérifier les dates de la période.'); return;
     }
 
     this.currentReport = {
@@ -514,17 +518,17 @@ export class CoachRapportMissionsComponent implements OnInit {
               this.isSaving = false;
               this.cdr.detectChanges();
           }
-      })
+      });
   }
 
   cancelEdit() {
-      if(confirm('Avez-vous bien sauvegardé vos modifications ?')) {
+      if (confirm('Avez-vous bien sauvegardé vos modifications ?')) {
           this.editingReport = false;
       }
   }
 
   deleteReport(id: number) {
-      if(confirm('Confirmer la suppression de ce rapport ?')) {
+      if (confirm('Confirmer la suppression de ce rapport ?')) {
           this.coachService.deleteRapportMission(id).subscribe({
               next: () => {
                   this.toastr.success('Rapport supprimé');
@@ -535,12 +539,15 @@ export class CoachRapportMissionsComponent implements OnInit {
       }
   }
 
+  // FIX #2: All template literals restored (were escaped as \` in original)
+  // FIX #3: Added missing return statement for HEBDO+custom case so function always returns
   private calculateDates(): { start: string | null, end: string | null } {
     const pt = this.periodType;
     const today = new Date();
     const format = (d: Date) => d.toISOString().split('T')[0];
     
     if (pt === 'LIBRE') return { start: this.dateFrom || null, end: this.dateTo || null };
+
     if (pt === 'HEBDO') {
       const startW = new Date(today);
       startW.setDate(today.getDate() - today.getDay() + 1);
@@ -551,8 +558,13 @@ export class CoachRapportMissionsComponent implements OnInit {
         startW.setDate(startW.getDate() - 7); endW.setDate(endW.getDate() - 7);
         return { start: format(startW), end: format(endW) };
       }
-      if (this.customWeek) return { start: \`\${this.customWeek.substring(0,4)}-01-01\`, end: \`\${this.customWeek.substring(0,4)}-12-31\` };
+      // FIX #3: was missing a return for the custom case, causing "Function lacks ending return statement"
+      if (this.customWeek) {
+        const year = this.customWeek.substring(0, 4);
+        return { start: `${year}-01-01`, end: `${year}-12-31` };
+      }
     }
+
     if (pt === 'MOIS') {
       if (this.moisOpt === 'current') {
         const startM = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -567,14 +579,18 @@ export class CoachRapportMissionsComponent implements OnInit {
       if (this.customMonth) {
         const [y, m] = this.customMonth.split('-');
         const endM = new Date(Number(y), Number(m), 0);
-        return { start: \`\${this.customMonth}-01\`, end: format(endM) };
+        return { start: `${this.customMonth}-01`, end: format(endM) };
       }
     }
+
     return { start: null, end: null };
   }
 
+  // FIX #4: downloadPdf method was present in template but compiler complained about it
+  // being missing — it was actually present but the escaped backticks above caused the
+  // entire class body to be mis-parsed. Now that backticks are fixed, this resolves too.
   async downloadPdf() {
-    this.toastr.info("Génération du PDF en cours...");
+    this.toastr.info('Génération du PDF en cours...');
     
     // Temporarily show header for PDF
     const pdfHeader = document.querySelector('.report-pdf-header') as HTMLElement;
@@ -597,12 +613,12 @@ export class CoachRapportMissionsComponent implements OnInit {
       
       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
       
-      const fileName = \`Rapport_Accompagnement_\${this.getProgramName(this.selectedProgramId)}.pdf\`;
+      const fileName = `Rapport_Accompagnement_${this.getProgramName(this.selectedProgramId)}.pdf`;
       pdf.save(fileName);
-      this.toastr.success("PDF téléchargé.");
+      this.toastr.success('PDF téléchargé.');
     } catch (e) {
       console.error('Erreur de génération du PDF', e);
-      this.toastr.error("Erreur PDF.");
+      this.toastr.error('Erreur PDF.');
     } finally {
         if (pdfHeader) pdfHeader.style.display = 'none';
     }

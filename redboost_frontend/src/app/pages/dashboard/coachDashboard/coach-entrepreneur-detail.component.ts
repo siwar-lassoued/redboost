@@ -747,10 +747,10 @@ export class CoachEntrepreneurDetailComponent implements OnInit {
       // Since CoachService does not have getConsolidatedReport natively mapped, we'll manually fetch it from the Rapport backend
       const token = localStorage.getItem('token') || sessionStorage.getItem('token') || '';
       
-      fetch(\`http://localhost:8082/api/rapports/entrepreneur/\${entrepreneurId}/consolidated\`, {
+      fetch(`http://localhost:8082/api/rapports/entrepreneur/${entrepreneurId}/consolidated`, {
           method: 'GET',
           headers: {
-              'Authorization': \`Bearer \${token}\`
+              'Authorization': `Bearer ${token}`
           }
       })
       .then(response => {
@@ -761,7 +761,7 @@ export class CoachEntrepreneurDetailComponent implements OnInit {
           const url = window.URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
-          a.download = \`Rapport_Consolide_Entrepreneur_\${entrepreneurId}.pdf\`;
+          a.download = `Rapport_Consolide_Entrepreneur_${entrepreneurId}.pdf`;
           document.body.appendChild(a);
           a.click();
           a.remove();
