@@ -225,7 +225,7 @@ export class CoachLivrablesComponent implements OnInit {
     }
 
     this.loadProgrammes(this.coachId);
-    this.loadEntrepreneurs(this.coachId);
+    this.loadEntrepreneurs();
   }
 
   loadProgrammes(coachId: number) {

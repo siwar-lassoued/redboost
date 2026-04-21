@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { CoachService, DisponibiliteDTO, SessionCoachDTO, ThematiqueCoachingDTO, CoachCalendarEventDTO } from './services/coach.service';
+import { CoachService, DisponibiliteDTO, SessionCoachDTO, ThematiqueCoachingDTO, CoachCalendarEventDTO, ProgrammeDTO } from './services/coach.service';
 import { AuthService } from '../../frontoffice/service/auth.service';
 
 interface DateSlotGroup {

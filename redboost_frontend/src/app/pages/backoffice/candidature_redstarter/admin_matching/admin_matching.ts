@@ -39,12 +39,32 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
         <!-- ═══ Thématique Selector + Add ═══ -->
         <div class="card thematique-selector-card">
           <div class="thematique-selector-row">
-            <div class="form-group" style="flex:1; max-width:400px; margin:0">
-              <label>Thématique</label>
-              <select [(ngModel)]="selectedThematiqueId" (change)="onThematiqueChange()" class="form-select">
-                <option [ngValue]="0">-- Toutes les thématiques --</option>
-                <option *ngFor="let t of thematiques" [ngValue]="t.id">{{ t.nom }} ({{ t.dateDebut }} → {{ t.dateFin }})</option>
-              </select>
+            <div style="flex:1">
+              <label class="section-label">Thématiques <span class="count-chip">{{ thematiques.length }}</span></label>
+              <!-- "All" option -->
+              <div class="th-list-item" [class.th-list-item-active]="selectedThematiqueId === 0" (click)="selectedThematiqueId = 0; onThematiqueChange()">
+                <div class="th-list-item-main">
+                  <span class="th-list-nom">Toutes les thématiques</span>
+                </div>
+              </div>
+              <!-- One row per thematique -->
+              <div *ngFor="let t of thematiques"
+                   class="th-list-item"
+                   [class.th-list-item-active]="selectedThematiqueId === t.id"
+                   (click)="selectedThematiqueId = t.id!; onThematiqueChange()">
+                <div class="th-list-item-main">
+                  <span class="th-list-nom">{{ t.nom }}</span>
+                  <span class="th-list-dates">{{ t.dateDebut }} → {{ t.dateFin }}</span>
+                </div>
+                <div class="th-list-prog">
+                  <i class="pi pi-folder-open" style="font-size:11px;margin-right:4px;opacity:.7"></i>
+                  {{ getProgrammeName(t.programmeId) }}
+                </div>
+                <span class="th-list-status"
+                      [class.th-status-active]="t.statut === 'ACTIVE'"
+                      [class.th-status-done]="t.statut === 'TERMINEE'"
+                      [class.th-status-cancelled]="t.statut === 'ANNULEE'">{{ t.statut }}</span>
+              </div>
             </div>
             <button class="btn-add-thematique" (click)="showAddForm = !showAddForm">
               <i class="pi pi-plus"></i> {{ showAddForm ? 'Annuler' : 'Ajouter Thématique' }}
@@ -335,34 +355,11 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
           </div>
         </ng-container>
 
-        <!-- ═══ All Thématiques Overview (when no specific one selected) ═══ -->
-        <ng-container *ngIf="!selectedThematiqueId">
-          <div *ngIf="thematiques.length === 0" class="empty-state-inline" style="margin-top:20px">
-            <i class="pi pi-info-circle" style="font-size:32px;color:#9CA3AF;display:block;margin-bottom:12px"></i>
-            <p>Aucune thématique créée pour ce programme. Utilisez le bouton <strong>+ Ajouter Thématique</strong> ci-dessus.</p>
-          </div>
-
-          <div *ngFor="let t of thematiques" class="th-overview-card" (click)="selectedThematiqueId = t.id!; onThematiqueChange()">
-            <div class="th-overview-left">
-              <div>
-                <h3 class="th-overview-name">{{ t.nom }}</h3>
-                <p class="th-overview-dates">{{ t.dateDebut }} → {{ t.dateFin }}</p>
-                <p class="th-overview-desc" *ngIf="t.description">{{ t.description }}</p>
-              </div>
-            </div>
-            <div class="th-overview-right">
-              <span class="status-badge" [class.active]="t.statut === 'ACTIVE'" [class.expired]="t.statut === 'TERMINEE'">{{ t.statut }}</span>
-              <div class="th-overview-actions">
-                <button class="btn-sm" (click)="$event.stopPropagation(); editThematique(t)"><i class="pi pi-pencil"></i></button>
-                <button class="btn-sm btn-sm-danger" (click)="$event.stopPropagation(); deleteThematique(t.id!)"><i class="pi pi-trash"></i></button>
-              </div>
-            </div>
-          </div>
-        </ng-container>
+        
 
       </ng-container>
 
-      <!-- ═══ All Thématiques Overview ═══ -->
+      <!-- ═══ All Thématiques Overview ═══
       <ng-container *ngIf="!selectedThematiqueId">
         <div *ngIf="thematiques.length === 0" class="empty-state-inline" style="margin-top:20px">
           <i class="pi pi-info-circle" style="font-size:32px;color:#9CA3AF;display:block;margin-bottom:12px"></i>
@@ -388,7 +385,7 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
             </div>
           </div>
         </div>
-      </ng-container>
+      </ng-container> -->
 
     </div>
     `,
@@ -597,6 +594,21 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
       .loading-box { text-align: center; padding: 40px; color: #9CA3AF; font-weight: 600; }
       .empty-state-inline { text-align: center; padding: 32px; color: #6B7280; font-size: 14px; background: #F9FAFB; border-radius: 16px; border: 1px dashed #E5E7EB; }
 
+      /* Thematique list */
+      .section-label { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: #374151; margin-bottom: 8px; }
+      .count-chip { background: #F3F4F6; color: #6B7280; border-radius: 10px; padding: 1px 8px; font-size: 11px; font-weight: 600; }
+      .th-list-item { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 10px; cursor: pointer; transition: background .15s, border-color .15s; border: 1.5px solid transparent; margin-bottom: 6px; background: #F9FAFB; }
+      .th-list-item:hover { background: #F3F4F6; border-color: #E5E7EB; }
+      .th-list-item-active { background: #FFF0F4 !important; border-color: #ea5073 !important; }
+      .th-list-item-main { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+      .th-list-nom { font-size: 14px; font-weight: 600; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .th-list-dates { font-size: 11px; color: #9CA3AF; margin-top: 2px; }
+      .th-list-prog { font-size: 12px; font-weight: 600; color: #ea5073; white-space: nowrap; display: flex; align-items: center; flex-shrink: 0; }
+      .th-list-status { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 8px; white-space: nowrap; flex-shrink: 0; }
+      .th-status-active { background: #D1FAE5; color: #065F46; }
+      .th-status-done { background: #E5E7EB; color: #374151; }
+      .th-status-cancelled { background: #FEE2E2; color: #991B1B; }
+
       @media (max-width: 900px) {
         .manual-workspace { grid-template-columns: 1fr; }
         .manual-center { padding-top: 0; flex-direction: row; flex-wrap: wrap; justify-content: center; }
@@ -657,10 +669,11 @@ export class AdminMatchingComponent implements OnInit {
 
     ngOnInit(): void {
         this.http.get<Programme[]>(`${environment.apiUrl}/backoffice/programmes`).subscribe({
-            next: (data) => {
-                this.programmes = data;
-                this.loadAllThematiques();
-            },
+          next: (data) => this.programmes = data,
+            // next: (data) => {
+            //     this.programmes = data;
+            //     this.loadAllThematiques();
+            // },
             error: (e) => console.error('Failed to load programmes', e)
         });
         
@@ -684,16 +697,21 @@ export class AdminMatchingComponent implements OnInit {
         }
     }
 
-    loadAllThematiques(): void {
-        this.thematiqueSvc.getAll().subscribe({
-            next: (data) => this.thematiques = data,
-            error: (e) => console.error(e)
-        });
-    }
+    // loadAllThematiques(): void {
+    //     this.thematiqueSvc.getAll().subscribe({
+    //         next: (data) => this.thematiques = data,
+    //         error: (e) => console.error(e)
+    //     });
+    // }
+
+    // getProgrammeName(progId: number): string {
+    //     const p = this.programmes.find(prog => prog.id === progId);
+    //     return p ? p.nom : 'Programme inconnu';
+    // }
 
     getProgrammeName(progId: number): string {
         const p = this.programmes.find(prog => prog.id === progId);
-        return p ? p.nom : 'Programme inconnu';
+        return p ? p.nom : '—';
     }
 
     get selectedThematiqueObj(): ThematiqueCoaching | null {
@@ -710,29 +728,18 @@ export class AdminMatchingComponent implements OnInit {
         this.showManualPanel = false;
         this.errorMessage = null;
 
-<<<<<<< HEAD
+// <<<<<<< HEAD
         this.applyProgFilter();
-=======
-        if (this.selectedProgId) {
-            this.thematiqueSvc.getByProgramme(this.selectedProgId).subscribe({
-                next: (t) => this.thematiques = t,
-                error: () => {}
-            });
-        } else {
-            this.loadAllThematiques();
-        }
->>>>>>> 146cef4 (show associated program under each theme)
-    }
-
-    selectThematiqueFromOverview(t: ThematiqueCoaching): void {
-        this.selectedProgId = t.programmeId;
-        this.selectedThematiqueId = t.id!;
-        this.thematiqueSvc.getByProgramme(this.selectedProgId).subscribe({
-            next: (progT) => {
-                this.thematiques = progT;
-                this.onThematiqueChange();
-            }
-        });
+// =======
+//         if (this.selectedProgId) {
+//             this.thematiqueSvc.getByProgramme(this.selectedProgId).subscribe({
+//                 next: (t) => this.thematiques = t,
+//                 error: () => {}
+//             });
+//         } else {
+//             this.loadAllThematiques();
+//         }
+// >>>>>>> 146cef4 (show associated program under each theme)
     }
 
     // ─── Thématique change ───

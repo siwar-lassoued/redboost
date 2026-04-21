@@ -39,10 +39,6 @@ public class ThematiqueService {
         return thematiqueRepo.findByProgrammeId(programmeId);
     }
 
-    public List<ThematiqueCoaching> getAll() {
-        return thematiqueRepo.findAll();
-    }
-
     public List<ThematiqueCoaching> getActiveByProgramme(Long programmeId) {
         return thematiqueRepo.findByProgrammeIdAndStatut(programmeId, ThematiqueCoaching.StatutThematique.ACTIVE);
     }
@@ -83,7 +79,9 @@ public class ThematiqueService {
      */
     @Transactional
     public void updateExpiredStatuses() {
-        List<ThematiqueCoaching> actives = thematiqueRepo.findByProgrammeIdAndStatut(null, ThematiqueCoaching.StatutThematique.ACTIVE);
+        List<ThematiqueCoaching> actives = thematiqueRepo.findAll().stream()
+                .filter(t -> t.getStatut() == ThematiqueCoaching.StatutThematique.ACTIVE)
+                .toList();
         LocalDate today = LocalDate.now();
         for (ThematiqueCoaching t : actives) {
             if (t.getDateFin() != null && t.getDateFin().isBefore(today)) {
