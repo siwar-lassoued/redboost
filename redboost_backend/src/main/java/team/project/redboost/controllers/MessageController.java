@@ -29,13 +29,21 @@ public class MessageController {
     @PostMapping
     public ResponseEntity<Map<String, Object>> sendMessage(
             @RequestBody Map<String, String> payload) {
-        Long expediteurId = Long.parseLong(payload.get("expediteurId"));
-        Long destinataireId = Long.parseLong(payload.get("destinataireId"));
-        String contenu = payload.get("contenu");
-        MessageDTO saved = messageService.save(expediteurId, destinataireId, contenu);
-        Map<String, Object> res = new HashMap<>();
-        res.put("data", saved);
-        return ResponseEntity.ok(res);
+        try {
+            Long expediteurId = Long.parseLong(payload.get("expediteurId"));
+            Long destinataireId = Long.parseLong(payload.get("destinataireId"));
+            String contenu = payload.get("contenu");
+            MessageDTO saved = messageService.save(expediteurId, destinataireId, contenu);
+            Map<String, Object> res = new HashMap<>();
+            res.put("data", saved);
+            return ResponseEntity.ok(res);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Map<String, Object> err = new HashMap<>();
+            err.put("error", e.getMessage());
+            err.put("type", e.getClass().getName());
+            return ResponseEntity.status(500).body(err);
+        }
     }
 
     @PutMapping("/read/{userId}/{otherUserId}")
