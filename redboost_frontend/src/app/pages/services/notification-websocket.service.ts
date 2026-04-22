@@ -6,7 +6,7 @@ import { BehaviorSubject, Observable } from 'rxjs';
 import { Router } from '@angular/router';
 import { Client, IMessage } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import { environment } from '../../../../environment';
+import { environment } from '../../../environment';
 
 // Matches the backend Entity/DTO
 export interface AppNotification {

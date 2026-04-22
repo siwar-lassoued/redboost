@@ -69,29 +69,35 @@ public class CoachService {
         List<Matching> matchings = matchingRepository.findByCoachIdAndStatut(coachId, Matching.StatutMatching.VALIDE);
         int nbProjet = matchings.size();
         
-        List<SessionCoach> sessions = sessionCoachRepository.findByDisponibiliteCoachId(coachId);
+        List<Session> bookedSessions = sessionRepository.findByCoachId(coachId);
         List<SeanceExceptionnelle> seances = seanceExceptionnelleRepository.findByCoachId(coachId);
-        int nbRendezVous = sessions.size() + seances.size();
+        int nbRendezVous = bookedSessions.size() + seances.size();
         
         long nbTaches = 0;
+        int completedTaches = 0;
+        int totalTaches = 0;
         for (Matching m : matchings) {
-            nbTaches += tacheRepository.findByResponsableId(m.getEntrepreneurId()).stream()
-                    .filter(t -> t.getStatus() != Tache.StatusTache.TERMINEE)
-                    .count();
+            List<Tache> tasks = tacheRepository.findByResponsableId(m.getEntrepreneurId());
+            totalTaches += tasks.size();
+            for (Tache t : tasks) {
+                if (t.getStatus() != Tache.StatusTache.TERMINEE) {
+                    nbTaches++;
+                } else {
+                    completedTaches++;
+                }
+            }
         }
         
+        double completionRate = totalTaches > 0 ? ((double) completedTaches / totalTaches) * 100 : 0.0;
+        
         List<DashboardStatsDTO.ActivityDTO> activities = new ArrayList<>();
-        activities.add(DashboardStatsDTO.ActivityDTO.builder()
-                .time("Il y a 2h")
-                .text("Nouvelle session planifiée avec Rania")
-                .build());
         
         return DashboardStatsDTO.builder()
                 .nbProjet(nbProjet)
                 .nbRendezVous(nbRendezVous)
                 .nbTaches((int)nbTaches)
                 .nbPhases(nbProjet * 2) // Mock
-                .completionRate(87.0)
+                .completionRate(Math.round(completionRate * 10.0) / 10.0)
                 .activity(activities)
                 .build();
     }
@@ -131,6 +137,62 @@ public class CoachService {
         })
         .filter(dto -> dto != null)
         .collect(Collectors.toList());
+    }
+
+    /**
+     * Returns matched entrepreneurs grouped by thématique for the coach profile page.
+     * Each group contains the thématique info and the list of entrepreneurs matched in it.
+     */
+    public List<Map<String, Object>> getMatchedEntrepreneursGroupedByThematique(Long coachId) {
+        List<Matching> matchings = matchingRepository.findByCoachIdAndStatutAndThematiqueIdNotNull(
+                coachId, Matching.StatutMatching.VALIDE);
+
+        // Group matchings by thematiqueId
+        Map<Long, List<Matching>> grouped = matchings.stream()
+                .collect(Collectors.groupingBy(Matching::getThematiqueId));
+
+        List<Map<String, Object>> result = new ArrayList<>();
+
+        for (Map.Entry<Long, List<Matching>> entry : grouped.entrySet()) {
+            Long thematiqueId = entry.getKey();
+            List<Matching> themMatchings = entry.getValue();
+
+            Map<String, Object> group = new LinkedHashMap<>();
+            group.put("thematiqueId", thematiqueId);
+
+            // Resolve thématique name
+            ThematiqueCoaching thematique = thematiqueRepository.findById(thematiqueId).orElse(null);
+            group.put("thematiqueName", thematique != null ? thematique.getNom() : "Thématique #" + thematiqueId);
+            group.put("thematiqueStatut", thematique != null ? thematique.getStatut().name() : "UNKNOWN");
+
+            // Build entrepreneur list for this thématique
+            List<Map<String, Object>> entrepreneurs = new ArrayList<>();
+            Set<Long> seenEntIds = new HashSet<>();
+
+            for (Matching m : themMatchings) {
+                if (!seenEntIds.add(m.getEntrepreneurId())) continue;
+
+                User ent = userRepository.findById(m.getEntrepreneurId()).orElse(null);
+                if (ent == null) continue;
+
+                Map<String, Object> entMap = new LinkedHashMap<>();
+                entMap.put("id", ent.getId());
+                entMap.put("firstName", ent.getFirstName());
+                entMap.put("lastName", ent.getLastName());
+                entMap.put("email", ent.getEmail());
+                entMap.put("phoneNumber", ent.getPhoneNumber());
+                entMap.put("entreprise", ent.getEntreprise());
+                entMap.put("secteur", ent.getSecteur());
+                entMap.put("matchingId", m.getId());
+                entrepreneurs.add(entMap);
+            }
+
+            group.put("entrepreneurs", entrepreneurs);
+            group.put("count", entrepreneurs.size());
+            result.add(group);
+        }
+
+        return result;
     }
     public List<CoachCalendarEventDTO> getCalendarEvents(Long coachId) {
         List<CoachCalendarEventDTO> events = new ArrayList<>();
@@ -188,15 +250,16 @@ public class CoachService {
         List<UpcomingSessionDTO> upcoming = new ArrayList<>();
         
         // Sessions from calendar
-        List<SessionCoach> sessions = sessionCoachRepository.findByDisponibiliteCoachId(coachId);
-        for (SessionCoach s : sessions) {
-            if (!s.getDateSession().isBefore(LocalDate.now())) {
+        List<Session> bookedSessions = sessionRepository.findByCoachId(coachId);
+        for (Session s : bookedSessions) {
+            if (!s.getDate().toLocalDate().isBefore(LocalDate.now())) {
                 upcoming.add(UpcomingSessionDTO.builder()
                         .id(s.getId())
-                        .entrepreneurName("Session " + (s.getDisponibilite() != null ? s.getDisponibilite().getThematique().getNom() : "Coaching"))
-                        .dateSession(s.getDateSession())
-                        .heureDebut(s.getHeureDebut())
+                        .entrepreneurName(s.getEntrepreneur().getFirstName() + " " + s.getEntrepreneur().getLastName())
+                        .dateSession(s.getDate().toLocalDate())
+                        .heureDebut(s.getDate().toLocalTime())
                         .statut("CONFIRMED")
+                        .meetingLink(s.getMeetLink())
                         .build());
             }
         }
@@ -206,7 +269,7 @@ public class CoachService {
         for (SeanceExceptionnelle s : seances) {
             if (!s.getDateSeance().isBefore(LocalDate.now())) {
                 upcoming.add(UpcomingSessionDTO.builder()
-                        .id(s.getId())
+                        .id(String.valueOf(s.getId()))
                         .entrepreneurName(s.getEntrepreneur().getFirstName() + " " + s.getEntrepreneur().getLastName())
                         .dateSession(s.getDateSeance())
                         .heureDebut(s.getHeureDebut())
@@ -216,7 +279,11 @@ public class CoachService {
         }
         
         return upcoming.stream()
-                .sorted((a, b) -> a.getDateSession().compareTo(b.getDateSession()))
+                .sorted((a, b) -> {
+                    int dateCmp = a.getDateSession().compareTo(b.getDateSession());
+                    if (dateCmp != 0) return dateCmp;
+                    return a.getHeureDebut().compareTo(b.getHeureDebut());
+                })
                 .limit(5)
                 .collect(Collectors.toList());
     }

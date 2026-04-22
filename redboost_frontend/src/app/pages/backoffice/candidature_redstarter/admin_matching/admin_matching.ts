@@ -728,18 +728,7 @@ export class AdminMatchingComponent implements OnInit {
         this.showManualPanel = false;
         this.errorMessage = null;
 
-// <<<<<<< HEAD
         this.applyProgFilter();
-// =======
-//         if (this.selectedProgId) {
-//             this.thematiqueSvc.getByProgramme(this.selectedProgId).subscribe({
-//                 next: (t) => this.thematiques = t,
-//                 error: () => {}
-//             });
-//         } else {
-//             this.loadAllThematiques();
-//         }
-// >>>>>>> 146cef4 (show associated program under each theme)
     }
 
     // ─── Thématique change ───

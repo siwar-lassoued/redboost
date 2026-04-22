@@ -113,7 +113,7 @@ public class MatchingIaService {
 
         List<CandidatureRedstarter> unmatchedCandidatures = candidaturesCombine.stream()
                 .filter(c -> !coachCandidatureIds.contains(c.getId()))
-                .filter(c -> !matchingRepo.isEntrepreneurActivelyMatched(c.getId(), programmeId))
+                .filter(c -> !matchingRepo.isEntrepreneurActivelyMatchedForThematique(c.getId(), thematiqueId))
                 .collect(Collectors.toList());
 
         log.info("Entrepreneurs à matcher: {} / {} acceptés", unmatchedCandidatures.size(), candidaturesCombine.size());
@@ -733,9 +733,9 @@ public class MatchingIaService {
 
         List<Map<String, Object>> entrepreneursList = candidaturesCombine.stream()
                 .filter(c -> !coachCandidatureIds.contains(c.getId()))
-                // Exclure ceux qui ont un coaching ACTIF (VALIDE) dans ce programme.
-                // S'ils ont terminé leur coaching (statut TERMINE), ils sont disponibles pour une nouvelle thématique.
-                .filter(c -> !matchingRepo.isEntrepreneurActivelyMatched(c.getId(), programmeId))
+                // Exclure ceux qui ont un coaching ACTIF (VALIDE) pour CETTE thématique spécifique.
+                // Un entrepreneur peut être matché dans plusieurs thématiques différentes.
+                .filter(c -> !matchingRepo.isEntrepreneurActivelyMatchedForThematique(c.getId(), thematiqueId))
                 .map(c -> {
                     Map<String, Object> e = new LinkedHashMap<>();
                     e.put("id", c.getId());

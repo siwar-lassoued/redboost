@@ -425,7 +425,12 @@ export class AppMenu implements OnInit {
                     {
                         label: 'Rapport de missions',
                         icon: 'pi pi-fw pi-file-pdf',
-                        routerLink: ['/rapport-missions'], // Needs to be created/mapped
+                        routerLink: ['/rapport-missions'],
+                    },
+                    {
+                        label: 'Rapport de sessions',
+                        icon: 'pi pi-fw pi-file-edit',
+                        routerLink: ['/rapport-sessions'],
                     },
                 ],
 

@@ -416,7 +416,48 @@
                 </div>
             </div>
         </div>
-    </div>
+
+        <!-- Matched Entrepreneurs Section (Coach only) -->
+        <div class="matched-section" *ngIf="user?.role === 'COACH'">
+            <h3 class="section-title">
+                <i class="fas fa-users"></i> Mes Entrepreneurs Matchés
+            </h3>
+
+            <div *ngIf="isLoadingMatched" class="matched-loading">
+                <p>Chargement...</p>
+            </div>
+
+            <div *ngIf="!isLoadingMatched && matchedGroups.length === 0" class="matched-empty">
+                <p>Aucun entrepreneur matché pour le moment.</p>
+            </div>
+
+            <div *ngFor="let group of matchedGroups" class="thematique-group">
+                <div class="thematique-header">
+                    <span class="thematique-name">{{ group.thematiqueName }}</span>
+                    <span class="thematique-count">{{ group.count }} entrepreneur(s)</span>
+                    <span class="thematique-status" 
+                          [class.status-active]="group.thematiqueStatut === 'ACTIVE'"
+                          [class.status-done]="group.thematiqueStatut === 'TERMINEE'">
+                        {{ group.thematiqueStatut }}
+                    </span>
+                </div>
+                <div class="entrepreneur-list">
+                    <div *ngFor="let ent of group.entrepreneurs" class="entrepreneur-row">
+                        <div class="ent-info">
+                            <div class="ent-name">{{ ent.firstName }} {{ ent.lastName }}</div>
+                            <div class="ent-meta">
+                                <span *ngIf="ent.email">{{ ent.email }}</span>
+                                <span *ngIf="ent.entreprise"> · {{ ent.entreprise }}</span>
+                                <span *ngIf="ent.secteur"> · {{ ent.secteur }}</span>
+                            </div>
+                        </div>
+                        <button class="btn-message" (click)="openChat(ent.id)" title="Envoyer un message">
+                            <i class="pi pi-comment"></i> Message
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     
     <!-- Profile Update Dialog -->
     <app-profile-update-dialog

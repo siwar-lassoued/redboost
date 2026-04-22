@@ -39,6 +39,14 @@ public class RapportMissionCoach {
     @Column(name = "date_fin")
     private String dateFin;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "thematique_id")
+    @JsonIgnoreProperties({"coach", "disponibilites", "matchings"})
+    private ThematiqueCoaching thematique;
+
+    @Column(name = "attached_session_ids", columnDefinition = "TEXT")
+    private String attachedSessionIds;
+
     @Column(columnDefinition = "TEXT")
     private String introduction;
 

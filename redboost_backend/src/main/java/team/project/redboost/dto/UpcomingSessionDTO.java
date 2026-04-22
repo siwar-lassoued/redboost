@@ -12,7 +12,7 @@ import java.time.LocalTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UpcomingSessionDTO {
-    private Long id;
+    private String id;
     private String entrepreneurName;
     private LocalDate dateSession;
     private LocalTime heureDebut;

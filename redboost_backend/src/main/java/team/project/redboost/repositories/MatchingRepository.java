@@ -68,6 +68,19 @@ public interface MatchingRepository extends JpaRepository<Matching, Long> {
     @Query("SELECT m FROM Matching m WHERE m.statut = 'VALIDE'")
     List<Matching> findAllValide();
 
+    /** Check if entrepreneur has an active (VALIDE) matching for a SPECIFIC thématique */
+    @Query("""
+      SELECT COUNT(m) > 0 FROM Matching m
+      WHERE m.entrepreneurId = :entrepreneurId
+        AND m.thematiqueId = :thematiqueId
+        AND m.statut = 'VALIDE'
+      """)
+    boolean isEntrepreneurActivelyMatchedForThematique(@Param("entrepreneurId") Long entrepreneurId,
+                                                       @Param("thematiqueId") Long thematiqueId);
+
+    /** Find all VALIDE matchings for a specific coach, grouped by thématique */
+    List<Matching> findByCoachIdAndStatutAndThematiqueIdNotNull(Long coachId, Matching.StatutMatching statut);
+
     /** Efface la référence thematique_id d'un matching quand la thématique est supprimée */
     @Modifying
     @Query("UPDATE Matching m SET m.thematiqueId = null WHERE m.thematiqueId = :thematiqueId")

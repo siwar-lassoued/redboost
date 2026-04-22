@@ -82,6 +82,10 @@ export class UserProfileComponent implements OnInit {
     // Dialog visibility
     showUpdateDialog: boolean = false;
 
+    // Matched entrepreneurs (Coach only)
+    matchedGroups: any[] = [];
+    isLoadingMatched = false;
+
     stats = [
 /*         { currentValue: 0, label: 'Projects' },
  */        { currentValue: 0, label: 'Connections' },
@@ -217,6 +221,11 @@ export class UserProfileComponent implements OnInit {
                 }
                 
                 this.isLoading = false;
+
+                // Load matched entrepreneurs if COACH
+                if (this.user.role === 'COACH' && this.user.id) {
+                    this.loadMatchedEntrepreneurs(this.user.id);
+                }
             },
             error: (error) => {
                 this.messageService.add({
@@ -487,5 +496,25 @@ export class UserProfileComponent implements OnInit {
     onProfileUpdated(): void {
         // Refresh the profile after update
         this.fetchUserProfile();
+    }
+
+    // --- Coach: Matched Entrepreneurs ---
+
+    private loadMatchedEntrepreneurs(coachId: number): void {
+        this.isLoadingMatched = true;
+        this.http.get<any[]>(`${environment.apiUrl}/coach/${coachId}/matched-entrepreneurs`).subscribe({
+            next: (groups) => {
+                this.matchedGroups = groups || [];
+                this.isLoadingMatched = false;
+            },
+            error: () => {
+                this.matchedGroups = [];
+                this.isLoadingMatched = false;
+            }
+        });
+    }
+
+    openChat(entrepreneurId: number): void {
+        this.router.navigate(['/coach-chat'], { queryParams: { userId: entrepreneurId } });
     }
 }

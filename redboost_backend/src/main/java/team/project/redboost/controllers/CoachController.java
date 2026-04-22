@@ -104,6 +104,11 @@ public class CoachController {
         return ResponseEntity.ok(coachService.getCoachEntrepreneurs(coachId));
     }
 
+    @GetMapping("/{coachId}/matched-entrepreneurs")
+    public ResponseEntity<List<java.util.Map<String, Object>>> getMatchedEntrepreneursGrouped(@PathVariable Long coachId) {
+        return ResponseEntity.ok(coachService.getMatchedEntrepreneursGroupedByThematique(coachId));
+    }
+
     @GetMapping("/{coachId}/calendar-events")
     public ResponseEntity<List<CoachCalendarEventDTO>> getCalendarEvents(@PathVariable Long coachId) {
         return ResponseEntity.ok(coachService.getCalendarEvents(coachId));

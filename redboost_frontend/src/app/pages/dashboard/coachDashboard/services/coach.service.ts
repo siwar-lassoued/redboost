@@ -108,7 +108,7 @@ export interface DashboardStatsDTO {
 }
 
 export interface UpcomingSessionDTO {
-  id: number;
+  id: number | string;
   entrepreneurName: string;
   dateSession: string;
   heureDebut: string;
@@ -227,6 +227,10 @@ export class CoachService {
   getCoachEntrepreneurs(coachId: number): Observable<CoachEntrepreneurDTO[]> {
     return this.http.get<CoachEntrepreneurDTO[]>(`${this.apiUrl}/${coachId}/entrepreneurs`);
   }
+
+  getMatchedEntrepreneursGrouped(coachId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/${coachId}/matched-entrepreneurs`);
+  }
   getCalendarEvents(coachId: number): Observable<CoachCalendarEventDTO[]> {
     return this.http.get<CoachCalendarEventDTO[]>(`${this.apiUrl}/${coachId}/calendar-events`);
   }
@@ -287,11 +291,36 @@ export class CoachService {
     return this.http.get<any[]>(`${environment.apiUrl}/rapports-mission-coach/coach/${coachId}/programme/${programmeId}`);
   }
 
+  getRapportsMissionByThematique(coachId: number, thematiqueId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${environment.apiUrl}/rapports-mission-coach/coach/${coachId}/thematique/${thematiqueId}`);
+  }
+
   saveRapportMission(payload: any): Observable<any> {
     return this.http.post(`${environment.apiUrl}/rapports-mission-coach`, payload);
   }
 
   deleteRapportMission(id: number): Observable<void> {
     return this.http.delete<void>(`${environment.apiUrl}/rapports-mission-coach/${id}`);
+  }
+
+  // RAPPORT SESSION COACH
+  getRapportsSession(coachId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${environment.apiUrl}/rapports-session-coach/coach/${coachId}`);
+  }
+
+  getRapportsSessionByThematique(coachId: number, thematiqueId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${environment.apiUrl}/rapports-session-coach/coach/${coachId}/thematique/${thematiqueId}`);
+  }
+
+  getRapportsSessionByIds(ids: number[]): Observable<any[]> {
+    return this.http.get<any[]>(`${environment.apiUrl}/rapports-session-coach/ids?ids=${ids.join(',')}`);
+  }
+
+  saveRapportSession(payload: any): Observable<any> {
+    return this.http.post(`${environment.apiUrl}/rapports-session-coach`, payload);
+  }
+
+  deleteRapportSession(id: number): Observable<void> {
+    return this.http.delete<void>(`${environment.apiUrl}/rapports-session-coach/${id}`);
   }
 }

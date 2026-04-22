@@ -9,6 +9,8 @@ import team.project.redboost.entities.User;
 import team.project.redboost.repositories.RapportMissionCoachRepository;
 import team.project.redboost.repositories.ProgrammeRepository;
 import team.project.redboost.repositories.UserRepository;
+import team.project.redboost.entities.ThematiqueCoaching;
+import team.project.redboost.repositories.ThematiqueRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -24,12 +26,20 @@ public class RapportMissionCoachController {
     private final RapportMissionCoachRepository repository;
     private final ProgrammeRepository programmeRepository;
     private final UserRepository userRepository;
+    private final ThematiqueRepository thematiqueRepository;
 
     @GetMapping("/coach/{coachId}/programme/{programmeId}")
     public ResponseEntity<List<RapportMissionCoach>> getHistory(
             @PathVariable Long coachId, 
             @PathVariable Long programmeId) {
         return ResponseEntity.ok(repository.findByCoachIdAndProgrammeIdOrderByDateCreationDesc(coachId, programmeId));
+    }
+    
+    @GetMapping("/coach/{coachId}/thematique/{thematiqueId}")
+    public ResponseEntity<List<RapportMissionCoach>> getHistoryByThematique(
+            @PathVariable Long coachId, 
+            @PathVariable Long thematiqueId) {
+        return ResponseEntity.ok(repository.findByCoachIdAndThematiqueIdOrderByDateCreationDesc(coachId, thematiqueId));
     }
 
     @PostMapping
@@ -54,6 +64,15 @@ public class RapportMissionCoachController {
 
         rapport.setCoach(coach.get());
         rapport.setProgramme(programme.get());
+        
+        if (payload.containsKey("thematiqueId") && payload.get("thematiqueId") != null) {
+            Optional<ThematiqueCoaching> thematique = thematiqueRepository.findById(Long.valueOf(payload.get("thematiqueId").toString()));
+            thematique.ifPresent(rapport::setThematique);
+        }
+
+        if (payload.containsKey("attachedSessionIds") && payload.get("attachedSessionIds") != null) {
+            rapport.setAttachedSessionIds((String) payload.get("attachedSessionIds"));
+        }
         
         rapport.setPeriodType((String) payload.get("periodType"));
         rapport.setDateDebut((String) payload.get("dateDebut"));

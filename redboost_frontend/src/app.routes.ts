@@ -57,6 +57,7 @@ import { CoachEntrepreneurDetailComponent } from './app/pages/dashboard/coachDas
 import { SessionsComponent } from './app/pages/dashboard/coachDashboard/sessions.component';
 import { CoachChatComponent } from './app/pages/dashboard/coachDashboard/coach-chat.component';
 import { CoachRapportMissionsComponent } from './app/pages/dashboard/coachDashboard/coach-rapport-missions.component';
+import { CoachRapportSessionComponent } from './app/pages/dashboard/coachDashboard/coach-rapport-session.component';
 import { CoachLivrablesComponent } from './app/pages/dashboard/coachDashboard/coach-livrables.component';
 import { NoteDeSyntheseCreateComponent } from './app/pages/dashboard/coachDashboard/note-de-synthese-create.component';
 import { SeanceExceptionnelleComponent } from './app/pages/dashboard/coachDashboard/seance-exceptionnelle.component';
@@ -152,6 +153,7 @@ export const appRoutes: Routes = [
             { path: 'coach-chat', component: CoachChatComponent },
             { path: 'gestion_comm', component: EntrepreneurChatComponent },
             { path: 'rapport-missions', component: CoachRapportMissionsComponent },
+            { path: 'rapport-sessions', component: CoachRapportSessionComponent },
             { path: 'coach-entrep-deliverable', component: CoachLivrablesComponent },
             { path: 'coach-livrables', component: CoachLivrablesComponent },
             { path: 'note-de-synthese-create/:id', component: NoteDeSyntheseCreateComponent },

@@ -7,9 +7,7 @@ import { ToastrService } from 'ngx-toastr';
 import { CoachService } from './services/coach.service';
 import { AuthService } from '../../frontoffice/service/auth.service';
 
-type PeriodType = 'LIBRE' | 'HEBDO' | 'MOIS';
-type HebdoOption = 'current' | 'last' | 'custom';
-type MoisOption = 'current' | 'last' | 'custom';
+
 
 @Component({
   selector: 'app-coach-rapport-missions',
@@ -38,58 +36,23 @@ type MoisOption = 'current' | 'last' | 'custom';
             <!-- Left Column -->
             <div style="display:flex; flex-direction:column; gap:20px;">
               <div class="form-group">
-                <label>Programme d'incubation <span class="required">*</span></label>
-                <select [(ngModel)]="selectedProgramId" class="premium-input" (change)="loadHistory()">
-                  <option [ngValue]="0" disabled>Choisir un programme...</option>
-                  <option *ngFor="let p of programmes" [value]="p.id">{{ p.nom }}</option>
+                <label>Thématique de Coaching <span class="required">*</span></label>
+                <select [(ngModel)]="selectedThematiqueId" class="premium-input" (change)="onThematiqueChange()">
+                  <option [ngValue]="0" disabled>Choisir une thématique...</option>
+                  <option *ngFor="let t of thematiques" [value]="t.id">{{ t.nom }}</option>
                 </select>
               </div>
 
-              <div class="form-group">
-                <label>Période couverte <span class="required">*</span></label>
-                <div class="period-tabs">
-                  <button *ngFor="let pt of periodTypes"
-                      (click)="periodType = pt.id"
-                      class="period-btn"
-                      [class.active]="periodType === pt.id">
-                    {{ pt.label }}
-                  </button>
-                </div>
-              </div>
-
-              <!-- date pickers -->
-              <div class="form-group" style="min-height:80px;">
-                <div *ngIf="periodType === 'LIBRE'" style="display:flex; gap:16px;">
-                  <div style="flex:1">
-                    <label class="hint" style="display:block; margin-bottom:4px;">Du</label>
-                    <input type="date" [(ngModel)]="dateFrom" class="premium-input">
-                  </div>
-                  <div style="flex:1">
-                    <label class="hint" style="display:block; margin-bottom:4px;">Au</label>
-                    <input type="date" [(ngModel)]="dateTo" class="premium-input">
-                  </div>
-                </div>
-
-                <div *ngIf="periodType === 'HEBDO'" style="display:flex; flex-wrap:wrap; gap:8px;">
-                  <label *ngFor="let opt of hebdoOptions" class="opt-label" [class.active-opt]="hebdoOpt === opt.val">
-                    <input type="radio" name="hebdo" [value]="opt.val" [(ngModel)]="hebdoOpt" style="display:none;">
-                    {{ opt.label }}
-                  </label>
-                  <input *ngIf="hebdoOpt === 'custom'" type="week" [(ngModel)]="customWeek" class="premium-input" style="margin-top:8px;">
-                </div>
-
-                <div *ngIf="periodType === 'MOIS'" style="display:flex; flex-wrap:wrap; gap:8px;">
-                  <label *ngFor="let opt of moisOptions" class="opt-label" [class.active-opt]="moisOpt === opt.val">
-                    <input type="radio" name="mois" [value]="opt.val" [(ngModel)]="moisOpt" style="display:none;">
-                    {{ opt.label }}
-                  </label>
-                  <input *ngIf="moisOpt === 'custom'" type="month" [(ngModel)]="customMonth" class="premium-input" style="margin-top:8px;">
+              <div class="form-group" *ngIf="selectedThematique">
+                <label>Programme associé</label>
+                <div class="info-tag">
+                    <i class="pi pi-info-circle"></i> {{ selectedThematique.programme?.nom }}
                 </div>
               </div>
             </div>
             
             <div class="launch-section" style="display:flex; align-items:flex-end;">
-              <button (click)="initNewReport()" [disabled]="selectedProgramId === 0" class="btn-primary" style="width:100%; justify-content:center;">
+              <button (click)="initNewReport()" [disabled]="selectedThematiqueId === 0" class="btn-primary" style="width:100%; justify-content:center;">
                 <i class="pi pi-pencil"></i> Rédiger le rapport
               </button>
             </div>
@@ -99,18 +62,18 @@ type MoisOption = 'current' | 'last' | 'custom';
         <!-- History -->
         <div class="section-card" style="margin-top: 1.5rem;">
            <h2 class="section-title"><i class="pi pi-history"></i> Historique des Rapports ({{ history.length }})</h2>
-           <div *ngIf="selectedProgramId === 0" class="empty-state">
+           <div *ngIf="selectedThematiqueId === 0" class="empty-state">
              <p>Sélectionnez un programme pour voir l'historique des rapports.</p>
            </div>
-           <div *ngIf="history.length === 0 && selectedProgramId !== 0" class="empty-state">
+           <div *ngIf="history.length === 0 && selectedThematiqueId !== 0" class="empty-state">
              <p>Aucun rapport d'accompagnement n'a été créé pour ce programme.</p>
            </div>
            
            <table *ngIf="history.length > 0" class="history-table">
             <thead>
               <tr>
-                <th>Programme / ID</th>
-                <th>Période</th>
+                <th>Thématique / ID</th>
+                <th>Programme</th>
                 <th>Dernière modif.</th>
                 <th style="text-align:right;">Actions</th>
               </tr>
@@ -118,12 +81,11 @@ type MoisOption = 'current' | 'last' | 'custom';
             <tbody>
               <tr *ngFor="let h of history">
                 <td>
-                  <div style="font-weight:700; color:#1A1A2E;">{{ getProgramName(selectedProgramId) }}</div>
+                  <div style="font-weight:700; color:#1A1A2E;">{{ h.thematique?.nom }}</div>
                   <div class="hint">Rapport #{{ h.id }}</div>
                 </td>
                 <td>
-                  <span class="report-tag">{{ h.periodType }}</span>
-                  <div style="font-size:13px; margin-top:4px; font-weight:500;">{{ h.dateDebut }} au {{ h.dateFin }}</div>
+                  <span class="report-tag">{{ h.programme?.nom }}</span>
                 </td>
                 <td>
                    <div style="font-size:13px; color:#4B5563;">{{ h.dateCreation | date:'shortDate' }}</div>
@@ -214,24 +176,70 @@ type MoisOption = 'current' | 'last' | 'custom';
 
           <!-- SECTION 3 -->
           <div class="section-card" *ngIf="currentSection === 3">
-             <h2 class="section-title">Suivi & Feedbacks</h2>
+             <h2 class="section-title">
+               Suivi & Feedbacks 
+               <span class="attached-count" *ngIf="attachedSessions.length > 0">{{ attachedSessions.length }} sessions liées</span>
+             </h2>
              
-             <div class="form-group">
-                <label>3.1 Suivi des bénéficiaires</label>
-                <textarea class="premium-textarea" [(ngModel)]="currentReport.suiviBeneficiaires" rows="5" 
-                  placeholder="- Nom du projet&#10;- Niveau d’avancement&#10;- Besoins identifiés&#10;- Actions réalisées"></textarea>
-             </div>
-             
-             <div class="form-group">
-                <label>3.2 Planning des séances</label>
-                <textarea class="premium-textarea" [(ngModel)]="currentReport.planningSeances" rows="5" 
-                  placeholder="- Date&#10;- Bénéficiaire&#10;- Durée"></textarea>
-             </div>
+             <div class="drag-drop-container">
+                <!-- Drop Zone -->
+                <div class="drop-column">
+                    <div class="form-group">
+                        <label>3.1 Sessions liées & Feedbacks</label>
+                        <div class="drop-zone" 
+                             (dragover)="onDragOver($event)" 
+                             (drop)="onDrop($event)"
+                             [class.drag-over]="false">
+                            
+                            <div *ngIf="attachedSessions.length === 0" class="drop-placeholder">
+                                <i class="pi pi-cloud-download" style="font-size: 2rem; display: block; margin-bottom: 8px;"></i>
+                                Glissez-déposez des rapports de session ici pour les lier à cette mission
+                            </div>
 
-             <div class="form-group">
-                <label>3.3 Feedback des bénéficiaires</label>
-                <textarea class="premium-textarea" [(ngModel)]="currentReport.feedbackBeneficiaires" rows="5" 
-                  placeholder="- Satisfaction&#10;- Points forts&#10;- Points d’amélioration"></textarea>
+                            <div *ngFor="let s of attachedSessions" class="session-card-attached">
+                                <div class="session-info">
+                                    <div class="session-name">{{ s.beneficiaireNom }}</div>
+                                    <div class="session-meta">Session #{{ s.numeroSession }} - {{ s.dateSession }}</div>
+                                </div>
+                                <button (click)="detachSession(s)" class="btn-detach" title="Détacher">
+                                    <i class="pi pi-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>3.2 Suivi des bénéficiaires (Synthèse)</label>
+                        <textarea class="premium-textarea" [(ngModel)]="currentReport.suiviBeneficiaires" rows="5" 
+                        placeholder="- Nom du projet&#10;- Niveau d’avancement&#10;- Besoins identifiés&#10;- Actions réalisées"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>3.3 Feedback global</label>
+                        <textarea class="premium-textarea" [(ngModel)]="currentReport.feedbackBeneficiaires" rows="5" 
+                        placeholder="- Satisfaction&#10;- Points forts&#10;- Points d’amélioration"></textarea>
+                    </div>
+                </div>
+
+                <!-- Session Sidebar (Draggable items) -->
+                <div class="session-sidebar">
+                    <div class="sidebar-title">
+                        <i class="pi pi-list"></i> Sessions disponibles
+                    </div>
+                    <div class="sessions-list">
+                        <div *ngIf="availableSessions.length === 0" class="hint" style="text-align:center; padding: 20px;">
+                            Aucun rapport de session disponible pour cette thématique.
+                        </div>
+                        <div *ngFor="let s of availableSessions" 
+                             class="session-card-mini" 
+                             draggable="true" 
+                             (dragstart)="onDragStart($event, s)">
+                            <div class="session-name">{{ s.beneficiaireNom }}</div>
+                            <div class="session-meta">Session #{{ s.numeroSession }}</div>
+                            <div class="session-meta">{{ s.dateSession }}</div>
+                        </div>
+                    </div>
+                </div>
              </div>
           </div>
 
@@ -469,6 +477,43 @@ type MoisOption = 'current' | 'last' | 'custom';
     .btn-nav-primary:hover:not(:disabled) { background: #1a424a; }
     .btn-nav-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
+    .info-tag { background: #E0F2FE; color: #0369A1; padding: 12px; border-radius: 8px; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; }
+
+    /* Drag & Drop Styles */
+    .drag-drop-container { display: grid; grid-template-columns: 1fr 320px; gap: 24px; }
+    .drop-zone { 
+      border: 2px dashed #CBD5E1; border-radius: 12px; padding: 20px; background: #F8FAFC; min-height: 150px;
+      transition: all 0.2s; display: flex; flex-direction: column; gap: 12px;
+    }
+    .drop-zone.drag-over { border-color: #245C67; background: #F0FDFA; }
+    .drop-placeholder { margin: auto; color: #94A3B8; text-align: center; font-size: 0.9rem; }
+    
+    .session-sidebar { background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 12px; padding: 16px; height: fit-content; }
+    .sidebar-title { font-size: 0.95rem; font-weight: 700; color: #334155; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+    .sessions-list { display: flex; flex-direction: column; gap: 10px; max-height: 400px; overflow-y: auto; padding-right: 4px; }
+    
+    .session-card-mini {
+      background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px; cursor: grab;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .session-card-mini:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+    .session-card-mini:active { cursor: grabbing; }
+    
+    .session-card-attached {
+      background: #FFFFFF; border: 1px solid #245C67; border-radius: 8px; padding: 12px; display: flex; justify-content: space-between; align-items: center;
+      animation: slideIn 0.3s ease-out;
+    }
+    @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+    
+    .session-info { flex: 1; }
+    .session-name { font-weight: 700; color: #1E293B; font-size: 0.9rem; }
+    .session-meta { font-size: 0.8rem; color: #64748B; margin-top: 2px; }
+    
+    .btn-detach { background: transparent; border: none; color: #EF4444; cursor: pointer; padding: 4px; border-radius: 4px; transition: background 0.2s; }
+    .btn-detach:hover { background: #FEF2F2; }
+
+    .attached-count { background: #245C67; color: white; padding: 2px 8px; border-radius: 999px; font-size: 0.75rem; }
+
     @media (max-width: 768px) {
       .form-grid { grid-template-columns: 1fr; }
       .header-row { flex-direction: column; gap: 1rem; }
@@ -480,34 +525,13 @@ type MoisOption = 'current' | 'last' | 'custom';
 })
 export class CoachRapportMissionsComponent implements OnInit {
   
-  periodTypes = [
-    { id: 'LIBRE' as PeriodType, label: 'Personnalisé' },
-    { id: 'HEBDO' as PeriodType, label: 'Hebdo' },
-    { id: 'MOIS' as PeriodType, label: 'Mensuel' },
-  ];
 
-  hebdoOptions = [
-    { val: 'current' as HebdoOption, label: 'Cette semaine' },
-    { val: 'last' as HebdoOption, label: 'Semaine passée' },
-    { val: 'custom' as HebdoOption, label: 'Choisir semaine' },
-  ];
 
-  moisOptions = [
-    { val: 'current' as MoisOption, label: 'Ce mois' },
-    { val: 'last' as MoisOption, label: 'Mois passé' },
-    { val: 'custom' as MoisOption, label: 'Choisir mois' },
-  ];
-
-  programmes: any[] = [];
-  selectedProgramId: number = 0;
-  
-  periodType: PeriodType = 'MOIS';
-  dateFrom = '';
-  dateTo = '';
-  hebdoOpt: HebdoOption = 'current';
-  moisOpt: MoisOption = 'current';
-  customWeek = '';
   customMonth = '';
+
+  thematiques: any[] = [];
+  selectedThematiqueId: number = 0;
+  selectedThematique: any = null;
 
   coachId: number = 0;
 
@@ -522,6 +546,9 @@ export class CoachRapportMissionsComponent implements OnInit {
   // Data State
   history: any[] = [];
   currentReport: any = {};
+  
+  attachedSessions: any[] = [];
+  availableSessions: any[] = [];
 
   constructor(
     private coachService: CoachService,
@@ -534,11 +561,12 @@ export class CoachRapportMissionsComponent implements OnInit {
     const cid = this.authService.getUserId();
     this.coachId = typeof cid === 'string' ? parseInt(cid, 10) : (cid || 0);
 
-    this.coachService.getCoachProgrammes(this.coachId).subscribe(
+    this.coachService.getThematiquesAssignedToCoach(this.coachId).subscribe(
       (data) => {
-        this.programmes = data;
-        if(this.programmes.length > 0) {
-            this.selectedProgramId = this.programmes[0].id;
+        this.thematiques = data;
+        if(this.thematiques.length > 0) {
+            this.selectedThematiqueId = this.thematiques[0].id;
+            this.selectedThematique = this.thematiques[0];
             this.loadHistory();
         }
         this.cdr.detectChanges();
@@ -547,13 +575,18 @@ export class CoachRapportMissionsComponent implements OnInit {
   }
 
   getProgramName(id: number): string {
-      const p = this.programmes.find(prog => prog.id === id);
-      return p ? p.nom : 'Programme inconnu';
+      const t = this.thematiques.find(them => them.id === id);
+      return t && t.programme ? t.programme.nom : 'Programme inconnu';
+  }
+
+  onThematiqueChange() {
+      this.selectedThematique = this.thematiques.find(t => t.id === Number(this.selectedThematiqueId));
+      this.loadHistory();
   }
 
   loadHistory() {
-      if(this.selectedProgramId === 0 || !this.coachId) return;
-      this.coachService.getRapportsMission(this.coachId, this.selectedProgramId).subscribe({
+      if(this.selectedThematiqueId === 0 || !this.coachId) return;
+      this.coachService.getRapportsMissionByThematique(this.coachId, this.selectedThematiqueId).subscribe({
           next: (data) => {
               this.history = data;
               this.cdr.detectChanges();
@@ -565,18 +598,13 @@ export class CoachRapportMissionsComponent implements OnInit {
   }
 
   initNewReport() {
-    if (this.selectedProgramId === 0) return;
-    const { start, end } = this.calculateDates();
-    if (!start || !end) {
-      this.toastr.warning("Veuillez vérifier les dates de la période."); return;
-    }
-
+    if (this.selectedThematiqueId === 0) return;
+    
     this.currentReport = {
         coachId: this.coachId,
-        programmeId: this.selectedProgramId,
-        periodType: this.periodType,
-        dateDebut: start,
-        dateFin: end,
+        programmeId: this.selectedThematique.programme ? this.selectedThematique.programme.id : 0,
+        thematiqueId: this.selectedThematiqueId,
+        attachedSessionIds: '',
         
         // Blank sections out
         introduction: '',
@@ -591,6 +619,9 @@ export class CoachRapportMissionsComponent implements OnInit {
         conclusion: ''
     };
 
+    this.attachedSessions = [];
+    this.availableSessions = [];
+    this.loadAvailableSessions();
     this.editingReport = true;
     this.currentSection = 1;
   }
@@ -598,17 +629,33 @@ export class CoachRapportMissionsComponent implements OnInit {
   openReport(reportData: any) {
       this.currentReport = { ...reportData };
       this.currentReport.coachId = this.coachId;
-      this.currentReport.programmeId = this.selectedProgramId;
+      this.currentReport.programmeId = reportData.programme ? reportData.programme.id : 0;
+      this.currentReport.thematiqueId = reportData.thematique ? reportData.thematique.id : this.selectedThematiqueId;
+      
+      this.attachedSessions = [];
+      if (this.currentReport.attachedSessionIds) {
+          const ids = this.currentReport.attachedSessionIds.split(',').map(Number);
+          this.coachService.getRapportsSessionByIds(ids).subscribe(data => {
+              this.attachedSessions = data;
+              this.cdr.detectChanges();
+          });
+      }
+      
+      this.loadAvailableSessions();
       this.editingReport = true;
       this.currentSection = 1;
   }
 
   saveReport() {
       this.isSaving = true;
+      
+      // Update attachedSessionIds from the attachedSessions array
+      this.currentReport.attachedSessionIds = this.attachedSessions.map(s => s.id).join(',');
+      
       this.coachService.saveRapportMission(this.currentReport).subscribe({
           next: (res) => {
               this.toastr.success('Rapport enregistré avec succès');
-              this.currentReport = res; // update ID if needed
+              this.currentReport = res; 
               this.isSaving = false;
               this.loadHistory();
               this.cdr.detectChanges();
@@ -638,6 +685,48 @@ export class CoachRapportMissionsComponent implements OnInit {
               error: () => this.toastr.error('Erreur de suppression')
           });
       }
+  }
+
+  loadAvailableSessions() {
+      if (!this.coachId || !this.selectedThematiqueId) return;
+      this.coachService.getRapportsSessionByThematique(this.coachId, this.selectedThematiqueId).subscribe(data => {
+          // Filter out sessions already attached
+          const attachedIds = this.attachedSessions.map(s => s.id);
+          this.availableSessions = data.filter(s => !attachedIds.includes(s.id));
+          this.cdr.detectChanges();
+      });
+  }
+
+  // --- DRAG & DROP ---
+  onDragStart(event: DragEvent, session: any) {
+      event.dataTransfer?.setData('sessionReport', JSON.stringify(session));
+  }
+
+  onDragOver(event: DragEvent) {
+      event.preventDefault(); // Necessary to allow drop
+  }
+
+  onDrop(event: DragEvent) {
+      event.preventDefault();
+      const data = event.dataTransfer?.getData('sessionReport');
+      if (data) {
+          const session = JSON.parse(data);
+          this.attachSession(session);
+      }
+  }
+
+  attachSession(session: any) {
+      if (!this.attachedSessions.find(s => s.id === session.id)) {
+          this.attachedSessions.push(session);
+          this.availableSessions = this.availableSessions.filter(s => s.id !== session.id);
+          this.cdr.detectChanges();
+      }
+  }
+
+  detachSession(session: any) {
+      this.attachedSessions = this.attachedSessions.filter(s => s.id !== session.id);
+      this.availableSessions.push(session);
+      this.cdr.detectChanges();
   }
 
   // --- WIZARD LOGIC ---
@@ -679,44 +768,7 @@ export class CoachRapportMissionsComponent implements OnInit {
     }
   }
 
-  // --- UTILS ---
-  private calculateDates(): { start: string | null, end: string | null } {
-    const pt = this.periodType;
-    const today = new Date();
-    const format = (d: Date) => d.toISOString().split('T')[0];
-    
-    if (pt === 'LIBRE') return { start: this.dateFrom || null, end: this.dateTo || null };
-    if (pt === 'HEBDO') {
-      const startW = new Date(today);
-      startW.setDate(today.getDate() - today.getDay() + 1);
-      const endW = new Date(startW); endW.setDate(startW.getDate() + 6);
 
-      if (this.hebdoOpt === 'current') return { start: format(startW), end: format(endW) };
-      if (this.hebdoOpt === 'last') {
-        startW.setDate(startW.getDate() - 7); endW.setDate(endW.getDate() - 7);
-        return { start: format(startW), end: format(endW) };
-      }
-      if (this.customWeek) return { start: `${this.customWeek.substring(0,4)}-01-01`, end: `${this.customWeek.substring(0,4)}-12-31` };
-    }
-    if (pt === 'MOIS') {
-      if (this.moisOpt === 'current') {
-        const startM = new Date(today.getFullYear(), today.getMonth(), 1);
-        const endM = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-        return { start: format(startM), end: format(endM) };
-      }
-      if (this.moisOpt === 'last') {
-        const lM = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-        const lMEnd = new Date(today.getFullYear(), today.getMonth(), 0);
-        return { start: format(lM), end: format(lMEnd) };
-      }
-      if (this.customMonth) {
-        const [y, m] = this.customMonth.split('-');
-        const endM = new Date(Number(y), Number(m), 0);
-        return { start: `${this.customMonth}-01`, end: format(endM) };
-      }
-    }
-    return { start: null, end: null };
-  }
 
   async downloadPdf() {
     this.toastr.info("Génération du PDF en cours...");
@@ -750,7 +802,7 @@ export class CoachRapportMissionsComponent implements OnInit {
       
       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
       
-      const fileName = `Rapport_Accompagnement_${this.getProgramName(this.selectedProgramId)}.pdf`;
+      const fileName = `Rapport_Accompagnement_${this.selectedThematique?.nom || 'rapport'}.pdf`;
       pdf.save(fileName);
       this.toastr.success("PDF téléchargé.");
     } catch (e) {
