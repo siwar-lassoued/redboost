@@ -24,7 +24,8 @@ export interface AppNotification {
 export class NotificationWebSocketService {
   // backend endpoints
   private apiUrl = `${environment.apiUrl}/notifications`;
-  private wsUrl = environment.apiUrl.replace('http', 'ws') + '/ws'; // Convert http/https to ws/wss
+  // SockJS needs http/https URL — it handles the ws upgrade internally
+  private wsUrl = environment.apiUrl + '/ws';
 
   private stompClient: Client | null = null;
   
@@ -268,6 +269,7 @@ export class NotificationWebSocketService {
       this.stompClient.deactivate();
     }
     this.connectionStatusSubject.next(false);
+    this.notificationsSubject.next([]); // Clear notifications on logout
     this.currentUserEmail = null;
   }
 

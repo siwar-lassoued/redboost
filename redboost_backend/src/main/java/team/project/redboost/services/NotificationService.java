@@ -115,4 +115,8 @@ public class NotificationService {
                 .entityId(notification.getEntityId())
                 .build();
     }
+
+    public NotificationRepository getNotificationRepository() {
+        return notificationRepository;
+    }
 }

@@ -419,41 +419,66 @@
 
         <!-- Matched Entrepreneurs Section (Coach only) -->
         <div class="matched-section" *ngIf="user?.role === 'COACH'">
-            <h3 class="section-title">
-                <i class="fas fa-users"></i> Mes Entrepreneurs Matchés
-            </h3>
-
-            <div *ngIf="isLoadingMatched" class="matched-loading">
-                <p>Chargement...</p>
+            <div class="matched-header">
+                <div>
+                    <h2 class="matched-title">Mes Entrepreneurs Matchés</h2>
+                    <p class="matched-subtitle">Liste des entrepreneurs regroupés par thématique de coaching</p>
+                </div>
             </div>
 
-            <div *ngIf="!isLoadingMatched && matchedGroups.length === 0" class="matched-empty">
-                <p>Aucun entrepreneur matché pour le moment.</p>
+            <div *ngIf="isLoadingMatched" class="matched-empty-state">
+                <p class="empty-text">Chargement des données...</p>
             </div>
 
-            <div *ngFor="let group of matchedGroups" class="thematique-group">
-                <div class="thematique-header">
-                    <span class="thematique-name">{{ group.thematiqueName }}</span>
-                    <span class="thematique-count">{{ group.count }} entrepreneur(s)</span>
-                    <span class="thematique-status" 
-                          [class.status-active]="group.thematiqueStatut === 'ACTIVE'"
-                          [class.status-done]="group.thematiqueStatut === 'TERMINEE'">
+            <div *ngIf="!isLoadingMatched && matchedGroups.length === 0" class="matched-empty-state">
+                <i class="pi pi-users" style="font-size: 2rem; color: #D1D5DB;"></i>
+                <p class="empty-text">Aucun entrepreneur matché</p>
+                <p class="empty-sub">Les entrepreneurs vous seront assignés par thématique</p>
+            </div>
+
+            <div *ngFor="let group of matchedGroups" class="matched-thematique-block">
+                <!-- Thématique Tab Header -->
+                <div class="thematique-tab-header">
+                    <span class="thematique-label">{{ group.thematiqueName }}</span>
+                    <span class="thematique-badge-count">{{ group.count }}</span>
+                    <span class="thematique-status-badge"
+                          [class.active]="group.thematiqueStatut === 'ACTIVE'"
+                          [class.done]="group.thematiqueStatut === 'TERMINEE'">
                         {{ group.thematiqueStatut }}
                     </span>
                 </div>
-                <div class="entrepreneur-list">
-                    <div *ngFor="let ent of group.entrepreneurs" class="entrepreneur-row">
-                        <div class="ent-info">
-                            <div class="ent-name">{{ ent.firstName }} {{ ent.lastName }}</div>
-                            <div class="ent-meta">
-                                <span *ngIf="ent.email">{{ ent.email }}</span>
-                                <span *ngIf="ent.entreprise"> · {{ ent.entreprise }}</span>
-                                <span *ngIf="ent.secteur"> · {{ ent.secteur }}</span>
-                            </div>
-                        </div>
-                        <button class="btn-message" (click)="openChat(ent.id)" title="Envoyer un message">
-                            <i class="pi pi-comment"></i> Message
-                        </button>
+
+                <!-- Table Card -->
+                <div class="matched-table-card">
+                    <div class="matched-table-scroll">
+                        <table class="matched-table">
+                            <thead>
+                                <tr>
+                                    <th>Nom</th>
+                                    <th>Email</th>
+                                    <th>Entreprise</th>
+                                    <th>Secteur</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngFor="let ent of group.entrepreneurs" class="matched-table-row">
+                                    <td>
+                                        <div class="matched-name-cell">
+                                            <span class="matched-name-text">{{ ent.firstName }} {{ ent.lastName }}</span>
+                                        </div>
+                                    </td>
+                                    <td><span class="matched-email-text">{{ ent.email || '—' }}</span></td>
+                                    <td><span class="matched-prog-text">{{ ent.entreprise || '—' }}</span></td>
+                                    <td><span class="matched-prog-text">{{ ent.secteur || '—' }}</span></td>
+                                    <td>
+                                        <button class="matched-btn-action" (click)="openChat(ent.id)">
+                                            <i class="pi pi-comment"></i> Message
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>

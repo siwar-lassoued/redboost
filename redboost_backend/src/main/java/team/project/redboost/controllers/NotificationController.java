@@ -29,10 +29,19 @@ public class NotificationController {
         return user.getId();
     }
 
+    @GetMapping("/debug")
+    public ResponseEntity<List<team.project.redboost.entities.Notification>> debugNotifications() {
+        // Temporary endpoint to dump notifications to check recipient IDs
+        List<team.project.redboost.entities.Notification> all = ((team.project.redboost.repositories.NotificationRepository) notificationService.getNotificationRepository()).findAll();
+        all.sort((a, b) -> b.getId().compareTo(a.getId()));
+        return ResponseEntity.ok(all.size() > 20 ? all.subList(0, 20) : all);
+    }
+
     @GetMapping
     public ResponseEntity<List<NotificationDTO>> getAllNotifications(@AuthenticationPrincipal UserDetails userDetails) {
         Long userId = getAuthenticatedUserId(userDetails);
         List<NotificationDTO> notifications = notificationService.getNotificationsForUser(userId);
+        System.out.println("DEBUG - User " + userDetails.getUsername() + " (ID: " + userId + ") requested notifications. Returning " + notifications.size() + " items.");
         return ResponseEntity.ok(notifications);
     }
 

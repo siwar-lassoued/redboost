@@ -153,23 +153,22 @@ export class CoachChatComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    const user = this.authService.currentUser$.value;
-    if (!user?.id) {
-      return;
-    }
-
-   this.currentUserId = String(user.id);
-    this.loadAssignedEntrepreneurs();
+    this.authService.getCurrentUser().subscribe(user => {
+      if (user && user.id) {
+        this.currentUserId = String(user.id);
+        this.loadAssignedEntrepreneurs();
+      }
+    });
   }
 
   loadAssignedEntrepreneurs(): void {
     this.userService.getEntrepreneursByCoach(this.currentUserId).subscribe({
       next: (users) => {
         this.contacts = users.map((u) => ({
-          id: u.id,
-          name: `${u.prenom} ${u.nom}`.trim(),
-          company: u.startupName || u.startup,
-          avatar: `${u.prenom?.[0] || ''}${u.nom?.[0] || ''}`.toUpperCase(),
+          id: String(u.id),
+          name: `${u.firstName || u.prenom || ''} ${u.lastName || u.nom || ''}`.trim(),
+          company: u.entreprise || u.startupName || u.startup || '',
+          avatar: `${(u.firstName || u.prenom || '?')[0]}${(u.lastName || u.nom || '?')[0]}`.toUpperCase(),
         }));
         this.filteredContacts = [...this.contacts];
         if (this.filteredContacts.length) {

@@ -45,10 +45,8 @@ export class UserService {
         );
     }
 
-    getEntrepreneursByCoach(coachId: string): Observable<User[]> {
-        return this.http.get<ApiResponse<User[]>>(`${this.baseUrl}/coach/${coachId}/entrepreneurs`).pipe(
-            map(res => res.data)
-        );
+    getEntrepreneursByCoach(coachId: string): Observable<any[]> {
+        return this.http.get<any[]>(`${environment.apiUrl}/coach/${coachId}/entrepreneurs`);
     }
 
     getCoachesByEntrepreneur(entrepreneurId: string): Observable<User[]> {
