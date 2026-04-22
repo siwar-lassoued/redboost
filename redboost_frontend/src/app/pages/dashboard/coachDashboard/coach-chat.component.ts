@@ -153,7 +153,7 @@ export class CoachChatComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.authService.getCurrentUser().subscribe(user => {
+    this.authService.currentUser$.subscribe(user => {
       if (user && user.id) {
         this.currentUserId = String(user.id);
         this.loadAssignedEntrepreneurs();
