@@ -63,7 +63,10 @@ public class CoachService {
     @Autowired
     private GoogleCalendarService googleCalendarService;
 
-    // --- DASHBOARD OVERVIEW ---
+    @Autowired
+    private CandidatureRedstarterRepository candidatureRepository;
+
+    
 
     public DashboardStatsDTO getDashboardStats(Long coachId) {
         List<Matching> matchings = matchingRepository.findByCoachIdAndStatut(coachId, Matching.StatutMatching.VALIDE);
@@ -110,8 +113,11 @@ public class CoachService {
         return matchings.stream()
             .filter(m -> seenIds.add(m.getEntrepreneurId()))
             .map(m -> {
-            User ent = userRepository.findById(m.getEntrepreneurId()).orElse(null);
-            if (ent == null) return null;
+                CandidatureRedstarter cand = candidatureRepository.findById(m.getEntrepreneurId()).orElse(null);
+                if (cand == null || cand.getEmail() == null) return null;
+                
+                User ent = userRepository.findByEmail(cand.getEmail());
+                if (ent == null) return null;
             
             List<Tache> tasks = tacheRepository.findByResponsableId(ent.getId());
             long total = tasks.size();
@@ -172,7 +178,10 @@ public class CoachService {
             for (Matching m : themMatchings) {
                 if (!seenEntIds.add(m.getEntrepreneurId())) continue;
 
-                User ent = userRepository.findById(m.getEntrepreneurId()).orElse(null);
+                CandidatureRedstarter cand = candidatureRepository.findById(m.getEntrepreneurId()).orElse(null);
+                if (cand == null || cand.getEmail() == null) continue;
+
+                User ent = userRepository.findByEmail(cand.getEmail());
                 if (ent == null) continue;
 
                 Map<String, Object> entMap = new LinkedHashMap<>();
