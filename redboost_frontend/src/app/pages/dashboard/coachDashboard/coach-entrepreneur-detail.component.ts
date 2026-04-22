@@ -33,7 +33,7 @@ import { ToastrService } from 'ngx-toastr';
                 <div class="project-desc"><b>Description du projet :</b> {{ entrepreneur.startupDescription }}</div>
             </div>
             <div class="header-actions">
-                <button class="btn-coach-badge">Sami Ben Salah</button>
+                <button class="btn-coach-badge" *ngIf="coachProfile">{{ coachProfile.firstName }} {{ coachProfile.lastName }}</button>
             </div>
         </div>
 
@@ -165,7 +165,7 @@ import { ToastrService } from 'ngx-toastr';
                 <div *ngFor="let note of entrepreneur.notes" class="session-report-card">
                     <div class="session-report-header">
                         <div class="flex items-center gap-3">
-                            <div class="avatar-sm-dark">SB</div>
+                            <div class="avatar-sm-dark" *ngIf="coachProfile">{{ getCoachInitials() }}</div>
                             <div>
                                 <div class="text-white font-bold">Rapport</div>
                                 <div class="text-gray-300 text-sm">{{ note.date | date:'mediumDate' }}</div>
@@ -651,6 +651,7 @@ export class CoachEntrepreneurDetailComponent implements OnInit {
   isUploading: boolean = false;
   uploadingTaskId: number | null = null;
   isDownloadingPdf: boolean = false;
+  coachProfile: any = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -665,6 +666,16 @@ export class CoachEntrepreneurDetailComponent implements OnInit {
     const rawCoachId = this.authService.getUserId();
     this.coachId = typeof rawCoachId === 'string' ? parseInt(rawCoachId, 10) : rawCoachId;
     
+    if (this.coachId) {
+      this.coachService.getCoachProfile().subscribe({
+        next: (profile) => {
+          this.coachProfile = profile;
+          this.cdr.detectChanges();
+        },
+        error: (err) => console.error('Error loading coach profile:', err)
+      });
+    }
+
     this.route.params.subscribe(params => {
       const entrepreneurId = +params['id'];
       if (entrepreneurId && this.coachId) {
@@ -674,6 +685,11 @@ export class CoachEntrepreneurDetailComponent implements OnInit {
         this.toastr.error('ID Entrepreneur ou Coach manquant', 'Erreur');
       }
     });
+  }
+
+  getCoachInitials(): string {
+    if (!this.coachProfile) return '';
+    return (this.coachProfile.firstName?.charAt(0) || '') + (this.coachProfile.lastName?.charAt(0) || '');
   }
 
   loadEntrepreneurDetails(coachId: number, entrepreneurId: number): void {
