@@ -163,6 +163,9 @@ export class CoachService {
   deleteDisponibilite(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/disponibilites/${id}`);
   }
+  updateDisponibilite(dispoId: number, thematiqueId: number): Observable<DisponibiliteDTO> {
+    return this.http.put<DisponibiliteDTO>(`${this.apiUrl}/disponibilites/${dispoId}/thematique/${thematiqueId}`, {});
+  }
 
   // SESSION
   getSessionsByDisponibilite(dispoId: number): Observable<SessionCoachDTO[]> {

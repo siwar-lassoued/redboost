@@ -406,7 +406,20 @@ public class CoachService {
     public void deleteDisponibilite(Long id) {
         disponibiliteRepository.deleteById(id);
     }
+    @Transactional
+    public DisponibiliteDTO updateDisponibilite(Long disponibiliteId, Long thematiqueId) {
+        Disponibilite disponibilite = disponibiliteRepository.findById(disponibiliteId)
+                .orElseThrow(() -> new ValidationException("Disponibilité non trouvée"));
+        ThematiqueCoaching theme = thematiqueRepository.findById(thematiqueId)
+                .orElseThrow(() -> new ValidationException("Thématique non trouvée"));
 
+        disponibilite.setThematique(theme);
+        disponibilite.setDateDebut(theme.getDateDebut());
+        disponibilite.setDateFin(theme.getDateFin());
+
+        Disponibilite saved = disponibiliteRepository.save(disponibilite);
+        return mapToDTO(saved);
+    }
     // --- SESSION COACH ---
     
     public List<SessionCoachDTO> getSessionsByDisponibilite(Long disponibiliteId) {

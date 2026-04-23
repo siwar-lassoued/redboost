@@ -29,6 +29,9 @@ interface DateSlotGroup {
               <button class="btn-primary shadow-glow" (click)="openDispoModal()">
                   <i class="pi pi-plus"></i> Ajouter disponibilité
               </button>
+              <button class="btn-outline" [disabled]="disponibilites.length === 0" (click)="openEditDispoModal()">
+                  <i class="pi pi-pencil"></i> Modifier disponibilité
+              </button>
           </div>
       </div>
 
@@ -107,7 +110,10 @@ interface DateSlotGroup {
                           <strong>{{dispo.thematiqueNom || 'Thématique'}}</strong>
                           <span>Du {{dispo.dateDebut | date:'dd/MM/yyyy'}} au {{dispo.dateFin | date:'dd/MM/yyyy'}}</span>
                       </div>
-                      <button (click)="deleteDispo(dispo.id!)" class="btn-icon-danger"><i class="pi pi-trash"></i></button>
+                      <div class="dispo-actions">
+                        <button (click)="openEditDispoModal(dispo)" class="btn-icon-edit"><i class="pi pi-pencil"></i></button>
+                        <button (click)="deleteDispo(dispo.id!)" class="btn-icon-danger"><i class="pi pi-trash"></i></button>
+                      </div>
                   </div>
                   <div *ngIf="disponibilites.length === 0" class="text-sm text-gray-400 italic">Aucune disponibilité.</div>
               </div>
@@ -214,6 +220,47 @@ interface DateSlotGroup {
               </div>
           </div>
       </div>
+      <!-- Modal Modifier une disponibilité -->
+      <div *ngIf="showEditDispoModal" class="modal-backdrop" (click)="showEditDispoModal = false">
+          <div class="modal-content" (click)="$event.stopPropagation()">
+              <div class="modal-header">
+                  <div>
+                      <h2>Modifier une disponibilité</h2>
+                      <p class="text-sm text-gray-500 mt-1">Choisissez une disponibilité et associez-la à une autre thématique.</p>
+                  </div>
+                  <button class="close-btn" (click)="showEditDispoModal = false"><i class="pi pi-times"></i></button>
+              </div>
+              <div class="modal-body">
+                  <div class="form-group">
+                      <label>Disponibilité à modifier *</label>
+                      <select class="premium-input" [(ngModel)]="selectedDispoToEditId" (ngModelChange)="onDispoToEditSelected()">
+                        <option [ngValue]="null">Sélectionner une disponibilité...</option>
+                        <option *ngFor="let dispo of disponibilites" [ngValue]="dispo.id">
+                          {{dispo.thematiqueNom}} ({{dispo.dateDebut | date:'shortDate'}} - {{dispo.dateFin | date:'shortDate'}})
+                        </option>
+                      </select>
+                  </div>
+
+                  <div class="form-group">
+                      <label>Nouvelle thématique *</label>
+                      <select class="premium-input" [(ngModel)]="editThematiqueId">
+                          <option [ngValue]="null">Sélectionner une nouvelle thématique...</option>
+                          <option *ngFor="let t of thematiques" [ngValue]="t.id">
+                              {{t.nom}} ({{t.dateDebut | date:'shortDate'}} - {{t.dateFin | date:'shortDate'}})
+                          </option>
+                      </select>
+                  </div>
+
+                  <div *ngIf="editValidationError" class="error-banner">
+                    <i class="pi pi-exclamation-triangle"></i> {{ editValidationError }}
+                  </div>
+              </div>
+              <div class="modal-actions">
+                  <button class="btn-outline" (click)="showEditDispoModal = false">Annuler</button>
+                  <button class="btn-primary" [disabled]="!selectedDispoToEditId || !editThematiqueId" (click)="updateDisponibilite()">Enregistrer</button>
+              </div>
+          </div>
+      </div>
 
       <!-- Loading -->
       <div *ngIf="loading" class="loading-overlay">
@@ -260,6 +307,9 @@ interface DateSlotGroup {
     .event-name { font-weight: 700; color: #2D3748; font-size: 0.9rem; }
     .event-datetime { font-size: 0.8rem; color: #718096; margin-top: 0.2rem; display: flex; align-items: center; gap: 0.3rem; }
     .dispo-item { display: flex; justify-content: space-between; align-items: center; padding: 0.8rem; border-radius: 10px; background: #F8FAFC; border: 1px solid #E2E8F0; margin-bottom: 0.5rem; }
+    .dispo-actions { display: flex; gap: 0.4rem; }
+    .btn-icon-edit { background: #EBF8FF; color: #3182CE; border: none; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+    .btn-icon-edit:hover { background: #BEE3F8; }
     .dispo-info { display: flex; flex-direction: column; }
     .dispo-info strong { color: #2D3748; font-size: 0.9rem; }
     .dispo-info span { color: #718096; font-size: 0.8rem; margin-top: 0.1rem; }
@@ -351,13 +401,17 @@ export class DisponibilitesComponent implements OnInit {
   coachId!: number;
   loading: boolean = false;
   showDispoModal: boolean = false;
+  showEditDispoModal: boolean = false;
   selectedThematiqueId: number | null = null;
+  selectedDispoToEditId: number | null = null;
+  editThematiqueId: number | null = null;
   newDispoTitle: string = '';
   defaultTitle: string = '';
   dateSlotGroups: DateSlotGroup[] = [{ date: '', slots: [{ start: '', end: '' }] }];
   sessionDuration: string = '1h';
   newSessionType: string = 'EN_LIGNE';
   dispoValidationError: string | null = null;
+  editValidationError: string | null = null;
 
   selectedFilterThematiqueId: number | null = null;
   activeFilterThematique: ThematiqueCoachingDTO | null = null;
@@ -437,6 +491,25 @@ export class DisponibilitesComponent implements OnInit {
       this.newDispoTitle = this.programmes[0].nom;
     }
   }
+  openEditDispoModal(dispo?: DisponibiliteDTO): void {
+    this.showEditDispoModal = true;
+    this.editValidationError = null;
+    if (dispo?.id) {
+      this.selectedDispoToEditId = dispo.id;
+      this.editThematiqueId = dispo.thematiqueId;
+      return;
+    }
+    if (this.disponibilites.length > 0) {
+      this.selectedDispoToEditId = this.disponibilites[0].id || null;
+      this.editThematiqueId = this.disponibilites[0].thematiqueId || null;
+    }
+  }
+
+  onDispoToEditSelected(): void {
+    const selected = this.disponibilites.find(d => d.id === this.selectedDispoToEditId);
+    this.editThematiqueId = selected?.thematiqueId ?? null;
+    this.editValidationError = null;
+  }
 
   private normalizeCalendarDate(value: string): string {
     if (!value) return '';
@@ -500,6 +573,25 @@ private mapCalendarEvents(events: CoachCalendarEventDTO[]): any[] {
         this.loadData();
       },
       error: () => {}
+    });
+  }
+  updateDisponibilite(): void {
+    if (!this.selectedDispoToEditId || !this.editThematiqueId) return;
+    const current = this.disponibilites.find(d => d.id === this.selectedDispoToEditId);
+    if (current?.thematiqueId === this.editThematiqueId) {
+      this.editValidationError = 'Veuillez choisir une thématique différente de la thématique actuelle.';
+      return;
+    }
+
+    this.editValidationError = null;
+    this.coachService.updateDisponibilite(this.selectedDispoToEditId, this.editThematiqueId).subscribe({
+      next: () => {
+        this.showEditDispoModal = false;
+        this.loadData();
+      },
+      error: () => {
+        this.editValidationError = 'La modification a échoué. Veuillez réessayer.';
+      }
     });
   }
 

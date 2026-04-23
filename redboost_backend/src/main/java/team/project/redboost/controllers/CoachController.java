@@ -36,6 +36,12 @@ public class CoachController {
         coachService.deleteDisponibilite(id);
         return ResponseEntity.noContent().build();
     }
+    @PutMapping("/disponibilites/{id}/thematique/{thematiqueId}")
+    public ResponseEntity<DisponibiliteDTO> updateDisponibilite(
+            @PathVariable Long id,
+            @PathVariable Long thematiqueId) {
+        return ResponseEntity.ok(coachService.updateDisponibilite(id, thematiqueId));
+    }
 
     // --- SESSION COACH ---
 
