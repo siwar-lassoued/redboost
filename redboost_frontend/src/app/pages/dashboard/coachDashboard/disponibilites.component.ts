@@ -3,10 +3,24 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CoachService, DisponibiliteDTO, SessionCoachDTO, ThematiqueCoachingDTO, CoachCalendarEventDTO, ProgrammeDTO } from './services/coach.service';
 import { AuthService } from '../../frontoffice/service/auth.service';
-
+import { firstValueFrom } from 'rxjs';
 interface DateSlotGroup {
   date: string;
   slots: { start: string; end: string }[];
+}
+
+interface SessionView {
+  session?: SessionCoachDTO;
+  isEditing: boolean;
+  isNew: boolean;
+  editStart: string;
+  editEnd: string;
+}
+
+interface DateGroupView {
+  date: string;
+  disponibiliteId: number;
+  sessions: SessionView[];
 }
 
 @Component({
@@ -131,13 +145,7 @@ interface DateSlotGroup {
                   <button class="close-btn" (click)="showDispoModal = false"><i class="pi pi-times"></i></button>
               </div>
               <div class="modal-body">
-                  <div class="form-group">
-                      <label>Titre de la disponibilité *</label>
-                      <input type="text" class="premium-input" [(ngModel)]="newDispoTitle" placeholder="Ex: Session individuelle Boost Tech">
-                      <p *ngIf="defaultTitle" class="field-help" style="color:#059669;"><i class="pi pi-check-circle" style="margin-right:4px;"></i> Pré-rempli depuis le programme : <strong>{{ defaultTitle }}</strong></p>
-                  </div>
-
-                  <div class="form-group">
+                <div class="form-group">
                       <label>Thématique *</label>
                       <select class="premium-input" [(ngModel)]="selectedThematiqueId" (ngModelChange)="onThematiqueSelected()">
                            <option [ngValue]="null">Sélectionner une thématique...</option>
@@ -145,6 +153,11 @@ interface DateSlotGroup {
                             {{t.nom}} ({{t.dateDebut | date:'shortDate'}} - {{t.dateFin | date:'shortDate'}})
                           </option>
                       </select>
+                  </div>
+                  <div class="form-group">
+                      <label>Nom du programme *</label>
+                      <input type="text" class="premium-input" [(ngModel)]="newDispoTitle" placeholder="Ex: Session individuelle Boost Tech">
+                      <p *ngIf="defaultTitle" class="field-help" style="color:#059669;"><i class="pi pi-check-circle" style="margin-right:4px;"></i> Pré-rempli depuis le programme : <strong>{{ defaultTitle }}</strong></p>
                   </div>
 
                   <div *ngIf="selectedThematiqueObj" class="thematique-dates-banner">
@@ -226,29 +239,91 @@ interface DateSlotGroup {
               <div class="modal-header">
                   <div>
                       <h2>Modifier une disponibilité</h2>
-                      <p class="text-sm text-gray-500 mt-1">Choisissez une disponibilité et associez-la à une autre thématique.</p>
+                      <p class="text-sm text-gray-500 mt-1">Sélectionnez une thématique, puis une date ou un créneau à modifier.</p>
                   </div>
                   <button class="close-btn" (click)="showEditDispoModal = false"><i class="pi pi-times"></i></button>
               </div>
               <div class="modal-body">
                   <div class="form-group">
-                      <label>Disponibilité à modifier *</label>
-                      <select class="premium-input" [(ngModel)]="selectedDispoToEditId" (ngModelChange)="onDispoToEditSelected()">
-                        <option [ngValue]="null">Sélectionner une disponibilité...</option>
-                        <option *ngFor="let dispo of disponibilites" [ngValue]="dispo.id">
-                          {{dispo.thematiqueNom}} ({{dispo.dateDebut | date:'shortDate'}} - {{dispo.dateFin | date:'shortDate'}})
+                      <label>Thématique *</label>
+                      <select class="premium-input" [(ngModel)]="selectedEditThematiqueId" (ngModelChange)="onEditThematiqueSelected($event)">
+                        <option [ngValue]="null">Sélectionner une thématique...</option>
+                        <option *ngFor="let t of thematiques" [ngValue]="t.id">
+                          {{t.nom}} ({{t.dateDebut | date:'shortDate'}} - {{t.dateFin | date:'shortDate'}})
                         </option>
                       </select>
                   </div>
 
-                  <div class="form-group">
-                      <label>Nouvelle thématique *</label>
-                      <select class="premium-input" [(ngModel)]="editThematiqueId">
-                          <option [ngValue]="null">Sélectionner une nouvelle thématique...</option>
-                          <option *ngFor="let t of thematiques" [ngValue]="t.id">
-                              {{t.nom}} ({{t.dateDebut | date:'shortDate'}} - {{t.dateFin | date:'shortDate'}})
-                          </option>
-                      </select>
+                  <div *ngIf="selectedEditThematiqueObj" class="thematique-dates-banner">
+                    <i class="pi pi-info-circle"></i>
+                    <span>Thématique sélectionnée : <strong>{{ selectedEditThematiqueObj.nom }}</strong> ({{ selectedEditThematiqueObj.dateDebut | date:'dd/MM/yyyy' }} → {{ selectedEditThematiqueObj.dateFin | date:'dd/MM/yyyy' }})</span>
+                  </div>
+
+                  <div *ngIf="selectedEditThematiqueId && groupedEditDatesView.length === 0 && !loading && dispoIdsForActiveTheme.length === 0" class="error-banner">
+                    <i class="pi pi-info-circle"></i> Aucune disponibilité trouvée pour cette thématique.
+                  </div>
+
+                  <div class="form-group" *ngIf="selectedEditThematiqueId && groupedEditDatesView.length === 0 && !loading && dispoIdsForActiveTheme.length > 0">
+                    <div class="error-banner" style="margin-bottom: 1rem; background: #EBF8FF; border-color: #BEE3F8; color: #2B6CB0;">
+                      <i class="pi pi-info-circle"></i> La thématique possède une disponibilité, mais aucun créneau.
+                    </div>
+                    <button class="btn-outline" style="width:100%" (click)="addEmptyDateGroupForTheme()">
+                      <i class="pi pi-calendar-plus"></i> Ajouter une première date
+                    </button>
+                  </div>
+
+                  <div class="form-group" *ngIf="groupedEditDatesView.length > 0">
+                    <label>Disponibilités & Créneaux</label>
+                    <div *ngFor="let group of groupedEditDatesView; let gi = index" class="date-slot-group edit-date-group">
+                      <div class="dsg-header">
+                        <div class="dsg-date-row">
+                          <span *ngIf="group.date !== ''" class="dsg-badge">📅 {{ group.date | date:'dd/MM/yyyy' }}</span>
+                          <input *ngIf="group.date === ''" type="date" class="premium-input dsg-date-input" style="padding: 4px;font-size: 0.9rem;" [(ngModel)]="group.date" [min]="selectedEditThematiqueObj?.dateDebut || ''" [max]="selectedEditThematiqueObj?.dateFin || ''">
+                        </div>
+                      </div>
+                      <div class="dsg-slots">
+                        <div *ngFor="let sv of group.sessions; let si = index" class="slot-card edit-slot-card" [class.editing]="sv.isEditing">
+                          
+                          <!-- VIEW MODE -->
+                          <div *ngIf="!sv.isEditing" class="slot-read-only">
+                            <div class="slot-time">
+                              <i class="pi pi-clock"></i>
+                              <span>{{ sv.session?.heureDebut }} à {{ sv.session?.heureFin }}</span>
+                            </div>
+                            <div class="slot-actions">
+                              <button class="btn-icon-edit" title="Modifier" (click)="startEditSession(sv)"><i class="pi pi-pencil"></i></button>
+                              <button class="btn-icon-danger" title="Supprimer" (click)="deleteSession(sv, group, si)"><i class="pi pi-trash"></i></button>
+                            </div>
+                          </div>
+                          
+                          <!-- EDIT MODE -->
+                          <div *ngIf="sv.isEditing" class="slot-edit-mode">
+                            <div class="slot-grid" style="margin-bottom: 0.5rem;">
+                              <div>
+                                <label class="slot-label">Début</label>
+                                <input type="time" class="premium-input" [(ngModel)]="sv.editStart">
+                              </div>
+                              <div>
+                                <label class="slot-label">Fin</label>
+                                <input type="time" class="premium-input" [(ngModel)]="sv.editEnd">
+                              </div>
+                            </div>
+                            <div class="edit-actions">
+                              <button class="btn-outline-sm" (click)="cancelEditSession(group, sv, si)">Annuler</button>
+                              <button *ngIf="!sv.isNew" class="btn-primary-sm" (click)="saveSessionEdit(sv, group)">Enregistrer</button>
+                              <button *ngIf="sv.isNew" class="btn-primary-sm" (click)="saveNewSession(sv, group)">Créer</button>
+                            </div>
+                          </div>
+                          
+                        </div>
+                        <button class="btn-inline-slot mt-1" (click)="addNewSessionToDate(group)">
+                          <i class="pi pi-plus"></i> Ajouter un créneau à cette date
+                        </button>
+                      </div>
+                    </div>
+                    <button class="btn-outline mt-3" style="width: 100%" (click)="addEmptyDateGroupForTheme()">
+                      <i class="pi pi-calendar-plus"></i> Ajouter une autre date
+                    </button>
                   </div>
 
                   <div *ngIf="editValidationError" class="error-banner">
@@ -256,12 +331,10 @@ interface DateSlotGroup {
                   </div>
               </div>
               <div class="modal-actions">
-                  <button class="btn-outline" (click)="showEditDispoModal = false">Annuler</button>
-                  <button class="btn-primary" [disabled]="!selectedDispoToEditId || !editThematiqueId" (click)="updateDisponibilite()">Enregistrer</button>
+                  <button class="btn-outline" (click)="showEditDispoModal = false">Fermer</button>
               </div>
           </div>
       </div>
-
       <!-- Loading -->
       <div *ngIf="loading" class="loading-overlay">
           <div class="spinner"></div>
@@ -395,6 +468,23 @@ interface DateSlotGroup {
       transition: all .2s;
     }
     .btn-inline-slot:hover { border-color: #FF4D85; color: #FF4D85; background: #FFF5F7; }
+
+    /* Edit Modal Dynamic List Styles */
+    .edit-date-group { margin-bottom: 16px; border: 1px solid #edf2f7; background: #fafbfc; border-radius: 12px; }
+    .edit-slot-card { display: flex; flex-direction: column; padding: 12px 16px; transition: all 0.2s; border: none; border-bottom: 1px solid #edf2f7; border-radius: 0; margin-bottom: 0; background: transparent; }
+    .edit-slot-card:last-child { border-bottom: none; }
+    .edit-slot-card.editing { background: #FFF5F7; border-radius: 8px; margin: 4px; border: 1px solid #FFD0DE; }
+    
+    .slot-read-only { display: flex; justify-content: space-between; align-items: center; }
+    .slot-time { font-weight: 600; color: #2D3748; display: flex; align-items: center; gap: 8px; font-size: 0.95rem; }
+    .slot-time i { color: #A0AEC0; }
+    .slot-actions { display: flex; gap: 8px; }
+    
+    .edit-actions { display: flex; gap: 10px; justify-content: flex-end; }
+    .btn-outline-sm { background: white; border: 1px solid #E2E8F0; color: #4A5568; padding: 6px 12px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: background .2s; }
+    .btn-outline-sm:hover { background: #F7FAFC; }
+    .btn-primary-sm { background: var(--gradient-pink); color: white; border: none; padding: 6px 16px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: transform .2s; }
+    .btn-primary-sm:hover { transform: translateY(-1px); }
   `]
 })
 export class DisponibilitesComponent implements OnInit {
@@ -412,7 +502,10 @@ export class DisponibilitesComponent implements OnInit {
   newSessionType: string = 'EN_LIGNE';
   dispoValidationError: string | null = null;
   editValidationError: string | null = null;
-
+// ===== EDIT DISPONIBILITE =====
+selectedEditThematiqueId: number | null = null;
+groupedEditDatesView: DateGroupView[] = [];
+dispoIdsForActiveTheme: number[] = [];
   selectedFilterThematiqueId: number | null = null;
   activeFilterThematique: ThematiqueCoachingDTO | null = null;
 
@@ -494,22 +587,98 @@ export class DisponibilitesComponent implements OnInit {
   openEditDispoModal(dispo?: DisponibiliteDTO): void {
     this.showEditDispoModal = true;
     this.editValidationError = null;
-    if (dispo?.id) {
-      this.selectedDispoToEditId = dispo.id;
-      this.editThematiqueId = dispo.thematiqueId;
+    this.groupedEditDatesView = [];
+    if (dispo?.thematiqueId) {
+      this.selectedEditThematiqueId = dispo.thematiqueId;
+      this.onEditThematiqueSelected(dispo.thematiqueId);
       return;
     }
-    if (this.disponibilites.length > 0) {
-      this.selectedDispoToEditId = this.disponibilites[0].id || null;
-      this.editThematiqueId = this.disponibilites[0].thematiqueId || null;
+    if (this.thematiques.length > 0) {
+      this.selectedEditThematiqueId = this.thematiques[0].id || null;
+      if (this.selectedEditThematiqueId) {
+        this.onEditThematiqueSelected(this.selectedEditThematiqueId);
+      }
     }
   }
 
-  onDispoToEditSelected(): void {
-    const selected = this.disponibilites.find(d => d.id === this.selectedDispoToEditId);
-    this.editThematiqueId = selected?.thematiqueId ?? null;
-    this.editValidationError = null;
+  get selectedEditThematiqueObj(): ThematiqueCoachingDTO | null {
+    if (!this.selectedEditThematiqueId) return null;
+    return this.thematiques.find(t => t.id === this.selectedEditThematiqueId) || null;
   }
+
+  onEditThematiqueSelected(thematiqueId: number | null): void {
+    this.groupedEditDatesView = [];
+    this.dispoIdsForActiveTheme = [];
+    this.editValidationError = null;
+    if (!thematiqueId) return;
+
+    this.loading = true;
+    this.dispoIdsForActiveTheme = this.disponibilites
+      .filter(d => d.thematiqueId === thematiqueId && !!d.id)
+      .map(d => d.id!);
+      
+    if (this.dispoIdsForActiveTheme.length === 0) {
+      this.loading = false;
+      return;
+    }
+
+    Promise.all(this.dispoIdsForActiveTheme.map((dispoId: number) => firstValueFrom(this.coachService.getSessionsByDisponibilite(dispoId))))
+      .then((sessionsByDispo: SessionCoachDTO[][]) => {
+        const mergedSessions = sessionsByDispo.flat();
+        
+        const groupedMap = new Map<string, SessionCoachDTO[]>();
+        mergedSessions.forEach(s => {
+          if (!groupedMap.has(s.dateSession)) {
+            groupedMap.set(s.dateSession, []);
+          }
+          groupedMap.get(s.dateSession)!.push(s);
+        });
+
+        const dates = Array.from(groupedMap.keys()).sort();
+        this.groupedEditDatesView = dates.map(date => {
+          const sessions = groupedMap.get(date)!;
+          sessions.sort((a,b) => a.heureDebut.localeCompare(b.heureDebut));
+          
+          return {
+            date,
+            disponibiliteId: sessions[0].disponibiliteId,
+            sessions: sessions.map(s => ({
+              session: s,
+              isEditing: false,
+              isNew: false,
+              editStart: s.heureDebut.slice(0,5),
+              editEnd: s.heureFin.slice(0,5)
+            }))
+          };
+        });
+        this.loading = false;
+      })
+      .catch(() => {
+        this.editValidationError = 'Impossible de charger les créneaux de la thématique sélectionnée.';
+        this.groupedEditDatesView = [];
+        this.loading = false;
+      });
+  }
+
+  startEditSession(sv: SessionView) {
+    sv.isEditing = true;
+    if (sv.session) {
+      sv.editStart = sv.session.heureDebut.slice(0,5);
+      sv.editEnd = sv.session.heureFin.slice(0,5);
+    }
+  }
+
+  cancelEditSession(group: DateGroupView, sv: SessionView, idx: number) {
+    if (sv.isNew) {
+      group.sessions.splice(idx, 1);
+    } else {
+      sv.isEditing = false;
+      sv.editStart = sv.session!.heureDebut.slice(0,5);
+      sv.editEnd = sv.session!.heureFin.slice(0,5);
+      this.editValidationError = null;
+    }
+  }
+
 
   private normalizeCalendarDate(value: string): string {
     if (!value) return '';
@@ -550,7 +719,6 @@ private mapCalendarEvents(events: CoachCalendarEventDTO[]): any[] {
 
   addDisponibilite() {
     if (!this.selectedThematiqueId) return;
-    // Validate dates against thematique range
     const thematique = this.thematiques.find(t => t.id === this.selectedThematiqueId);
     if (thematique) {
       const thStart = new Date(thematique.dateDebut);
@@ -566,34 +734,175 @@ private mapCalendarEvents(events: CoachCalendarEventDTO[]): any[] {
       }
     }
     this.dispoValidationError = null;
+    this.loading = true;
     this.coachService.addDisponibilite(this.coachId, this.selectedThematiqueId).subscribe({
-      next: (data) => {
-        this.disponibilites.push(data);
-        this.resetModalForm();
-        this.loadData();
+      next: (dispoCreated) => {
+        if (dispoCreated && dispoCreated.id) {
+          const sessionPromises: Promise<any>[] = [];
+          
+          for (const group of this.dateSlotGroups) {
+            if (!group.date) continue;
+            for (const slot of group.slots) {
+              if (slot.start && slot.end) {
+                const sStart = slot.start.length === 5 ? `${slot.start}:00` : slot.start;
+                const sEnd = slot.end.length === 5 ? `${slot.end}:00` : slot.end;
+                
+                const sessionPayload: SessionCoachDTO = {
+                  disponibiliteId: dispoCreated.id,
+                  titre: this.newDispoTitle || 'Session',
+                  dateSession: group.date,
+                  heureDebut: sStart,
+                  heureFin: sEnd,
+                  typeSession: this.newSessionType
+                };
+                sessionPromises.push(firstValueFrom(this.coachService.addSession(dispoCreated.id, sessionPayload)));
+              }
+            }
+          }
+
+          if (sessionPromises.length > 0) {
+            Promise.all(sessionPromises).then(() => {
+              this.disponibilites.push(dispoCreated);
+              this.resetModalForm();
+              this.loadData();
+              this.loading = false;
+            }).catch(() => {
+              this.disponibilites.push(dispoCreated);
+              this.resetModalForm();
+              this.loadData();
+              this.loading = false;
+            });
+          } else {
+            this.disponibilites.push(dispoCreated);
+            this.resetModalForm();
+            this.loadData();
+            this.loading = false;
+          }
+        }
       },
-      error: () => {}
+      error: () => { this.loading = false; }
     });
   }
-  updateDisponibilite(): void {
-    if (!this.selectedDispoToEditId || !this.editThematiqueId) return;
-    const current = this.disponibilites.find(d => d.id === this.selectedDispoToEditId);
-    if (current?.thematiqueId === this.editThematiqueId) {
-      this.editValidationError = 'Veuillez choisir une thématique différente de la thématique actuelle.';
+  saveSessionEdit(sv: SessionView, group: DateGroupView) {
+    if (!sv.editStart || !sv.editEnd) {
+      this.editValidationError = 'Les heures sont obligatoires.';
       return;
     }
-
+    if (sv.editStart >= sv.editEnd) {
+      this.editValidationError = 'L\'heure de début doit être avant la fin.';
+      return;
+    }
     this.editValidationError = null;
-    this.coachService.updateDisponibilite(this.selectedDispoToEditId, this.editThematiqueId).subscribe({
-      next: () => {
-        this.showEditDispoModal = false;
+    
+    const startObj = sv.editStart.length === 5 ? `${sv.editStart}:00` : sv.editStart;
+    const endObj = sv.editEnd.length === 5 ? `${sv.editEnd}:00` : sv.editEnd;
+    
+    const updateData = { ...sv.session!, heureDebut: startObj, heureFin: endObj };
+    
+    this.loading = true;
+    this.coachService.updateSession(updateData.id!, updateData).subscribe({
+      next: (res) => {
+        sv.session = res;
+        sv.isEditing = false;
+        this.loading = false;
         this.loadData();
       },
       error: () => {
-        this.editValidationError = 'La modification a échoué. Veuillez réessayer.';
+        this.editValidationError = 'Échec de la mise à jour du créneau.';
+        this.loading = false;
       }
     });
   }
+
+  deleteSession(sv: SessionView, group: DateGroupView, idx: number) {
+    if (confirm('Voulez-vous vraiment supprimer ce créneau ?')) {
+      this.loading = true;
+      this.coachService.deleteSession(sv.session!.id!).subscribe({
+        next: () => {
+          group.sessions.splice(idx, 1);
+          if (group.sessions.length === 0) {
+            this.groupedEditDatesView = this.groupedEditDatesView.filter(g => g !== group);
+          }
+          this.loading = false;
+          this.loadData();
+        },
+        error: () => {
+          this.editValidationError = 'Échec de la suppression du créneau.';
+          this.loading = false;
+        }
+      });
+    }
+  }
+
+  addNewSessionToDate(group: DateGroupView) {
+    this.editValidationError = null;
+    group.sessions.push({
+      isEditing: true,
+      isNew: true,
+      editStart: '',
+      editEnd: ''
+    });
+  }
+
+  addEmptyDateGroupForTheme() {
+    if (this.dispoIdsForActiveTheme.length === 0) return;
+    this.editValidationError = null;
+    this.groupedEditDatesView.push({
+      date: '',
+      disponibiliteId: this.dispoIdsForActiveTheme[0],
+      sessions: [{
+        isEditing: true,
+        isNew: true,
+        editStart: '',
+        editEnd: ''
+      }]
+    });
+  }
+
+  saveNewSession(sv: SessionView, group: DateGroupView) {
+    if (!group.date) {
+      this.editValidationError = 'Veuillez définir une date.';
+      return;
+    }
+    if (!sv.editStart || !sv.editEnd) {
+      this.editValidationError = 'Les heures sont obligatoires.';
+      return;
+    }
+    if (sv.editStart >= sv.editEnd) {
+      this.editValidationError = 'L\'heure de début doit être avant la fin.';
+      return;
+    }
+    this.editValidationError = null;
+    
+    const startObj = sv.editStart.length === 5 ? `${sv.editStart}:00` : sv.editStart;
+    const endObj = sv.editEnd.length === 5 ? `${sv.editEnd}:00` : sv.editEnd;
+
+    const newSession: SessionCoachDTO = {
+      disponibiliteId: group.disponibiliteId,
+      titre: 'Session',
+      dateSession: group.date,
+      heureDebut: startObj,
+      heureFin: endObj,
+      typeSession: 'EN_LIGNE'
+    };
+
+    this.loading = true;
+    this.coachService.addSession(group.disponibiliteId, newSession).subscribe({
+      next: (res) => {
+        sv.session = res;
+        sv.isNew = false;
+        sv.isEditing = false;
+        this.loading = false;
+        this.loadData();
+      },
+      error: () => {
+        this.editValidationError = 'Échec de la création du créneau.';
+        this.loading = false;
+      }
+    });
+  }
+
+
 
   get selectedThematiqueObj(): ThematiqueCoachingDTO | null {
     if (!this.selectedThematiqueId) return null;
@@ -604,21 +913,19 @@ private mapCalendarEvents(events: CoachCalendarEventDTO[]): any[] {
     this.dispoValidationError = null;
     const th = this.selectedThematiqueObj;
     if (th) {
-      this.dateSlotGroups = [{ date: th.dateDebut, slots: [{ start: '', end: '' }] }];
-      // Find programme name from thematique's programmeId and pre-fill the title
+      // Do not auto-populate the date input with the theme's start date
+      this.dateSlotGroups = [{ date: '', slots: [{ start: '', end: '' }] }];
       const prog = this.programmes.find(p => p.id === th.programmeId);
       if (prog) {
         this.defaultTitle = prog.nom;
         this.newDispoTitle = prog.nom;
       }
     }
-  }
+}
 
-  // Date-Slot Group Management
   addDateGroup(): void {
-    const th = this.selectedThematiqueObj;
-    this.dateSlotGroups.push({ date: th?.dateDebut || '', slots: [{ start: '', end: '' }] });
-  }
+    this.dateSlotGroups.push({ date: '', slots: [{ start: '', end: '' }] });
+}
 
   removeDateGroup(gi: number): void {
     if (this.dateSlotGroups.length <= 1) return;

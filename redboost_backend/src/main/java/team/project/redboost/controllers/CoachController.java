@@ -67,6 +67,13 @@ public class CoachController {
         coachService.deleteSession(id);
         return ResponseEntity.noContent().build();
     }
+    @PutMapping("/sessions/{id}")
+    public ResponseEntity<SessionCoachDTO> updateSession(
+            @PathVariable Long id,
+            @RequestBody SessionCoachDTO dto) {
+        return ResponseEntity.ok(coachService.updateSession(id, dto));
+    }
+
 
     // --- SEANCE EXCEPTIONNELLE ---
 

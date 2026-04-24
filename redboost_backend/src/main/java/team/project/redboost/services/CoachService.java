@@ -206,16 +206,6 @@ public class CoachService {
     public List<CoachCalendarEventDTO> getCalendarEvents(Long coachId) {
         List<CoachCalendarEventDTO> events = new ArrayList<>();
 
-        disponibiliteRepository.findByCoachId(coachId).forEach(d -> events.add(
-                CoachCalendarEventDTO.builder()
-                        .id("dispo-" + d.getId())
-                        .type("DISPONIBILITE_COACH")
-                        .title("Disponibilité: " + (d.getThematique() != null ? d.getThematique().getNom() : "Thématique"))
-                        .date(String.valueOf(d.getDateDebut()))
-                        .source("coach")
-                        .build()
-        ));
-
         sessionCoachRepository.findByDisponibiliteCoachId(coachId).forEach(s -> events.add(
                 CoachCalendarEventDTO.builder()
                         .id("slot-" + s.getId())
@@ -477,7 +467,35 @@ public class CoachService {
 
         return mapToDTO(saved);
     }
-    
+    @Transactional
+    public SessionCoachDTO updateSession(Long sessionId, SessionCoachDTO dto) {
+        SessionCoach session = sessionCoachRepository.findById(sessionId)
+                .orElseThrow(() -> new ValidationException("Session non trouvée"));
+
+        Disponibilite dispo = session.getDisponibilite();
+        LocalDate sessionDate = dto.getDateSession();
+        if (sessionDate.isBefore(dispo.getDateDebut()) || sessionDate.isAfter(dispo.getDateFin())) {
+            throw new ValidationException("La date de session doit être comprise entre " + dispo.getDateDebut() + " et " + dispo.getDateFin());
+        }
+        if (dto.getHeureDebut().isAfter(dto.getHeureFin())) {
+            throw new ValidationException("L'heure de début doit être avant l'heure de fin");
+        }
+
+        session.setDateSession(sessionDate);
+        session.setHeureDebut(dto.getHeureDebut());
+        session.setHeureFin(dto.getHeureFin());
+        if (dto.getTitre() != null && !dto.getTitre().isBlank()) {
+            session.setTitre(dto.getTitre());
+        }
+        if (dto.getTypeSession() != null) {
+            try {
+                session.setTypeSession(SessionCoach.TypeSession.valueOf(dto.getTypeSession()));
+            } catch (Exception ignored) {}
+        }
+
+        SessionCoach saved = sessionCoachRepository.save(session);
+        return mapToDTO(saved);
+    }
     public void deleteSession(Long id) {
         sessionCoachRepository.deleteById(id);
     }

@@ -180,6 +180,9 @@ export class CoachService {
   deleteSession(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/sessions/${id}`);
   }
+  updateSession(sessionId: number, session: SessionCoachDTO): Observable<SessionCoachDTO> {
+    return this.http.put<SessionCoachDTO>(`${this.apiUrl}/sessions/${sessionId}`, session);
+  }
 
   // SEANCE EXCEPTIONNELLE
   getSeancesExceptionnelles(coachId: number): Observable<SeanceExceptionnelleDTO[]> {
