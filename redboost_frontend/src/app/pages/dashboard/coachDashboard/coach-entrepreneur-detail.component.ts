@@ -1,6 +1,6 @@
 import { Component, OnInit, ChangeDetectorRef, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, ActivatedRoute } from '@angular/router';
+import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { CoachService, CoachEntrepreneurDetailDTO } from './services/coach.service';
 import { TacheService } from '../../../core/services/tache.service';
 import { AuthService } from '../../frontoffice/service/auth.service';
@@ -151,6 +151,9 @@ import { ToastrService } from 'ngx-toastr';
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-xl font-bold text-[#2D3748]">Reporting Sessions</h2>
                     <div style="display: flex; gap: 1rem;">
+                        <button class="btn-primary" (click)="goToCreateReport(entrepreneur.id)">
+                            <i class="pi pi-plus"></i> Ajouter
+                        </button>
                         <button class="btn-secondary" (click)="downloadConsolidatedReports(entrepreneur.id)" *ngIf="entrepreneur.notes.length > 0" [disabled]="isDownloadingPdf">
                             <i class="pi" [class.pi-spin]="isDownloadingPdf" [class.pi-spinner]="isDownloadingPdf" [class.pi-download]="!isDownloadingPdf"></i>
                             {{ isDownloadingPdf ? 'Génération...' : 'Rapports consolidés' }}
@@ -655,12 +658,17 @@ export class CoachEntrepreneurDetailComponent implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     private coachService: CoachService,
     private tacheService: TacheService,
     private authService: AuthService,
     private toastr: ToastrService,
     private cdr: ChangeDetectorRef
   ) {}
+
+  goToCreateReport(entrepreneurId: number): void {
+      this.router.navigate(['/rapport-sessions'], { queryParams: { entrepreneurId: entrepreneurId, action: 'new' }});
+  }
 
   ngOnInit(): void {
     const rawCoachId = this.authService.getUserId();

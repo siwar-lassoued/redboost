@@ -1,6 +1,8 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import { ToastrService } from 'ngx-toastr';
@@ -377,6 +379,7 @@ export class CoachRapportSessionComponent implements OnInit {
   actions: any[] = [];
 
   constructor(
+    private route: ActivatedRoute,
     private coachService: CoachService,
     private authService: AuthService,
     private toastr: ToastrService,
@@ -387,28 +390,40 @@ export class CoachRapportSessionComponent implements OnInit {
     const cid = this.authService.getUserId();
     this.coachId = typeof cid === 'string' ? parseInt(cid, 10) : (cid || 0);
 
-    this.coachService.getCoachProfile().subscribe(profile => {
-        this.coachProfile = profile;
-    });
+    if (!this.coachId) return;
 
-    this.coachService.getThematiquesAssignedToCoach(this.coachId).subscribe(
-      (data) => {
-        this.thematiques = data;
+    forkJoin({
+      profile: this.coachService.getCoachProfile(),
+      thematiques: this.coachService.getThematiquesAssignedToCoach(this.coachId),
+      entrepreneurs: this.coachService.getCoachEntrepreneurs(this.coachId)
+    }).subscribe({
+      next: ({ profile, thematiques, entrepreneurs }) => {
+        this.coachProfile = profile;
+        this.thematiques = thematiques;
         if(this.thematiques.length > 0) {
             this.selectedThematiqueId = this.thematiques[0].id;
         }
-      }
-    );
-
-    this.coachService.getCoachEntrepreneurs(this.coachId).subscribe(
-      (data) => {
-        this.entrepreneurs = data;
+        this.entrepreneurs = entrepreneurs;
         if(this.entrepreneurs.length > 0) {
             this.selectedEntrepreneurId = this.entrepreneurs[0].id;
         }
         this.loadHistory();
+
+        this.route.queryParams.subscribe(params => {
+          if (params['action'] === 'new' && params['entrepreneurId']) {
+            const eid = Number(params['entrepreneurId']);
+            if (this.entrepreneurs.find(e => e.id === eid)) {
+              this.selectedEntrepreneurId = eid;
+            }
+            this.initNewReport();
+            this.cdr.detectChanges();
+          }
+        });
+      },
+      error: (err) => {
+        console.error('Erreur lors du chargement des données initiales', err);
       }
-    );
+    });
   }
 
   loadHistory() {
