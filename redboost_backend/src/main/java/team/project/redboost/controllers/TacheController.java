@@ -3,9 +3,11 @@ package team.project.redboost.controllers;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import team.project.redboost.dto.DocumentDTO;
 import team.project.redboost.entities.Tache;
 import team.project.redboost.services.TacheService;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
@@ -53,14 +55,14 @@ public class TacheController {
     @PostMapping
     public ResponseEntity<Map<String, Object>> create(@RequestBody Tache t) {
         Map<String, Object> res = new HashMap<>();
-        res.put("data", tacheService.create(t));
+        res.put("data", toResponse(tacheService.create(t)));
         return ResponseEntity.ok(res);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<Map<String, Object>> update(@PathVariable Long id, @RequestBody Tache t) {
         Map<String, Object> res = new HashMap<>();
-        res.put("data", tacheService.update(id, t));
+        res.put("data", toResponse(tacheService.update(id, t)));
         return ResponseEntity.ok(res);
     }
 
@@ -79,5 +81,22 @@ public class TacheController {
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         tacheService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    private Map<String, Object> toResponse(Tache tache) {
+        Map<String, Object> dto = new HashMap<>();
+        dto.put("id", tache.getId());
+        dto.put("titre", tache.getTitre());
+        dto.put("description", tache.getDescription());
+        dto.put("priorite", tache.getPriorite());
+        dto.put("status", tache.getStatus() != null ? tache.getStatus().name() : null);
+        dto.put("responsableId", tache.getResponsableId());
+        dto.put("dateDebut", tache.getDateDebut());
+        dto.put("dateLimite", tache.getDateLimite());
+        dto.put("dateFinReel", tache.getDateFinReel());
+        dto.put("difficulte", tache.getDifficulte());
+        dto.put("entrepreneurId", tache.getResponsableId());
+        dto.put("documents", new ArrayList<DocumentDTO>());
+        return dto;
     }
 }

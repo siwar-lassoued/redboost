@@ -3,6 +3,7 @@ package team.project.redboost.services;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import team.project.redboost.config.ValidationException;
 import team.project.redboost.entities.Tache;
 import team.project.redboost.entities.Activite;
 import team.project.redboost.entities.Sprint;
@@ -10,6 +11,7 @@ import team.project.redboost.repositories.TacheRepository;
 import team.project.redboost.repositories.ActiviteRepository;
 import team.project.redboost.repositories.SprintRepository;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -59,6 +61,32 @@ public class TacheService {
     }
 
     public Tache create(Tache tache) {
+        if (tache.getTitre() == null || tache.getTitre().trim().isEmpty()) {
+            throw new ValidationException("Le titre de la tâche est obligatoire.");
+        }
+        if (tache.getResponsableId() == null) {
+            throw new ValidationException("L'entrepreneur assigné est obligatoire.");
+        }
+        if (tache.getDateLimite() == null) {
+            throw new ValidationException("La date limite est obligatoire.");
+        }
+
+        tache.setTitre(tache.getTitre().trim());
+
+        if (tache.getDescription() != null) {
+            String description = tache.getDescription().trim();
+            tache.setDescription(description.isEmpty() ? null : description);
+        }
+        if (tache.getDateDebut() == null) {
+            tache.setDateDebut(LocalDate.now());
+        }
+        if (tache.getPriorite() == null || tache.getPriorite().trim().isEmpty()) {
+            tache.setPriorite("MOYENNE");
+        }
+        if (tache.getStatus() == null) {
+            tache.setStatus(Tache.StatusTache.NON_DEMARREE);
+        }
+
         return tacheRepository.save(tache);
     }
 

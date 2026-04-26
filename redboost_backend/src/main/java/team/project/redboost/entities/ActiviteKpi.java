@@ -1,5 +1,6 @@
 package team.project.redboost.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -22,7 +23,12 @@ public class ActiviteKpi {
     private String valeurCible;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "activite_id", insertable = false, updatable = false)
+    @JsonIgnoreProperties({"kpis", "taches", "documents", "sprint", "hibernateLazyInitializer", "handler"})
+    private Activite activite;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "kpi_id", insertable = false, updatable = false)
     private BackofficeKpi kpi;
 
-}
+}

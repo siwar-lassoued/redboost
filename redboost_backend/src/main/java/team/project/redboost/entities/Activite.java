@@ -74,7 +74,7 @@ public class Activite {
     @JsonIgnoreProperties({"activite", "sprint", "hibernateLazyInitializer", "handler"})
     private List<Tache> taches = new ArrayList<>();
 
-    @OneToMany(mappedBy = "activiteId", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "activite", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private List<ActiviteKpi> kpis = new ArrayList<>();
 

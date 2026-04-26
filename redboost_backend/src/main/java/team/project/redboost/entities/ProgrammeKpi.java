@@ -44,7 +44,7 @@ public class ProgrammeKpi {
 
 
     // In ProgrammeKpi class, add:
-    @OneToMany(mappedBy = "programmeKpiId", cascade = CascadeType.ALL, orphanRemoval = true) // Note: mappedBy references the field, not entity
+    @OneToMany(mappedBy = "programmeKpi", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProgrammeKpiHistory> history = new ArrayList<>();
 
     // Helper method to get typesuivi from the associated BackofficeKpi

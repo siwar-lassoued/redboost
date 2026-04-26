@@ -1,15 +1,18 @@
-import { Component, OnInit, ChangeDetectorRef, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { CoachService, CoachEntrepreneurDetailDTO } from './services/coach.service';
 import { TacheService } from '../../../core/services/tache.service';
 import { AuthService } from '../../frontoffice/service/auth.service';
 import { ToastrService } from 'ngx-toastr';
+import { environment } from '../../../../environment';
 
 @Component({
   selector: 'app-coach-entrepreneur-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, FormsModule],
   template: `
     <div class="entrepreneur-detail-page">
       <!-- Breadcrumb / Back Navigation -->
@@ -61,17 +64,16 @@ import { ToastrService } from 'ngx-toastr';
             <div *ngIf="activeTab === 'taches'">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-xl font-bold text-[#2D3748]">Plan d'action ({{ entrepreneur.tasks.length || 0 }} tâches)</h2>
-                    <button class="btn-primary" (click)="showTaskModal = true">
+                    <button class="btn-primary" (click)="openTaskModal()">
                         <i class="pi pi-plus"></i> Ajouter une tâche
                     </button>
                 </div>
 
-            <!-- Tasks List Mockup (using data if available) -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 <div *ngIf="!entrepreneur.tasks || entrepreneur.tasks.length === 0" class="p-8 text-center text-gray-500">
                     Aucune tâche spécifique assignée pour le moment.
                 </div>
-                
+
                 <div *ngFor="let task of entrepreneur.tasks" class="task-item border-b border-gray-100 p-4 hover:bg-gray-50 flex items-center gap-4">
                     <div class="task-checkbox">
                         <i *ngIf="task.status === 'TERMINEE'" class="pi pi-check-circle text-green-500 text-xl"></i>
@@ -80,7 +82,7 @@ import { ToastrService } from 'ngx-toastr';
                     <div class="task-content flex-1">
                         <h4 class="font-semibold text-gray-800 m-0">{{ task.titre }}</h4>
                         <p class="text-sm text-gray-500 mt-1 mb-2">{{ task.description }}</p>
-                        
+
                         <div class="task-documents" *ngIf="task.documents && task.documents.length > 0">
                             <div class="text-xs font-bold text-gray-500 mb-1">Documents attachés :</div>
                             <div *ngFor="let doc of task.documents" class="flex items-center gap-2 text-xs bg-gray-50 p-2 rounded mb-1">
@@ -94,7 +96,7 @@ import { ToastrService } from 'ngx-toastr';
                         </div>
 
                         <div class="mt-2">
-                           <input type="file" #fileInput [id]="'file_' + task.id" class="hidden" 
+                           <input type="file" [id]="'file_' + task.id" class="hidden"
                                   (change)="onTaskFileSelected($event, task)" multiple />
                            <button class="text-xs font-bold text-[#FF4D85] bg-pink-50 px-3 py-1.5 rounded-full hover:bg-pink-100 transition-colors flex items-center gap-1"
                                    (click)="triggerFileInput(task.id)">
@@ -104,7 +106,7 @@ import { ToastrService } from 'ngx-toastr';
                         </div>
                     </div>
                     <div class="task-meta">
-                        <span class="badge" [class.badge-success]="task.status === 'TERMINEE'" 
+                        <span class="badge" [class.badge-success]="task.status === 'TERMINEE'"
                                           [class.badge-warning]="task.status !== 'TERMINEE'">
                             {{ task.status === 'TERMINEE' ? 'Terminé' : 'En cours' }}
                         </span>
@@ -195,7 +197,9 @@ import { ToastrService } from 'ngx-toastr';
           <button routerLink="/coach-dashboard" class="mt-4 text-pink-500 hover:underline">Retour au dashboard</button>
       </div>
 
-      <!-- Ajouter une Tâche Modal (Mock) -->
+      <!-- ══════════════════════════════════════════
+           MODAL : Ajouter une Tâche
+           ══════════════════════════════════════════ -->
       <div *ngIf="showTaskModal" class="modal-backdrop" (click)="showTaskModal = false">
           <div class="modal-content" (click)="$event.stopPropagation()">
               <div class="modal-header">
@@ -203,20 +207,45 @@ import { ToastrService } from 'ngx-toastr';
                   <button class="close-btn" (click)="showTaskModal = false"><i class="pi pi-times"></i></button>
               </div>
               <div class="modal-body">
+
+
+
                   <div class="form-group mb-4">
-                      <label>Titre de la tâche</label>
-                      <input type="text" class="premium-input" placeholder="Ex: Finaliser le deck" />
+                      <label>Titre de la tâche <span class="required">*</span></label>
+                      <input type="text" class="premium-input" [(ngModel)]="newTask.titre" placeholder="Ex: Finaliser le deck" />
                   </div>
                   <div class="form-group mb-4">
                       <label>Description détaillée</label>
-                      <textarea class="premium-input" rows="3" placeholder="Description de ce qui est attendu..."></textarea>
+                      <textarea class="premium-input" [(ngModel)]="newTask.description" rows="3" placeholder="Description de ce qui est attendu..."></textarea>
+                  </div>
+                  <div class="form-group mb-2">
+                      <label>Priorité</label>
+                      <select class="premium-input" [(ngModel)]="newTask.priorite">
+                          <option value="Haute">Haute</option>
+                          <option value="Moyenne">Moyenne</option>
+                          <option value="Basse">Basse</option>
+                      </select>
+                  </div>
+                  <div class="form-row mb-4">
+                      <div class="form-group">
+                          <label>Date de début</label>
+                          <input type="date" class="premium-input" [(ngModel)]="newTask.dateDebut" />
+                      </div>
+                      <div class="form-group">
+                          <label>Date d'échéance <span class="required">*</span></label>
+                          <input type="date" class="premium-input" [(ngModel)]="newTask.dateLimite" />
+                      </div>
                   </div>
                   <div class="form-group mb-6">
-                      <label>Date d'échéance</label>
-                      <input type="date" class="premium-input" />
+                      <label>Pièce jointe (optionnel)</label>
+                      <input type="file" class="premium-input" (change)="onNewTaskFileSelected($event)" style="padding: 0.5rem;" />
                   </div>
-                  <button class="btn-primary w-full justify-center" (click)="showTaskModal = false">
-                      Créer la tâche
+
+                  <button class="btn-primary w-full justify-center"
+                          (click)="submitNewTask()"
+                          [disabled]="isCreatingTask || !newTask.titre || !newTask.dateLimite">
+                      <i class="pi" [ngClass]="isCreatingTask ? 'pi-spinner pi-spin' : 'pi-check'"></i>
+                      {{ isCreatingTask ? 'Création en cours...' : 'Créer la tâche' }}
                   </button>
               </div>
           </div>
@@ -232,416 +261,142 @@ import { ToastrService } from 'ngx-toastr';
         font-family: var(--font-family);
         margin-top: -1rem;
     }
-
     .back-link {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        color: #718096;
-        text-decoration: none;
-        font-weight: 500;
-        margin-bottom: 2rem;
-        transition: color 0.2s;
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        color: #718096; text-decoration: none; font-weight: 500;
+        margin-bottom: 2rem; transition: color 0.2s;
     }
-    .back-link:hover {
-        color: #FF4D85;
-    }
-
+    .back-link:hover { color: #FF4D85; }
     .profile-header-card {
-        background: white;
-        border-radius: 1.5rem;
-        padding: 2rem;
-        display: flex;
-        align-items: center;
-        gap: 2rem;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.03);
-        margin-bottom: 2rem;
+        background: white; border-radius: 1.5rem; padding: 2rem;
+        display: flex; align-items: center; gap: 2rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.03); margin-bottom: 2rem;
     }
     .avatar {
-        width: 80px;
-        height: 80px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 700;
-        font-size: 1.8rem;
-        color: white;
+        width: 80px; height: 80px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 700; font-size: 1.8rem; color: white;
     }
     .pink-avatar { background: linear-gradient(135deg, #FF6B9E, #FF3366); }
-
-    .profile-info {
-        flex: 1;
-    }
-    .profile-info h1 {
-        margin: 0 0 0.5rem 0;
-        font-size: 2rem;
-        color: #2D3748;
-    }
-    .startup-info {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-    }
-    .program-badge {
-        font-size: 0.8rem;
-        font-weight: 700;
-        background: #EDF2F7;
-        color: #4A5568;
-        padding: 0.3rem 0.8rem;
-        border-radius: 6px;
-        letter-spacing: 1px;
-    }
-    .company-name {
-        color: var(--coach-primary);
-        font-weight: 600;
-        font-size: 1.1rem;
-    }
-
-    .header-actions {
-        display: flex;
-        gap: 1rem;
-    }
-    .btn-primary {
-        background: var(--gradient-pink);
-        color: white;
-        border: none;
-        padding: 0.8rem 1.5rem;
-        border-radius: 12px;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        cursor: pointer;
-        transition: transform 0.2s;
-        box-shadow: 0 4px 15px rgba(233, 30, 99, 0.3);
-    }
-    .btn-primary:hover { transform: translateY(-2px); }
-    
-    .btn-secondary {
-        background: white;
-        border: 1px solid #E2E8F0;
-        color: #4A5568;
-        padding: 0.8rem 1.5rem;
-        border-radius: 12px;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-    .btn-secondary:hover {
-        background: #F8FAFC;
-        border-color: #CBD5E0;
-    }
-
-    .custom-tabs {
-        display: flex;
-        gap: 2rem;
-        border-bottom: 2px solid #EDF2F7;
-        margin-bottom: 2rem;
-    }
-    .tab {
-        background: none;
-        border: none;
-        padding: 1rem 0;
-        font-size: 1.05rem;
-        font-weight: 600;
-        color: #A0AEC0;
-        cursor: pointer;
-        position: relative;
-        transition: color 0.2s;
-    }
-    .tab:hover { color: #4A5568; }
-    .tab.active {
-        color: var(--coach-primary);
-    }
-    .tab.active::after {
-        content: '';
-        position: absolute;
-        bottom: -2px;
-        left: 0;
-        right: 0;
-        height: 3px;
-        background: var(--coach-primary);
-        border-radius: 3px 3px 0 0;
-    }
-
-    .badge {
-        font-size: 0.75rem;
-        padding: 0.3rem 0.8rem;
-        border-radius: 12px;
-        font-weight: 600;
-    }
-    .badge-warning { background: #FFF5F5; color: #E53E3E; border: 1px solid #FED7D7; }
-    .badge-success { background: #F0FFF4; color: #38A169; border: 1px solid #C6F6D5; }
-
-    /* Modal Styles matching the existing UI components */
-    .modal-backdrop {
-        position: fixed;
-        inset: 0;
-        background: rgba(0,0,0,0.4);
-        backdrop-filter: blur(4px);
-        z-index: 1000;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    .modal-content {
-        background: white;
-        border-radius: 1.5rem;
-        width: 100%;
-        max-width: 500px;
-        padding: 2rem;
-        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-        animation: slide-up 0.3s ease-out;
-    }
-    .modal-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1.5rem;
-    }
-    .modal-header h2 {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: #2D3748;
-        margin: 0;
-    }
-    .close-btn {
-        background: none;
-        border: none;
-        font-size: 1.2rem;
-        color: #A0AEC0;
-        cursor: pointer;
-    }
-    
-    .form-group label {
-        display: block;
-        font-size: 0.95rem;
-        font-weight: 600;
-        color: #4A5568;
-        margin-bottom: 0.5rem;
-    }
-    .premium-input {
-        width: 100%;
-        padding: 0.8rem 1rem;
-        border-radius: 10px;
-        border: 1px solid #E2E8F0;
-        background: #F8FAFC;
-        font-family: inherit;
-        font-size: 1rem;
-        color: #2D3748;
-        outline: none;
-        transition: all 0.2s;
-    }
-    .premium-input:focus {
-        border-color: #FF4D85;
-        box-shadow: 0 0 0 3px rgba(255, 77, 133, 0.1);
-        background: white;
-    }
-
-    .upload-zone {
-        border: 2px dashed #CBD5E0;
-        border-radius: 1rem;
-        background: #F8FAFC;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-    .upload-zone:hover {
-        border-color: #FF4D85;
-        background: #FFF5F7;
-    }
-
-    .btn-icon { background: none; border: none; color: #A0AEC0; cursor: pointer; padding: 0.5rem; transition: color 0.2s; border-radius: 50%; }
-    .btn-icon:hover { color: #2D3748; background: #F7FAFC; }
-
-    .search-bar {
-        position: relative;
-    }
-    .search-bar input {
-        width: 100%;
-        padding: 0.8rem 1rem 0.8rem 2.8rem;
-        border-radius: 12px;
-        border: 1px solid #E2E8F0;
-        background: white;
-        font-family: inherit;
-        font-size: 0.95rem;
-        transition: all 0.2s;
-    }
-    .search-bar input:focus {
-        outline: none;
-        border-color: #FF4D85;
-        box-shadow: 0 0 0 3px rgba(255, 77, 133, 0.1);
-    }
-    .search-bar i {
-        position: absolute;
-        left: 1.2rem;
-        top: 50%;
-        transform: translateY(-50%);
-        color: #A0AEC0;
-    }
-
-    @keyframes slide-up {
-        from { transform: translateY(20px); opacity: 0; }
-        to { transform: translateY(0); opacity: 1; }
-    }
-
-    /* === New enriched styles === */
-    .purple-avatar { background: linear-gradient(135deg, #B794F4, #805AD5); }
+    .profile-info { flex: 1; }
+    .profile-info h1 { margin: 0 0 0.5rem 0; font-size: 2rem; color: #2D3748; }
     .startup-sub { color: #718096; font-size: 0.95rem; }
     .project-desc { color: #4A5568; font-size: 0.9rem; margin-top: 0.5rem; line-height: 1.5; }
-
     .btn-coach-badge {
-        background: #1A202C;
-        color: white;
-        border: none;
-        padding: 0.5rem 1.2rem;
-        border-radius: 20px;
-        font-weight: 600;
-        font-size: 0.85rem;
-        cursor: default;
+        background: #1A202C; color: white; border: none;
+        padding: 0.5rem 1.2rem; border-radius: 20px; font-weight: 600; font-size: 0.85rem; cursor: default;
     }
-
     .stats-bar {
-        background: white;
-        border-radius: 1rem;
-        padding: 1rem 2rem;
-        display: flex;
-        gap: 3rem;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.03);
-        margin-bottom: 2rem;
-        border: 1px solid #EDF2F7;
+        background: white; border-radius: 1rem; padding: 1rem 2rem;
+        display: flex; gap: 3rem; box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+        margin-bottom: 2rem; border: 1px solid #EDF2F7;
     }
     .stat-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; color: #4A5568; }
     .dot { width: 10px; height: 10px; border-radius: 50%; }
     .dot-pink { background: #FF4D85; }
     .dot-green { background: #48BB78; }
-
+    .custom-tabs {
+        display: flex; gap: 2rem; border-bottom: 2px solid #EDF2F7; margin-bottom: 2rem;
+    }
+    .tab {
+        background: none; border: none; padding: 1rem 0; font-size: 1.05rem;
+        font-weight: 600; color: #A0AEC0; cursor: pointer; position: relative; transition: color 0.2s;
+    }
+    .tab:hover { color: #4A5568; }
+    .tab.active { color: #FF4D85; }
+    .tab.active::after {
+        content: ''; position: absolute; bottom: -2px; left: 0; right: 0;
+        height: 3px; background: #FF4D85; border-radius: 3px 3px 0 0;
+    }
     .tab-badge {
-        background: #FFF5F5;
-        color: #E53E3E;
-        font-size: 0.7rem;
-        padding: 0.2rem 0.5rem;
-        border-radius: 8px;
-        font-weight: 700;
-        margin-left: 0.4rem;
+        background: #FFF5F5; color: #E53E3E; font-size: 0.7rem;
+        padding: 0.2rem 0.5rem; border-radius: 8px; font-weight: 700; margin-left: 0.4rem;
     }
     .tab-count {
-        background: #EDF2F7;
-        color: #4A5568;
-        font-size: 0.7rem;
-        padding: 0.15rem 0.5rem;
-        border-radius: 8px;
-        font-weight: 700;
-        margin-left: 0.4rem;
+        background: #EDF2F7; color: #4A5568; font-size: 0.7rem;
+        padding: 0.15rem 0.5rem; border-radius: 8px; font-weight: 700; margin-left: 0.4rem;
     }
-
-    /* Livrables enriched */
+    .badge { font-size: 0.75rem; padding: 0.3rem 0.8rem; border-radius: 12px; font-weight: 600; }
+    .badge-warning { background: #FFF5F5; color: #E53E3E; border: 1px solid #FED7D7; }
+    .badge-success { background: #F0FFF4; color: #38A169; border: 1px solid #C6F6D5; }
     .livrable-stats {
-        display: flex;
-        gap: 2rem;
-        padding: 1rem 1.5rem;
-        background: white;
-        border-radius: 1rem;
-        border: 1px solid #EDF2F7;
-        margin-bottom: 1.5rem;
+        display: flex; gap: 2rem; padding: 1rem 1.5rem; background: white;
+        border-radius: 1rem; border: 1px solid #EDF2F7; margin-bottom: 1.5rem;
     }
     .livrable-stat { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; color: #4A5568; }
-
     .livrable-card {
-        background: white;
-        border-radius: 1rem;
-        padding: 1.5rem;
-        margin-bottom: 1rem;
-        border: 1px solid #EDF2F7;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        background: white; border-radius: 1rem; padding: 1.5rem;
+        margin-bottom: 1rem; border: 1px solid #EDF2F7; box-shadow: 0 2px 8px rgba(0,0,0,0.02);
     }
-    .livrable-highlight { border-left: 4px solid #ED8936; }
     .livrable-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
-
     .tag { font-size: 0.7rem; padding: 0.2rem 0.6rem; border-radius: 6px; font-weight: 700; }
-    .tag-red { background: #FFF5F5; color: #E53E3E; }
     .tag-blue { background: #EBF4FF; color: #3182CE; }
-    .tag-gray { background: #EDF2F7; color: #718096; }
-    .tag-green { background: #F0FFF4; color: #38A169; }
-
     .livrable-file { display: flex; align-items: center; gap: 0.8rem; padding: 0.8rem; background: #F8FAFC; border-radius: 10px; }
-    .link-voir, .link-dl {
-        background: none;
-        border: none;
-        color: #3182CE;
-        font-weight: 600;
-        font-size: 0.8rem;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 0.3rem;
-    }
+    .link-voir, .link-dl { background: none; border: none; color: #3182CE; font-weight: 600; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 0.3rem; text-decoration: none; }
     .link-dl { color: #718096; }
-
-    .livrable-actions { display: flex; gap: 1rem; margin-top: 1rem; }
-    .btn-accept {
-        flex: 1;
-        background: linear-gradient(135deg, #48BB78, #38A169);
-        color: white;
-        border: none;
-        padding: 0.8rem;
-        border-radius: 10px;
-        font-weight: 700;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-        cursor: pointer;
-        transition: transform 0.2s;
-    }
-    .btn-accept:hover { transform: translateY(-2px); }
-    .btn-revision {
-        flex: 1;
-        background: linear-gradient(135deg, #ED8936, #DD6B20);
-        color: white;
-        border: none;
-        padding: 0.8rem;
-        border-radius: 10px;
-        font-weight: 700;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-        cursor: pointer;
-        transition: transform 0.2s;
-    }
-    .btn-revision:hover { transform: translateY(-2px); }
-
-    /* Reporting Sessions */
     .session-report-card { border-radius: 1rem; overflow: hidden; margin-bottom: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.06); }
-    .session-report-header {
-        background: linear-gradient(135deg, #2D3748, #1A202C);
-        padding: 1.5rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
+    .session-report-header { background: linear-gradient(135deg, #2D3748, #1A202C); padding: 1.5rem; }
     .avatar-sm-dark {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background: rgba(255,255,255,0.15);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-weight: 700;
-        font-size: 0.85rem;
+        width: 40px; height: 40px; border-radius: 50%;
+        background: rgba(255,255,255,0.15); display: flex; align-items: center;
+        justify-content: center; color: white; font-weight: 700; font-size: 0.85rem;
     }
-    .stars { display: flex; gap: 0.2rem; }
     .session-report-body { padding: 1.5rem; background: white; }
     .session-report-body p { margin: 0 0 1rem 0; line-height: 1.6; }
     .plan-action { margin-top: 1rem; }
     .plan-title { font-size: 0.75rem; font-weight: 700; color: #A0AEC0; letter-spacing: 1px; margin-bottom: 0.6rem; }
-    .plan-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; color: #4A5568; margin-bottom: 0.4rem; }
+
+    /* ── Modal ───────────────────────────────────── */
+    .modal-backdrop {
+        position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+        backdrop-filter: blur(4px); z-index: 1000;
+        display: flex; align-items: center; justify-content: center; padding: 2rem;
+    }
+    .modal-content {
+        background: white; border-radius: 1.5rem; width: 100%; max-width: 560px;
+        max-height: calc(100vh - 4rem); box-shadow: 0 20px 40px rgba(0,0,0,0.12);
+        animation: slide-up 0.25s ease-out; overflow: hidden; display: flex; flex-direction: column;
+    }
+    .modal-header {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 1.4rem 1.6rem 1rem; border-bottom: 1px solid #EDF2F7;
+    }
+    .modal-header h2 { font-size: 1.3rem; font-weight: 700; color: #2D3748; margin: 0; }
+    .close-btn { background: #F7FAFC; border: none; width: 32px; height: 32px; border-radius: 50%; color: #A0AEC0; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .close-btn:hover { background: #EDF2F7; color: #4A5568; }
+    .modal-body { overflow-y: auto; padding: 1.4rem 1.6rem 1.6rem; display: flex; flex-direction: column; gap: 0; }
+    .form-group { display: flex; flex-direction: column; }
+    .form-group label { font-size: 0.9rem; font-weight: 600; color: #4A5568; margin-bottom: 0.45rem; }
+    .required { color: #FF4D85; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .premium-input {
+        width: 100%; padding: 0.75rem 1rem; border-radius: 10px; border: 1px solid #E2E8F0;
+        background: #F8FAFC; font-family: inherit; font-size: 0.95rem; color: #2D3748;
+        outline: none; transition: all 0.2s; box-sizing: border-box; resize: vertical;
+    }
+    .premium-input:focus { border-color: #FF4D85; box-shadow: 0 0 0 3px rgba(255,77,133,0.1); background: white; }
+    .premium-input:disabled { background: #EDF2F7; color: #A0AEC0; cursor: not-allowed; }
+    .loading-hint { display: flex; align-items: center; gap: 0.5rem; color: #718096; font-size: 0.9rem; padding: 0.75rem 1rem; background: #F8FAFC; border-radius: 10px; border: 1px solid #E2E8F0; }
+    .hint-text { font-size: 0.82rem; color: #E53E3E; margin-top: 0.4rem; display: flex; align-items: center; gap: 0.4rem; }
+    .btn-primary {
+        background: linear-gradient(135deg, #FF6B9E 0%, #E83E8C 100%); color: white; border: none;
+        padding: 0.85rem 1.5rem; border-radius: 12px; font-weight: 700; display: flex;
+        align-items: center; gap: 0.5rem; cursor: pointer; transition: all 0.2s;
+        font-family: inherit; font-size: 0.95rem;
+    }
+    .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(255,77,133,0.35); }
+    .btn-primary:disabled { background: #CBD5E0; background-image: none; cursor: not-allowed; transform: none; box-shadow: none; }
+    .btn-secondary {
+        background: white; border: 1px solid #E2E8F0; color: #4A5568;
+        padding: 0.85rem 1.5rem; border-radius: 12px; font-weight: 600;
+        cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 0.5rem;
+        font-family: inherit;
+    }
+    .btn-secondary:hover:not(:disabled) { background: #F8FAFC; border-color: #CBD5E0; }
+    .btn-secondary:disabled { opacity: 0.6; cursor: not-allowed; }
+    .w-full { width: 100%; }
+    .justify-center { justify-content: center; }
+    @keyframes slide-up { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
   `]
 })
 export class CoachEntrepreneurDetailComponent implements OnInit {
@@ -656,9 +411,25 @@ export class CoachEntrepreneurDetailComponent implements OnInit {
   isDownloadingPdf: boolean = false;
   coachProfile: any = null;
 
+  // ── Task creation ──────────────────────────────
+  newTask: any = {
+    titre: '',
+    description: '',
+    priorite: 'Moyenne',
+    dateDebut: '',
+    dateLimite: ''
+  };
+  newTaskFile: File | null = null;
+  isCreatingTask: boolean = false;
+
+  // ── Activités disponibles pour le sélecteur ───
+  activites: any[] = [];
+  isLoadingActivites: boolean = false;
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
+    private http: HttpClient,
     private coachService: CoachService,
     private tacheService: TacheService,
     private authService: AuthService,
@@ -667,19 +438,18 @@ export class CoachEntrepreneurDetailComponent implements OnInit {
   ) {}
 
   goToCreateReport(entrepreneurId: number): void {
-      this.router.navigate(['/rapport-sessions'], { queryParams: { entrepreneurId: entrepreneurId, action: 'new' }});
+    this.router.navigate(['/rapport-sessions'], {
+      queryParams: { entrepreneurId, action: 'new' }
+    });
   }
 
   ngOnInit(): void {
     const rawCoachId = this.authService.getUserId();
     this.coachId = typeof rawCoachId === 'string' ? parseInt(rawCoachId, 10) : rawCoachId;
-    
+
     if (this.coachId) {
       this.coachService.getCoachProfile().subscribe({
-        next: (profile) => {
-          this.coachProfile = profile;
-          this.cdr.detectChanges();
-        },
+        next: (profile) => { this.coachProfile = profile; this.cdr.detectChanges(); },
         error: (err) => console.error('Error loading coach profile:', err)
       });
     }
@@ -707,6 +477,8 @@ export class CoachEntrepreneurDetailComponent implements OnInit {
         this.entrepreneur = data;
         this.isLoading = false;
         this.cdr.detectChanges();
+        // Charger les activités après avoir chargé l'entrepreneur
+        this.loadActivitesForEntrepreneur(entrepreneurId);
       },
       error: (err) => {
         console.error('Error loading entrepreneur details:', err);
@@ -716,6 +488,66 @@ export class CoachEntrepreneurDetailComponent implements OnInit {
       }
     });
   }
+
+  /**
+   * Charge toutes les activités des sprints des programmes de l'entrepreneur
+   * en appelant l'endpoint global des sprints détaillés.
+   */
+  loadActivitesForEntrepreneur(entrepreneurId: number): void {
+    this.isLoadingActivites = true;
+    const token = this.getAuthToken();
+    const headers = new HttpHeaders({ Authorization: `Bearer ${token}` });
+
+    // On récupère tous les sprints détaillés globaux et on filtre
+    // par responsableId = entrepreneurId, ou on prend tous les sprints
+    // de tous les programmes auxquels l'entrepreneur est associé.
+    this.http.get<any[]>(
+      `${environment.apiUrl}/backoffice/programmes/sprints-detail-global`,
+      { headers }
+    ).subscribe({
+      next: (sprints) => {
+        const allActivites: any[] = [];
+        sprints.forEach(sprint => {
+          if (sprint.activites && sprint.activites.length > 0) {
+            sprint.activites.forEach((act: any) => {
+              // Inclure toutes les activités, pas seulement celles de l'entrepreneur
+              // Le coach peut assigner une tâche à n'importe quelle activité du programme
+              allActivites.push({
+                id: act.id,
+                nom: act.nom,
+                sprintNom: sprint.nom,
+                programmeNom: sprint.programmeNom,
+                programmeId: sprint.programmeId,
+                sprintId: sprint.id
+              });
+            });
+          }
+        });
+        this.activites = allActivites;
+        this.isLoadingActivites = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Erreur chargement activités:', err);
+        this.isLoadingActivites = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  /** Ouvre le modal et réinitialise le formulaire */
+  openTaskModal(): void {
+    this.newTask = {
+      titre: '',
+      description: '',
+      priorite: 'Moyenne',
+      dateDebut: '',
+      dateLimite: ''
+    };
+    this.newTaskFile = null;
+    this.showTaskModal = true;
+  }
+
   triggerFileInput(taskId: number): void {
     const el = document.getElementById('file_' + taskId) as HTMLInputElement;
     if (el) el.click();
@@ -735,7 +567,6 @@ export class CoachEntrepreneurDetailComponent implements OnInit {
         this.uploadingTaskId = null;
         this.toastr.success('Documents chargés avec succès', 'Succès');
         this.cdr.detectChanges();
-        // Reset input
         event.target.value = '';
       },
       error: (err) => {
@@ -764,41 +595,134 @@ export class CoachEntrepreneurDetailComponent implements OnInit {
     });
   }
 
+  onNewTaskFileSelected(event: any): void {
+    const files: FileList = event.target.files;
+    if (files && files.length > 0) {
+      this.newTaskFile = files[0];
+    } else {
+      this.newTaskFile = null;
+    }
+  }
+
+  submitNewTask(): void {
+    if (!this.entrepreneur) return;
+    
+    if (!this.activites || this.activites.length === 0) {
+      this.toastr.error("Aucune activité n'est disponible pour cet entrepreneur. Impossible de créer une tâche.", 'Erreur');
+      return;
+    }
+
+    this.isCreatingTask = true;
+    
+    // Auto-select the first available activity to attach the task internally
+    const activite = this.activites[0];
+
+    if (!activite.programmeId) {
+      this.toastr.error('Programme ID manquant pour l\'activité sélectionnée', 'Erreur');
+      this.isCreatingTask = false;
+      return;
+    }
+
+    const token = this.getAuthToken();
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    });
+
+    const tachePayload = {
+      titre: this.newTask.titre,
+      description: this.newTask.description || '',
+      responsableId: this.entrepreneur.id,
+      priorite: this.newTask.priorite || 'Moyenne',
+      dateDebut: this.newTask.dateDebut || null,
+      dateLimite: this.newTask.dateLimite,
+      difficulte: 'Moyenne',
+      status: 'NON_DEMARREE'
+    };
+
+    // Le backend attend : { tache: {...}, kpiIds: [] }
+    const body = { tache: tachePayload, kpiIds: [] };
+
+    const url = `${environment.apiUrl}/backoffice/programmes/${activite.programmeId}/sprints/${activite.sprintId}/activities/${activite.id}/taches`;
+
+    this.http.post<any>(url, body, { headers }).subscribe({
+      next: (createdTask: any) => {
+        if (this.newTaskFile) {
+          const taskId = typeof createdTask.id === 'string' ? parseInt(createdTask.id, 10) : createdTask.id;
+          this.tacheService.uploadDocuments(taskId, [this.newTaskFile], this.coachId || 0).subscribe({
+            next: (docs) => {
+              createdTask.documents = docs;
+              this.finalizeTaskCreation(createdTask);
+            },
+            error: () => {
+              this.toastr.warning("Tâche créée, mais la pièce jointe n'a pas pu être téléchargée.", 'Attention');
+              this.finalizeTaskCreation(createdTask);
+            }
+          });
+        } else {
+          this.finalizeTaskCreation(createdTask);
+        }
+      },
+      error: (err) => {
+        console.error('Erreur création tâche:', err);
+        const msg = err?.error?.message || 'Erreur lors de la création de la tâche';
+        this.toastr.error(msg, 'Erreur');
+        this.isCreatingTask = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  finalizeTaskCreation(task: any): void {
+    if (!this.entrepreneur!.tasks) this.entrepreneur!.tasks = [];
+    this.entrepreneur!.tasks.unshift(task);
+    this.toastr.success('Tâche créée avec succès', 'Succès');
+    this.showTaskModal = false;
+    this.isCreatingTask = false;
+    this.newTask = { titre: '', description: '', priorite: 'Moyenne', dateDebut: '', dateLimite: '' };
+    this.newTaskFile = null;
+    this.cdr.detectChanges();
+  }
+
   downloadConsolidatedReports(entrepreneurId: number): void {
-      this.isDownloadingPdf = true;
-      // Depending on the backend we can call a service. We will use a standard fetch using auth headers if needed,
-      // but since we are using Angular HttpClient, we should use a service method.
-      // Since CoachService does not have getConsolidatedReport natively mapped, we'll manually fetch it from the Rapport backend
-      const token = localStorage.getItem('token') || sessionStorage.getItem('token') || '';
-      
-      fetch(`http://localhost:8082/api/rapports/entrepreneur/${entrepreneurId}/consolidated`, {
-          method: 'GET',
-          headers: {
-              'Authorization': `Bearer ${token}`
-          }
-      })
+    this.isDownloadingPdf = true;
+    const token = this.getAuthToken();
+
+    fetch(`${environment.apiUrl}/rapports/entrepreneur/${entrepreneurId}/consolidated`, {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${token}` }
+    })
       .then(response => {
-          if(!response.ok) throw new Error('Network response was not ok');
-          return response.blob();
+        if (!response.ok) throw new Error('Network response was not ok');
+        return response.blob();
       })
       .then(blob => {
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `Rapport_Consolide_Entrepreneur_${entrepreneurId}.pdf`;
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          window.URL.revokeObjectURL(url);
-          this.isDownloadingPdf = false;
-          this.toastr.success('Le fichier a été téléchargé avec succès');
-          this.cdr.detectChanges();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Rapport_Consolide_Entrepreneur_${entrepreneurId}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+        this.isDownloadingPdf = false;
+        this.toastr.success('Le fichier a été téléchargé avec succès');
+        this.cdr.detectChanges();
       })
       .catch(err => {
-          console.error(err);
-          this.isDownloadingPdf = false;
-          this.toastr.error('Erreur lors du téléchargement du document consolidé');
-          this.cdr.detectChanges();
+        console.error(err);
+        this.isDownloadingPdf = false;
+        this.toastr.error('Erreur lors du téléchargement du document consolidé');
+        this.cdr.detectChanges();
       });
+  }
+
+  /** Récupère le token JWT depuis le localStorage ou sessionStorage */
+  private getAuthToken(): string {
+    return localStorage.getItem('accessToken')
+      || sessionStorage.getItem('accessToken')
+      || localStorage.getItem('token')
+      || sessionStorage.getItem('token')
+      || '';
   }
 }

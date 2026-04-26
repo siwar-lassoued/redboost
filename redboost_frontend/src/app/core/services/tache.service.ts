@@ -51,6 +51,15 @@ export class TacheService {
         );
     }
 
+    createForActivity(
+        programmeId: number,
+        sprintId: number,
+        activiteId: number,
+        data: Partial<Tache>
+    ): Observable<Tache> {
+        const url = `${environment.apiUrl}/backoffice/programmes/${programmeId}/sprints/${sprintId}/activities/${activiteId}/taches`;
+        return this.http.post<Tache>(url, { tache: data, kpiIds: [] });
+    }
     update(id: string, data: Partial<Tache>): Observable<Tache> {
         return this.http.put<ApiResponse<Tache>>(`${this.baseUrl}/${id}`, data).pipe(
             map(res => res.data)

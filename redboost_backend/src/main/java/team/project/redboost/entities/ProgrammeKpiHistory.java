@@ -1,6 +1,7 @@
 // src/main/java/team/project/redboost/entities/ProgrammeKpiHistory.java
 package team.project.redboost.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -20,6 +21,11 @@ public class ProgrammeKpiHistory {
     @Column(name = "programme_kpi_id", nullable = false)
     private Long programmeKpiId;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "programme_kpi_id", insertable = false, updatable = false)
+    @JsonIgnoreProperties({"history", "valeurs", "programme", "kpi", "hibernateLazyInitializer", "handler"})
+    private ProgrammeKpi programmeKpi;
+
     private String valeurPrecedente;
     private String valeurActuelle;
     private String valeurCible;
@@ -37,4 +43,4 @@ public class ProgrammeKpiHistory {
 
     @Column(name = "activite_id")
     private Long activiteId;
-}
+}

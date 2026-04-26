@@ -1,6 +1,7 @@
 // src/main/java/team/project/redboost/entities/TacheKpi.java
 package team.project.redboost.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -21,6 +22,11 @@ public class TacheKpi {
 
     private String valeurActuelle;
     private String valeurCible;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tache_id", insertable = false, updatable = false)
+    @JsonIgnoreProperties({"tachesKpis", "documents", "activite", "hibernateLazyInitializer", "handler"})
+    private Tache tache;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "kpi_id", insertable = false, updatable = false)

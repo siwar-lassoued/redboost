@@ -54,7 +54,7 @@ public class Tache {
 
     // Relation bidirectionnelle avec Activité
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "activite_id", nullable = false)
+    @JoinColumn(name = "activite_id", nullable = true)
     @JsonIgnoreProperties({"taches", "sprint", "kpis", "hibernateLazyInitializer", "handler"})
     private Activite activite;
 
@@ -81,7 +81,7 @@ public class Tache {
     }
 
 
-    @OneToMany(mappedBy = "tacheId", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "tache", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private List<TacheKpi> tachesKpis = new ArrayList<>();
 }
