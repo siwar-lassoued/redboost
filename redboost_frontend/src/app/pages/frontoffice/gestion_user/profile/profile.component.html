@@ -483,6 +483,62 @@
                 </div>
             </div>
         </div>
+
+        <!-- Assigned Coaches Section (Entrepreneur only) -->
+        <div class="matched-section" *ngIf="user?.role === 'ENTREPRENEUR'">
+            <div class="matched-header">
+                <div>
+                    <h2 class="matched-title">Mes Coachs Assignés</h2>
+                    <p class="matched-subtitle">Liste de vos coachs experts pour ce programme</p>
+                </div>
+            </div>
+
+            <div *ngIf="isLoadingMatched" class="matched-empty-state">
+                <p class="empty-text">Chargement des données...</p>
+            </div>
+
+            <div *ngIf="!isLoadingMatched && entrepreneurCoaches.length === 0" class="matched-empty-state">
+                <i class="pi pi-users" style="font-size: 2rem; color: #D1D5DB;"></i>
+                <p class="empty-text">Aucun coach assigné</p>
+                <p class="empty-sub">Vos coachs apparaîtront ici une fois le matching validé</p>
+            </div>
+
+            <div *ngIf="!isLoadingMatched && entrepreneurCoaches.length > 0" class="matched-thematique-block">
+                <!-- Table Card -->
+                <div class="matched-table-card" style="border-radius: 20px;">
+                    <div class="matched-table-scroll">
+                        <table class="matched-table">
+                            <thead>
+                                <tr>
+                                    <th>Coach</th>
+                                    <th>Email</th>
+                                    <th>Spécialité</th>
+                                    <th>Score Matching</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngFor="let coach of entrepreneurCoaches" class="matched-table-row">
+                                    <td>
+                                        <div class="matched-name-cell">
+                                            <span class="matched-name-text">{{ coach.nom || coach.firstName + ' ' + coach.lastName }}</span>
+                                        </div>
+                                    </td>
+                                    <td><span class="matched-email-text">{{ coach.email || '—' }}</span></td>
+                                    <td><span class="matched-prog-text">{{ coach.specialite || '—' }}</span></td>
+                                    <td><span class="matched-prog-text font-bold text-sky-600">{{ coach.scoreMatching ? coach.scoreMatching + '%' : '—' }}</span></td>
+                                    <td>
+                                        <button class="matched-btn-action" (click)="openChat(coach.id)">
+                                            <i class="pi pi-comment"></i> Message
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
     
     <!-- Profile Update Dialog -->
     <app-profile-update-dialog

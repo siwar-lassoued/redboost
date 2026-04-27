@@ -86,6 +86,9 @@ export class UserProfileComponent implements OnInit {
     matchedGroups: any[] = [];
     isLoadingMatched = false;
 
+    // Assigned coaches (Entrepreneur only)
+    entrepreneurCoaches: any[] = [];
+
     stats = [
 /*         { currentValue: 0, label: 'Projects' },
  */        { currentValue: 0, label: 'Connections' },
@@ -225,6 +228,8 @@ export class UserProfileComponent implements OnInit {
                 // Load matched entrepreneurs if COACH
                 if (this.user.role === 'COACH' && this.user.id) {
                     this.loadMatchedEntrepreneurs(this.user.id);
+                } else if (this.user.role === 'ENTREPRENEUR' && this.user.id) {
+                    this.loadEntrepreneurCoaches(this.user.id);
                 }
             },
             error: (error) => {
@@ -514,7 +519,27 @@ export class UserProfileComponent implements OnInit {
         });
     }
 
-    openChat(entrepreneurId: number): void {
-        this.router.navigate(['/coach-chat'], { queryParams: { userId: entrepreneurId } });
+    // --- Entrepreneur: Assigned Coaches ---
+
+    private loadEntrepreneurCoaches(entrepreneurId: number): void {
+        this.isLoadingMatched = true;
+        this.http.get<any[]>(`${environment.apiUrl}/matching/entrepreneur/${entrepreneurId}/coaches`).subscribe({
+            next: (coaches) => {
+                this.entrepreneurCoaches = coaches || [];
+                this.isLoadingMatched = false;
+            },
+            error: () => {
+                this.entrepreneurCoaches = [];
+                this.isLoadingMatched = false;
+            }
+        });
+    }
+
+    openChat(userId: number): void {
+        if (this.user.role === 'COACH') {
+            this.router.navigate(['/coach-chat'], { queryParams: { userId: userId } });
+        } else {
+            this.router.navigate(['/gestion_comm'], { queryParams: { with: userId } });
+        }
     }
 }
