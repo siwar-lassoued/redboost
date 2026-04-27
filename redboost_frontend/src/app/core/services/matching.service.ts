@@ -65,9 +65,7 @@ export class MatchingService {
     }
 
     getEntrepreneurCoaches(entrepreneurId: string): Observable<MatchingView[]> {
-        return this.http.get<ApiResponse<MatchingView[]>>(`${this.baseUrl}/entrepreneur/${entrepreneurId}/coaches`).pipe(
-            map(res => res.data)
-        );
+        return this.http.get<MatchingView[]>(`${this.baseUrl}/entrepreneur/${entrepreneurId}/coaches`);
     }
 
     releaseEntrepreneur(matchingId: string): Observable<void> {

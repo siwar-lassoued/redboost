@@ -88,6 +88,11 @@ public class MatchingController {
         return ResponseEntity.ok(matchingService.updateManualMatching(matchingId, coachId, entrepreneurId, note));
     }
 
+    @GetMapping("/entrepreneur/{entrepreneurId}/coaches")
+    public ResponseEntity<List<Map<String, Object>>> getEntrepreneurCoaches(@PathVariable Long entrepreneurId) {
+        return ResponseEntity.ok(matchingService.getCoachesForEntrepreneur(entrepreneurId));
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, String>> handleRuntimeException(RuntimeException ex) {
         return ResponseEntity.badRequest().body(Collections.singletonMap("message", ex.getMessage()));

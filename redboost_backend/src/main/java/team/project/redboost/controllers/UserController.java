@@ -51,6 +51,9 @@ public class UserController {
     @Autowired
     private ExcelImportService excelImportService;
 
+    @Autowired
+    private team.project.redboost.repositories.CandidatureRedstarterRepository candidatureRedstarterRepository;
+
     @PatchMapping("/updateprofile")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> updateUserProfile(
@@ -835,14 +838,34 @@ public class UserController {
 
     @GetMapping("/entrepreneurs/{entrepreneurId}/coaches")
     public ResponseEntity<List<Map<String, Object>>> getCoachesForEntrepreneur(@PathVariable Long entrepreneurId) {
-        List<team.project.redboost.entities.Matching> matchings = matchingRepository.findByEntrepreneurIdAndStatut(
-                entrepreneurId, team.project.redboost.entities.Matching.StatutMatching.VALIDE);
-        
-        List<Map<String, Object>> coaches = matchings.stream()
-                .map(m -> userService.findById(m.getCoachId()))
-                .filter(coach -> coach != null)
-                .map(this::buildUserResponse)
-                .collect(Collectors.toList());
+        Set<Long> seenCoachIds = new HashSet<>();
+        List<Map<String, Object>> coaches = new ArrayList<>();
+
+        // Bridge User ID → Candidature ID via email
+        User entrepreneur = userService.findById(entrepreneurId);
+        if (entrepreneur != null && entrepreneur.getEmail() != null) {
+            List<CandidatureRedstarter> candidatures = candidatureRedstarterRepository.findByEmail(entrepreneur.getEmail());
+            for (CandidatureRedstarter cand : candidatures) {
+                List<Matching> matchings = matchingRepository.findByEntrepreneurIdAndStatut(
+                        cand.getId(), Matching.StatutMatching.VALIDE);
+                for (Matching m : matchings) {
+                    if (seenCoachIds.add(m.getCoachId())) {
+                        User coach = userService.findById(m.getCoachId());
+                        if (coach != null) coaches.add(buildUserResponse(coach));
+                    }
+                }
+            }
+        }
+
+        // Fallback: direct User ID lookup
+        List<Matching> directMatchings = matchingRepository.findByEntrepreneurIdAndStatut(
+                entrepreneurId, Matching.StatutMatching.VALIDE);
+        for (Matching m : directMatchings) {
+            if (seenCoachIds.add(m.getCoachId())) {
+                User coach = userService.findById(m.getCoachId());
+                if (coach != null) coaches.add(buildUserResponse(coach));
+            }
+        }
 
         return ResponseEntity.ok(coaches);
     }

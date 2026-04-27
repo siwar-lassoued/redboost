@@ -974,4 +974,62 @@ public class MatchingIaService {
         }
         return null;
     }
+
+   
+    public List<Map<String, Object>> getCoachesForEntrepreneur(Long entrepreneurUserId) {
+        User entrepreneur = userRepo.findById(entrepreneurUserId)
+                .orElseThrow(() -> new RuntimeException("Entrepreneur non trouvé : " + entrepreneurUserId));
+
+        String email = entrepreneur.getEmail();
+        if (email == null) return Collections.emptyList();
+
+        // Find candidature(s) by email to get the candidature ID used in matchings
+        List<CandidatureRedstarter> candidatures = candidatureRepo.findByEmail(email);
+
+        List<Map<String, Object>> result = new ArrayList<>();
+        Set<Long> seenCoachIds = new HashSet<>();
+
+        // Search matchings via candidature IDs
+        for (CandidatureRedstarter cand : candidatures) {
+            List<Matching> matchings = matchingRepo.findByEntrepreneurIdAndStatut(
+                    cand.getId(), Matching.StatutMatching.VALIDE);
+
+            for (Matching m : matchings) {
+                if (!seenCoachIds.add(m.getCoachId())) continue;
+                buildCoachView(m, result);
+            }
+        }
+
+        // Fallback: also try with the User ID directly (in case some matchings use User IDs)
+        List<Matching> directMatchings = matchingRepo.findByEntrepreneurIdAndStatut(
+                entrepreneurUserId, Matching.StatutMatching.VALIDE);
+        for (Matching m : directMatchings) {
+            if (!seenCoachIds.add(m.getCoachId())) continue;
+            buildCoachView(m, result);
+        }
+
+        return result;
+    }
+
+    private void buildCoachView(Matching m, List<Map<String, Object>> result) {
+        userRepo.findById(m.getCoachId()).ifPresent(coach -> {
+            Map<String, Object> view = new LinkedHashMap<>();
+            view.put("id", String.valueOf(coach.getId()));
+            view.put("nom", ((coach.getFirstName() != null ? coach.getFirstName() : "") + " " +
+                    (coach.getLastName() != null ? coach.getLastName() : "")).trim());
+            view.put("specialite", coach.getExpertise());
+            view.put("sector", coach.getSecteur());
+            view.put("programmeId", String.valueOf(m.getProgrammeId()));
+
+            programmeRepo.findById(m.getProgrammeId()).ifPresent(p ->
+                    view.put("programmeName", p.getNom()));
+
+            view.put("scoreMatching", m.getScoreIa() != null ? m.getScoreIa() : 0);
+            view.put("justificationMatching", m.getJustification());
+            view.put("pointsForts", m.getPointsForts());
+            view.put("recommandationSession1", m.getRecommandationSession1());
+
+            result.add(view);
+        });
+    }
 }

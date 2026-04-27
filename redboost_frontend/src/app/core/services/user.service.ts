@@ -50,9 +50,7 @@ export class UserService {
     }
 
     getCoachesByEntrepreneur(entrepreneurId: string): Observable<User[]> {
-        return this.http.get<ApiResponse<User[]>>(`${this.baseUrl}/entrepreneur/${entrepreneurId}/coaches`).pipe(
-            map(res => res.data)
-        );
+        return this.http.get<User[]>(`${this.baseUrl}/entrepreneurs/${entrepreneurId}/coaches`);
     }
 
     create(data: Partial<User>): Observable<User> {
