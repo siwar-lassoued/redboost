@@ -80,7 +80,12 @@ public class CoachService {
         int completedTaches = 0;
         int totalTaches = 0;
         for (Matching m : matchings) {
-            List<Tache> tasks = tacheRepository.findByResponsableId(m.getEntrepreneurId());
+            CandidatureRedstarter cand = candidatureRepository.findById(m.getEntrepreneurId()).orElse(null);
+            if (cand == null || cand.getEmail() == null) continue;
+            User ent = userRepository.findByEmail(cand.getEmail());
+            if (ent == null) continue;
+
+            List<Tache> tasks = tacheRepository.findByResponsableId(ent.getId());
             totalTaches += tasks.size();
             for (Tache t : tasks) {
                 if (t.getStatus() != Tache.StatusTache.TERMINEE) {
@@ -456,12 +461,18 @@ public class CoachService {
                 dispo.getCoach().getId(), Matching.StatutMatching.VALIDE);
         for (Matching m : matchings) {
             try {
-                notificationService.createAndSendNotification(
-                        m.getEntrepreneurId(),
-                        "Nouveau créneau disponible : \"" + dto.getTitre() + "\" le " + sessionDate,
-                        "SESSION_SLOT_ADDED", saved.getId());
+                CandidatureRedstarter cand = candidatureRepository.findById(m.getEntrepreneurId()).orElse(null);
+                if (cand != null && cand.getEmail() != null) {
+                    User entUser = userRepository.findByEmail(cand.getEmail());
+                    if (entUser != null) {
+                        notificationService.createAndSendNotification(
+                                entUser.getId(),
+                                "Nouveau créneau disponible : \"" + dto.getTitre() + "\" le " + sessionDate,
+                                "SESSION_SLOT_ADDED", saved.getId());
+                    }
+                }
             } catch (Exception e) {
-                log.warn("Notification failed for entrepreneur {}: {}", m.getEntrepreneurId(), e.getMessage());
+                log.warn("Notification failed for entrepreneur candidature {}: {}", m.getEntrepreneurId(), e.getMessage());
             }
         }
 
