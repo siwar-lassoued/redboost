@@ -211,7 +211,7 @@ export class MesCoachsComponent implements OnInit {
     const user = this.authSvc.currentUser$.value;
     const userId = user?.id;
     if (userId) {
-      this.matchSvc.getEntrepreneurCoaches(Number(userId)).subscribe(data => {
+      this.matchSvc.getEntrepreneurCoaches(userId).subscribe(data => {
         this.matchings.set(data);
         data.forEach(m => {
           this.loadSlots(m.id, Number(userId));
