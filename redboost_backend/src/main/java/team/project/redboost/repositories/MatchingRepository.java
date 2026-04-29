@@ -13,8 +13,8 @@ public interface MatchingRepository extends JpaRepository<Matching, Long> {
 
     List<Matching> findByCoachIdAndStatut(Long coachId, Matching.StatutMatching statut);
 
-    List<Matching> findByEntrepreneurIdAndStatut(Long entrepreneurId, Matching.StatutMatching statut);
-
+    List<Matching> findByEntrepreneurIdAndStatut(
+            Long entrepreneurId, Matching.StatutMatching statut);
     @Query("""
       SELECT m FROM Matching m
       WHERE m.programmeId = :programmeId

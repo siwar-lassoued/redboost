@@ -89,7 +89,8 @@ public class MatchingController {
     }
 
     @GetMapping("/entrepreneur/{entrepreneurId}/coaches")
-    public ResponseEntity<List<Map<String, Object>>> getEntrepreneurCoaches(@PathVariable Long entrepreneurId) {
+    public ResponseEntity<List<Map<String, Object>>> getCoachesForEntrepreneur(
+            @PathVariable Long entrepreneurId) {
         return ResponseEntity.ok(matchingService.getCoachesForEntrepreneur(entrepreneurId));
     }
 

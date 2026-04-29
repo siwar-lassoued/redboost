@@ -1,279 +1,560 @@
-import { Component, signal, computed, inject, ChangeDetectionStrategy, OnInit } from '@angular/core';
+import {
+  Component,
+  signal,
+  computed,
+  inject,
+  ChangeDetectionStrategy,
+  OnInit,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { FormsModule } from '@angular/forms';
-import { DropdownModule } from 'primeng/dropdown';
-import { ButtonModule } from 'primeng/button';
-import { MatchingService, MatchingView } from '../../../core/services/matching.service';
+import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../../core/services/auth.service';
-import { CoachService, SessionCoachDTO } from '../../dashboard/coachDashboard/services/coach.service';
+import { environment } from '../../../../environment';
+
+interface SessionSlot {
+  id: number;
+  dateSession: string;
+  heureDebut: string;
+  heureFin: string;
+  typeSession: 'EN_LIGNE' | 'PRESENTIEL';
+  titre: string;
+}
+
+interface Disponibilite {
+  id: number;
+  dateDebut: string;
+  dateFin: string;
+  thematiqueNom?: string;
+  sessions: SessionSlot[];
+}
+
+interface CoachView {
+  coachId: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  expertise?: string;
+  skills?: string;
+  profilePictureUrl?: string;
+  matchingScore: number;
+  justification?: string;
+  pointsForts?: string;
+  disponibilites: Disponibilite[];
+  // UI state
+  expanded?: boolean;
+  parsedPoints?: string[];
+}
 
 @Component({
   selector: 'rb-mes-coachs',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, RouterLink, FormsModule, DropdownModule, ButtonModule],
+  imports: [CommonModule, RouterLink],
   template: `
     <div class="p-6 bg-[#F8FAFC] min-h-screen">
-      <!-- Header -->
-      <div class="mb-8">
-        <h1 class="text-3xl font-black text-[#1A1A2E] tracking-tight">Mes Coachs</h1>
-        <p class="text-gray-500 mt-1 font-medium">Profils et accompagnements personnalisés</p>
+
+      <!-- ── Header ─────────────────────────────────────────────── -->
+      <div class="flex items-center justify-between mb-8">
+        <div>
+          <h1 class="text-3xl font-black text-[#1A1A2E] tracking-tight">
+            Mes Coachs
+          </h1>
+          <p class="text-gray-500 mt-1 font-medium">
+            {{ coaches().length }} coach{{ coaches().length > 1 ? 's' : '' }} assigné{{ coaches().length > 1 ? 's' : '' }}
+          </p>
+        </div>
+
+        <!-- Badge -->
+        <div
+          class="flex items-center gap-2 px-5 py-2.5 bg-[#1A3A3A] text-white
+                 rounded-full text-xs font-black shadow-lg shadow-[#1A3A3A]/20">
+          <i class="pi pi-users"></i>
+          Accompagnement actif
+        </div>
       </div>
 
-      @if (matchings().length > 0) {
-        @for (coach of matchings(); track coach.id) {
-          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            <!-- Coach Profile Card -->
-            <div class="lg:col-span-1">
-            <div class="bg-white rounded-3xl p-6 shadow-xl shadow-gray-200/50 border border-gray-100">
-              <!-- Avatar -->
-              <div class="text-center mb-6">
-                <div class="w-24 h-24 rounded-3xl flex items-center justify-center text-white text-3xl font-black mx-auto mb-4 shadow-2xl shadow-sky-400/30"
-                  style="background: linear-gradient(135deg, #00d2ff, #3aafff)">
-                  {{ coach.nom[0] }}
-                </div>
-                <div class="flex items-center justify-center gap-2 mb-1">
-                  <h2 class="text-xl font-black text-[#1A1A2E]">{{ coach.nom }}</h2>
-                  <i class="pi pi-check-circle text-blue-500 text-lg"></i>
-                </div>
-                <p class="text-sm text-gray-500 font-medium">{{ coach.specialite || 'Coach Expert' }}</p>
-              </div>
+      <!-- ── Loading ─────────────────────────────────────────────── -->
+      @if (loading()) {
+        <div class="flex flex-col items-center justify-center py-24">
+          <div class="w-16 h-16 rounded-3xl bg-white shadow-xl flex items-center
+                      justify-center mb-4 animate-pulse">
+            <i class="pi pi-spin pi-spinner text-2xl text-[#3aafff]"></i>
+          </div>
+          <p class="text-sm font-black text-gray-400 uppercase tracking-widest">
+            Chargement…
+          </p>
+        </div>
+      }
 
-              <!-- AI Match Justification (Crucial) -->
-              <div class="mb-6 p-4 bg-amber-50 rounded-2xl border border-amber-100">
-                <div class="flex items-center gap-2 mb-2">
-                  <i class="pi pi-sparkles text-amber-600"></i>
-                  <span class="text-[10px] font-bold text-amber-700 uppercase tracking-widest">Pourquoi ce matching ?</span>
-                </div>
-                <p class="text-xs text-amber-900 leading-relaxed italic">
-                  "{{ coach.justificationMatching }}"
-                </p>
-                <div class="mt-2 flex flex-wrap gap-1">
-                   @for (tag of getPointsForts(coach); track tag) {
-                     <span class="text-[9px] px-2 py-0.5 bg-white/50 rounded-full text-amber-800 font-bold border border-amber-200/50">{{ tag }}</span>
-                   }
-                </div>
-              </div>
+      <!-- ── Empty state ─────────────────────────────────────────── -->
+      @if (!loading() && coaches().length === 0) {
+        <div
+          class="flex flex-col items-center justify-center py-24 bg-white
+                 rounded-3xl border-2 border-dashed border-gray-200">
+          <div class="w-20 h-20 bg-[#F8FAFC] rounded-3xl flex items-center
+                      justify-center mb-5">
+            <i class="pi pi-user-plus text-4xl text-gray-300"></i>
+          </div>
+          <p class="text-base font-black text-gray-400 uppercase tracking-widest mb-2">
+            Aucun coach assigné
+          </p>
+          <p class="text-sm text-gray-400 text-center max-w-xs mb-6">
+            Votre coach sera visible ici dès que l'équipe RedBoost
+            aura finalisé votre matching.
+          </p>
+          <button
+            routerLink="/entrepreneur/dashboard"
+            class="flex items-center gap-2 px-6 py-3 rounded-2xl text-sm
+                   font-black text-white shadow-lg transition-all hover:scale-[1.02]"
+            style="background: linear-gradient(135deg, #1A3A3A, #3aafff)">
+            <i class="pi pi-home"></i>
+            Retour au tableau de bord
+          </button>
+        </div>
+      }
 
-              <!-- CTAs -->
-              <div class="space-y-3">
-                <button [routerLink]="['/gestion_comm']" [queryParams]="{with: coach.id}"
-                  class="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-black text-white transition-all hover:scale-[1.02] shadow-lg"
-                  style="background: linear-gradient(135deg, #1A3A3A, #C0392B)">
-                  <i class="pi pi-comments pb-1 px-1"></i>
-                  Discuter avec ce coach
+      <!-- ── Coach Cards ─────────────────────────────────────────── -->
+      @if (!loading()) {
+        <div class="space-y-6">
+          @for (coach of coaches(); track coach.coachId) {
+            <div
+              class="bg-white rounded-[32px] shadow-xl shadow-gray-200/50
+                     border border-gray-100 overflow-hidden transition-all
+                     hover:shadow-2xl hover:-translate-y-0.5">
+
+              <!-- ── Coach Header ─────────────────────────────────── -->
+              <div class="p-6">
+                <div class="flex items-start gap-5">
+
+                  <!-- Avatar -->
+                  <div class="relative flex-shrink-0">
+                    @if (coach.profilePictureUrl) {
+                      <img
+                        [src]="coach.profilePictureUrl"
+                        [alt]="coach.firstName"
+                        class="w-20 h-20 rounded-2xl object-cover shadow-lg" />
+                    } @else {
+                      <div
+                        class="w-20 h-20 rounded-2xl flex items-center justify-center
+                               text-white text-2xl font-black shadow-lg"
+                        style="background: linear-gradient(135deg, #1A3A3A, #3aafff)">
+                        {{ coach.firstName[0] }}{{ coach.lastName[0] }}
+                      </div>
+                    }
+                    <!-- Score badge -->
+                    <div
+                      class="absolute -bottom-2 -right-2 w-9 h-9 rounded-xl
+                             flex items-center justify-center text-white text-[10px]
+                             font-black shadow-lg border-2 border-white"
+                      [style.background]="scoreGradient(coach.matchingScore)">
+                      {{ coach.matchingScore | number:'1.0-0' }}
+                    </div>
+                  </div>
+
+                  <!-- Info -->
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-3 mb-1 flex-wrap">
+                      <h2 class="text-xl font-black text-[#1A1A2E]">
+                        {{ coach.firstName }} {{ coach.lastName }}
+                      </h2>
+                      <span
+                        class="text-[10px] px-2.5 py-1 rounded-full font-black
+                               uppercase tracking-widest"
+                        style="background: #e8f9ff; color: #3aafff">
+                        {{ coach.firstName.toLowerCase() }} {{ coach.lastName.toLowerCase() }}
+                      </span>
+                    </div>
+
+                    @if (coach.expertise) {
+                      <p class="text-sm text-gray-500 font-medium mb-3 leading-relaxed">
+                        {{ coach.expertise }}
+                      </p>
+                    }
+
+                    <!-- Skill tags -->
+                    @if (coach.skills) {
+                      <div class="flex flex-wrap gap-1.5 mb-4">
+                        @for (skill of parseSkills(coach.skills); track skill) {
+                          <span
+                            class="text-[10px] px-2.5 py-1 rounded-full font-black
+                                   uppercase tracking-widest"
+                            style="background: #F3F4F6; color: #374151">
+                            {{ skill }}
+                          </span>
+                        }
+                      </div>
+                    }
+
+                    <!-- Points forts from matching IA -->
+                    @if (coach.parsedPoints && coach.parsedPoints.length > 0) {
+                      <div class="flex flex-col gap-1.5 mb-4">
+                        <p class="text-[10px] font-black text-gray-400 uppercase
+                                  tracking-widest mb-1">
+                          Points forts identifiés par l'IA
+                        </p>
+                        @for (pt of coach.parsedPoints.slice(0, 3); track pt) {
+                          <div class="flex items-start gap-2">
+                            <i class="pi pi-check-circle text-emerald-400 text-xs
+                                      mt-0.5 flex-shrink-0"></i>
+                            <span class="text-xs text-gray-600 font-medium">{{ pt }}</span>
+                          </div>
+                        }
+                      </div>
+                    }
+                  </div>
+
+                  <!-- Right column: actions + score meter -->
+                  <div class="flex-shrink-0 flex flex-col items-end gap-3">
+
+                    <!-- Score meter -->
+                    <div class="text-right mb-1">
+                      <p class="text-[10px] font-black text-gray-400 uppercase
+                                tracking-widest mb-1">
+                        Score matching
+                      </p>
+                      <div class="flex items-center gap-2">
+                        <div class="w-32 h-2 bg-gray-100 rounded-full overflow-hidden">
+                          <div
+                            class="h-full rounded-full transition-all duration-700"
+                            [style.width]="coach.matchingScore + '%'"
+                            [style.background]="scoreGradient(coach.matchingScore)">
+                          </div>
+                        </div>
+                        <span class="text-sm font-black" [style.color]="scoreColor(coach.matchingScore)">
+                          {{ coach.matchingScore | number:'1.0-0' }}%
+                        </span>
+                      </div>
+                    </div>
+
+                    <!-- Action buttons -->
+                    <div class="flex gap-2">
+                      <a
+                        [href]="'mailto:' + coach.email"
+                        class="flex items-center gap-2 px-4 py-2.5 rounded-2xl
+                               text-xs font-black text-white transition-all
+                               hover:scale-[1.03] shadow-lg shadow-[#3aafff]/20"
+                        style="background: linear-gradient(135deg, #1A3A3A, #3aafff)">
+                        <i class="pi pi-envelope"></i>
+                        Contacter
+                      </a>
+                      <button
+                        [routerLink]="['/entrepreneur/chat']"
+                        [queryParams]="{ with: coach.coachId }"
+                        class="w-10 h-10 rounded-2xl flex items-center justify-center
+                               text-white transition-all hover:scale-[1.05]
+                               shadow-lg shadow-[#ff3d91]/20"
+                        style="background: linear-gradient(135deg, #ff3d91, #a17dfd)">
+                        <i class="pi pi-comments text-sm"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Justification (collapsible) -->
+                @if (coach.justification) {
+                  <div class="mt-4 p-4 bg-[#F8FAFC] rounded-2xl border border-gray-100">
+                    <p class="text-[10px] font-black text-gray-400 uppercase
+                              tracking-widest mb-2">
+                      Pourquoi ce matching ?
+                    </p>
+                    <p class="text-xs text-gray-600 leading-relaxed font-medium italic">
+                      "{{ coach.justification }}"
+                    </p>
+                  </div>
+                }
+
+                <!-- Toggle disponibilités -->
+                <button
+                  (click)="toggleCoach(coach)"
+                  class="mt-4 w-full flex items-center justify-between px-5 py-3
+                         rounded-2xl bg-[#F8FAFC] border border-gray-200 text-sm
+                         font-black text-[#1A1A2E] hover:border-[#3aafff]/40
+                         hover:bg-[#e8f9ff]/30 transition-all cursor-pointer">
+                  <span class="flex items-center gap-2">
+                    <i class="pi pi-calendar text-[#3aafff]"></i>
+                    Disponibilités & créneaux
+                    <span
+                      class="text-[10px] px-2 py-0.5 rounded-full font-black"
+                      style="background: #e8f9ff; color: #3aafff">
+                      {{ totalSlots(coach) }}
+                    </span>
+                  </span>
+                  <i class="pi text-gray-400 text-sm transition-transform duration-300"
+                    [class.pi-chevron-down]="!coach.expanded"
+                    [class.pi-chevron-up]="coach.expanded"></i>
                 </button>
               </div>
-            </div>
-          </div>
 
-            <!-- Right: Availability & Booking -->
-            <div class="lg:col-span-2 space-y-6">
-              <!-- Calendly Widget -->
-              @if (coach.calendlyUrl) {
-                <div class="bg-white rounded-3xl p-6 shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden">
-                  <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-black text-[#1A1A2E] flex items-center gap-2">
-                      <i class="pi pi-calendar-clock text-[#ff3d91]"></i>
-                      Prendre rendez-vous via Calendly
-                    </h3>
-                  </div>
-                  <div class="calendly-inline-widget min-w-[320px] h-[630px]" [attr.data-url]="coach.calendlyUrl" style="width:100%;"></div>
-                </div>
-              } @else {
-                <!-- Available Slots Dropdown -->
-                <div class="bg-white rounded-3xl p-6 shadow-xl shadow-gray-200/50 border border-gray-100">
-                  <div class="flex items-center justify-between mb-6">
-                    <h3 class="text-lg font-black text-[#1A1A2E] flex items-center gap-2">
-                      <i class="pi pi-calendar-clock text-[#ff3d91]"></i>
-                      Réserver votre prochaine séance
-                    </h3>
-                  </div>
-  
-                  <div class="flex flex-col gap-4">
-                    @if (getCoachSlots(coach.id).length > 0) {
-                      <div class="flex gap-4">
-                        <p-dropdown 
-                          [options]="getCoachSlots(coach.id)" 
-                          [(ngModel)]="selectedSlots[coach.id]"
-                          optionLabel="label" 
-                          placeholder="Sélectionnez un créneau disponible"
-                          [style]="{'width': '100%'}">
-                        </p-dropdown>
-                        <p-button 
-                          [disabled]="!selectedSlots[coach.id]"
-                          label="Réserver"
-                          icon="pi pi-plus-circle"
-                          (onClick)="openBookingModal(selectedSlots[coach.id], coach)">
-                        </p-button>
-                      </div>
-                    } @else {
-                      <div class="text-center py-8 border-2 border-dashed border-gray-100 rounded-3xl">
-                        <i class="pi pi-calendar-minus text-3xl mx-auto mb-3 text-gray-200"></i>
-                        <p class="text-sm font-bold text-gray-400">Aucun créneau disponible pour ce coach</p>
-                        <p class="text-[10px] text-gray-300 mt-1">Dès que votre coach ajoutera des créneaux, ils apparaîtront ici.</p>
+              <!-- ── Disponibilités Panel ──────────────────────────── -->
+              @if (coach.expanded) {
+                <div
+                  class="border-t border-gray-100 bg-[#FAFBFF] px-6 pb-6 pt-4">
+
+                  @if (coach.disponibilites.length === 0) {
+                    <div class="py-8 text-center">
+                      <i class="pi pi-calendar text-3xl text-gray-200 mb-2 block"></i>
+                      <p class="text-xs font-black text-gray-400 uppercase tracking-widest">
+                        Aucune disponibilité publiée
+                      </p>
+                    </div>
+                  }
+
+                  <div class="space-y-5">
+                    @for (dispo of coach.disponibilites; track dispo.id) {
+                      <div class="bg-white rounded-2xl border border-gray-100
+                                  shadow-sm overflow-hidden">
+
+                        <!-- Dispo header -->
+                        <div
+                          class="flex items-center justify-between px-5 py-3
+                                 border-b border-gray-100"
+                          style="background: linear-gradient(135deg, #F8FAFC, #e8f9ff)">
+                          <div class="flex items-center gap-3">
+                            @if (dispo.thematiqueNom) {
+                              <span
+                                class="text-[10px] px-3 py-1 rounded-full font-black
+                                       uppercase tracking-widest"
+                                style="background: #1A3A3A; color: white">
+                                {{ dispo.thematiqueNom }}
+                              </span>
+                            }
+                            <span class="text-xs text-gray-500 font-medium">
+                              <i class="pi pi-calendar mr-1"></i>
+                              {{ formatDate(dispo.dateDebut) }}
+                              →
+                              {{ formatDate(dispo.dateFin) }}
+                            </span>
+                          </div>
+                          <span
+                            class="text-[10px] px-2 py-0.5 rounded-full font-black"
+                            style="background: #e8f9ff; color: #3aafff">
+                            {{ dispo.sessions.length }} créneau{{ dispo.sessions.length > 1 ? 'x' : '' }}
+                          </span>
+                        </div>
+
+                        <!-- Session slots grid -->
+                        @if (dispo.sessions.length === 0) {
+                          <div class="py-5 text-center">
+                            <p class="text-xs text-gray-400 font-medium">
+                              Aucun créneau publié pour cette disponibilité
+                            </p>
+                          </div>
+                        }
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 p-4">
+                          @for (slot of dispo.sessions; track slot.id) {
+                            <div
+                              class="relative rounded-xl p-4 border-2 transition-all
+                                     hover:scale-[1.01] hover:shadow-md"
+                              [style.borderColor]="slot.typeSession === 'EN_LIGNE' ? '#3aafff33' : '#ff3d9133'"
+                              [style.background]="slot.typeSession === 'EN_LIGNE' ? '#f0fbff' : '#fff0f7'">
+
+                              <!-- Type badge (top right) -->
+                              <span
+                                class="absolute top-2 right-2 text-[8px] px-2 py-0.5
+                                       rounded-full font-black uppercase tracking-widest"
+                                [style.background]="slot.typeSession === 'EN_LIGNE' ? '#3aafff' : '#ff3d91'"
+                                style="color: white">
+                                {{ slot.typeSession === 'EN_LIGNE' ? '📹 Ligne' : '🏢 Présentiel' }}
+                              </span>
+
+                              <!-- Date big -->
+                              <div class="flex items-center gap-3 mb-2">
+                                <div
+                                  class="w-11 h-11 rounded-xl flex flex-col items-center
+                                         justify-center text-white flex-shrink-0 shadow"
+                                  [style.background]="slot.typeSession === 'EN_LIGNE'
+                                    ? 'linear-gradient(135deg,#1A3A3A,#3aafff)'
+                                    : 'linear-gradient(135deg,#ff3d91,#a17dfd)'">
+                                  <span class="text-[9px] font-bold opacity-80 uppercase leading-none">
+                                    {{ slotMonth(slot.dateSession) }}
+                                  </span>
+                                  <span class="text-lg font-black leading-none">
+                                    {{ slotDay(slot.dateSession) }}
+                                  </span>
+                                </div>
+                                <div>
+                                  <p class="text-xs font-black text-[#1A1A2E]">
+                                    {{ slotDayName(slot.dateSession) }}
+                                  </p>
+                                  <p class="text-[11px] text-gray-500 font-medium">
+                                    {{ slot.heureDebut | slice:0:5 }}
+                                    –
+                                    {{ slot.heureFin | slice:0:5 }}
+                                  </p>
+                                </div>
+                              </div>
+
+                              @if (slot.titre) {
+                                <p class="text-[11px] text-gray-500 font-medium truncate pr-8">
+                                  {{ slot.titre }}
+                                </p>
+                              }
+
+                              <!-- Book button -->
+                              <button
+                                (click)="bookSlot(slot, coach)"
+                                class="mt-3 w-full py-2 rounded-xl text-[10px] font-black
+                                       text-white uppercase tracking-widest transition-all
+                                       hover:opacity-90 cursor-pointer border-0"
+                                [style.background]="slot.typeSession === 'EN_LIGNE'
+                                  ? 'linear-gradient(135deg,#1A3A3A,#3aafff)'
+                                  : 'linear-gradient(135deg,#ff3d91,#a17dfd)'">
+                                Réserver ce créneau
+                              </button>
+                            </div>
+                          }
+                        </div>
                       </div>
                     }
                   </div>
                 </div>
               }
-
-            <!-- Recommendation Box -->
-            @if (coach.recommandationSession1) {
-              <div class="bg-sky-600 rounded-3xl p-6 text-white shadow-xl shadow-sky-200/50">
-                <div class="flex items-start gap-4">
-                   <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
-                     <i class="pi pi-lightbulb text-xl"></i>
-                   </div>
-                   <div>
-                     <h4 class="font-black text-sm uppercase tracking-widest mb-1 opacity-80">Recommandation Session 1</h4>
-                     <p class="text-sm font-medium leading-relaxed">{{ coach.recommandationSession1 }}</p>
-                   </div>
-                </div>
-              </div>
-            }
-          </div>
-        </div>
-        }
-      } @else {
-        <div class="flex flex-col items-center justify-center py-24 bg-white rounded-3xl border border-dashed border-gray-200">
-           <i class="pi pi-search text-5xl text-gray-200 mb-4"></i>
-           <h3 class="font-bold text-gray-500">Matching en cours...</h3>
-           <p class="text-sm text-gray-400 mt-1">L'administrateur est en train de finaliser votre attribution de coach(s).</p>
-        </div>
-      }
-
-      <!-- Booking Modal -->
-      @if (selectedSlotToBook()) {
-        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div class="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in duration-200">
-            <div class="p-6 bg-[#C0392B] text-white">
-              <h3 class="font-black text-lg">Confirmer la réservation</h3>
-              <p class="text-xs opacity-80 mt-1">Session avec {{ selectedCoachForBooking()?.nom }}</p>
             </div>
-            <div class="p-6 space-y-4">
-              <div class="p-4 bg-gray-50 rounded-2xl border border-gray-100">
-                <div class="flex items-center gap-3 mb-2">
-                  <i class="pi pi-calendar text-[#C0392B]"></i>
-                  <span class="font-bold text-sm">{{ selectedSlotToBook()?.dateSession | date:'fullDate' }}</span>
-                </div>
-                <div class="flex items-center gap-3">
-                  <i class="pi pi-clock text-[#C0392B]"></i>
-                  <span class="font-bold text-sm">{{ selectedSlotToBook()?.heureDebut }} à {{ selectedSlotToBook()?.heureFin }}</span>
-                </div>
-              </div>
-
-              <div>
-                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Notes pour le coach (optionnel)</label>
-                <textarea 
-                  [(ngModel)]="bookingNotes"
-                  placeholder="Précisez vos attentes pour cette session..."
-                  class="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-[#C0392B] min-h-[100px]"
-                ></textarea>
-              </div>
-
-              <div class="flex gap-3 pt-2">
-                <button (click)="cancelBooking()" class="flex-1 py-3 border-2 border-gray-100 rounded-2xl text-sm font-black text-gray-500 hover:bg-gray-50 transition-colors">Annuler</button>
-                <button (click)="confirmBooking()" class="flex-[2] py-3 bg-[#1A3A3A] text-white rounded-2xl text-sm font-black shadow-lg hover:opacity-90 transition-all flex items-center justify-center gap-2">
-                  @if (isBooking()) {
-                    <i class="pi pi-spinner pi-spin"></i>
-                    Réservation...
-                  } @else {
-                    <i class="pi pi-check"></i>
-                    Confirmer
-                  }
-                </button>
-              </div>
-            </div>
-          </div>
+          }
         </div>
       }
     </div>
   `,
-  styles: [`:host { display: block; }`]
+  styles: [`:host { display: block; }`],
 })
 export class MesCoachsComponent implements OnInit {
-  private matchSvc = inject(MatchingService);
-  private coachSvc = inject(CoachService);
+  private http = inject(HttpClient);
   private authSvc = inject(AuthService);
 
-  matchings = signal<MatchingView[]>([]);
-  allSlots: { [coachId: string]: any[] } = {};
-  selectedSlots: { [coachId: string]: any } = {};
-  
-  selectedSlotToBook = signal<SessionCoachDTO | null>(null);
-  selectedCoachForBooking = signal<MatchingView | null>(null);
-  bookingNotes = '';
-  isBooking = signal(false);
+  loading = signal(true);
+  coaches = signal<CoachView[]>([]);
 
   ngOnInit(): void {
     const user = this.authSvc.currentUser$.value;
-    const userId = user?.id;
-    if (userId) {
-      this.matchSvc.getEntrepreneurCoaches(userId).subscribe(data => {
-        this.matchings.set(data);
-        data.forEach(m => {
-          this.loadSlots(m.id, m.programmeId);
-        });
+    if (!user) {
+      this.loading.set(false);
+      return;
+    }
+
+    this.http
+      .get<any[]>(
+        `${environment.apiUrl}/matching/entrepreneur/${user.id}/coaches`
+      )
+      .subscribe({
+        next: (data) => {
+          const mapped: CoachView[] = data.map((c) => ({
+            ...c,
+            expanded: false,
+            parsedPoints: this.tryParseArray(c.pointsForts),
+          }));
+          this.coaches.set(mapped);
+          this.loading.set(false);
+        },
+        error: () => {
+          this.coaches.set([]);
+          this.loading.set(false);
+        },
       });
-    }
   }
 
-  getPointsForts(coach: MatchingView): string[] {
+  // ── UI helpers ──────────────────────────────────────────────────
+
+  toggleCoach(coach: CoachView): void {
+    coach.expanded = !coach.expanded;
+    // Trigger signal update by spreading
+    this.coaches.update((list) => [...list]);
+  }
+
+  totalSlots(coach: CoachView): number {
+    return coach.disponibilites.reduce(
+      (sum, d) => sum + d.sessions.length,
+      0
+    );
+  }
+
+  parseSkills(raw: string): string[] {
+    if (!raw) return [];
+    return raw
+      .split(/[,;]+/)
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .slice(0, 5);
+  }
+
+  tryParseArray(raw?: string): string[] {
+    if (!raw) return [];
     try {
-      return JSON.parse(coach.pointsForts || '[]');
-    } catch(e) { 
-      return ['Expertise', 'Accompagnement']; 
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
     }
   }
 
-  loadSlots(coachId: string, programmeId: string): void {
-    this.coachSvc.getAvailableSessionsForEntrepreneur(Number(coachId)).subscribe(slots => {
-      // Format them for prime dropdown
-      this.allSlots[coachId] = slots.map(s => ({
-         ...s,
-         label: `${new Date(s.dateSession).toLocaleString('fr-FR', {weekday: 'short', day: '2-digit', month: 'short'})} ${s.heureDebut} - ${s.heureFin}`
-      }));
+  scoreGradient(score: number): string {
+    if (score >= 75) return 'linear-gradient(135deg, #22c55e, #16a34a)';
+    if (score >= 50) return 'linear-gradient(135deg, #f59e0b, #d97706)';
+    return 'linear-gradient(135deg, #ef4444, #dc2626)';
+  }
+
+  scoreColor(score: number): string {
+    if (score >= 75) return '#16a34a';
+    if (score >= 50) return '#d97706';
+    return '#dc2626';
+  }
+
+  formatDate(raw: string): string {
+    if (!raw) return '—';
+    return new Date(raw).toLocaleDateString('fr-FR', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
     });
   }
 
-  getCoachSlots(coachId: string): any[] {
-    return this.allSlots[coachId] || [];
+  slotMonth(raw: string): string {
+    return new Date(raw)
+      .toLocaleDateString('fr-FR', { month: 'short' })
+      .toUpperCase();
   }
 
-  openBookingModal(dropdownSelection: any, coach: MatchingView): void {
-    if (!dropdownSelection) return;
-    this.selectedCoachForBooking.set(coach);
-    this.selectedSlotToBook.set(dropdownSelection);
-    this.bookingNotes = '';
-  }
-  
-  cancelBooking(): void {
-    this.selectedSlotToBook.set(null);
-    this.selectedCoachForBooking.set(null);
+  slotDay(raw: string): string {
+    return new Date(raw).getDate().toString();
   }
 
-  confirmBooking(): void {
-    const slot = this.selectedSlotToBook();
-    const coach = this.selectedCoachForBooking();
+  slotDayName(raw: string): string {
+    return new Date(raw).toLocaleDateString('fr-FR', { weekday: 'long' });
+  }
+
+  // ── Book slot ───────────────────────────────────────────────────
+
+  bookSlot(slot: SessionSlot, coach: CoachView): void {
     const user = this.authSvc.currentUser$.value;
-    const userId = user?.id;
-    if (!slot || !userId || !coach) return;
+    if (!user) return;
 
-    this.isBooking.set(true);
-    this.coachSvc.bookSession(Number(slot.id), Number(userId)).subscribe({
-      next: () => {
-        this.isBooking.set(false);
-        this.cancelBooking();
-        this.selectedSlots[coach.id] = null;
-        this.loadSlots(coach.id, coach.programmeId); // Reload slots
-      },
-      error: (e) => {
-        console.error(e);
-        this.isBooking.set(false);
-        alert(e.error?.error || "Erreur lors de la réservation");
-      }
-    });
+    if (
+      !confirm(
+        `Confirmer la réservation du créneau du ${this.slotDayName(slot.dateSession)} ${this.slotDay(slot.dateSession)} ${this.slotMonth(slot.dateSession)} de ${slot.heureDebut?.slice(0, 5)} à ${slot.heureFin?.slice(0, 5)} avec ${coach.firstName} ${coach.lastName} ?`
+      )
+    )
+      return;
+
+    this.http
+      .post(
+        `${environment.apiUrl}/coach/sessions/${slot.id}/book?entrepreneurId=${user.id}`,
+        {}
+      )
+      .subscribe({
+        next: (res: any) => {
+          alert(
+            res?.meetLink
+              ? `✅ Réservation confirmée !\nLien Meet : ${res.meetLink}`
+              : '✅ Réservation confirmée !'
+          );
+        },
+        error: (err) => {
+          alert(
+            '❌ ' +
+              (err.error?.error || err.error?.message || 'Erreur de réservation')
+          );
+        },
+      });
   }
 }

@@ -218,14 +218,7 @@ import { environment } from '../../../../environment';
                       <label>Description détaillée</label>
                       <textarea class="premium-input" [(ngModel)]="newTask.description" rows="3" placeholder="Description de ce qui est attendu..."></textarea>
                   </div>
-                  <div class="form-group mb-2">
-                      <label>Priorité</label>
-                      <select class="premium-input" [(ngModel)]="newTask.priorite">
-                          <option value="Haute">Haute</option>
-                          <option value="Moyenne">Moyenne</option>
-                          <option value="Basse">Basse</option>
-                      </select>
-                  </div>
+                
                   <div class="form-row mb-4">
                       <div class="form-group">
                           <label>Date de début</label>

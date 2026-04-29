@@ -8,7 +8,6 @@ import team.project.redboost.config.ValidationException;
 import team.project.redboost.dto.*;
 import team.project.redboost.entities.*;
 import team.project.redboost.repositories.*;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -788,5 +787,103 @@ public class CoachService {
                 .filter(s -> !s.getDateSession().isBefore(LocalDate.now())) // Only future sessions
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
+    }
+
+    public CoachPlanningDTO getCoachPlanning(Long coachId) {
+        // 1. Fetch all SessionCoach slots for this coach
+        List<SessionCoach> slots = sessionCoachRepository.findByDisponibiliteCoachId(coachId);
+
+        // 2. Fetch all Sessions (bookings) for this coach
+        List<Session> allBookings = sessionRepository.findByCoachId(coachId);
+
+        // 3. Fetch exceptional sessions
+        List<SeanceExceptionnelle> exceptionals = seanceExceptionnelleRepository.findByCoachId(coachId);
+
+        LocalDate today = LocalDate.now();
+
+        // Map slot ID → bookings
+        Map<Long, List<Session>> bookingsBySlotId = allBookings.stream()
+                .filter(s -> s.getDisponibiliteId() != null)
+                .collect(Collectors.groupingBy(s -> {
+                    try { return Long.parseLong(s.getDisponibiliteId()); }
+                    catch (NumberFormatException e) { return -1L; }
+                }));
+
+        // Build SlotWithBookings
+        List<CoachPlanningDTO.SlotWithBookings> slotDTOs = slots.stream().map(slot -> {
+                    List<Session> slotBookings = bookingsBySlotId.getOrDefault(slot.getId(), List.of());
+
+                    List<CoachPlanningDTO.BookingInfo> bookingInfos = slotBookings.stream().map(s -> {
+                        User ent = s.getEntrepreneur();
+                        return CoachPlanningDTO.BookingInfo.builder()
+                                .sessionId(s.getId())
+                                .entrepreneurId(ent != null ? ent.getId() : null)
+                                .entrepreneurName(ent != null ? ent.getFirstName() + " " + ent.getLastName() : "Inconnu")
+                                .entrepreneurEmail(ent != null ? ent.getEmail() : null)
+                                .statut(s.getStatut() != null ? s.getStatut().name() : "CONFIRME")
+                                .meetLink(s.getMeetLink())
+                                .notesEntrepreneur(s.getNotesEntrepreneur())
+                                .build();
+                    }).collect(Collectors.toList());
+
+                    String thematiqueName = null;
+                    Long thematiqueId = null;
+                    if (slot.getDisponibilite() != null && slot.getDisponibilite().getThematique() != null) {
+                        thematiqueName = slot.getDisponibilite().getThematique().getNom();
+                        thematiqueId = slot.getDisponibilite().getThematique().getId();
+                    }
+
+                    return CoachPlanningDTO.SlotWithBookings.builder()
+                            .slotId(slot.getId())
+                            .titre(slot.getTitre())
+                            .dateSession(slot.getDateSession())
+                            .heureDebut(slot.getHeureDebut())
+                            .heureFin(slot.getHeureFin())
+                            .typeSession(slot.getTypeSession() != null ? slot.getTypeSession().name() : "EN_LIGNE")
+                            .thematique(thematiqueName)
+                            .thematiqueId(thematiqueId)
+                            .bookings(bookingInfos)
+                            .isBooked(!bookingInfos.isEmpty())
+                            .build();
+                }).sorted(Comparator.comparing(CoachPlanningDTO.SlotWithBookings::getDateSession)
+                        .thenComparing(CoachPlanningDTO.SlotWithBookings::getHeureDebut))
+                .collect(Collectors.toList());
+
+        // Build ExceptionalSessionDTOs
+        List<CoachPlanningDTO.ExceptionalSessionDTO> exceptionalDTOs = exceptionals.stream().map(s -> {
+                    User ent = s.getEntrepreneur();
+                    return CoachPlanningDTO.ExceptionalSessionDTO.builder()
+                            .id(s.getId())
+                            .titre(s.getTitre())
+                            .dateSeance(s.getDateSeance())
+                            .heureDebut(s.getHeureDebut())
+                            .heureFin(s.getHeureFin())
+                            .entrepreneurId(ent != null ? ent.getId() : null)
+                            .entrepreneurName(ent != null ? ent.getFirstName() + " " + ent.getLastName() : "Inconnu")
+                            .typeSession(s.getTypeSession() != null ? s.getTypeSession().name() : "EN_LIGNE")
+                            .build();
+                }).sorted(Comparator.comparing(CoachPlanningDTO.ExceptionalSessionDTO::getDateSeance)
+                        .thenComparing(CoachPlanningDTO.ExceptionalSessionDTO::getHeureDebut))
+                .collect(Collectors.toList());
+
+        // Stats
+        long bookedCount = slotDTOs.stream().filter(CoachPlanningDTO.SlotWithBookings::isBooked).count();
+        long upcomingCount = slotDTOs.stream()
+                .filter(s -> !s.getDateSession().isBefore(today)).count();
+        upcomingCount += exceptionalDTOs.stream()
+                .filter(s -> !s.getDateSeance().isBefore(today)).count();
+
+        CoachPlanningDTO.PlanningStats stats = CoachPlanningDTO.PlanningStats.builder()
+                .totalSlots(slotDTOs.size())
+                .bookedSlots((int) bookedCount)
+                .exceptionalCount(exceptionalDTOs.size())
+                .upcomingCount((int) upcomingCount)
+                .build();
+
+        return CoachPlanningDTO.builder()
+                .slots(slotDTOs)
+                .exceptional(exceptionalDTOs)
+                .stats(stats)
+                .build();
     }
 }

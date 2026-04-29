@@ -183,4 +183,12 @@ public class CoachController {
     public ResponseEntity<List<SessionCoachDTO>> getAvailableSessionsForEntrepreneur(@PathVariable Long coachId) {
         return ResponseEntity.ok(coachService.getAvailableSessionsForEntrepreneur(coachId));
     }
+
+    // --- PLANNING DÉTAILLÉ ---
+
+    @GetMapping("/{coachId}/planning")
+    public ResponseEntity<CoachPlanningDTO> getCoachPlanning(@PathVariable Long coachId) {
+        return ResponseEntity.ok(coachService.getCoachPlanning(coachId));
+    }
+
 }
