@@ -288,8 +288,8 @@ export class CoachService {
   getSessionBookings(sessionCoachId: number): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/sessions/${sessionCoachId}/bookings`);
   }
-  getAvailableSessionsForEntrepreneur(coachId: number): Observable<SessionCoachDTO[]> {
-    return this.http.get<SessionCoachDTO[]>(`${this.apiUrl}/${coachId}/available-sessions`);
+  getAvailableSessionsForEntrepreneur(coachId: number, entrepreneurId: number): Observable<SessionCoachDTO[]> {
+    return this.http.get<SessionCoachDTO[]>(`${this.apiUrl}/${coachId}/available-sessions?entrepreneurId=${entrepreneurId}`);
   }
 
   // RAPPORT MISSION COACH

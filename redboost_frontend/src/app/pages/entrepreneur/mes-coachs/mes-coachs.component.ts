@@ -214,7 +214,7 @@ export class MesCoachsComponent implements OnInit {
       this.matchSvc.getEntrepreneurCoaches(userId).subscribe(data => {
         this.matchings.set(data);
         data.forEach(m => {
-          this.loadSlots(m.id, m.programmeId);
+          this.loadSlots(m.id, userId);
         });
       });
     }
@@ -228,8 +228,8 @@ export class MesCoachsComponent implements OnInit {
     }
   }
 
-  loadSlots(coachId: string, programmeId: string): void {
-    this.coachSvc.getAvailableSessionsForEntrepreneur(Number(coachId)).subscribe(slots => {
+  loadSlots(coachId: string, entrepreneurId: number): void {
+    this.coachSvc.getAvailableSessionsForEntrepreneur(Number(coachId), entrepreneurId).subscribe(slots => {
       // Format them for prime dropdown
       this.allSlots[coachId] = slots.map(s => ({
          ...s,
@@ -267,7 +267,7 @@ export class MesCoachsComponent implements OnInit {
         this.isBooking.set(false);
         this.cancelBooking();
         this.selectedSlots[coach.id] = null;
-        this.loadSlots(coach.id, coach.programmeId); // Reload slots
+        this.loadSlots(coach.id, Number(userId)); // Reload slots
       },
       error: (e) => {
         console.error(e);

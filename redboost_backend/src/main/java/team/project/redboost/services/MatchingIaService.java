@@ -1000,13 +1000,17 @@ public class MatchingIaService {
             }
         }
 
-        // Fallback: also try with the User ID directly (in case some matchings use User IDs)
+        // Remove the fallback that uses entrepreneurUserId against matching.entrepreneurId.
+        // matching.entrepreneurId always stores the Candidature ID. Matching against User ID
+        // can return another user's coach if their Candidature ID happens to equal this User ID.
+        /*
         List<Matching> directMatchings = matchingRepo.findByEntrepreneurIdAndStatut(
                 entrepreneurUserId, Matching.StatutMatching.VALIDE);
         for (Matching m : directMatchings) {
             if (!seenCoachIds.add(m.getCoachId())) continue;
             buildCoachView(m, result);
         }
+        */
 
         return result;
     }

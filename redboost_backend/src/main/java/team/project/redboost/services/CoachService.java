@@ -783,9 +783,43 @@ public class CoachService {
     }
 
     // --- Available sessions for entrepreneur (from a specific coach) ---
-    public List<SessionCoachDTO> getAvailableSessionsForEntrepreneur(Long coachId) {
-        return sessionCoachRepository.findByDisponibiliteCoachId(coachId).stream()
-                .filter(s -> !s.getDateSession().isBefore(LocalDate.now())) // Only future sessions
+    public List<SessionCoachDTO> getAvailableSessionsForEntrepreneur(Long coachId, Long entrepreneurUserId) {
+        // Find which thematiques this entrepreneur is matched with this coach
+        User entrepreneur = userRepository.findById(entrepreneurUserId)
+                .orElseThrow(() -> new ValidationException("Entrepreneur non trouvé"));
+        String email = entrepreneur.getEmail();
+        if (email == null) return Collections.emptyList();
+
+        List<CandidatureRedstarter> candidatures = candidatureRepository.findByEmail(email);
+        Set<Long> matchedThematiqueIds = new HashSet<>();
+        
+        for (CandidatureRedstarter cand : candidatures) {
+            List<Matching> matchings = matchingRepository.findByEntrepreneurIdAndStatut(cand.getId(), Matching.StatutMatching.VALIDE);
+            for (Matching m : matchings) {
+                if (m.getCoachId().equals(coachId) && m.getThematiqueId() != null) {
+                    matchedThematiqueIds.add(m.getThematiqueId());
+                }
+            }
+        }
+
+        // Fetch all future sessions of this coach
+        List<SessionCoach> futureSessions = sessionCoachRepository.findByDisponibiliteCoachId(coachId).stream()
+                .filter(s -> !s.getDateSession().isBefore(LocalDate.now()))
+                .filter(s -> s.getDisponibilite() != null && s.getDisponibilite().getThematique() != null 
+                        && matchedThematiqueIds.contains(s.getDisponibilite().getThematique().getId()))
+                .collect(Collectors.toList());
+
+        // We also need to filter out sessions that are already booked!
+        List<Session> bookedSessions = sessionRepository.findByCoachId(coachId).stream()
+                .filter(s -> s.getStatut() == Session.Statut.CONFIRME || s.getStatut() == Session.Statut.DEMANDE)
+                .collect(Collectors.toList());
+        Set<String> bookedSessionCoachIds = bookedSessions.stream()
+                .map(Session::getDisponibiliteId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        return futureSessions.stream()
+                .filter(s -> !bookedSessionCoachIds.contains(String.valueOf(s.getId())))
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }
