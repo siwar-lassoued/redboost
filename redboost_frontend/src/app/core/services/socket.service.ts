@@ -1,5 +1,6 @@
 import { Injectable, OnDestroy } from '@angular/core';
 import { Client, IFrame, StompSubscription } from '@stomp/stompjs';
+import SockJS from 'sockjs-client';
 import { Subject, Observable } from 'rxjs';
 import { environment } from '../../../environment';
 
@@ -34,13 +35,13 @@ export class SocketService implements OnDestroy {
     connect(token: string): void {
         if (this.client?.active) return;
 
-        // Determine protocol based on environment – derive WS URL from apiUrl
-        const url = new URL(environment.apiUrl);
-        const protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-        const brokerURL = `${protocol}//${url.host}/ws`;
+        // Use SockJS with apiUrl to respect the context path (e.g. /api)
+        const wsUrl = environment.apiUrl + '/ws';
 
         this.client = new Client({
-            brokerURL,
+            webSocketFactory: () => new SockJS(wsUrl, null, {
+                transports: ['websocket', 'xhr-streaming', 'xhr-polling']
+            }),
             connectHeaders: { Authorization: `Bearer ${token}` },
             reconnectDelay: 5000,
             onConnect: (_frame: IFrame) => {

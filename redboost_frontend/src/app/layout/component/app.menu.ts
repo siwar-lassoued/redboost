@@ -294,11 +294,6 @@ export class AppMenu implements OnInit {
                         icon: 'pi pi-fw pi-calendar-clock',
                         routerLink: ['/entrepreneur/mes-sessions'],
                     },
-                    {
-                        label: 'Chat avec mon coach',
-                        icon: 'pi pi-fw pi-comments',
-                        routerLink: ['/entrepreneur/chat'],
-                    },
                 ],
             },
             {
@@ -337,6 +332,11 @@ export class AppMenu implements OnInit {
                 icon: 'pi pi-fw pi-comments',
                 items: [
                     {
+                        label: 'Chat avec mon coach',
+                        icon: 'pi pi-fw pi-comments',
+                        routerLink: ['/entrepreneur/chat'],
+                    },
+                    {
                         label: 'Messagerie',
                         icon: 'pi pi-fw pi-inbox',
                         routerLink: ['/gestion_comm'],
@@ -347,9 +347,9 @@ export class AppMenu implements OnInit {
                         routerLink: ['/messagerie-reclamation'],
                     },
                     {
-                        label: 'Feedback',
-                        icon: 'pi pi-fw pi-comment',
-                        routerLink: ['/feedback'],
+                        label: 'Formulaires à remplir',
+                        icon: 'pi pi-fw pi-file-edit',
+                        routerLink: ['/entrepreneur-kpi-forms'],
                     },
                 ],
             },

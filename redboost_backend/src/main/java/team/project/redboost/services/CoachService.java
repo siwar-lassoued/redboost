@@ -801,22 +801,24 @@ public class CoachService {
         if (email == null) return Collections.emptyList();
 
         List<CandidatureRedstarter> candidatures = candidatureRepository.findByEmail(email);
-        Set<Long> matchedThematiqueIds = new HashSet<>();
+        boolean isMatched = false;
         
         for (CandidatureRedstarter cand : candidatures) {
             List<Matching> matchings = matchingRepository.findByEntrepreneurIdAndStatut(cand.getId(), Matching.StatutMatching.VALIDE);
             for (Matching m : matchings) {
-                if (m.getCoachId().equals(coachId) && m.getThematiqueId() != null) {
-                    matchedThematiqueIds.add(m.getThematiqueId());
+                if (m.getCoachId().equals(coachId)) {
+                    isMatched = true;
+                    break;
                 }
             }
+            if (isMatched) break;
         }
+
+        if (!isMatched) return Collections.emptyList();
 
         // Fetch all future sessions of this coach
         List<SessionCoach> futureSessions = sessionCoachRepository.findByDisponibiliteCoachId(coachId).stream()
                 .filter(s -> !s.getDateSession().isBefore(LocalDate.now()))
-                .filter(s -> s.getDisponibilite() != null && s.getDisponibilite().getThematique() != null 
-                        && matchedThematiqueIds.contains(s.getDisponibilite().getThematique().getId()))
                 .collect(Collectors.toList());
 
         // We also need to filter out sessions that are already booked!
