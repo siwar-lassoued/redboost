@@ -131,12 +131,7 @@ export class AppMenu implements OnInit {
                         label: 'Événements',
                         icon: 'pi pi-fw pi-calendar-plus',
                         routerLink: ['/calendar'],
-                    },
-                    {
-                        label: 'Planning de coaching',
-                        icon: 'pi pi-fw pi-calendar-clock',
-                        routerLink: ['/admin_planning'],
-                    },
+                    }
                 ],
             },
             {
@@ -172,9 +167,14 @@ export class AppMenu implements OnInit {
             },
             
             {
-                label: 'SUIVI COACH & KPI',
+                label: 'SUIVI D\'ACCOMPAGNEMENT',
                 icon: 'pi pi-fw pi-star',
                 items: [
+                    {
+                        label: 'Planning de coaching',
+                        icon: 'pi pi-fw pi-calendar-clock',
+                        routerLink: ['/admin_planning'],
+                    },
                     {
                         label: 'Évaluations Coach',
                         icon: 'pi pi-fw pi-star-fill',
