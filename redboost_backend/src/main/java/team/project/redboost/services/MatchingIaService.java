@@ -983,34 +983,34 @@ public class MatchingIaService {
         String email = entrepreneur.getEmail();
         if (email == null) return Collections.emptyList();
 
-        // Find candidature(s) by email to get the candidature ID used in matchings
-        List<CandidatureRedstarter> candidatures = candidatureRepo.findByEmail(email);
+        // Find candidature(s) by email (case-insensitive) to get the candidature ID used in matchings
+        List<CandidatureRedstarter> candidatures = candidatureRepo.findAll().stream()
+                .filter(c -> c.getEmail() != null && c.getEmail().equalsIgnoreCase(email))
+                .collect(Collectors.toList());
 
         List<Map<String, Object>> result = new ArrayList<>();
-        Set<Long> seenCoachIds = new HashSet<>();
+        Set<String> seenKey = new HashSet<>(); // coachId + "_" + thematiqueId to allow same coach in different thematiques
 
-        // Search matchings via candidature IDs
+        // 1. Search matchings via candidature IDs
         for (CandidatureRedstarter cand : candidatures) {
             List<Matching> matchings = matchingRepo.findByEntrepreneurIdAndStatut(
                     cand.getId(), Matching.StatutMatching.VALIDE);
 
             for (Matching m : matchings) {
-                if (!seenCoachIds.add(m.getCoachId())) continue;
+                String key = m.getCoachId() + "_" + m.getThematiqueId();
+                if (!seenKey.add(key)) continue;
                 buildCoachView(m, result);
             }
         }
 
-        // Remove the fallback that uses entrepreneurUserId against matching.entrepreneurId.
-        // matching.entrepreneurId always stores the Candidature ID. Matching against User ID
-        // can return another user's coach if their Candidature ID happens to equal this User ID.
-        /*
+        // 2. Fallback: Search matchings via direct User ID (in case some were created that way)
         List<Matching> directMatchings = matchingRepo.findByEntrepreneurIdAndStatut(
                 entrepreneurUserId, Matching.StatutMatching.VALIDE);
         for (Matching m : directMatchings) {
-            if (!seenCoachIds.add(m.getCoachId())) continue;
+            String key = m.getCoachId() + "_" + m.getThematiqueId();
+            if (!seenKey.add(key)) continue;
             buildCoachView(m, result);
         }
-        */
 
         return result;
     }

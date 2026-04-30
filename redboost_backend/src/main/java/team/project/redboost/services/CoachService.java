@@ -794,44 +794,62 @@ public class CoachService {
 
     // --- Available sessions for entrepreneur (from a specific coach) ---
     public List<SessionCoachDTO> getAvailableSessionsForEntrepreneur(Long coachId, Long entrepreneurUserId) {
-        // Find which thematiques this entrepreneur is matched with this coach
         User entrepreneur = userRepository.findById(entrepreneurUserId)
                 .orElseThrow(() -> new ValidationException("Entrepreneur non trouvé"));
+        
         String email = entrepreneur.getEmail();
         if (email == null) return Collections.emptyList();
 
-        List<CandidatureRedstarter> candidatures = candidatureRepository.findByEmail(email);
-        boolean isMatched = false;
+        // 1. Collect all thematique IDs where this entrepreneur is matched with this coach
+        Set<Long> matchedThematiqueIds = new HashSet<>();
+        
+        // Try finding by email (case-insensitive)
+        List<CandidatureRedstarter> candidatures = candidatureRepository.findAll().stream()
+                .filter(c -> c.getEmail() != null && c.getEmail().equalsIgnoreCase(email))
+                .collect(Collectors.toList());
         
         for (CandidatureRedstarter cand : candidatures) {
             List<Matching> matchings = matchingRepository.findByEntrepreneurIdAndStatut(cand.getId(), Matching.StatutMatching.VALIDE);
             for (Matching m : matchings) {
-                if (m.getCoachId().equals(coachId)) {
-                    isMatched = true;
-                    break;
+                if (m.getCoachId().equals(coachId) && m.getThematiqueId() != null) {
+                    matchedThematiqueIds.add(m.getThematiqueId());
                 }
             }
-            if (isMatched) break;
         }
 
-        if (!isMatched) return Collections.emptyList();
+        // Fallback: Check if matching was done directly with User ID
+        List<Matching> directMatchings = matchingRepository.findByEntrepreneurIdAndStatut(entrepreneurUserId, Matching.StatutMatching.VALIDE);
+        for (Matching m : directMatchings) {
+            if (m.getCoachId().equals(coachId) && m.getThematiqueId() != null) {
+                matchedThematiqueIds.add(m.getThematiqueId());
+            }
+        }
 
-        // Fetch all future sessions of this coach
-        List<SessionCoach> futureSessions = sessionCoachRepository.findByDisponibiliteCoachId(coachId).stream()
-                .filter(s -> !s.getDateSession().isBefore(LocalDate.now()))
-                .collect(Collectors.toList());
+        if (matchedThematiqueIds.isEmpty()) {
+            log.warn("No active matching found for entrepreneur {} and coach {} in any thématique.", entrepreneurUserId, coachId);
+            return Collections.emptyList();
+        }
 
-        // We also need to filter out sessions that are already booked!
+        // 2. Fetch future sessions of this coach that belong to the matched thématiques
+        List<SessionCoach> coachSessions = sessionCoachRepository.findByDisponibiliteCoachId(coachId);
+        
+        // Filter out past sessions, already booked sessions, and those not in matched thématiques
         List<Session> bookedSessions = sessionRepository.findByCoachId(coachId).stream()
                 .filter(s -> s.getStatut() == Session.Statut.CONFIRME || s.getStatut() == Session.Statut.DEMANDE)
                 .collect(Collectors.toList());
+        
         Set<String> bookedSessionCoachIds = bookedSessions.stream()
                 .map(Session::getDisponibiliteId)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
-        return futureSessions.stream()
+        LocalDate today = LocalDate.now();
+
+        return coachSessions.stream()
+                .filter(s -> !s.getDateSession().isBefore(today))
                 .filter(s -> !bookedSessionCoachIds.contains(String.valueOf(s.getId())))
+                .filter(s -> s.getDisponibilite() != null && s.getDisponibilite().getThematique() != null 
+                             && matchedThematiqueIds.contains(s.getDisponibilite().getThematique().getId()))
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }
