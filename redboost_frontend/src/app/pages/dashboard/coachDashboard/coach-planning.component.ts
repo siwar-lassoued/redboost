@@ -314,8 +314,8 @@ type FilterTab = 'all' | 'upcoming' | 'booked' | 'free' | 'exceptional';
                   (click)="openDetail(slot)">
                   <div class="ge-time">{{ formatTime(slot.heureDebut) }}</div>
                   <div class="ge-titre">{{ slot.titre }}</div>
-                  <div *ngIf="slot.isBooked" class="ge-ent">
-                    {{ slot.bookings[0]?.entrepreneurName }}
+                  <div *ngIf="slot.isBooked && slot.bookings.length > 0" class="ge-ent font-bold text-[#1A1A2E]">
+                    {{ slot.bookings[0].entrepreneurName }}
                   </div>
                 </div>
                 <div

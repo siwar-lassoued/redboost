@@ -104,8 +104,9 @@ import { environment } from '../../../../environment';
             <label style="display: block; font-size: 0.7rem; font-weight: 900; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 0.75rem; padding-left: 0.25rem;">Commentaire (optionnel)</label>
             <textarea [(ngModel)]="rating.commentaire" placeholder="Partagez votre expérience avec ce coach..."
               style="width: 100%; padding: 1.25rem; background: #F8FAFC; border: 2px solid transparent; border-radius: 20px; font-size: 0.9rem; color: #374151; font-weight: 500; outline: none; min-height: 130px; resize: vertical; font-family: inherit; box-sizing: border-box; transition: border-color 0.2s;"
-              (focus)="$event.target.style.borderColor='#1A3A3A'"
-              (blur)="$event.target.style.borderColor='transparent'"></textarea>
+              #commentInput
+              (focus)="commentInput.style.borderColor='#1A3A3A'"
+              (blur)="commentInput.style.borderColor='transparent'"></textarea>
           </div>
 
           <!-- Submit -->
