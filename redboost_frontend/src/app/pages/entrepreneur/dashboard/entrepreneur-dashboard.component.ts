@@ -67,7 +67,7 @@ import { OnInit, computed } from '@angular/core';
             <div class="flex items-center gap-4 mb-4">
               <div class="w-16 h-16 rounded-2xl flex items-center justify-center text-white text-xl font-black shadow-lg"
                 style="background: linear-gradient(135deg, #1A3A3A, #3aafff)">
-                {{ assignedCoach()!.nom[0] }}
+                {{ assignedCoach()!.nom ? assignedCoach()!.nom[0] : 'C' }}
               </div>
               <div>
                 <p class="font-black text-[#1A1A2E]">{{ assignedCoach()!.nom }}</p>
@@ -231,7 +231,7 @@ export class EntrepreneurDashboardComponent implements OnInit {
 
     // Load Tasks
     this.tacheSvc.getByUser(userSnapshot.id).subscribe((taches: any) => {
-      const myTaches: any[] = Array.isArray(taches) ? taches : (taches.data || []);
+      const myTaches: any[] = Array.isArray(taches) ? taches : (taches?.data || []);
       this.totalTasks.set(myTaches.length);
 
       const urgent = myTaches
@@ -251,7 +251,7 @@ export class EntrepreneurDashboardComponent implements OnInit {
 
     // Load Sessions
     this.sessionSvc.getByEntrepreneur(userSnapshot.id).subscribe((sessions: any) => {
-      const mySessions: any[] = Array.isArray(sessions) ? sessions : (sessions.data || []);
+      const mySessions: any[] = Array.isArray(sessions) ? sessions : (sessions?.data || []);
       const upcoming = mySessions
         .filter((s: any) => new Date(s.date).getTime() > Date.now())
         .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())[0];
