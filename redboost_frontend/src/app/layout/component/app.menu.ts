@@ -331,11 +331,7 @@ export class AppMenu implements OnInit {
                 label: 'COMMUNICATION',
                 icon: 'pi pi-fw pi-comments',
                 items: [
-                    {
-                        label: 'Chat avec mon coach',
-                        icon: 'pi pi-fw pi-comments',
-                        routerLink: ['/entrepreneur/chat'],
-                    },
+
                     {
                         label: 'Messagerie',
                         icon: 'pi pi-fw pi-inbox',
