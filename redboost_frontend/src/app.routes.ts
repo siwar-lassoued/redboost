@@ -78,6 +78,7 @@ import { EntrepreneurStatusComponent } from './app/pages/entrepreneur/status/ent
 import { EntrepreneurChatComponent } from './app/pages/entrepreneur/chat/entrepreneur-chat.component';
 import { EntrepreneurParametresComponent } from './app/pages/entrepreneur/parametres/entrepreneur-parametres.component';
 
+import { CoachPlanningComponent } from './app/pages/dashboard/coachDashboard/coach-planning.component';
 export const pagesRoutes: Routes = [
     { path: 'profile', component: UserProfileComponent },
     { path: 'all-users', component: UserListComponent },
@@ -154,6 +155,7 @@ export const appRoutes: Routes = [
             { path: 'gestion_comm', component: EntrepreneurChatComponent },
             { path: 'rapport-missions', component: CoachRapportMissionsComponent },
             { path: 'rapport-sessions', component: CoachRapportSessionComponent },
+            { path: 'coach-planning', component: CoachPlanningComponent },
             { path: 'coach-entrep-deliverable', component: CoachLivrablesComponent },
             { path: 'coach-livrables', component: CoachLivrablesComponent },
             { path: 'note-de-synthese-create/:id', component: NoteDeSyntheseCreateComponent },

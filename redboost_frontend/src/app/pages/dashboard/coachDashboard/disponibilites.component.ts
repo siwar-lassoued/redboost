@@ -110,7 +110,13 @@ interface DateGroupView {
                       </div>
                       <div class="event-details">
                           <div class="event-name">{{event.title}}</div>
-                          <div class="event-datetime"><i class="pi pi-calendar"></i> {{event.date}} • {{event.time}}</div>
+                          <div class="event-datetime">
+                              <i class="pi pi-calendar"></i>
+                              <span>{{ event.dateFormatted }} • 
+                                <span *ngIf="event.startTime && event.endTime">{{ event.startTime }}-{{ event.endTime }}</span>
+                                <span *ngIf="!event.startTime || !event.endTime">{{ event.time }}</span>
+                              </span>
+                          </div>
                       </div>
                   </div>
                   <div *ngIf="upcomingEvents.length === 0" class="text-sm text-gray-400 italic">Aucun événement à venir.</div>
@@ -699,6 +705,8 @@ private mapCalendarEvents(events: CoachCalendarEventDTO[]): any[] {
       title: ev.title,
       date: this.normalizeCalendarDate(ev.date),
       time: (ev.startTime || '').slice(0, 5),
+      startTime: ev.startTime ? ev.startTime.slice(0, 5) : '',
+      endTime: ev.endTime ? ev.endTime.slice(0, 5) : '',
       color: colorByType[ev.type] || '#805AD5'
     }));
   }
@@ -713,7 +721,10 @@ private mapCalendarEvents(events: CoachCalendarEventDTO[]): any[] {
       .map(e => ({
         title: e.title,
         date: new Date(e.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }),
-        time: e.time || '—'
+        time: e.time || '—',
+        startTime: e.startTime || '',
+        endTime: e.endTime || '',
+        dateFormatted: new Date(e.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })
       }));
   }
 

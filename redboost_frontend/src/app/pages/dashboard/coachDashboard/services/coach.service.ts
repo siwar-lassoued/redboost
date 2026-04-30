@@ -329,4 +329,11 @@ export class CoachService {
   deleteRapportSession(id: number): Observable<void> {
     return this.http.delete<void>(`${environment.apiUrl}/rapports-session-coach/${id}`);
   }
+
+
+getMyCoaches(entrepreneurId: number): Observable<any[]> {
+  return this.http.get<any[]>(
+    `${environment.apiUrl}/matching/entrepreneur/${entrepreneurId}/coaches`
+  );
+}
 }

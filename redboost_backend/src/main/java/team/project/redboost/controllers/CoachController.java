@@ -185,4 +185,12 @@ public class CoachController {
             @RequestParam Long entrepreneurId) {
         return ResponseEntity.ok(coachService.getAvailableSessionsForEntrepreneur(coachId, entrepreneurId));
     }
+
+    // --- PLANNING DÉTAILLÉ ---
+
+    @GetMapping("/{coachId}/planning")
+    public ResponseEntity<CoachPlanningDTO> getCoachPlanning(@PathVariable Long coachId) {
+        return ResponseEntity.ok(coachService.getCoachPlanning(coachId));
+    }
+
 }
