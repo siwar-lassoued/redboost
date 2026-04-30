@@ -165,7 +165,7 @@ export class CoachRatingComponent implements OnInit {
     // If sessionId is in route, pre-fill
     const sessionIdParam = this.route.snapshot.params['sessionId'];
     if (sessionIdParam) {
-      this.rating.sessionId = Number(sessionIdParam);
+      this.rating.sessionId = sessionIdParam;
     }
 
     // Load past sessions for this entrepreneur

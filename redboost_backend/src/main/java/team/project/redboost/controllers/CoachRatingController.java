@@ -61,7 +61,7 @@ public class CoachRatingController {
             rating.setEntrepreneur(entrepreneur);
 
             if (payload.get("sessionId") != null) {
-                Long sessionId = ((Number) payload.get("sessionId")).longValue();
+                String sessionId = payload.get("sessionId").toString();
                 sessionRepository.findById(sessionId).ifPresent(rating::setSession);
             }
 
