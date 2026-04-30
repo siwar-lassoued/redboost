@@ -397,7 +397,9 @@ public class CoachService {
         return mapToDTO(saved);
     }
     
+    @Transactional
     public void deleteDisponibilite(Long id) {
+        sessionCoachRepository.deleteByDisponibiliteId(id);
         disponibiliteRepository.deleteById(id);
     }
     @Transactional

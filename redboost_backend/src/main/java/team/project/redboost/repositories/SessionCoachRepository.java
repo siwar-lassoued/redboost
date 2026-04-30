@@ -13,6 +13,7 @@ import java.util.List;
 @Repository
 public interface SessionCoachRepository extends JpaRepository<SessionCoach, Long> {
     List<SessionCoach> findByDisponibiliteId(Long disponibiliteId);
+    void deleteByDisponibiliteId(Long disponibiliteId);
     List<SessionCoach> findByDisponibiliteCoachId(Long coachId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
