@@ -79,7 +79,12 @@ public class CoachService {
         int completedTaches = 0;
         int totalTaches = 0;
         for (Matching m : matchings) {
-            List<Tache> tasks = tacheRepository.findByResponsableId(m.getEntrepreneurId());
+            CandidatureRedstarter cand = candidatureRepository.findById(m.getEntrepreneurId()).orElse(null);
+            if (cand == null || cand.getEmail() == null) continue;
+            User ent = userRepository.findByEmail(cand.getEmail());
+            if (ent == null) continue;
+
+            List<Tache> tasks = tacheRepository.findByResponsableId(ent.getId());
             totalTaches += tasks.size();
             for (Tache t : tasks) {
                 if (t.getStatus() != Tache.StatusTache.TERMINEE) {
@@ -455,12 +460,18 @@ public class CoachService {
                 dispo.getCoach().getId(), Matching.StatutMatching.VALIDE);
         for (Matching m : matchings) {
             try {
-                notificationService.createAndSendNotification(
-                        m.getEntrepreneurId(),
-                        "Nouveau créneau disponible : \"" + dto.getTitre() + "\" le " + sessionDate,
-                        "SESSION_SLOT_ADDED", saved.getId());
+                CandidatureRedstarter cand = candidatureRepository.findById(m.getEntrepreneurId()).orElse(null);
+                if (cand != null && cand.getEmail() != null) {
+                    User entUser = userRepository.findByEmail(cand.getEmail());
+                    if (entUser != null) {
+                        notificationService.createAndSendNotification(
+                                entUser.getId(),
+                                "Nouveau créneau disponible : \"" + dto.getTitre() + "\" le " + sessionDate,
+                                "SESSION_SLOT_ADDED", saved.getId());
+                    }
+                }
             } catch (Exception e) {
-                log.warn("Notification failed for entrepreneur {}: {}", m.getEntrepreneurId(), e.getMessage());
+                log.warn("Notification failed for entrepreneur candidature {}: {}", m.getEntrepreneurId(), e.getMessage());
             }
         }
 
@@ -782,9 +793,43 @@ public class CoachService {
     }
 
     // --- Available sessions for entrepreneur (from a specific coach) ---
-    public List<SessionCoachDTO> getAvailableSessionsForEntrepreneur(Long coachId) {
-        return sessionCoachRepository.findByDisponibiliteCoachId(coachId).stream()
-                .filter(s -> !s.getDateSession().isBefore(LocalDate.now())) // Only future sessions
+    public List<SessionCoachDTO> getAvailableSessionsForEntrepreneur(Long coachId, Long entrepreneurUserId) {
+        // Find which thematiques this entrepreneur is matched with this coach
+        User entrepreneur = userRepository.findById(entrepreneurUserId)
+                .orElseThrow(() -> new ValidationException("Entrepreneur non trouvé"));
+        String email = entrepreneur.getEmail();
+        if (email == null) return Collections.emptyList();
+
+        List<CandidatureRedstarter> candidatures = candidatureRepository.findByEmail(email);
+        Set<Long> matchedThematiqueIds = new HashSet<>();
+        
+        for (CandidatureRedstarter cand : candidatures) {
+            List<Matching> matchings = matchingRepository.findByEntrepreneurIdAndStatut(cand.getId(), Matching.StatutMatching.VALIDE);
+            for (Matching m : matchings) {
+                if (m.getCoachId().equals(coachId) && m.getThematiqueId() != null) {
+                    matchedThematiqueIds.add(m.getThematiqueId());
+                }
+            }
+        }
+
+        // Fetch all future sessions of this coach
+        List<SessionCoach> futureSessions = sessionCoachRepository.findByDisponibiliteCoachId(coachId).stream()
+                .filter(s -> !s.getDateSession().isBefore(LocalDate.now()))
+                .filter(s -> s.getDisponibilite() != null && s.getDisponibilite().getThematique() != null 
+                        && matchedThematiqueIds.contains(s.getDisponibilite().getThematique().getId()))
+                .collect(Collectors.toList());
+
+        // We also need to filter out sessions that are already booked!
+        List<Session> bookedSessions = sessionRepository.findByCoachId(coachId).stream()
+                .filter(s -> s.getStatut() == Session.Statut.CONFIRME || s.getStatut() == Session.Statut.DEMANDE)
+                .collect(Collectors.toList());
+        Set<String> bookedSessionCoachIds = bookedSessions.stream()
+                .map(Session::getDisponibiliteId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        return futureSessions.stream()
+                .filter(s -> !bookedSessionCoachIds.contains(String.valueOf(s.getId())))
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }

@@ -180,8 +180,10 @@ public class CoachController {
     }
 
     @GetMapping("/{coachId}/available-sessions")
-    public ResponseEntity<List<SessionCoachDTO>> getAvailableSessionsForEntrepreneur(@PathVariable Long coachId) {
-        return ResponseEntity.ok(coachService.getAvailableSessionsForEntrepreneur(coachId));
+    public ResponseEntity<List<SessionCoachDTO>> getAvailableSessionsForEntrepreneur(
+            @PathVariable Long coachId,
+            @RequestParam Long entrepreneurId) {
+        return ResponseEntity.ok(coachService.getAvailableSessionsForEntrepreneur(coachId, entrepreneurId));
     }
 
     // --- PLANNING DÉTAILLÉ ---

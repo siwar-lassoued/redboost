@@ -35,8 +35,7 @@ public class MatchingIaService {
     private final NotificationService notificationService;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final RestTemplate restTemplate = new RestTemplate();
-    private final DisponibiliteRepository disponibiliteRepository;
-    private final SessionCoachRepository sessionCoachRepository;
+
     @Value("${ai.service.base-url}")
     private String aiServiceUrl;
 
@@ -976,58 +975,44 @@ public class MatchingIaService {
         return null;
     }
 
+   
+    public List<Map<String, Object>> getCoachesForEntrepreneur(Long entrepreneurUserId) {
+        User entrepreneur = userRepo.findById(entrepreneurUserId)
+                .orElseThrow(() -> new RuntimeException("Entrepreneur non trouvé : " + entrepreneurUserId));
 
-    public List<Map<String, Object>> getCoachesForEntrepreneur(Long entrepreneurId) {
-        List<Matching> matchings = matchingRepo
-                .findByEntrepreneurIdAndStatut(entrepreneurId, Matching.StatutMatching.VALIDE);
+        String email = entrepreneur.getEmail();
+        if (email == null) return Collections.emptyList();
 
-        return matchings.stream().map(m -> {
-            Map<String, Object> view = new LinkedHashMap<>();
-            userRepo.findById(m.getCoachId()).ifPresent(coach -> {
-                view.put("coachId", coach.getId());
-                view.put("firstName", coach.getFirstName());
-                view.put("lastName", coach.getLastName());
-                view.put("email", coach.getEmail());
-                view.put("expertise", coach.getExpertise());
-                view.put("skills", coach.getSkills());
-                view.put("profilePictureUrl", coach.getProfilePictureUrl());
-                view.put("matchingScore", m.getScoreIa());
-                view.put("justification", m.getJustification());
-                view.put("pointsForts", m.getPointsForts());
+        // Find candidature(s) by email to get the candidature ID used in matchings
+        List<CandidatureRedstarter> candidatures = candidatureRepo.findByEmail(email);
 
-                List<Map<String, Object>> dispos = disponibiliteRepository
-                        .findByCoachId(coach.getId())
-                        .stream()
-                        .map(d -> {
-                            Map<String, Object> dispoMap = new LinkedHashMap<>();
-                            dispoMap.put("id", d.getId());
-                            dispoMap.put("dateDebut", d.getDateDebut());
-                            dispoMap.put("dateFin", d.getDateFin());
-                            if (d.getThematique() != null) {
-                                dispoMap.put("thematiqueNom", d.getThematique().getNom());
-                            }
-                            List<Map<String, Object>> sessions = sessionCoachRepository
-                                    .findByDisponibiliteId(d.getId())
-                                    .stream()
-                                    .map(s -> {
-                                        Map<String, Object> sMap = new LinkedHashMap<>();
-                                        sMap.put("id", s.getId());
-                                        sMap.put("dateSession", s.getDateSession());
-                                        sMap.put("heureDebut", s.getHeureDebut());
-                                        sMap.put("heureFin", s.getHeureFin());
-                                        sMap.put("typeSession", s.getTypeSession() != null ? s.getTypeSession().name() : "EN_LIGNE");
-                                        sMap.put("titre", s.getTitre());
-                                        return sMap;
-                                    })
-                                    .collect(Collectors.toList());
-                            dispoMap.put("sessions", sessions);
-                            return dispoMap;
-                        })
-                        .collect(Collectors.toList());
-                view.put("disponibilites", dispos);
-            });
-            return view;
-        }).filter(m -> !m.isEmpty()).collect(Collectors.toList());
+        List<Map<String, Object>> result = new ArrayList<>();
+        Set<Long> seenCoachIds = new HashSet<>();
+
+        // Search matchings via candidature IDs
+        for (CandidatureRedstarter cand : candidatures) {
+            List<Matching> matchings = matchingRepo.findByEntrepreneurIdAndStatut(
+                    cand.getId(), Matching.StatutMatching.VALIDE);
+
+            for (Matching m : matchings) {
+                if (!seenCoachIds.add(m.getCoachId())) continue;
+                buildCoachView(m, result);
+            }
+        }
+
+        // Remove the fallback that uses entrepreneurUserId against matching.entrepreneurId.
+        // matching.entrepreneurId always stores the Candidature ID. Matching against User ID
+        // can return another user's coach if their Candidature ID happens to equal this User ID.
+        /*
+        List<Matching> directMatchings = matchingRepo.findByEntrepreneurIdAndStatut(
+                entrepreneurUserId, Matching.StatutMatching.VALIDE);
+        for (Matching m : directMatchings) {
+            if (!seenCoachIds.add(m.getCoachId())) continue;
+            buildCoachView(m, result);
+        }
+        */
+
+        return result;
     }
 
     private void buildCoachView(Matching m, List<Map<String, Object>> result) {
