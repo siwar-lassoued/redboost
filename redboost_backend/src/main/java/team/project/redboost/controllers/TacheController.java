@@ -33,7 +33,8 @@ public class TacheController {
     @GetMapping("/assignee/{assigneeId}")
     public ResponseEntity<Map<String, Object>> getByAssignee(@PathVariable Long assigneeId) {
         Map<String, Object> res = new HashMap<>();
-        res.put("data", tacheService.getByAssignee(assigneeId));
+        res.put("data", tacheService.getByAssignee(assigneeId).stream()
+                .map(this::toResponse).collect(java.util.stream.Collectors.toList()));
         return ResponseEntity.ok(res);
     }
 
@@ -41,7 +42,8 @@ public class TacheController {
     public ResponseEntity<Map<String, Object>> getByEntrepreneur(
             @PathVariable Long entrepreneurId) {
         Map<String, Object> res = new HashMap<>();
-        res.put("data", tacheService.getByAssignee(entrepreneurId));
+        res.put("data", tacheService.getByAssignee(entrepreneurId).stream()
+                .map(this::toResponse).collect(java.util.stream.Collectors.toList()));
         return ResponseEntity.ok(res);
     }
 
@@ -89,14 +91,31 @@ public class TacheController {
         dto.put("titre", tache.getTitre());
         dto.put("description", tache.getDescription());
         dto.put("priorite", tache.getPriorite());
-        dto.put("status", tache.getStatus() != null ? tache.getStatus().name() : null);
+        // FIX: use "statut" (not "status") to match frontend field name
+        String statutStr = tache.getStatus() != null ? tache.getStatus().name() : null;
+        dto.put("statut", statutStr);
+        dto.put("status", statutStr); // keep "status" for backward compat
         dto.put("responsableId", tache.getResponsableId());
         dto.put("dateDebut", tache.getDateDebut());
         dto.put("dateLimite", tache.getDateLimite());
+        // FIX: also expose as "dateEcheance" since frontend template uses task.dateEcheance
+        dto.put("dateEcheance", tache.getDateLimite());
         dto.put("dateFinReel", tache.getDateFinReel());
         dto.put("difficulte", tache.getDifficulte());
         dto.put("entrepreneurId", tache.getResponsableId());
         dto.put("documents", new ArrayList<DocumentDTO>());
+        // FIX: add completionProb so progress bar renders (derive from status)
+        int completionProb = 0;
+        if (tache.getStatus() != null) {
+            switch (tache.getStatus()) {
+                case NON_DEMARREE: completionProb = 0; break;
+                case EN_COURS: completionProb = 50; break;
+                case EN_RETARD: completionProb = 40; break;
+                case TERMINEE: completionProb = 100; break;
+                default: completionProb = 10; break;
+            }
+        }
+        dto.put("completionProb", completionProb);
         return dto;
     }
 }

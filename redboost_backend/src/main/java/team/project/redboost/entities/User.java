@@ -117,6 +117,9 @@ public class User implements UserDetails {
     @Column(name = "session_essai")
     private Boolean sessionEssai;
 
+    @Column(name = "calendly_url")
+    private String calendlyUrl;
+
     // Entrepreneur-specific fields
     @Column(name = "startup_name")
     private String startupName;
