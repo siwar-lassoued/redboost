@@ -825,24 +825,26 @@ public class CoachService {
         
         log.info(" Nombre total de matchings VALIDE trouvés: {}", allMatchings.size());
 
+        boolean hasGlobalMatching = false;
         for (Matching m : allMatchings) {
             if (m.getCoachId().equals(coachId)) {
                 isMatchedWithThisCoach = true;
                 if (m.getThematiqueId() != null) {
                     matchedThematiqueIds.add(m.getThematiqueId());
                     log.info("[DIAG] Thématique matchée trouvée: {}", m.getThematiqueId());
+                } else {
+                    hasGlobalMatching = true;
+                    log.info(" Matching GLOBAL trouvé");
                 }
             }
         }
 
         if (!isMatchedWithThisCoach) {
-            log.warn(" Aucun matching VALIDE trouvé entre entrepreneur {} et coach {}", entrepreneurUserId, coachId);
+            log.warn("[DIAG] Aucun matching VALIDE trouvé entre entrepreneur {} et coach {}", entrepreneurUserId, coachId);
             return Collections.emptyList();
         }
 
-        if (matchedThematiqueIds.isEmpty()) {
-            log.warn(" L'entrepreneur est matché avec le coach mais sans thématique spécifique.");
-            }
+        final boolean finalHasGlobal = hasGlobalMatching || matchedThematiqueIds.isEmpty();
 
         // 2. Fetch future sessions of this coach
         List<SessionCoach> coachSessions = sessionCoachRepository.findByDisponibiliteCoachId(coachId);
@@ -864,6 +866,7 @@ public class CoachService {
                 .filter(s -> !s.getDateSession().isBefore(today))
                 .filter(s -> !bookedSessionCoachIds.contains(String.valueOf(s.getId())))
                 .filter(s -> {
+                    if (finalHasGlobal) return true;
                     if (s.getDisponibilite() != null && s.getDisponibilite().getThematique() != null) {
                         Long stid = s.getDisponibilite().getThematique().getId();
                         boolean match = matchedThematiqueIds.contains(stid);

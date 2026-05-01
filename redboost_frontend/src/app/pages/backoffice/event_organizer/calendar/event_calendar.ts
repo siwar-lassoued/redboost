@@ -489,7 +489,7 @@ openEditEventDialog(event: CalendarEvent): void {
 
   getEventTypeColor(typeName: string): string {
     const eventType = this.eventTypes.find(t => t.name === typeName);
-    return eventType ? eventType.color : '#6B7280';
+    return eventType ? eventType.color : '#F43F5E';
   }
 
   getUpcomingEventsCount(): number {
@@ -542,7 +542,7 @@ getEventGradient(typeName: string): string {
     return `linear-gradient(135deg, ${eventType.color} 0%, ${this.darkenColor(eventType.color, 20)} 100%)`;
   }
 
-  return 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)';
+  return 'linear-gradient(135deg, #F43F5E 0%, #F43F5E 100%)';
 }
 
 // Helper to darken a color
