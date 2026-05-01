@@ -826,19 +826,22 @@ public class CoachService {
                 isMatchedWithThisCoach = true;
                 if (m.getThematiqueId() != null) {
                     matchedThematiqueIds.add(m.getThematiqueId());
+                    log.info("[DIAG] Matching trouvé: coach={}, thématique={}", coachId, m.getThematiqueId());
                 } else {
                     hasGlobalMatching = true;
+                    log.info("[DIAG] Matching GLOBAL trouvé pour coach={}", coachId);
                 }
             }
         }
 
         if (!isMatchedWithThisCoach) {
-            log.warn("No active matching found for entrepreneur {} and coach {}", entrepreneurUserId, coachId);
+            log.warn("[DIAG] Aucun matching VALIDE trouvé pour entrepreneurUserId={} et coachId={}", entrepreneurUserId, coachId);
             return Collections.emptyList();
         }
 
         // 2. Fetch future sessions of this coach
         List<SessionCoach> coachSessions = sessionCoachRepository.findByDisponibiliteCoachId(coachId);
+        log.info("[DIAG] Sessions trouvées pour le coach {}: {}", coachId, coachSessions.size());
         
         // Filter out already booked sessions
         List<Session> bookedSessions = sessionRepository.findByCoachId(coachId).stream()
@@ -851,10 +854,21 @@ public class CoachService {
                 .collect(Collectors.toSet());
 
         LocalDate today = LocalDate.now();
+        final boolean finalHasGlobalMatching = hasGlobalMatching;
 
         return coachSessions.stream()
                 .filter(s -> !s.getDateSession().isBefore(today))
                 .filter(s -> !bookedSessionCoachIds.contains(String.valueOf(s.getId())))
+                .filter(s -> {
+                    if (finalHasGlobalMatching) return true;
+                    if (s.getDisponibilite() != null && s.getDisponibilite().getThematique() != null) {
+                        Long stid = s.getDisponibilite().getThematique().getId();
+                        boolean match = matchedThematiqueIds.contains(stid);
+                        if (!match) log.info("[DIAG] Session {} filtrée: thématique {} non matchée", s.getId(), stid);
+                        return match;
+                    }
+                    return false;
+                })
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }
