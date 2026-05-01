@@ -801,41 +801,46 @@ public class CoachService {
         
         String email = entrepreneur.getEmail();
         if (email == null) return Collections.emptyList();
+        email = email.trim().toLowerCase();
 
-        // 1. Collect all thematique IDs where this entrepreneur is matched with this coach
+        // 1. Collect all thematique IDs and check if there's a global matching
         Set<Long> matchedThematiqueIds = new HashSet<>();
+        boolean hasGlobalMatching = false;
+        boolean isMatchedWithThisCoach = false;
         
-        // Try finding by email (case-insensitive)
+        // Find by email (case-insensitive)
+        final String finalEmail = email;
         List<CandidatureRedstarter> candidatures = candidatureRepository.findAll().stream()
-                .filter(c -> c.getEmail() != null && c.getEmail().equalsIgnoreCase(email))
+                .filter(c -> c.getEmail() != null && c.getEmail().trim().equalsIgnoreCase(finalEmail))
                 .collect(Collectors.toList());
         
+        List<Matching> allMatchings = new ArrayList<>();
         for (CandidatureRedstarter cand : candidatures) {
-            List<Matching> matchings = matchingRepository.findByEntrepreneurIdAndStatut(cand.getId(), Matching.StatutMatching.VALIDE);
-            for (Matching m : matchings) {
-                if (m.getCoachId().equals(coachId) && m.getThematiqueId() != null) {
+            allMatchings.addAll(matchingRepository.findByEntrepreneurIdAndStatut(cand.getId(), Matching.StatutMatching.VALIDE));
+        }
+        // Also check by direct User ID
+        allMatchings.addAll(matchingRepository.findByEntrepreneurIdAndStatut(entrepreneurUserId, Matching.StatutMatching.VALIDE));
+        
+        for (Matching m : allMatchings) {
+            if (m.getCoachId().equals(coachId)) {
+                isMatchedWithThisCoach = true;
+                if (m.getThematiqueId() != null) {
                     matchedThematiqueIds.add(m.getThematiqueId());
+                } else {
+                    hasGlobalMatching = true;
                 }
             }
         }
 
-        // Fallback: Check if matching was done directly with User ID
-        List<Matching> directMatchings = matchingRepository.findByEntrepreneurIdAndStatut(entrepreneurUserId, Matching.StatutMatching.VALIDE);
-        for (Matching m : directMatchings) {
-            if (m.getCoachId().equals(coachId) && m.getThematiqueId() != null) {
-                matchedThematiqueIds.add(m.getThematiqueId());
-            }
-        }
-
-        if (matchedThematiqueIds.isEmpty()) {
-            log.warn("No active matching found for entrepreneur {} and coach {} in any thématique.", entrepreneurUserId, coachId);
+        if (!isMatchedWithThisCoach) {
+            log.warn("No active matching found for entrepreneur {} and coach {}", entrepreneurUserId, coachId);
             return Collections.emptyList();
         }
 
-        // 2. Fetch future sessions of this coach that belong to the matched thématiques
+        // 2. Fetch future sessions of this coach
         List<SessionCoach> coachSessions = sessionCoachRepository.findByDisponibiliteCoachId(coachId);
         
-        // Filter out past sessions, already booked sessions, and those not in matched thématiques
+        // Filter out already booked sessions
         List<Session> bookedSessions = sessionRepository.findByCoachId(coachId).stream()
                 .filter(s -> s.getStatut() == Session.Statut.CONFIRME || s.getStatut() == Session.Statut.DEMANDE)
                 .collect(Collectors.toList());
@@ -850,8 +855,15 @@ public class CoachService {
         return coachSessions.stream()
                 .filter(s -> !s.getDateSession().isBefore(today))
                 .filter(s -> !bookedSessionCoachIds.contains(String.valueOf(s.getId())))
-                .filter(s -> s.getDisponibilite() != null && s.getDisponibilite().getThematique() != null 
-                             && matchedThematiqueIds.contains(s.getDisponibilite().getThematique().getId()))
+                .filter(s -> {
+                    // If global matching, show everything for this coach
+                    if (hasGlobalMatching) return true;
+                    // Otherwise, require thematique match
+                    if (s.getDisponibilite() != null && s.getDisponibilite().getThematique() != null) {
+                        return matchedThematiqueIds.contains(s.getDisponibilite().getThematique().getId());
+                    }
+                    return false;
+                })
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }
