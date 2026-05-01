@@ -49,8 +49,8 @@ export class UserService {
         return this.http.get<any[]>(`${environment.apiUrl}/coach/${coachId}/entrepreneurs`);
     }
 
-    getCoachesByEntrepreneur(entrepreneurId: string): Observable<User[]> {
-        return this.http.get<User[]>(`${this.baseUrl}/entrepreneurs/${entrepreneurId}/coaches`);
+    getCoachesByEntrepreneur(entrepreneurId: string): Observable<any[]> {
+        return this.http.get<any[]>(`${environment.apiUrl}/matching/entrepreneur/${entrepreneurId}/coaches`);
     }
 
     create(data: Partial<User>): Observable<User> {

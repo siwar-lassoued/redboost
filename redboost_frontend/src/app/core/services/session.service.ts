@@ -66,9 +66,8 @@ export class SessionService {
     }
 
     requestReschedule(sessionId: string, newDate: string, entrepreneurId: number): Observable<any> {
-        return this.http.put<any>(
-            `${environment.apiUrl}/coach/sessions/${sessionId}/reschedule?newDate=${newDate}&entrepreneurId=${entrepreneurId}`, 
-            {}
-        );
+        // Format the payload with 'note' key as expected by SessionController.requestReschedule
+        const payload = { note: `Demande de reprogrammation pour le: ${newDate}` };
+        return this.http.post<any>(`${this.baseUrl}/${sessionId}/reschedule`, payload);
     }
 }

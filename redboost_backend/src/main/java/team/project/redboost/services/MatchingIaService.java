@@ -1023,6 +1023,7 @@ public class MatchingIaService {
                     (coach.getLastName() != null ? coach.getLastName() : "")).trim());
             view.put("specialite", coach.getExpertise());
             view.put("sector", coach.getSecteur());
+            view.put("calendlyUrl", coach.getCalendlyUrl());
             view.put("programmeId", String.valueOf(m.getProgrammeId()));
 
             programmeRepo.findById(m.getProgrammeId()).ifPresent(p ->
