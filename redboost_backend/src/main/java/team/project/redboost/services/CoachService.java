@@ -852,12 +852,15 @@ public class CoachService {
 
         LocalDate today = LocalDate.now();
 
+        // Capture flags for lambda
+        final boolean finalHasGlobalMatching = hasGlobalMatching;
+
         return coachSessions.stream()
                 .filter(s -> !s.getDateSession().isBefore(today))
                 .filter(s -> !bookedSessionCoachIds.contains(String.valueOf(s.getId())))
                 .filter(s -> {
                     // If global matching, show everything for this coach
-                    if (hasGlobalMatching) return true;
+                    if (finalHasGlobalMatching) return true;
                     // Otherwise, require thematique match
                     if (s.getDisponibilite() != null && s.getDisponibilite().getThematique() != null) {
                         return matchedThematiqueIds.contains(s.getDisponibilite().getThematique().getId());
