@@ -311,16 +311,11 @@ export class EntrepreneurChatComponent implements OnInit, AfterViewChecked {
     // Load the assigned coach(es) for this entrepreneur
     this.userService.getCoachesByEntrepreneur(this.currentUserId).subscribe({
       next: (users) => {
-        const convs: Conversation[] = users.map(u => {
-          const names = u.nom ? String(u.nom).split(' ') : ['C'];
-          const initial1 = names[0]?.[0] || '';
-          const initial2 = names.length > 1 ? names[1]?.[0] || '' : '';
-          return {
-            id: u.id,
-            name: u.nom || 'Coach',
-            avatar: (initial1 + initial2).toUpperCase()
-          };
-        });
+        const convs: Conversation[] = users.map(u => ({
+          id: u.id,
+          name: `${u.prenom} ${u.nom}`,
+          avatar: `${u.prenom?.[0] || ''}${u.nom?.[0] || ''}`.toUpperCase()
+        }));
         this.conversations.set(convs);
         this.isLoadingConversations.set(false);
         const withId = this.route.snapshot.queryParamMap.get('with');
