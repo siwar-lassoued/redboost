@@ -199,7 +199,7 @@ export class MesCoachsComponent implements OnInit {
   private authSvc = inject(AuthService);
 
   matchings = signal<MatchingView[]>([]);
-  allSlots: { [coachId: string]: any[] } = {};
+  allSlots = signal<{ [coachId: string]: any[] }>({});
   selectedSlots: { [coachId: string]: any } = {};
   
   selectedSlotToBook = signal<SessionCoachDTO | null>(null);
@@ -231,15 +231,16 @@ export class MesCoachsComponent implements OnInit {
   loadSlots(coachId: string, entrepreneurId: number): void {
     this.coachSvc.getAvailableSessionsForEntrepreneur(Number(coachId), entrepreneurId).subscribe(slots => {
       // Format them for prime dropdown
-      this.allSlots[coachId] = slots.map(s => ({
+      const formatted = slots.map(s => ({
          ...s,
          label: `${new Date(s.dateSession).toLocaleString('fr-FR', {weekday: 'short', day: '2-digit', month: 'short'})} ${s.heureDebut} - ${s.heureFin}`
       }));
+      this.allSlots.update(current => ({ ...current, [coachId]: formatted }));
     });
   }
 
   getCoachSlots(coachId: string): any[] {
-    return this.allSlots[coachId] || [];
+    return this.allSlots()[coachId] || [];
   }
 
   openBookingModal(dropdownSelection: any, coach: MatchingView): void {

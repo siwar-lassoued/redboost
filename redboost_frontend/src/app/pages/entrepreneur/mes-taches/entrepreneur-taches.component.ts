@@ -174,7 +174,7 @@ export class EntrepreneurTachesComponent implements OnInit {
   getColTasks(colId: string) {
     return this.tasks().filter(t => {
       // Map statuts to kanban columns
-      if (colId === 'A_FAIRE') return t.statut === 'A_FAIRE' || t.statut === 'EN_ATTENTE_VALIDATION';
+      if (colId === 'A_FAIRE') return t.statut === 'NON_DEMARREE' || t.statut === 'A_FAIRE' || t.statut === 'EN_ATTENTE_VALIDATION';
       if (colId === 'EN_COURS') return t.statut === 'EN_COURS' || t.statut === 'EN_RETARD';
       if (colId === 'TERMINEE') return t.statut === 'TERMINEE';
       return false;
