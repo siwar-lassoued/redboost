@@ -846,11 +846,10 @@ public class CoachService {
 
         final boolean finalHasGlobal = hasGlobalMatching || matchedThematiqueIds.isEmpty();
 
-        // 2. Fetch future sessions of this coach
+
         List<SessionCoach> coachSessions = sessionCoachRepository.findByDisponibiliteCoachId(coachId);
         log.info(" Sessions totales futures pour le coach: {}", coachSessions.size());
         
-        // Filter out already booked sessions
         List<Session> bookedSessions = sessionRepository.findByCoachId(coachId).stream()
                 .filter(s -> s.getStatut() == Session.Statut.CONFIRME || s.getStatut() == Session.Statut.DEMANDE)
                 .collect(Collectors.toList());

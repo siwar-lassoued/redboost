@@ -65,14 +65,11 @@ export class CalendarComponent implements OnInit {
   isLoading = false;
   totalEventsCount = 0;
   
-  // Selected date and its events
+  // Selected date and its event
   selectedDate: Date | null = null;
   selectedDateEvents: CalendarEvent[] = [];
 
-  // Dynamic event types from database with assigned colors
   eventTypes: EventTypeWithColor[] = [];
-  
-  // Predefined colors for automatic assignment
   private colorPalette = [
     '#EF4444', // Red
     '#3B82A6', // Blue
@@ -88,7 +85,7 @@ export class CalendarComponent implements OnInit {
     '#F43F5E', // Rose
   ];
 
-  // Icon mapping for event types
+  // Icon mapping for event type
   private iconMapping: { [key: string]: string } = {
     'pitch deck': 'campaign',
     'pitch': 'campaign',
@@ -128,14 +125,11 @@ export class CalendarComponent implements OnInit {
     const year = this.currentMonth.getFullYear();
     const month = this.currentMonth.getMonth() + 1;
     const currentUser = this.authService.currentUser$.value;
-
-    // Base data: types and global events
     const dataSources: any = {
       types: this.typeFormationService.getAllTypes(),
       events: this.eventService.getEventsByMonth(year, month)
     };
 
-    // If entrepreneur, also fetch coaching related data
     if (currentUser && currentUser.role === 'ENTREPRENEUR') {
       dataSources.bookedSessions = this.sessionService.getByEntrepreneur(currentUser.id).pipe(catchError(() => of([])));
       dataSources.coaches = this.matchingService.getEntrepreneurCoaches(currentUser.id).pipe(catchError(() => of([])));
@@ -144,19 +138,15 @@ export class CalendarComponent implements OnInit {
     forkJoin(dataSources).subscribe({
       next: (response: any) => {
         this.eventTypes = this.mapTypesToEventTypes(response.types);
-        
-        // Initial global events
         let allCalendarEvents = this.mapResponseToCalendarEvents(response.events);
         
-        // Add booked coaching sessions
         if (response.bookedSessions) {
           const bookedMapped = this.mapBookedSessionsToCalendarEvents(response.bookedSessions);
           allCalendarEvents = [...allCalendarEvents, ...bookedMapped];
         }
 
-        // Add available slots from matched coaches
         if (response.coaches && response.coaches.length > 0) {
-            // This is complex as we need another forkJoin for slots of each coach
+          
             const slotRequests = response.coaches.map((c: any) => 
                 this.coachService.getAvailableSessionsForEntrepreneur(Number(c.id), Number(currentUser?.id)).pipe(catchError(() => of([])))
             );
@@ -230,14 +220,12 @@ export class CalendarComponent implements OnInit {
   getIconForType(typeName: string): string {
     const lowerName = typeName.toLowerCase();
     
-    // Check for exact or partial matches in icon mapping
     for (const [key, icon] of Object.entries(this.iconMapping)) {
       if (lowerName.includes(key)) {
         return icon;
       }
     }
     
-    // Default icon
     return 'event';
   }
 
@@ -405,7 +393,7 @@ openEditEventDialog(event: CalendarEvent): void {
           
           this.isLoading = false;
           
-          this.snackBar.open('✅ Événement mis à jour avec succès!', 'Fermer', {
+          this.snackBar.open(' Événement mis à jour avec succès!', 'Fermer', {
             duration: 5000,
             horizontalPosition: 'center',
             verticalPosition: 'top',
@@ -426,15 +414,12 @@ openEditEventDialog(event: CalendarEvent): void {
     const startDate = new Date(event.date);
     const endDate = new Date(event.date);
     
-    // Parse start time
     const [startHour, startMin] = startTime.split(':').map(Number);
     startDate.setHours(startHour, startMin, 0, 0);
     
-    // Parse end time
     const [endHour, endMin] = endTime.split(':').map(Number);
     endDate.setHours(endHour, endMin, 0, 0);
     
-    // Map mode back to backend mode
     const backendMode = event.mode === 'en-personne' ? 'EN_PERSONNE' : 
                         event.mode === 'virtuel' ? 'VIRTUEL' : 'HYBRID';
     
@@ -464,17 +449,16 @@ openEditEventDialog(event: CalendarEvent): void {
       panelClass: 'custom-dialog-container',
       disableClose: false,
       autoFocus: true,
-      data: {} // Empty data for create mode
+      data: {}
     });
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        // Reload both types and events in case a new type was created
         this.loadEventTypesAndEvents();
         
-        let message = '✅ Événement créé avec succès! Les invitations ont été envoyées.';
+        let message = ' Événement créé avec succès! Les invitations ont été envoyées.';
         if (result.meetLink) {
-          message += ` 🎥 Lien Meet disponible.`;
+          message += `  Lien Meet disponible.`;
         }
         
         this.snackBar.open(message, 'Fermer', {
@@ -499,7 +483,7 @@ openEditEventDialog(event: CalendarEvent): void {
 
 
 
-// Helper method to check if a date is today
+
 isToday(date: Date): boolean {
   const today = new Date();
   return date.getDate() === today.getDate() &&
@@ -507,7 +491,7 @@ isToday(date: Date): boolean {
     date.getFullYear() === today.getFullYear();
 }
 
-// Helper method to check if a date is selected
+
 isSelectedDate(date: Date): boolean {
   if (!this.selectedDate) return false;
   return date.getDate() === this.selectedDate.getDate() &&
@@ -515,7 +499,7 @@ isSelectedDate(date: Date): boolean {
     date.getFullYear() === this.selectedDate.getFullYear();
 }
 
-// Get gradient for event type
+
 getEventGradient(typeName: string): string {
   const gradients: { [key: string]: string } = {
     'pitch deck': 'linear-gradient(135deg, #ea5073 0%, #d4476a 100%)',
@@ -536,7 +520,7 @@ getEventGradient(typeName: string): string {
     }
   }
 
-  // Default gradient based on color from eventTypes
+
   const eventType = this.eventTypes.find(t => t.name === typeName);
   if (eventType) {
     return `linear-gradient(135deg, ${eventType.color} 0%, ${this.darkenColor(eventType.color, 20)} 100%)`;
@@ -545,7 +529,7 @@ getEventGradient(typeName: string): string {
   return 'linear-gradient(135deg, #F43F5E 0%, #F43F5E 100%)';
 }
 
-// Helper to darken a color
+
 private darkenColor(color: string, percent: number): string {
   const num = parseInt(color.replace('#', ''), 16);
   const amt = Math.round(2.55 * percent);
@@ -558,7 +542,7 @@ private darkenColor(color: string, percent: number): string {
     .toString(16).slice(1);
 }
 
-// Get upcoming events (sorted)
+
 getUpcomingEvents(): CalendarEvent[] {
   const now = new Date();
   return this.events
@@ -567,7 +551,7 @@ getUpcomingEvents(): CalendarEvent[] {
     .slice(0, 5);
 }
 
-// Format event date for display
+
 formatEventDate(date: Date): string {
   const months = [
     'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
@@ -576,7 +560,7 @@ formatEventDate(date: Date): string {
   return `${date.getDate()} ${months[date.getMonth()]}`;
 }
 
-// Select event date (from sidebar)
+
 selectEventDate(date: Date): void {
   this.selectedDate = date;
   this.selectedDateEvents = this.events.filter(event => 
@@ -586,27 +570,26 @@ selectEventDate(date: Date): void {
   );
 }
 
-// Delete event with confirmation
+
 deleteEvent(event: CalendarEvent): void {
   if (confirm(`Êtes-vous sûr de vouloir supprimer "${event.title}" ?`)) {
     this.eventService.cancelEvent(parseInt(event.id)).subscribe({
       next: () => {
-        this.snackBar.open('✅ Événement supprimé avec succès!', 'Fermer', {
+        this.snackBar.open(' Événement supprimé avec succès!', 'Fermer', {
           duration: 3000,
           panelClass: ['success-snackbar']
         });
         
-        // Remove the event from selectedDateEvents immediately
+    
         if (this.selectedDate) {
           this.selectedDateEvents = this.selectedDateEvents.filter(e => e.id !== event.id);
         }
         
-        // Then reload all events
         this.loadEvents();
       },
       error: (error) => {
         console.error('Error deleting event:', error);
-        this.snackBar.open('❌ Erreur lors de la suppression', 'Fermer', {
+        this.snackBar.open(' Erreur lors de la suppression', 'Fermer', {
           duration: 3000,
           panelClass: ['error-snackbar']
         });

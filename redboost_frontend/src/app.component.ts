@@ -46,12 +46,10 @@ export class AppComponent implements OnInit, OnDestroy {
         private router: Router,
         private userService: UserService,
         private http: HttpClient,
-        private notificationService: NotificationWebSocketService, // ✅ Inject notification service
+        private notificationService: NotificationWebSocketService, 
     ) {}
 
     ngOnInit() {
-
-        // Subscribe to NavigationEnd to get the correct URL after routing
         this.router.events
             .pipe(filter((event) => event instanceof NavigationEnd))
             .subscribe((event: NavigationEnd) => {

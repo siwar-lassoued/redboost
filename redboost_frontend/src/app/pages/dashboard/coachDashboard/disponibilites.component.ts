@@ -32,7 +32,7 @@ interface DateGroupView {
       <!-- Page Header -->
       <div class="page-header">
           <div class="page-title-row">
-              <div class="page-icon">📅</div>
+              <div class="page-icon"></div>
               <div>
                   <h1>Calendrier & Disponibilités</h1>
                   <p>Gérez vos créneaux et sessions planifiées</p>
@@ -182,7 +182,7 @@ interface DateGroupView {
                     <div *ngFor="let group of dateSlotGroups; let gi = index" class="date-slot-group">
                       <div class="dsg-header">
                         <div class="dsg-date-row">
-                          <span class="dsg-badge">📅 Date {{ gi + 1 }}</span>
+                          <span class="dsg-badge"> Date {{ gi + 1 }}</span>
                           <input type="date" class="premium-input dsg-date-input" [(ngModel)]="group.date"
                             [min]="selectedThematiqueObj?.dateDebut" [max]="selectedThematiqueObj?.dateFin">
                           <button *ngIf="dateSlotGroups.length > 1" class="btn-remove-inline" (click)="removeDateGroup(gi)">
@@ -283,7 +283,7 @@ interface DateGroupView {
                     <div *ngFor="let group of groupedEditDatesView; let gi = index" class="date-slot-group edit-date-group">
                       <div class="dsg-header">
                         <div class="dsg-date-row">
-                          <span *ngIf="group.date !== ''" class="dsg-badge">📅 {{ group.date | date:'dd/MM/yyyy' }}</span>
+                          <span *ngIf="group.date !== ''" class="dsg-badge"> {{ group.date | date:'dd/MM/yyyy' }}</span>
                           <input *ngIf="group.date === ''" type="date" class="premium-input dsg-date-input" style="padding: 4px;font-size: 0.9rem;" [(ngModel)]="group.date" [min]="selectedEditThematiqueObj?.dateDebut || ''" [max]="selectedEditThematiqueObj?.dateFin || ''">
                         </div>
                       </div>
