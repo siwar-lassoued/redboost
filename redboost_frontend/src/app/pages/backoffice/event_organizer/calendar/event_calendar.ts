@@ -12,7 +12,12 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { EventService, EventResponse } from '../event.service';
 import { TypeFormationService, TypeFormation } from '../type-formation.service';
 import { MatTooltip } from '@angular/material/tooltip';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
+import { catchError, switchMap } from 'rxjs/operators';
+import { AuthService } from '../../../../core/services/auth.service';
+import { MatchingService } from '../../../../core/services/matching.service';
+import { CoachService } from '../../../dashboard/coachDashboard/services/coach.service';
+import { SessionService } from '../../../../core/services/session.service';
 
 interface CalendarEvent {
   id: string;
@@ -98,15 +103,20 @@ export class CalendarComponent implements OnInit {
     'workshop': 'handyman',
     'séminaire': 'school',
     'seminar': 'school',
-    'réunion': 'group',
     'meeting': 'group',
+    'créneau disponible': 'event_available',
+    'coaching (confirmé)': 'groups',
   };
 
   constructor(
     private dialog: MatDialog,
     private eventService: EventService,
     private typeFormationService: TypeFormationService,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private authService: AuthService,
+    private matchingService: MatchingService,
+    private coachService: CoachService,
+    private sessionService: SessionService
   ) {}
 
   ngOnInit(): void {
@@ -117,21 +127,54 @@ export class CalendarComponent implements OnInit {
     this.isLoading = true;
     const year = this.currentMonth.getFullYear();
     const month = this.currentMonth.getMonth() + 1;
+    const currentUser = this.authService.currentUser$.value;
 
-    // Load both event types and events in parallel
-    forkJoin({
+    // Base data: types and global events
+    const dataSources: any = {
       types: this.typeFormationService.getAllTypes(),
       events: this.eventService.getEventsByMonth(year, month)
-    }).subscribe({
-      next: (response) => {
-        // Map types from database to event types with colors
+    };
+
+    // If entrepreneur, also fetch coaching related data
+    if (currentUser && currentUser.role === 'ENTREPRENEUR') {
+      dataSources.bookedSessions = this.sessionService.getByEntrepreneur(currentUser.id).pipe(catchError(() => of([])));
+      dataSources.coaches = this.matchingService.getEntrepreneurCoaches(currentUser.id).pipe(catchError(() => of([])));
+    }
+
+    forkJoin(dataSources).subscribe({
+      next: (response: any) => {
         this.eventTypes = this.mapTypesToEventTypes(response.types);
         
-        // Map events
-        this.events = this.mapResponseToCalendarEvents(response.events);
-        this.totalEventsCount = this.events.length;
-        this.generateCalendar();
-        this.isLoading = false;
+        // Initial global events
+        let allCalendarEvents = this.mapResponseToCalendarEvents(response.events);
+        
+        // Add booked coaching sessions
+        if (response.bookedSessions) {
+          const bookedMapped = this.mapBookedSessionsToCalendarEvents(response.bookedSessions);
+          allCalendarEvents = [...allCalendarEvents, ...bookedMapped];
+        }
+
+        // Add available slots from matched coaches
+        if (response.coaches && response.coaches.length > 0) {
+            // This is complex as we need another forkJoin for slots of each coach
+            const slotRequests = response.coaches.map((c: any) => 
+                this.coachService.getAvailableSessionsForEntrepreneur(Number(c.id), Number(currentUser?.id)).pipe(catchError(() => of([])))
+            );
+            
+            forkJoin(slotRequests).subscribe((slotsArray: any) => {
+                const allSlots = (slotsArray as any[]).flat();
+                const slotsMapped = this.mapAvailableSlotsToCalendarEvents(allSlots);
+                this.events = [...allCalendarEvents, ...slotsMapped];
+                this.totalEventsCount = this.events.length;
+                this.generateCalendar();
+                this.isLoading = false;
+            });
+        } else {
+            this.events = allCalendarEvents;
+            this.totalEventsCount = this.events.length;
+            this.generateCalendar();
+            this.isLoading = false;
+        }
       },
       error: (error) => {
         console.error('Error loading data:', error);
@@ -143,6 +186,37 @@ export class CalendarComponent implements OnInit {
         this.generateCalendar();
       }
     });
+  }
+
+  mapBookedSessionsToCalendarEvents(sessions: any[]): CalendarEvent[] {
+    return sessions.map(s => ({
+      id: 'booked-' + s.id,
+      title: 'Session Coaching : ' + (s.titre || ''),
+      date: new Date(s.date),
+      time: new Date(s.date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+      type: 'Coaching (Confirmé)',
+      location: s.meetLink ? 'En ligne' : 'À définir',
+      mode: s.meetLink ? 'virtuel' : 'en-personne',
+      program: '',
+      description: s.description || '',
+      participants: [],
+      meetLink: s.meetLink
+    }));
+  }
+
+  mapAvailableSlotsToCalendarEvents(slots: any[]): CalendarEvent[] {
+    return slots.map(s => ({
+      id: 'slot-' + s.id,
+      title: 'Disponibilité Coach : ' + (s.titre || 'Créneau libre'),
+      date: new Date(s.dateSession),
+      time: s.heureDebut.substring(0, 5) + ' - ' + s.heureFin.substring(0, 5),
+      type: 'Créneau Disponible',
+      location: s.typeSession === 'EN_LIGNE' ? 'En ligne' : (s.adresse || 'En personne'),
+      mode: s.typeSession === 'EN_LIGNE' ? 'virtuel' : 'en-personne',
+      program: '',
+      description: 'Cliquez pour réserver ce créneau via l\'onglet "Mes Coachs"',
+      participants: []
+    }));
   }
 
   mapTypesToEventTypes(types: TypeFormation[]): EventTypeWithColor[] {
@@ -168,27 +242,7 @@ export class CalendarComponent implements OnInit {
   }
 
   loadEvents(): void {
-    this.isLoading = true;
-    const year = this.currentMonth.getFullYear();
-    const month = this.currentMonth.getMonth() + 1;
-
-    this.eventService.getEventsByMonth(year, month).subscribe({
-      next: (response) => {
-        this.events = this.mapResponseToCalendarEvents(response);
-        this.totalEventsCount = this.events.length;
-        this.generateCalendar();
-        this.isLoading = false;
-      },
-      error: (error) => {
-        console.error('Error loading events:', error);
-        this.snackBar.open('Erreur lors du chargement des événements', 'Fermer', {
-          duration: 3000,
-          panelClass: ['error-snackbar']
-        });
-        this.isLoading = false;
-        this.generateCalendar();
-      }
-    });
+    this.loadEventTypesAndEvents();
   }
 
   mapResponseToCalendarEvents(responses: EventResponse[]): CalendarEvent[] {
