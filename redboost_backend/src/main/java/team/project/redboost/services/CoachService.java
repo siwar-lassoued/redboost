@@ -796,23 +796,25 @@ public class CoachService {
 
     // --- Available sessions for entrepreneur (from a specific coach) ---
     public List<SessionCoachDTO> getAvailableSessionsForEntrepreneur(Long coachId, Long entrepreneurUserId) {
+        log.info(" Recherche sessions pour entrepreneurId={} et coachId={}", entrepreneurUserId, coachId);
+        
         User entrepreneur = userRepository.findById(entrepreneurUserId)
                 .orElseThrow(() -> new ValidationException("Entrepreneur non trouvé"));
         
         String email = entrepreneur.getEmail();
-        if (email == null) return Collections.emptyList();
+        if (email == null) {
+            log.warn(" Email non trouvé pour l'utilisateur {}", entrepreneurUserId);
+            return Collections.emptyList();
+        }
         email = email.trim().toLowerCase();
 
-        // 1. Collect all thematique IDs and check if there's a global matching
+        // 1. Collect all thematique IDs where this entrepreneur is matched with this coach
         Set<Long> matchedThematiqueIds = new HashSet<>();
-        boolean hasGlobalMatching = false;
         boolean isMatchedWithThisCoach = false;
         
-        // Find by email (case-insensitive)
-        final String finalEmail = email;
-        List<CandidatureRedstarter> candidatures = candidatureRepository.findAll().stream()
-                .filter(c -> c.getEmail() != null && c.getEmail().trim().equalsIgnoreCase(finalEmail))
-                .collect(Collectors.toList());
+        // Find candidatures by email (using optimized repository method)
+        List<CandidatureRedstarter> candidatures = candidatureRepository.findByEmail(email);
+        log.info(" Nombre de candidatures trouvées pour email {}: {}", email, candidatures.size());
         
         List<Matching> allMatchings = new ArrayList<>();
         for (CandidatureRedstarter cand : candidatures) {
@@ -821,27 +823,30 @@ public class CoachService {
         // Also check by direct User ID
         allMatchings.addAll(matchingRepository.findByEntrepreneurIdAndStatut(entrepreneurUserId, Matching.StatutMatching.VALIDE));
         
+        log.info(" Nombre total de matchings VALIDE trouvés: {}", allMatchings.size());
+
         for (Matching m : allMatchings) {
             if (m.getCoachId().equals(coachId)) {
                 isMatchedWithThisCoach = true;
                 if (m.getThematiqueId() != null) {
                     matchedThematiqueIds.add(m.getThematiqueId());
-                    log.info("[DIAG] Matching trouvé: coach={}, thématique={}", coachId, m.getThematiqueId());
-                } else {
-                    hasGlobalMatching = true;
-                    log.info("[DIAG] Matching GLOBAL trouvé pour coach={}", coachId);
+                    log.info("[DIAG] Thématique matchée trouvée: {}", m.getThematiqueId());
                 }
             }
         }
 
         if (!isMatchedWithThisCoach) {
-            log.warn("[DIAG] Aucun matching VALIDE trouvé pour entrepreneurUserId={} et coachId={}", entrepreneurUserId, coachId);
+            log.warn(" Aucun matching VALIDE trouvé entre entrepreneur {} et coach {}", entrepreneurUserId, coachId);
             return Collections.emptyList();
         }
 
+        if (matchedThematiqueIds.isEmpty()) {
+            log.warn(" L'entrepreneur est matché avec le coach mais sans thématique spécifique.");
+            }
+
         // 2. Fetch future sessions of this coach
         List<SessionCoach> coachSessions = sessionCoachRepository.findByDisponibiliteCoachId(coachId);
-        log.info("[DIAG] Sessions trouvées pour le coach {}: {}", coachId, coachSessions.size());
+        log.info(" Sessions totales futures pour le coach: {}", coachSessions.size());
         
         // Filter out already booked sessions
         List<Session> bookedSessions = sessionRepository.findByCoachId(coachId).stream()
@@ -854,17 +859,18 @@ public class CoachService {
                 .collect(Collectors.toSet());
 
         LocalDate today = LocalDate.now();
-        final boolean finalHasGlobalMatching = hasGlobalMatching;
 
         return coachSessions.stream()
                 .filter(s -> !s.getDateSession().isBefore(today))
                 .filter(s -> !bookedSessionCoachIds.contains(String.valueOf(s.getId())))
                 .filter(s -> {
-                    if (finalHasGlobalMatching) return true;
                     if (s.getDisponibilite() != null && s.getDisponibilite().getThematique() != null) {
                         Long stid = s.getDisponibilite().getThematique().getId();
                         boolean match = matchedThematiqueIds.contains(stid);
-                        if (!match) log.info("[DIAG] Session {} filtrée: thématique {} non matchée", s.getId(), stid);
+                        if (!match) {
+                            log.info(" Session {} (Thématique {}) filtrée car ne correspond pas aux thématiques de l'entrepreneur ({})", 
+                                    s.getId(), stid, matchedThematiqueIds);
+                        }
                         return match;
                     }
                     return false;
