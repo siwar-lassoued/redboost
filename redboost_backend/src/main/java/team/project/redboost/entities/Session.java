@@ -45,7 +45,8 @@ public class Session {
     private Integer dureeMinutes = 60;
 
     @Builder.Default
-    @Column(name = "statut")
+    @Enumerated(EnumType.STRING)
+    @Column(name = "statut", columnDefinition = "VARCHAR(50)")
     private Statut statut = Statut.PLANIFIE;
 
     @Column(name = "google_event_id")
@@ -55,6 +56,7 @@ public class Session {
     private String meetLink;
 
     @Builder.Default
+    @Enumerated(EnumType.STRING)
     @Column(name = "type_session")
     private TypeSession typeSession = TypeSession.EN_LIGNE;
 
@@ -65,7 +67,8 @@ public class Session {
     private String disponibiliteId;
 
     @Builder.Default
-    @Column(name = "booking_statut")
+    @Enumerated(EnumType.STRING)
+    @Column(name = "booking_statut", columnDefinition = "VARCHAR(50)")
     private BookingStatut bookingStatut = BookingStatut.CONFIRME;
 
     @ManyToOne(fetch = FetchType.LAZY)

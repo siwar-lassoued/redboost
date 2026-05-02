@@ -284,35 +284,71 @@
 </div>
 
 <!-- Booking Confirmation Modal -->
-<div class="booking-modal-overlay" *ngIf="selectedSlot">
-  <div class="booking-modal">
-    <div class="modal-header">
-      <h3>Confirmer la réservation</h3>
-      <p>{{ selectedGroupTitle }} — {{ selectedCoachForBooking?.nom }}</p>
+<div class="booking-overlay" *ngIf="selectedSlot" (click)="selectedSlot = null">
+  <div class="booking-modal-card" (click)="$event.stopPropagation()">
+    <div class="booking-modal-header">
+      <div class="header-icon-wrap">
+        <mat-icon>event_available</mat-icon>
+      </div>
+      <div class="header-text">
+        <h3>Confirmer la réservation</h3>
+        <p>{{ selectedGroupTitle }}<span *ngIf="selectedCoachForBooking"> — {{ selectedCoachForBooking.nom }}</span></p>
+      </div>
+      <button class="close-modal-btn" (click)="selectedSlot = null">
+        <mat-icon>close</mat-icon>
+      </button>
     </div>
-    <div class="modal-body">
-      <div class="slot-summary">
-        <div class="summary-item">
-          <mat-icon>event</mat-icon>
-          <span>{{ selectedSlot.dateSession | date:'dd MMMM yyyy' }}</span>
+    <div class="booking-modal-body">
+      <div class="session-info-grid">
+        <div class="info-chip">
+          <div class="chip-icon date-icon">
+            <mat-icon>calendar_today</mat-icon>
+          </div>
+          <div class="chip-content">
+            <span class="chip-label">Date</span>
+            <span class="chip-value">{{ selectedSlot.dateSession | date:'dd MMMM yyyy' }}</span>
+          </div>
         </div>
-        <div class="summary-item">
-          <mat-icon>schedule</mat-icon>
-          <span>{{ formatSlotTime(selectedSlot.heureDebut) }} à {{ formatSlotTime(selectedSlot.heureFin) }}</span>
+        <div class="info-chip">
+          <div class="chip-icon time-icon">
+            <mat-icon>schedule</mat-icon>
+          </div>
+          <div class="chip-content">
+            <span class="chip-label">Horaire</span>
+            <span class="chip-value">{{ formatSlotTime(selectedSlot.heureDebut) }} → {{ formatSlotTime(selectedSlot.heureFin) }}</span>
+          </div>
+        </div>
+        <div class="info-chip" *ngIf="selectedSlot.typeSession">
+          <div class="chip-icon mode-icon">
+            <mat-icon>{{ selectedSlot.typeSession === 'EN_LIGNE' ? 'videocam' : 'location_on' }}</mat-icon>
+          </div>
+          <div class="chip-content">
+            <span class="chip-label">Mode</span>
+            <span class="chip-value">{{ selectedSlot.typeSession === 'EN_LIGNE' ? 'En ligne' : 'Présentiel' }}</span>
+          </div>
         </div>
       </div>
-
-      <div class="notes-field">
-        <label>Notes pour le coach (optionnel)</label>
-        <textarea [(ngModel)]="bookingNotes" placeholder="Précisez vos besoins..."></textarea>
+      <div class="notes-section">
+        <label class="notes-label">
+          <mat-icon>edit_note</mat-icon>
+          Notes pour le coach <span class="optional-tag">optionnel</span>
+        </label>
+        <textarea
+          class="notes-textarea"
+          [(ngModel)]="bookingNotes"
+          placeholder="Précisez vos besoins, objectifs ou questions pour cette session..."
+          rows="3">
+        </textarea>
       </div>
-
-      <div class="modal-actions">
-        <button class="cancel-btn" (click)="selectedSlot = null">Annuler</button>
-        <button class="confirm-btn" (click)="confirmBooking()" [disabled]="isBooking">
-          <mat-icon *ngIf="!isBooking">check</mat-icon>
+      <div class="booking-modal-actions">
+        <button class="btn-cancel-modal" (click)="selectedSlot = null">
+          <mat-icon>close</mat-icon>
+          Annuler
+        </button>
+        <button class="btn-confirm-modal" (click)="confirmBooking()" [disabled]="isBooking">
           <span *ngIf="isBooking" class="loading-spinner"></span>
-          {{ isBooking ? 'Réservation...' : 'Confirmer' }}
+          <mat-icon *ngIf="!isBooking">check_circle</mat-icon>
+          {{ isBooking ? 'Réservation en cours...' : 'Confirmer la réservation' }}
         </button>
       </div>
     </div>
