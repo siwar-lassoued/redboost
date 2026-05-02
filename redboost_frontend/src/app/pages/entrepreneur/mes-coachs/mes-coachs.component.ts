@@ -126,37 +126,58 @@ import { CoachService, SessionCoachDTO, SessionGroupDTO } from '../../dashboard/
                           
                           <div class="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
                             @for (slot of group.slots; track slot.id) {
-                              <button
-                                class="flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all"
-                                [class]="group.reservedByMe
-                                  ? 'border-gray-100 bg-gray-50 cursor-not-allowed opacity-60'
-                                  : (selectedSlotId[coach.id] === slot.id
-                                    ? 'border-[#3B82A6] bg-[#EFF6FF] shadow-md'
-                                    : 'border-gray-100 hover:border-[#3B82A6]/40 hover:bg-gray-50')"
-                                [disabled]="group.reservedByMe"
-                                (click)="!group.reservedByMe && selectSlot(coach.id, slot, group.sessionTitle)">
+                                <button
+                                  class="flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all w-full relative"
+                                  [class]="
+                                    slot.isBookedByMe ? 'border-green-500 bg-green-50 cursor-not-allowed' :
+                                    (slot.isBooked && !slot.isBookedByMe) ? 'border-gray-200 bg-gray-100 cursor-not-allowed opacity-50' :
+                                    (!slot.isBooked && group.reservedByMe) ? 'border-gray-100 bg-gray-50 cursor-not-allowed opacity-60' :
+                                    (selectedSlotId[coach.id] === slot.id ? 'border-[#3B82A6] bg-[#EFF6FF] shadow-md' : 'border-gray-100 hover:border-[#3B82A6]/40 hover:bg-gray-50')
+                                  "
+                                  [disabled]="slot.isBooked || group.reservedByMe"
+                                  (click)="!slot.isBooked && !group.reservedByMe && selectSlot(coach.id, slot, group.sessionTitle)">
 
-                                
-                                <div class="w-10 h-10 rounded-xl flex flex-col items-center justify-center flex-shrink-0"
-                                  [class]="selectedSlotId[coach.id] === slot.id && !group.reservedByMe ? 'bg-[#3B82A6] text-white' : 'bg-gray-100 text-gray-600'">
-                                  <span class="text-[8px] font-black uppercase leading-none">{{ formatSlotMonth(slot.dateSession) }}</span>
-                                  <span class="text-sm font-black leading-tight">{{ formatSlotDay(slot.dateSession) }}</span>
-                                </div>
-
-                                <div class="flex-1 min-w-0">
-                                  <p class="text-xs font-black text-[#1A1A2E]">{{ formatSlotTime(slot.heureDebut) }} – {{ formatSlotTime(slot.heureFin) }}</p>
-                                  <p class="text-[10px] text-gray-400 font-medium flex items-center gap-1 mt-0.5">
-                                    <i class="pi" [class]="slot.typeSession === 'EN_LIGNE' ? 'pi-video' : 'pi-users'"></i>
-                                    {{ slot.typeSession === 'EN_LIGNE' ? 'En ligne' : 'Présentiel' }}
-                                  </p>
-                                </div>
-
-                                @if (selectedSlotId[coach.id] === slot.id && !group.reservedByMe) {
-                                  <div class="w-5 h-5 rounded-full bg-[#3B82A6] text-white flex items-center justify-center flex-shrink-0">
-                                    <i class="pi pi-check text-[9px]"></i>
+                                  <!-- Date badge -->
+                                  <div class="w-10 h-10 rounded-xl flex flex-col items-center justify-center flex-shrink-0"
+                                    [class]="
+                                      slot.isBookedByMe ? 'bg-green-500 text-white' :
+                                      (slot.isBooked && !slot.isBookedByMe) ? 'bg-gray-300 text-gray-500' :
+                                      (selectedSlotId[coach.id] === slot.id && !group.reservedByMe ? 'bg-[#3B82A6] text-white' : 'bg-gray-100 text-gray-600')
+                                    ">
+                                    <span class="text-[8px] font-black uppercase leading-none">{{ formatSlotMonth(slot.dateSession) }}</span>
+                                    <span class="text-sm font-black leading-tight">{{ formatSlotDay(slot.dateSession) }}</span>
                                   </div>
-                                }
-                              </button>
+
+                                  <!-- Details -->
+                                  <div class="flex-1 min-w-0">
+                                    <p class="text-xs font-black" [class]="slot.isBookedByMe ? 'text-green-700' : 'text-[#1A1A2E]'">
+                                      {{ formatSlotTime(slot.heureDebut) }} – {{ formatSlotTime(slot.heureFin) }}
+                                    </p>
+                                    <p class="text-[10px] text-gray-400 font-medium flex items-center gap-1 mt-0.5">
+                                      <i class="pi" [class]="slot.typeSession === 'EN_LIGNE' ? 'pi-video' : 'pi-users'"></i>
+                                      {{ slot.typeSession === 'EN_LIGNE' ? 'En ligne' : 'Présentiel' }}
+                                    </p>
+                                  </div>
+
+                                  <!-- Status icons -->
+                                  @if (slot.isBookedByMe) {
+                                    <div class="absolute right-2 top-2 bg-green-500 text-white text-[9px] px-2 py-0.5 rounded-full font-bold">
+                                      Votre résa
+                                    </div>
+                                  } @else if (slot.isBooked) {
+                                    <div class="absolute right-2 top-2 bg-gray-400 text-white text-[9px] px-2 py-0.5 rounded-full font-bold">
+                                      Réservé
+                                    </div>
+                                  } @else if (group.reservedByMe) {
+                                    <div class="absolute right-2 top-2 bg-gray-300 text-white text-[9px] px-2 py-0.5 rounded-full font-bold">
+                                      Indisponible
+                                    </div>
+                                  } @else if (selectedSlotId[coach.id] === slot.id && !group.reservedByMe) {
+                                    <div class="w-5 h-5 rounded-full bg-[#3B82A6] text-white flex items-center justify-center flex-shrink-0">
+                                      <i class="pi pi-check text-[9px]"></i>
+                                    </div>
+                                  }
+                                </button>
                             }
                           </div>
 

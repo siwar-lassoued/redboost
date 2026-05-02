@@ -866,11 +866,31 @@ public class CoachService {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
+        Set<String> myBookedSessionCoachIds = bookedSessions.stream()
+                .filter(s -> s.getEntrepreneur() != null && s.getEntrepreneur().getId().equals(entrepreneurUserId))
+                .map(Session::getDisponibiliteId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        // Also collect all sessionGroupIds already booked by this entrepreneur
+        Set<String> myBookedGroupIds = new HashSet<>();
+        for (Session booking : bookedSessions) {
+            if (booking.getEntrepreneur() != null && booking.getEntrepreneur().getId().equals(entrepreneurUserId) && booking.getDisponibiliteId() != null) {
+                try {
+                    Long slotId = Long.parseLong(booking.getDisponibiliteId());
+                    coachSessions.stream()
+                            .filter(s -> s.getId().equals(slotId))
+                            .map(SessionCoach::getSessionGroupId)
+                            .filter(Objects::nonNull)
+                            .forEach(myBookedGroupIds::add);
+                } catch (NumberFormatException ignored) {}
+            }
+        }
+
         LocalDate today = LocalDate.now();
 
         return coachSessions.stream()
                 .filter(s -> !s.getDateSession().isBefore(today))
-                .filter(s -> !bookedSessionCoachIds.contains(String.valueOf(s.getId())))
                 .filter(s -> {
                     if (finalHasGlobal) return true;
                     if (s.getDisponibilite() != null && s.getDisponibilite().getThematique() != null) {
@@ -884,7 +904,14 @@ public class CoachService {
                     }
                     return false;
                 })
-                .map(this::mapToDTO)
+                .map(s -> {
+                    SessionCoachDTO dto = mapToDTO(s);
+                    String sid = String.valueOf(s.getId());
+                    dto.setIsBooked(bookedSessionCoachIds.contains(sid));
+                    dto.setIsBookedByMe(myBookedSessionCoachIds.contains(sid));
+                    dto.setIsGroupReservedByMe(myBookedGroupIds.contains(s.getSessionGroupId()));
+                    return dto;
+                })
                 .collect(Collectors.toList());
     }
 

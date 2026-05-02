@@ -21,6 +21,9 @@ export interface SessionCoachDTO {
   heureFin: string;
   typeSession?: string; 
   sessionGroupId?: string; 
+  isBooked?: boolean;
+  isBookedByMe?: boolean;
+  isGroupReservedByMe?: boolean;
 }
 
 export interface SessionGroupDTO {

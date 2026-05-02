@@ -320,6 +320,14 @@
     width: 100%;
     height: 20px;
 
+    &.disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      background: #e5e7eb !important;
+      color: #9ca3af !important;
+      border: 1px dashed #9ca3af;
+    }
+
     .event-title {
       flex: 1;
       overflow: hidden;

@@ -14,6 +14,9 @@ public class SessionCoachDTO {
     private LocalTime heureFin;
     private String typeSession; // EN_LIGNE or PRESENTIEL
     private String sessionGroupId; // Groups related créneaux under the same logical session
+    private Boolean isBooked;
+    private Boolean isBookedByMe;
+    private Boolean isGroupReservedByMe;
 }
 
 

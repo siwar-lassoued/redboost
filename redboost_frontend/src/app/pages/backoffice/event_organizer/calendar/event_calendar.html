@@ -25,7 +25,7 @@
     <div class="pulse-dot"></div>
     <span>{{ totalEventsCount }} événement{{ totalEventsCount !== 1 ? 's' : '' }} programmé{{ totalEventsCount !== 1 ? 's' : '' }}</span>
 </button>
-          <button class="add-event-btn" mat-raised-button (click)="openAddEventDialog()">
+          <button class="add-event-btn" *ngIf="!isEntrepreneur" mat-raised-button (click)="openAddEventDialog()">
             <mat-icon>add</mat-icon>
             Ajouter un événement
           </button>
@@ -75,6 +75,7 @@
                     class="event-chip" 
                     *ngFor="let event of day.events.slice(0, 2)"
                     [style.background]="getEventGradient(event.type)"
+                    [class.disabled]="event.isDisabled"
                     [matTooltip]="event.title"
                     matTooltipPosition="above">
                     <span class="event-title">{{ event.title }}</span>
@@ -118,7 +119,7 @@
                     </div>
                   </div>
 
-                  <div class="event-actions">
+                  <div class="event-actions" *ngIf="!isEntrepreneur">
                     <button mat-icon-button (click)="openEditEventDialog(event)">
                       <mat-icon>edit</mat-icon>
                     </button>

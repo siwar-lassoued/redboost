@@ -31,6 +31,7 @@ interface CalendarEvent {
   description: string;
   participants: string[];
   meetLink?: string;
+  isDisabled?: boolean;
 }
 
 interface EventTypeWithColor {
@@ -64,6 +65,7 @@ export class CalendarComponent implements OnInit {
   events: CalendarEvent[] = [];
   isLoading = false;
   totalEventsCount = 0;
+  isEntrepreneur = false;
   
   // Selected date and its event
   selectedDate: Date | null = null;
@@ -131,6 +133,7 @@ export class CalendarComponent implements OnInit {
     };
 
     if (currentUser && currentUser.role === 'ENTREPRENEUR') {
+      this.isEntrepreneur = true;
       dataSources.bookedSessions = this.sessionService.getByEntrepreneur(currentUser.id).pipe(catchError(() => of([])));
       dataSources.coaches = this.matchingService.getEntrepreneurCoaches(currentUser.id).pipe(catchError(() => of([])));
     }
@@ -190,22 +193,24 @@ export class CalendarComponent implements OnInit {
       program: '',
       description: s.description || '',
       participants: [],
-      meetLink: s.meetLink
+      meetLink: s.meetLink,
+      isDisabled: true // For entrepreneurs, booked sessions are disabled in the calendar view
     }));
   }
 
   mapAvailableSlotsToCalendarEvents(slots: any[]): CalendarEvent[] {
     return slots.map(s => ({
       id: 'slot-' + s.id,
-      title: 'Disponibilité Coach : ' + (s.titre || 'Créneau libre'),
+      title: 'Dispo: ' + (s.titre || 'Créneau libre'),
       date: new Date(s.dateSession),
       time: s.heureDebut.substring(0, 5) + ' - ' + s.heureFin.substring(0, 5),
-      type: 'Créneau Disponible',
+      type: s.titre || 'Créneau Disponible', // Distinct color per session title
       location: s.typeSession === 'EN_LIGNE' ? 'En ligne' : (s.adresse || 'En personne'),
       mode: s.typeSession === 'EN_LIGNE' ? 'virtuel' : 'en-personne',
       program: '',
       description: 'Cliquez pour réserver ce créneau via l\'onglet "Mes Coachs"',
-      participants: []
+      participants: [],
+      isDisabled: s.isBooked || s.isGroupReservedByMe || false // Disabled if it's booked by anyone OR part of a group that is already reserved
     }));
   }
 
@@ -473,7 +478,15 @@ openEditEventDialog(event: CalendarEvent): void {
 
   getEventTypeColor(typeName: string): string {
     const eventType = this.eventTypes.find(t => t.name === typeName);
-    return eventType ? eventType.color : '#F43F5E';
+    if (eventType) return eventType.color;
+    
+    // Generate a consistent color from palette based on string hash
+    let hash = 0;
+    for (let i = 0; i < typeName.length; i++) {
+      hash = typeName.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const colorIndex = Math.abs(hash) % this.colorPalette.length;
+    return this.colorPalette[colorIndex];
   }
 
   getUpcomingEventsCount(): number {
@@ -545,8 +558,13 @@ private darkenColor(color: string, percent: number): string {
 
 getUpcomingEvents(): CalendarEvent[] {
   const now = new Date();
-  return this.events
-    .filter(event => event.date >= now)
+  let upcoming = this.events.filter(event => event.date >= now);
+  
+  if (this.isEntrepreneur) {
+    upcoming = upcoming.filter(event => event.id.startsWith('booked-'));
+  }
+
+  return upcoming
     .sort((a, b) => a.date.getTime() - b.date.getTime())
     .slice(0, 5);
 }
