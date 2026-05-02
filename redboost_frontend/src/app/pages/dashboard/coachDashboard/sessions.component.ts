@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CoachService, SessionCoachDTO } from './services/coach.service';
 import { AuthService } from '../../frontoffice/service/auth.service';
+import { firstValueFrom } from 'rxjs';
+
 export interface SessionGroup {
   sessionGroupId: string;
   titre: string;
@@ -73,7 +75,7 @@ export interface SessionGroup {
                     <td>
                       <div class="date-cell-custom">
                         <div *ngFor="let s of g.sessions | slice:0:2" class="mini-date-badge">
-                           {{ s.dateSession | date:'dd/MM' }} @ {{ s.heureDebut.substring(0,5) }}
+                           {{ s.dateSession | date:'dd/MM' }} &#64; {{ s.heureDebut.substring(0,5) }}
                         </div>
                         <span *ngIf="g.sessions.length > 2" class="more-dates text-xs text-gray-400">
                           + {{ g.sessions.length - 2 }} autres
@@ -172,41 +174,42 @@ export interface SessionGroup {
         </div>
       </div>
 
-      <!-- Loading -->
-      <div *ngIf="loading" class="loading-overlay">
-          <div class="spinner"></div>
-      </div>
-    </div>
-
       <!-- Bookings Modal -->
-      <div *ngIf="showBookingsModal" class="modal-backdrop" (click)="closeBookingsModal()">
-        <div class="modal-content" (click)="$event.stopPropagation()">
+      <div *ngIf="showBookingsModal" class="modal-overlay" (click)="closeBookingsModal()">
+        <div class="modal-box max-w-lg" (click)="$event.stopPropagation()">
           <div class="modal-header">
-            <h2><i class="pi pi-users text-[#ea5073]"></i> Entrepreneurs inscrits</h2>
-            <button class="close-btn" (click)="closeBookingsModal()"><i class="pi pi-times"></i></button>
+            <h3 class="modal-name"><i class="pi pi-users" style="color: #ea5073"></i> Entrepreneurs inscrits</h3>
+            <button (click)="closeBookingsModal()" class="modal-close"><i class="pi pi-times"></i></button>
           </div>
           <div class="modal-body">
-            <div *ngIf="loadingBookings" class="loading-state"><div class="spinner"></div></div>
-            <div *ngIf="!loadingBookings && selectedSessionBookings.length === 0" class="empty-msg">Aucun entrepreneur inscrit pour le moment.</div>
-            <div *ngFor="let b of selectedSessionBookings" class="booking-item">
-              <div class="booking-info">
-                <strong>{{b.entrepreneurName}}</strong>
-                <span class="booking-date">Réservé le : {{b.dateBooking | date:'dd/MM/yyyy HH:mm'}}</span>
-              </div>
-              <span class="status-pill" [class]="'pill-' + b.statut?.toLowerCase()">{{b.statut}}</span>
+            <div *ngIf="loadingBookings" class="loading-state" style="display: flex; justify-content: center; padding: 2rem;">
+              <div class="spinner"></div>
             </div>
+            <div *ngIf="!loadingBookings && selectedSessionBookings.length === 0" class="empty-msg" style="text-align: center; color: #6B7280; padding: 2rem;">
+              Aucun entrepreneur inscrit pour le moment.
+            </div>
+            <div *ngFor="let b of selectedSessionBookings" class="booking-item" style="padding: 1rem; border-bottom: 1px solid #F1F5F9; display: flex; justify-content: space-between; align-items: center;">
+              <div class="booking-info" style="display: flex; flex-direction: column;">
+                <strong style="color: #1E293B;">{{b.entrepreneurName}}</strong>
+                <span class="booking-date" style="font-size: 11px; color: #94A3B8;">Réservé le : {{b.dateBooking | date:'dd/MM/yyyy HH:mm'}}</span>
+              </div>
+              <span class="status-pill" [class]="'pill-' + b.statut?.toLowerCase()" style="font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 12px; background: #F3F4F6; color: #64748B;">{{b.statut}}</span>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button (click)="closeBookingsModal()" class="btn-close-modal">Fermer</button>
           </div>
         </div>
       </div>
 
-      <!-- Loading -->
-      <div *ngIf="loading" class="loading-overlay">
+      <!-- Main Loading Overlay -->
+      <div *ngIf="loading" class="modal-overlay" style="background: rgba(255,255,255,0.7)">
           <div class="spinner"></div>
       </div>
     </div>
   `,
   styles: [`
-    .cand-page { padding: 24px; background: #F5F6FA; min-height: 100vh; }
+    .cand-page { padding: 24px; background: #F5F6FA; min-height: 100vh; position: relative; }
     .cand-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 24px; }
     .cand-title { font-size: 28px; font-weight: 800; color: #1A1A2E; margin: 0; }
     .cand-subtitle { color: #8a8a8a; font-size: 14px; margin-top: 4px; }
@@ -327,20 +330,6 @@ export class SessionsComponent implements OnInit {
     this.filterSessions();
   }
 
-  filterSessions() {
-    let result = [...this.sessions];
-    if (this.activeFilter === 'upcoming') {
-      result = result.filter(s => this.isUpcoming(s));
-    } else if (this.activeFilter === 'past') {
-      result = result.filter(s => !this.isUpcoming(s));
-    }
-    if (this.searchTerm.trim()) {
-      const term = this.searchTerm.toLowerCase();
-      result = result.filter(s => s.titre.toLowerCase().includes(term));
-    }
-    this.filteredSessions = result;
-  }
-
   isUpcoming(session: SessionCoachDTO): boolean {
     return new Date(session.dateSession) >= new Date();
   }
@@ -349,7 +338,6 @@ export class SessionsComponent implements OnInit {
     const groupsMap: { [key: string]: SessionGroup } = {};
     
     sessions.forEach(s => {
-      // If no groupId, each one is its own group
       const gid = s.sessionGroupId || `single-${s.id}`;
       if (!groupsMap[gid]) {
         groupsMap[gid] = {
@@ -370,7 +358,6 @@ export class SessionsComponent implements OnInit {
     });
 
     return Object.values(groupsMap).map(g => {
-      // Sort sessions within group by date
       g.sessions.sort((a, b) => new Date(a.dateSession).getTime() - new Date(b.dateSession).getTime());
       return g;
     });
@@ -379,16 +366,13 @@ export class SessionsComponent implements OnInit {
   filterSessions() {
     let rawResult = [...this.sessions];
     
-    // Search
     if (this.searchTerm.trim()) {
       const term = this.searchTerm.toLowerCase();
       rawResult = rawResult.filter(s => s.titre.toLowerCase().includes(term));
     }
 
-    // Initial group
     let grouped = this.groupSessions(rawResult);
 
-    // Filter by group-level status
     if (this.activeFilter === 'upcoming') {
       grouped = grouped.filter(g => g.isUpcoming);
     } else if (this.activeFilter === 'past') {
@@ -396,7 +380,6 @@ export class SessionsComponent implements OnInit {
     }
 
     this.filteredGroups = grouped.sort((a,b) => {
-        // Sort by the first session date of the group (descending)
         const dateA = new Date(a.sessions[0].dateSession).getTime();
         const dateB = new Date(b.sessions[0].dateSession).getTime();
         return dateB - dateA;
