@@ -256,19 +256,30 @@ public class CandidatureRedstarterService {
                     String skills = "";
                     String expertise = "";
                     
+                    String firstNameExtracted = null;
+                    String lastNameExtracted = null;
+
                     Map<String, Object> answers = getDynamicAnswersMap(candidature);
                     if (answers != null) {
                         for (Map.Entry<String, Object> entry : answers.entrySet()) {
                             String key = entry.getKey().toLowerCase();
-                            String val = entry.getValue() != null ? entry.getValue().toString() : "";
+                            String val = entry.getValue() != null ? entry.getValue().toString().trim() : "";
+                            if (val.isEmpty()) continue;
                             
-                            if (nomPrenom == null && (key.contains("nom et prénom") || key.contains("nom complet") || key.contains("name"))) nomPrenom = val;
-                            if (phone == null && (key.contains("téléphone") || key.contains("phone") || key.contains("numéro") || key.contains("whatsapp"))) phone = val;
-                            if (startup == null && (key.contains("startup") || key.contains("entreprise") || key.contains("company") || key.contains("projet"))) startup = val;
-                            if (bio == null && (key.contains("bio") || key.contains("description"))) bio = val;
-                            if (region == null && (key.contains("région") || key.contains("region") || key.contains("ville") || key.contains("gouvernorat"))) region = val;
-                            if (linkedin == null && (key.contains("linkedin") || key.contains("réseau") || key.contains("social"))) linkedin = val;
-                            if (secteur == null && (key.contains("secteur") || key.contains("industry") || key.contains("domaine"))) secteur = val;
+                            // Name extraction
+                            if (key.contains("prénom") || key.contains("firstname") || (key.contains("first") && key.contains("name"))) {
+                                firstNameExtracted = val;
+                            } else if (key.contains("nom") && !key.contains("prénom") && !key.contains("entreprise") && !key.contains("startup")) {
+                                lastNameExtracted = val;
+                            }
+
+                            if ((nomPrenom == null || nomPrenom.isEmpty()) && (key.contains("nom et prénom") || key.contains("nom complet") || key.contains("full name"))) nomPrenom = val;
+                            if ((phone == null || phone.isEmpty()) && (key.contains("téléphone") || key.contains("phone") || key.contains("numéro") || key.contains("whatsapp"))) phone = val;
+                            if ((startup == null || startup.isEmpty()) && (key.contains("startup") || key.contains("entreprise") || key.contains("company") || key.contains("projet"))) startup = val;
+                            if ((bio == null || bio.isEmpty()) && (key.contains("bio") || key.contains("description"))) bio = val;
+                            if ((region == null || region.isEmpty()) && (key.contains("région") || key.contains("region") || key.contains("ville") || key.contains("gouvernorat"))) region = val;
+                            if ((linkedin == null || linkedin.isEmpty()) && (key.contains("linkedin") || key.contains("réseau") || key.contains("social"))) linkedin = val;
+                            if ((secteur == null || secteur.isEmpty()) && (key.contains("secteur") || key.contains("industry") || key.contains("domaine"))) secteur = val;
                             
                             // For coaches
                             if (key.contains("compétence") || key.contains("skill")) skills = val;
@@ -276,22 +287,32 @@ public class CandidatureRedstarterService {
                         }
                     }
                     
-                    if (nomPrenom != null && !nomPrenom.trim().isEmpty()) {
-                        String cleanNom = nomPrenom.trim();
-                        int firstSpace = cleanNom.indexOf(" ");
-                        if (firstSpace > 0) {
-                            String firstN = cleanNom.substring(0, firstSpace).trim();
-                            String lastN = cleanNom.substring(firstSpace + 1).trim();
-                            user.setFirstName(firstN.length() < 2 ? firstN + "_" : firstN);
-                            user.setLastName(lastN.length() < 2 ? lastN + "_" : lastN);
-                        } else {
-                            user.setFirstName(cleanNom.length() < 2 ? cleanNom + "_" : cleanNom);
-                            user.setLastName("Redboost"); // fallback for single names
+                    // Logic to prioritize extracted names or split nomPrenom
+                    String finalFirst = firstNameExtracted;
+                    String finalLast = lastNameExtracted;
+
+                    if (finalFirst == null || finalLast == null) {
+                        String nameToSplit = (nomPrenom != null && !nomPrenom.trim().isEmpty()) ? nomPrenom : "";
+                        if (!nameToSplit.isEmpty()) {
+                            String[] parts = nameToSplit.trim().split("\\s+", 2);
+                            if (parts.length > 1) {
+                                if (finalFirst == null) finalFirst = parts[0];
+                                if (finalLast == null) finalLast = parts[1];
+                            } else {
+                                if (finalFirst == null) finalFirst = parts[0];
+                            }
                         }
-                    } else {
-                        user.setFirstName("Candidat");
-                        user.setLastName("Redboost");
                     }
+
+                    // Final Fallbacks to avoid "Redboost" if possible
+                    if (finalFirst == null || finalFirst.trim().isEmpty()) finalFirst = "Candidat";
+                    if (finalLast == null || finalLast.trim().isEmpty()) {
+                        finalLast = (startup != null && startup.length() >= 2) ? startup : "Utilisateur";
+                    }
+
+                    // Enforce @Size(min=2)
+                    user.setFirstName(finalFirst.length() < 2 ? finalFirst + "_" : finalFirst);
+                    user.setLastName(finalLast.length() < 2 ? finalLast + "_" : finalLast);
                     
                     user.setPhoneNumber(phone != null && !phone.trim().isEmpty() ? phone : "00000000");
                     user.setBio(bio);
