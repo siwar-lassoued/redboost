@@ -280,7 +280,7 @@ const STATUT_BADGE: Record<string, { label: string; bg: string; color: string }>
                                  : (selectedSlotId() === slot.id
                                    ? 'border-sky-500 bg-sky-50 shadow-md shadow-sky-100 cursor-pointer'
                                    : 'border-gray-100 bg-white hover:border-sky-300 cursor-pointer')"
-                               (click)="!group.reservedByMe && selectedSlotId.set(slot.id)">
+                               (click)="!group.reservedByMe && selectedSlotId.set(slot.id!)">
                             <div class="flex items-center gap-3">
                               <div class="w-10 h-10 rounded-xl flex flex-col items-center justify-center"
                                 [class]="selectedSlotId() === slot.id && !group.reservedByMe ? 'bg-sky-500 text-white' : 'bg-sky-50 text-sky-600'">

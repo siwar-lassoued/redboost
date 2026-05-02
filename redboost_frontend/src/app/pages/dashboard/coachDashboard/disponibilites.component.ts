@@ -176,11 +176,11 @@ interface DateGroupView {
                     <input type="text" class="premium-input" [(ngModel)]="newDispoTitle"
                       placeholder="Ex: Session 1, Workshop Pitch Deck, Module Financement..."
                       (ngModelChange)="onSessionTitleChange()">
-                    <div *ngIf="newDispoTitle?.trim()" class="thematique-dates-banner" style="margin-top:6px; background:#F0FFF4; border-color:#C6F6D5; color:#276749;">
+                    <div *ngIf="newDispoTitle.trim()" class="thematique-dates-banner" style="margin-top:6px; background:#F0FFF4; border-color:#C6F6D5; color:#276749;">
                       <i class="pi pi-check-circle"></i>
                       <span>Session <strong>"{{ newDispoTitle }}"</strong> — Ajoutez maintenant les créneaux ci-dessous</span>
                     </div>
-                    <div *ngIf="selectedThematiqueId && !newDispoTitle?.trim()" class="error-banner" style="margin-top:6px;">
+                    <div *ngIf="selectedThematiqueId && !newDispoTitle.trim()" class="error-banner" style="margin-top:6px;">
                       <i class="pi pi-info-circle"></i>
                       <span>Entrez un titre de session pour continuer</span>
                     </div>
@@ -191,7 +191,7 @@ interface DateGroupView {
                 </div>
 
                 <!-- STEP 3: Dates & Créneaux (only shown once session title is filled) -->
-                <div *ngIf="newDispoTitle?.trim()">
+                <div *ngIf="newDispoTitle.trim()">
                   <div class="form-group">
                     <label>Étape 3 — Dates & Créneaux <span style="color:#E53E3E">*</span></label>
                     <p class="field-help">Chaque date possède ses propres créneaux horaires (tous liés à la session « {{ newDispoTitle }} »)</p>
@@ -251,7 +251,7 @@ interface DateGroupView {
               <div class="modal-actions">
                     <button class="btn-outline" (click)="showDispoModal = false">Annuler</button>
                     <button class="btn-primary"
-                      [disabled]="!selectedThematiqueId || !newDispoTitle?.trim()"
+                      [disabled]="!selectedThematiqueId || !newDispoTitle.trim()"
                       (click)="addDisponibilite()">Ajouter la disponibilité</button>
               </div>
           </div>
@@ -746,7 +746,7 @@ private mapCalendarEvents(events: CoachCalendarEventDTO[]): any[] {
   }
 
   addDisponibilite() {
-    if (!this.selectedThematiqueId || !this.newDispoTitle?.trim()) return;
+    if (!this.selectedThematiqueId || !this.newDispoTitle.trim()) return;
     const thematique = this.thematiques.find(t => t.id === this.selectedThematiqueId);
     if (thematique) {
       const thStart = new Date(thematique.dateDebut);
