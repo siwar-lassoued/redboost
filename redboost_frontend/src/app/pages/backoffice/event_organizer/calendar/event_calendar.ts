@@ -116,7 +116,9 @@ export class CalendarComponent implements OnInit {
     'seminar': 'school',
     'meeting': 'group',
     'créneau disponible': 'event_available',
+    'créneau': 'event_available',
     'coaching (confirmé)': 'groups',
+    'dispo': 'event_available',
   };
 
   constructor(
@@ -197,8 +199,9 @@ export class CalendarComponent implements OnInit {
               this.coachThematiquesMap[c.id] = groupedByThem;
             });
 
-            const allSlots = (slotsArray as any[]).flat();
-            const slotsMapped = this.mapAvailableSlotsToCalendarEvents(allSlots);
+            // Instead of separate slotRequests, we use slots from the groups to ensure consistency
+            const allSlotsFromGroups = groupsArray.flat().map(g => g.slots).flat();
+            const slotsMapped = this.mapAvailableSlotsToCalendarEvents(allSlotsFromGroups);
             
             this.events = [...allCalendarEvents, ...slotsMapped];
             this.totalEventsCount = this.events.length;
@@ -279,19 +282,24 @@ export class CalendarComponent implements OnInit {
   }
 
   mapAvailableSlotsToCalendarEvents(slots: any[]): CalendarEvent[] {
-    return slots.map(s => ({
-      id: 'slot-' + s.id,
-      title: 'Dispo: ' + (s.titre || 'Créneau'),
-      date: new Date(s.dateSession),
-      time: s.heureDebut.substring(0, 5) + ' - ' + s.heureFin.substring(0, 5),
-      type: s.titre || 'Créneau Disponible',
-      location: s.typeSession === 'EN_LIGNE' ? 'En ligne' : (s.adresse || 'En personne'),
-      mode: s.typeSession === 'EN_LIGNE' ? 'virtuel' : 'en-personne',
-      program: '',
-      description: 'Réservez via le panneau de droite',
-      participants: [],
-      isDisabled: s.isBooked || s.isGroupReservedByMe || false
-    }));
+    return slots.map(s => {
+      // Create date with time to avoid timezone shifts to previous day
+      const dateStr = s.dateSession.includes('T') ? s.dateSession : `${s.dateSession}T${s.heureDebut || '00:00:00'}`;
+      
+      return {
+        id: 'slot-' + s.id,
+        title: 'Dispo: ' + (s.titre || 'Créneau'),
+        date: new Date(dateStr),
+        time: s.heureDebut.substring(0, 5) + ' - ' + s.heureFin.substring(0, 5),
+        type: s.titre || 'Créneau Disponible',
+        location: s.typeSession === 'EN_LIGNE' ? 'En ligne' : (s.adresse || 'En personne'),
+        mode: s.typeSession === 'EN_LIGNE' ? 'virtuel' : 'en-personne',
+        program: '',
+        description: 'Réservez via le panneau de droite',
+        participants: [],
+        isDisabled: s.isBooked || s.isGroupReservedByMe || false
+      };
+    });
   }
 
   formatSlotDay(dateStr: string): string {
@@ -608,18 +616,22 @@ isSelectedDate(date: Date): boolean {
 }
 
 
-getEventGradient(typeName: string): string {
-  const gradients: { [key: string]: string } = {
-    'pitch deck': 'linear-gradient(135deg, #ea5073 0%, #d4476a 100%)',
-    'pitch': 'linear-gradient(135deg, #ea5073 0%, #d4476a 100%)',
-    'networking': 'linear-gradient(135deg, #2a7b8c 0%, #1a6778 100%)',
-    'formation': 'linear-gradient(135deg, #6d3345 0%, #5a2a3a 100%)',
-    'atelier': 'linear-gradient(135deg, #2a5f6f 0%, #1a4f5f 100%)',
-    'célébration': 'linear-gradient(135deg, #a855f7 0%, #9333ea 100%)',
-    'celebration': 'linear-gradient(135deg, #a855f7 0%, #9333ea 100%)',
-    'présentation': 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
-    'presentation': 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
-  };
+  getEventGradient(typeName: string): string {
+    const gradients: { [key: string]: string } = {
+      'pitch deck': 'linear-gradient(135deg, #ea5073 0%, #d4476a 100%)',
+      'pitch': 'linear-gradient(135deg, #ea5073 0%, #d4476a 100%)',
+      'networking': 'linear-gradient(135deg, #2a7b8c 0%, #1a6778 100%)',
+      'formation': 'linear-gradient(135deg, #6d3345 0%, #5a2a3a 100%)',
+      'atelier': 'linear-gradient(135deg, #2a5f6f 0%, #1a4f5f 100%)',
+      'célébration': 'linear-gradient(135deg, #a855f7 0%, #9333ea 100%)',
+      'celebration': 'linear-gradient(135deg, #a855f7 0%, #9333ea 100%)',
+      'présentation': 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
+      'presentation': 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
+      'coaching': 'linear-gradient(135deg, #3B82A6 0%, #2a6b8e 100%)',
+      'créneau': 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+      'dispo': 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+      'workshop': 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
+    };
 
   const lowerType = typeName.toLowerCase();
   for (const [key, gradient] of Object.entries(gradients)) {

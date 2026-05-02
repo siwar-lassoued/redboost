@@ -293,7 +293,9 @@ export class CoachService {
   // BOOKING (Entrepreneur)
   bookSession(sessionCoachId: number, entrepreneurId: number, notes?: string): Observable<any> {
     let url = `${this.apiUrl}/sessions/${sessionCoachId}/book?entrepreneurId=${entrepreneurId}`;
-    if (notes) url += `&notes=${encodeURIComponent(notes)}`;
+    if (notes && notes.trim()) {
+      url += `&notes=${encodeURIComponent(notes.trim())}`;
+    }
     return this.http.post(url, {});
   }
   rescheduleSession(sessionId: string, newDate: string, entrepreneurId: number): Observable<any> {

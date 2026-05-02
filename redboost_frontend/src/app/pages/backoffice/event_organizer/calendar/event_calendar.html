@@ -294,7 +294,7 @@
       <div class="slot-summary">
         <div class="summary-item">
           <mat-icon>event</mat-icon>
-          <span>{{ selectedSlot.dateSession | date:'fullDate':'':'fr' }}</span>
+          <span>{{ selectedSlot.dateSession | date:'dd MMMM yyyy' }}</span>
         </div>
         <div class="summary-item">
           <mat-icon>schedule</mat-icon>
@@ -311,7 +311,7 @@
         <button class="cancel-btn" (click)="selectedSlot = null">Annuler</button>
         <button class="confirm-btn" (click)="confirmBooking()" [disabled]="isBooking">
           <mat-icon *ngIf="!isBooking">check</mat-icon>
-          <mat-icon *ngIf="isBooking" class="pi-spin">sync</mat-icon>
+          <span *ngIf="isBooking" class="loading-spinner"></span>
           {{ isBooking ? 'Réservation...' : 'Confirmer' }}
         </button>
       </div>
