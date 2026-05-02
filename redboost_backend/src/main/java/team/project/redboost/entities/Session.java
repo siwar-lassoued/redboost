@@ -45,7 +45,7 @@ public class Session {
     private Integer dureeMinutes = 60;
 
     @Builder.Default
-    @Enumerated(EnumType.STRING)
+    @Column(name = "statut")
     private Statut statut = Statut.PLANIFIE;
 
     @Column(name = "google_event_id")
@@ -55,7 +55,6 @@ public class Session {
     private String meetLink;
 
     @Builder.Default
-    @Enumerated(EnumType.STRING)
     @Column(name = "type_session")
     private TypeSession typeSession = TypeSession.EN_LIGNE;
 
@@ -66,7 +65,6 @@ public class Session {
     private String disponibiliteId;
 
     @Builder.Default
-    @Enumerated(EnumType.STRING)
     @Column(name = "booking_statut")
     private BookingStatut bookingStatut = BookingStatut.CONFIRME;
 
