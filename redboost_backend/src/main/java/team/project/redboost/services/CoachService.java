@@ -430,7 +430,7 @@ public class CoachService {
     public SessionCoachDTO addSession(Long disponibiliteId, SessionCoachDTO dto) {
         Disponibilite dispo = disponibiliteRepository.findById(disponibiliteId)
                 .orElseThrow(() -> new ValidationException("Disponibilité non trouvée"));
-                
+
         // Validation règle importante : les dates ne dépassent pas la plage
         LocalDate sessionDate = dto.getDateSession();
         if (sessionDate.isBefore(dispo.getDateDebut()) || sessionDate.isAfter(dispo.getDateFin())) {
@@ -446,6 +446,11 @@ public class CoachService {
             try { type = SessionCoach.TypeSession.valueOf(dto.getTypeSession()); } catch (Exception ignored) {}
         }
 
+        // Use provided sessionGroupId or generate a new one (groups related créneaux under one session)
+        String groupId = (dto.getSessionGroupId() != null && !dto.getSessionGroupId().isBlank())
+                ? dto.getSessionGroupId()
+                : java.util.UUID.randomUUID().toString();
+
         SessionCoach session = SessionCoach.builder()
                 .disponibilite(dispo)
                 .titre(dto.getTitre())
@@ -453,6 +458,7 @@ public class CoachService {
                 .heureDebut(dto.getHeureDebut())
                 .heureFin(dto.getHeureFin())
                 .typeSession(type)
+                .sessionGroupId(groupId)
                 .build();
 
         SessionCoach saved = sessionCoachRepository.save(session);
@@ -610,6 +616,7 @@ public class CoachService {
         dto.setHeureDebut(s.getHeureDebut());
         dto.setHeureFin(s.getHeureFin());
         dto.setTypeSession(s.getTypeSession() != null ? s.getTypeSession().name() : "EN_LIGNE");
+        dto.setSessionGroupId(s.getSessionGroupId());
         return dto;
     }
 
@@ -879,6 +886,64 @@ public class CoachService {
                 })
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Returns available sessions GROUPED by sessionGroupId for the entrepreneur booking flow.
+     * Each group represents one logical "session" (e.g. Session 1 – Pitch Deck) with its créneaux.
+     * The group carries a flag indicating whether the entrepreneur has already reserved a slot in it.
+     */
+    public List<Map<String, Object>> getAvailableSessionsGrouped(Long coachId, Long entrepreneurUserId) {
+        // Reuse existing filtering logic
+        List<SessionCoachDTO> available = getAvailableSessionsForEntrepreneur(coachId, entrepreneurUserId);
+
+        // Also fetch ALL slots for this coach (including booked ones) to determine per-session reservation status
+        List<SessionCoach> allSlots = sessionCoachRepository.findByDisponibiliteCoachId(coachId);
+
+        // Collect all sessionGroupIds already booked by this entrepreneur
+        List<Session> myBookings = sessionRepository.findByCoachId(coachId).stream()
+                .filter(s -> s.getEntrepreneur() != null && s.getEntrepreneur().getId().equals(entrepreneurUserId))
+                .filter(s -> s.getStatut() == Session.Statut.CONFIRME || s.getStatut() == Session.Statut.DEMANDE)
+                .collect(Collectors.toList());
+
+        Set<String> bookedGroupIds = new java.util.HashSet<>();
+        for (Session booking : myBookings) {
+            if (booking.getDisponibiliteId() != null) {
+                try {
+                    Long slotId = Long.parseLong(booking.getDisponibiliteId());
+                    allSlots.stream()
+                            .filter(s -> s.getId().equals(slotId))
+                            .map(SessionCoach::getSessionGroupId)
+                            .filter(Objects::nonNull)
+                            .forEach(bookedGroupIds::add);
+                } catch (NumberFormatException ignored) {}
+            }
+        }
+
+        // Group available slots by sessionGroupId
+        Map<String, List<SessionCoachDTO>> grouped = new java.util.LinkedHashMap<>();
+        for (SessionCoachDTO slot : available) {
+            String groupId = slot.getSessionGroupId();
+            if (groupId == null) groupId = "ungrouped-" + slot.getId();
+            grouped.computeIfAbsent(groupId, k -> new ArrayList<>()).add(slot);
+        }
+
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Map.Entry<String, List<SessionCoachDTO>> entry : grouped.entrySet()) {
+            String groupId = entry.getKey();
+            List<SessionCoachDTO> slots = entry.getValue();
+            slots.sort(Comparator.comparing(SessionCoachDTO::getDateSession)
+                    .thenComparing(SessionCoachDTO::getHeureDebut));
+
+            Map<String, Object> group = new java.util.LinkedHashMap<>();
+            group.put("sessionGroupId", groupId);
+            group.put("sessionTitle", slots.get(0).getTitre());
+            group.put("reservedByMe", bookedGroupIds.contains(groupId));
+            group.put("slots", slots);
+            result.add(group);
+        }
+
+        return result;
     }
 
     public CoachPlanningDTO getCoachPlanning(Long coachId) {

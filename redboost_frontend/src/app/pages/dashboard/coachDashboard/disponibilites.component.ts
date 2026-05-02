@@ -146,38 +146,55 @@ interface DateGroupView {
               <div class="modal-header">
                   <div>
                       <h2>Ajouter une disponibilité</h2>
-                      <p class="text-sm text-gray-500 mt-1">Créez un nouveau créneau de disponibilité</p>
+                      <p class="text-sm text-gray-500 mt-1">Définissez une session et ses créneaux</p>
                   </div>
                   <button class="close-btn" (click)="showDispoModal = false"><i class="pi pi-times"></i></button>
               </div>
               <div class="modal-body">
+
+                <!-- STEP 1: Thématique -->
                 <div class="form-group">
-                      <label>Thématique *</label>
-                      <select class="premium-input" [(ngModel)]="selectedThematiqueId" (ngModelChange)="onThematiqueSelected()">
-                           <option [ngValue]="null">Sélectionner une thématique...</option>
-                          <option *ngFor="let t of thematiques" [ngValue]="t.id">
-                            {{t.nom}} ({{t.dateDebut | date:'shortDate'}} - {{t.dateFin | date:'shortDate'}})
-                          </option>
-                      </select>
-                  </div>
-                  <div class="form-group">
-                      <label>Nom du programme *</label>
-                      <input type="text" class="premium-input" [(ngModel)]="newDispoTitle" placeholder="Ex: Session individuelle Boost Tech">
-                      <p *ngIf="defaultTitle" class="field-help" style="color:#059669;"><i class="pi pi-check-circle" style="margin-right:4px;"></i> Pré-rempli depuis le programme : <strong>{{ defaultTitle }}</strong></p>
-                  </div>
+                    <label>Étape 1 — Thématique <span style="color:#E53E3E">*</span></label>
+                    <select class="premium-input" [(ngModel)]="selectedThematiqueId" (ngModelChange)="onThematiqueSelected()">
+                         <option [ngValue]="null">Sélectionner une thématique...</option>
+                        <option *ngFor="let t of thematiques" [ngValue]="t.id">
+                          {{t.nom}} ({{t.dateDebut | date:'shortDate'}} - {{t.dateFin | date:'shortDate'}})
+                        </option>
+                    </select>
+                </div>
 
-                  <div *ngIf="selectedThematiqueObj" class="thematique-dates-banner">
+                <div *ngIf="selectedThematiqueObj" class="thematique-dates-banner">
+                    <i class="pi pi-info-circle"></i>
+                    <span>Disponibilités du <strong>{{ selectedThematiqueObj.dateDebut | date:'dd/MM/yyyy' }}</strong> au <strong>{{ selectedThematiqueObj.dateFin | date:'dd/MM/yyyy' }}</strong></span>
+                </div>
+
+                <!-- STEP 2: Session Title (required before showing créneaux form) -->
+                <div class="form-group" *ngIf="selectedThematiqueId">
+                    <label>
+                      Étape 2 — Titre de la session <span style="color:#E53E3E">*</span>
+                    </label>
+                    <input type="text" class="premium-input" [(ngModel)]="newDispoTitle"
+                      placeholder="Ex: Session 1, Workshop Pitch Deck, Module Financement..."
+                      (ngModelChange)="onSessionTitleChange()">
+                    <div *ngIf="newDispoTitle?.trim()" class="thematique-dates-banner" style="margin-top:6px; background:#F0FFF4; border-color:#C6F6D5; color:#276749;">
+                      <i class="pi pi-check-circle"></i>
+                      <span>Session <strong>"{{ newDispoTitle }}"</strong> — Ajoutez maintenant les créneaux ci-dessous</span>
+                    </div>
+                    <div *ngIf="selectedThematiqueId && !newDispoTitle?.trim()" class="error-banner" style="margin-top:6px;">
                       <i class="pi pi-info-circle"></i>
-                      <span>Disponibilités du <strong>{{ selectedThematiqueObj.dateDebut | date:'dd/MM/yyyy' }}</strong> au <strong>{{ selectedThematiqueObj.dateFin | date:'dd/MM/yyyy' }}</strong></span>
-                  </div>
-                  <div *ngIf="dispoValidationError" class="error-banner">
-                      <i class="pi pi-exclamation-triangle"></i> {{ dispoValidationError }}
-                  </div>
+                      <span>Entrez un titre de session pour continuer</span>
+                    </div>
+                </div>
 
-                  <!-- Dates avec leurs créneaux liés -->
+                <div *ngIf="dispoValidationError" class="error-banner">
+                    <i class="pi pi-exclamation-triangle"></i> {{ dispoValidationError }}
+                </div>
+
+                <!-- STEP 3: Dates & Créneaux (only shown once session title is filled) -->
+                <div *ngIf="newDispoTitle?.trim()">
                   <div class="form-group">
-                    <label>Dates & Créneaux *</label>
-                    <p class="field-help">Chaque date possède ses propres créneaux horaires</p>
+                    <label>Étape 3 — Dates & Créneaux <span style="color:#E53E3E">*</span></label>
+                    <p class="field-help">Chaque date possède ses propres créneaux horaires (tous liés à la session « {{ newDispoTitle }} »)</p>
 
                     <div *ngFor="let group of dateSlotGroups; let gi = index" class="date-slot-group">
                       <div class="dsg-header">
@@ -218,10 +235,8 @@ interface DateGroupView {
                     </button>
                   </div>
 
-
-
                   <div class="form-group">
-                    <label>Type de session *</label>
+                    <label>Type de session <span style="color:#E53E3E">*</span></label>
                     <div class="type-session-selector">
                       <button class="type-btn" [class.active]="newSessionType === 'EN_LIGNE'" (click)="newSessionType = 'EN_LIGNE'">
                         <i class="pi pi-video"></i> En ligne
@@ -231,11 +246,13 @@ interface DateGroupView {
                       </button>
                     </div>
                   </div>
+                </div>
               </div>
-              <div class="modal-actions">  
-                      <button class="btn-outline" (click)="showDispoModal = false">Annuler</button>
-                      <button class="btn-primary" [disabled]="!selectedThematiqueId" (click)="addDisponibilite()">Ajouter la disponibilité</button>
-                  
+              <div class="modal-actions">
+                    <button class="btn-outline" (click)="showDispoModal = false">Annuler</button>
+                    <button class="btn-primary"
+                      [disabled]="!selectedThematiqueId || !newDispoTitle?.trim()"
+                      (click)="addDisponibilite()">Ajouter la disponibilité</button>
               </div>
           </div>
       </div>
@@ -729,7 +746,7 @@ private mapCalendarEvents(events: CoachCalendarEventDTO[]): any[] {
   }
 
   addDisponibilite() {
-    if (!this.selectedThematiqueId) return;
+    if (!this.selectedThematiqueId || !this.newDispoTitle?.trim()) return;
     const thematique = this.thematiques.find(t => t.id === this.selectedThematiqueId);
     if (thematique) {
       const thStart = new Date(thematique.dateDebut);
@@ -746,54 +763,62 @@ private mapCalendarEvents(events: CoachCalendarEventDTO[]): any[] {
     }
     this.dispoValidationError = null;
     this.loading = true;
-    this.coachService.addDisponibilite(this.coachId, this.selectedThematiqueId).subscribe({
+
+    // Generate ONE sessionGroupId for this entire session batch (all créneaux share it)
+    const sessionGroupId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36);
+
+    this.coachService.addDisponibilite(this.coachId, this.selectedThematiqueId!).subscribe({
       next: (dispoCreated) => {
         if (dispoCreated && dispoCreated.id) {
           const sessionPromises: Promise<any>[] = [];
-          
+
           for (const group of this.dateSlotGroups) {
             if (!group.date) continue;
             for (const slot of group.slots) {
               if (slot.start && slot.end) {
                 const sStart = slot.start.length === 5 ? `${slot.start}:00` : slot.start;
                 const sEnd = slot.end.length === 5 ? `${slot.end}:00` : slot.end;
-                
+
                 const sessionPayload: SessionCoachDTO = {
                   disponibiliteId: dispoCreated.id,
-                  titre: this.newDispoTitle || 'Session',
+                  titre: this.newDispoTitle.trim(),
                   dateSession: group.date,
                   heureDebut: sStart,
                   heureFin: sEnd,
-                  typeSession: this.newSessionType
+                  typeSession: this.newSessionType,
+                  sessionGroupId  // All créneaux of this session share the same group ID
                 };
                 sessionPromises.push(firstValueFrom(this.coachService.addSession(dispoCreated.id, sessionPayload)));
               }
             }
           }
 
-          if (sessionPromises.length > 0) {
-            Promise.all(sessionPromises).then(() => {
-              this.disponibilites.push(dispoCreated);
-              this.resetModalForm();
-              this.loadData();
-              this.loading = false;
-            }).catch(() => {
-              this.disponibilites.push(dispoCreated);
-              this.resetModalForm();
-              this.loadData();
-              this.loading = false;
-            });
-          } else {
+          const finish = () => {
             this.disponibilites.push(dispoCreated);
             this.resetModalForm();
             this.loadData();
             this.loading = false;
+          };
+          if (sessionPromises.length > 0) {
+            Promise.all(sessionPromises).then(finish).catch(finish);
+          } else {
+            finish();
           }
         }
       },
       error: () => { this.loading = false; }
     });
   }
+
+  onSessionTitleChange(): void {
+    // When the title changes, reset the dateSlotGroups so the form feels fresh
+    // (but only if it was pristine — don't wipe data if user already added dates)
+    const hasData = this.dateSlotGroups.some(g => g.date || g.slots.some(s => s.start || s.end));
+    if (!hasData) {
+      this.dateSlotGroups = [{ date: '', slots: [{ start: '', end: '' }] }];
+    }
+  }
+
   saveSessionEdit(sv: SessionView, group: DateGroupView) {
     if (!sv.editStart || !sv.editEnd) {
       this.editValidationError = 'Les heures sont obligatoires.';

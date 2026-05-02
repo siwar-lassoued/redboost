@@ -10,9 +10,9 @@ type TaskRisk = 'HAUTE' | 'CRITIQUE' | 'MOYENNE' | 'BASSE';
 type DelStatus = 'EN_ATTENTE' | 'APPROUVE' | 'REJETE' | 'RESOUMIS';
 
 const KANBAN = [
-  { id: 'A_FAIRE' as const, label: 'À FAIRE', color: '#6B7280', bg: '#F9FAFB' },
-  { id: 'EN_COURS' as const, label: 'EN COURS', color: '#3aafff', bg: '#EFF9FF' },
-  { id: 'TERMINEE' as const, label: 'TERMINÉ', color: '#22C55E', bg: '#F0FDF4' },
+  { id: 'A_FAIRE' as const, label: 'À FAIRE', color: '#475569', bg: '#F9FAFB' },
+  { id: 'EN_COURS' as const, label: 'EN COURS', color: '#3B82A6', bg: '#EFF9FF' },
+  { id: 'TERMINEE' as const, label: 'TERMINÉ', color: '#10B981', bg: '#F0FDF4' },
 ];
 
 const RISK_CFG: Record<string, { label: string; bg: string; color: string }> = {
@@ -36,7 +36,7 @@ const DEL_CFG: Record<string, { label: string; bg: string; color: string; icon: 
   imports: [CommonModule, FormsModule],
   template: `
     <div class="p-6 bg-[#F8FAFC] min-h-screen">
-      <!-- Header -->
+      
       <div class="flex items-center justify-between mb-8">
         <div>
           <h1 class="text-3xl font-black text-[#1A1A2E] tracking-tight">Mes Tâches</h1>
@@ -46,7 +46,7 @@ const DEL_CFG: Record<string, { label: string; bg: string; color: string; icon: 
           @for (col of kanbanCols; track col.id) {
             <button (click)="activeTab.set(col.id)"
               class="px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all lg:hidden cursor-pointer"
-              [style.background]="activeTab() === col.id ? 'linear-gradient(135deg,#1A3A3A,#C0392B)' : '#fff'"
+              [style.background]="activeTab() === col.id ? 'linear-gradient(135deg, #3B82A6, #475569)' : '#fff'"
               [style.color]="activeTab() === col.id ? '#fff' : '#6B7280'">
               {{ col.label }}
             </button>
@@ -59,12 +59,12 @@ const DEL_CFG: Record<string, { label: string; bg: string; color: string; icon: 
           <i class="pi pi-spin pi-spinner text-3xl text-gray-300"></i>
         </div>
       } @else {
-        <!-- Kanban Grid -->
+        
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
           @for (col of kanbanCols; track col.id) {
             <div class="rounded-3xl p-4 border border-gray-100 shadow-xl shadow-gray-200/50 bg-white"
               [class.hidden]="activeTab() !== 'ALL' && activeTab() !== col.id && isMobileWidth()">
-              <!-- Column header -->
+              
               <div class="flex items-center gap-2 mb-4 p-2">
                 <div class="w-3 h-3 rounded-full shadow" [style.background]="col.color"></div>
                 <span class="text-xs font-black tracking-widest uppercase" [style.color]="col.color">{{ col.label }}</span>
@@ -73,7 +73,7 @@ const DEL_CFG: Record<string, { label: string; bg: string; color: string; icon: 
                 </span>
               </div>
 
-              <!-- Task Cards -->
+              
               <div class="space-y-3 min-h-[80px]">
                 @for (task of getColTasks(col.id); track task.id) {
                   <div class="rounded-2xl border overflow-hidden transition-all shadow-sm hover:shadow-md"
@@ -88,7 +88,7 @@ const DEL_CFG: Record<string, { label: string; bg: string; color: string; icon: 
                         </p>
                       </div>
 
-                      <!-- Risk + Priority -->
+                      
                       <span class="inline-block text-[10px] px-2.5 py-1 rounded-full font-black uppercase tracking-widest mb-3"
                         [style.background]="getRisk(task.priorite || task.risk).bg" [style.color]="getRisk(task.priorite || task.risk).color">
                         {{ getRisk(task.priorite || task.risk).label }}
@@ -106,7 +106,7 @@ const DEL_CFG: Record<string, { label: string; bg: string; color: string; icon: 
                     </div>
 
                     <div class="border-t border-white/60 p-4 pt-3">
-                      <!-- Upload zone -->
+                      
                       <div class="space-y-2">
                         <p class="text-[9px] text-gray-400 font-black uppercase tracking-widest">Livrable à soumettre</p>
                         <div class="border-2 border-dashed border-gray-200 rounded-xl p-3 text-center cursor-pointer hover:border-[#ff3d91] hover:bg-pink-50/20 transition-all"
@@ -117,7 +117,7 @@ const DEL_CFG: Record<string, { label: string; bg: string; color: string; icon: 
                         <input type="file" [id]="'fi-' + task.id" class="hidden" (change)="onFile($event, task.id)">
                         <button (click)="submitDeliverable(task.id)" [disabled]="!getSelectedFile(task.id)"
                           class="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-[10px] font-black text-white transition-all disabled:opacity-40 cursor-pointer border-none"
-                          style="background: linear-gradient(135deg, #1A3A3A, #C0392B)">
+                          style="background: linear-gradient(135deg, #3B82A6, #475569)">
                           <i class="pi pi-upload mr-1"></i>
                           Soumettre le livrable
                         </button>
@@ -168,15 +168,15 @@ export class EntrepreneurTachesComponent implements OnInit {
   }
 
   getRemainingCount(): number {
-    return this.tasks().filter(t => t.statut !== 'TERMINEE').length;
+    return this.tasks().filter(t => t.status !== 'TERMINEE').length;
   }
 
   getColTasks(colId: string) {
     return this.tasks().filter(t => {
       // Map statuts to kanban columns
-      if (colId === 'A_FAIRE') return t.statut === 'A_FAIRE' || t.statut === 'EN_ATTENTE_VALIDATION';
-      if (colId === 'EN_COURS') return t.statut === 'EN_COURS' || t.statut === 'EN_RETARD';
-      if (colId === 'TERMINEE') return t.statut === 'TERMINEE';
+      if (colId === 'A_FAIRE') return t.status === 'A_FAIRE' || t.status === 'EN_ATTENTE_VALIDATION' || t.status === 'NON_DEMARREE';
+      if (colId === 'EN_COURS') return t.status === 'EN_COURS' || t.status === 'EN_RETARD';
+      if (colId === 'TERMINEE') return t.status === 'TERMINEE';
       return false;
     });
   }

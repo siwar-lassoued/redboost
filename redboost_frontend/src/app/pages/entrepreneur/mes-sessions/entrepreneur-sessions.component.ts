@@ -4,15 +4,15 @@ import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { SessionService } from '../../../core/services/session.service';
 import { AuthService } from '../../../core/services/auth.service';
-import { CoachService } from '../../dashboard/coachDashboard/services/coach.service';
+import { CoachService, SessionGroupDTO, SessionCoachDTO } from '../../dashboard/coachDashboard/services/coach.service';
 
 type Tab = 'PLANIFIEE' | 'REALISEE' | 'ANNULEE';
 type ViewMode = 'list' | 'calendar';
 
 const TAB_CONFIG: { id: Tab; label: string; icon: string; color: string; emptyMsg: string }[] = [
-  { id: 'PLANIFIEE', label: 'Planifiées', icon: 'calendar-clock', color: '#3aafff', emptyMsg: 'Aucune session planifiée' },
-  { id: 'REALISEE',  label: 'Terminées', icon: 'check-circle',   color: '#22c55e', emptyMsg: 'Aucune session terminée' },
-  { id: 'ANNULEE',   label: 'Annulées',  icon: 'x-circle',       color: '#ef4444', emptyMsg: 'Aucune session annulée' },
+  { id: 'PLANIFIEE', label: 'Planifiées', icon: 'calendar-clock', color: '#3B82A6', emptyMsg: 'Aucune session planifiée' },
+  { id: 'REALISEE',  label: 'Terminées', icon: 'check-circle',   color: '#10B981', emptyMsg: 'Aucune session terminée' },
+  { id: 'ANNULEE',   label: 'Annulées',  icon: 'x-circle',       color: '#EF4444', emptyMsg: 'Aucune session annulée' },
 ];
 
 const STATUT_BADGE: Record<string, { label: string; bg: string; color: string }> = {
@@ -29,35 +29,32 @@ const STATUT_BADGE: Record<string, { label: string; bg: string; color: string }>
   imports: [CommonModule, RouterLink, FormsModule],
   template: `
     <div class="p-6 bg-[#F8FAFC] min-h-screen relative">
-      <!-- Header -->
       <div class="flex items-center justify-between mb-8 flex-wrap gap-4">
         <div>
           <h1 class="text-3xl font-black text-[#1A1A2E] tracking-tight">Mes Sessions</h1>
           <p class="text-gray-500 mt-1 font-medium">{{ allSessions().length }} sessions au total</p>
         </div>
         <div class="flex items-center gap-4">
-          <!-- View Toggle -->
           <div class="flex bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
             <button (click)="viewMode.set('list')" 
               class="px-4 py-2 text-sm font-bold transition-all"
-              [class]="viewMode() === 'list' ? 'bg-[#1A3A3A] text-white' : 'text-gray-500 hover:bg-gray-50'">
+              [class]="viewMode() === 'list' ? 'bg-[#3B82A6] text-white' : 'text-gray-500 hover:bg-gray-50'">
               <i class="pi pi-list mr-1"></i> Liste
             </button>
             <button (click)="viewMode.set('calendar')" 
               class="px-4 py-2 text-sm font-bold transition-all"
-              [class]="viewMode() === 'calendar' ? 'bg-[#1A3A3A] text-white' : 'text-gray-500 hover:bg-gray-50'">
+              [class]="viewMode() === 'calendar' ? 'bg-[#3B82A6] text-white' : 'text-gray-500 hover:bg-gray-50'">
               <i class="pi pi-calendar mr-1"></i> Calendrier
             </button>
           </div>
           
-          <div class="flex items-center gap-2 px-5 py-2.5 bg-[#1A3A3A] text-white rounded-full text-xs font-black shadow-lg shadow-[#1A3A3A]/20">
+          <div class="flex items-center gap-2 px-5 py-2.5 bg-[#3B82A6] text-white rounded-full text-xs font-black shadow-lg shadow-[#3B82A6]/20">
             <i class="pi pi-video"></i>
             {{ getCount('PLANIFIEE') }} à venir
           </div>
         </div>
       </div>
 
-      <!-- Toolbar (Only in list view) -->
       @if (viewMode() === 'list') {
         <div class="flex gap-2 mb-6 overflow-x-auto pb-2">
           @for (tab of tabs; track tab.id) {
@@ -78,22 +75,18 @@ const STATUT_BADGE: Record<string, { label: string; bg: string; color: string }>
         </div>
       }
 
-      <!-- MAIN CONTENT -->
       @if (viewMode() === 'list') {
-        <!-- Session Cards -->
         <div class="space-y-4">
           @for (s of filteredSessions(); track s.id) {
             <div class="bg-white rounded-3xl overflow-hidden shadow-xl shadow-gray-200/50 border border-gray-100 transition-all hover:shadow-2xl hover:-translate-y-0.5">
               <div class="p-6">
                 <div class="flex items-start gap-5">
-                  <!-- Date Badge -->
                   <div class="w-16 h-16 rounded-2xl flex flex-col items-center justify-center text-white flex-shrink-0 shadow-lg"
-                    [style.background]="activeTab() === 'ANNULEE' ? 'linear-gradient(135deg, #ef4444, #dc2626)' : activeTab() === 'REALISEE' ? 'linear-gradient(135deg, #22c55e, #16a34a)' : 'linear-gradient(135deg, #1A3A3A, #3aafff)'">
+                    [style.background]="activeTab() === 'ANNULEE' ? 'linear-gradient(135deg, #EF4444, #B91C1C)' : activeTab() === 'REALISEE' ? 'linear-gradient(135deg, #10B981, #059669)' : 'linear-gradient(135deg, #3B82A6, #475569)'">
                     <span class="text-[10px] font-bold uppercase opacity-80">{{ formatMonth(s.date) }}</span>
                     <span class="text-2xl font-black leading-none">{{ formatDay(s.date) }}</span>
                   </div>
 
-                  <!-- Info -->
                   <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-3 mb-2 flex-wrap">
                       <h3 class="text-base font-black text-[#1A1A2E]">{{ s.titre || 'Session de coaching' }}</h3>
@@ -123,14 +116,13 @@ const STATUT_BADGE: Record<string, { label: string; bg: string; color: string }>
                     }
                   </div>
 
-                  <!-- Actions -->
                   <div class="flex-shrink-0 flex items-center gap-2">
                     @if (s.statut === 'PLANIFIEE' && s.meetLink) {
                       <a [href]="s.meetLink" target="_blank"
                         class="flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-black text-white transition-all hover:scale-[1.03] shadow-lg shadow-sky-400/30"
-                        style="background: linear-gradient(135deg, #00d2ff, #3aafff)">
+                        style="background: linear-gradient(135deg, #3B82A6, #2C6B8E)">
                         <i class="pi pi-video"></i>
-                        🎥 Rejoindre
+                        Rejoindre
                       </a>
                     }
                     @if (s.statut === 'PLANIFIEE') {
@@ -148,16 +140,15 @@ const STATUT_BADGE: Record<string, { label: string; bg: string; color: string }>
                     @if (s.statut === 'REALISEE' || s.statut === 'TERMINE') {
                       <button [routerLink]="['/coach-rating', s.id]"
                         class="flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-black text-white transition-all hover:scale-[1.03] shadow-lg shadow-amber-400/30"
-                        style="background: linear-gradient(135deg, #f59e0b, #d97706)">
+                        style="background: linear-gradient(135deg, #F97316, #EA580C)">
                         <i class="pi pi-star"></i>
-                        ⭐ Évaluer
+                        Évaluer
                       </button>
                     }
                   </div>
                 </div>
               </div>
 
-              <!-- Annulation Motif (red zone) -->
               @if (s.statut === 'ANNULEE' && s.annulationMotif) {
                 <div class="px-6 py-4 border-t-2 border-red-100" style="background: #FEF2F2">
                   <div class="flex items-start gap-2">
@@ -172,7 +163,6 @@ const STATUT_BADGE: Record<string, { label: string; bg: string; color: string }>
             </div>
           }
 
-          <!-- Empty State -->
           @if (filteredSessions().length === 0) {
             <div class="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border-2 border-dashed border-gray-200">
               <i class="pi pi-{{currentTabConfig().icon}} text-5xl text-gray-200 mb-4"></i>
@@ -180,7 +170,7 @@ const STATUT_BADGE: Record<string, { label: string; bg: string; color: string }>
               @if (activeTab() === 'PLANIFIEE') {
                 <button routerLink="/entrepreneur/coach"
                   class="mt-6 flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-black text-white shadow-lg transition-all hover:scale-[1.02]"
-                  style="background: linear-gradient(135deg, #1A3A3A, #3aafff)">
+                  style="background: linear-gradient(135deg, #3B82A6, #475569)">
                   <i class="pi pi-calendar-plus"></i>
                   Réserver une session
                 </button>
@@ -189,7 +179,6 @@ const STATUT_BADGE: Record<string, { label: string; bg: string; color: string }>
           }
         </div>
       } @else {
-        <!-- WEEK CALENDAR VIEW -->
         <div class="bg-white rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden">
           <div class="flex items-center justify-between p-6 border-b border-gray-100">
             <button (click)="prevWeek()" class="w-10 h-10 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors">
@@ -212,7 +201,7 @@ const STATUT_BADGE: Record<string, { label: string; bg: string; color: string }>
                 <div class="p-3 text-center border-b border-gray-100" [class.bg-sky-50]="isToday(day.date)">
                   <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">{{ day.dayName }}</span>
                   <span class="inline-flex w-8 h-8 items-center justify-center rounded-full mt-1 text-lg font-black" 
-                    [class]="isToday(day.date) ? 'bg-[#3aafff] text-white shadow-md shadow-sky-200' : 'text-[#1A1A2E]'">
+                    [class]="isToday(day.date) ? 'bg-[#3B82A6] text-white shadow-md shadow-sky-200' : 'text-[#1A1A2E]'">
                     {{ day.dayNum }}
                   </span>
                 </div>
@@ -227,7 +216,7 @@ const STATUT_BADGE: Record<string, { label: string; bg: string; color: string }>
                         <i class="pi pi-clock text-[10px]"></i> {{ formatTime(s.date) }}
                       </div>
                       @if(s.coach) {
-                        <div class="mt-1 text-[10px] text-gray-400 truncate">👨‍🏫 {{ s.coach.nom }}</div>
+                        <div class="mt-1 text-[10px] text-gray-400 truncate"><i class="pi pi-user mr-1"></i> {{ s.coach.nom }}</div>
                       }
                     </div>
                   }
@@ -238,53 +227,79 @@ const STATUT_BADGE: Record<string, { label: string; bg: string; color: string }>
         </div>
       }
       
-      <!-- RESCHEDULE MODAL -->
       @if (rescheduleSessionId()) {
         <div class="fixed inset-0 bg-[#1A1A2E]/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div class="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
             <div class="p-6 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-blue-50 to-white">
               <div>
                 <h2 class="text-xl font-black text-[#1A1A2E]">Reprogrammer la session</h2>
-                <p class="text-xs text-gray-500 font-medium mt-1">Choisissez un nouveau créneau disponible avec votre coach</p>
+                <p class="text-xs text-gray-500 font-medium mt-1">Choisissez un créneau dans une session disponible</p>
               </div>
               <button (click)="closeRescheduleModal()" class="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors">
                 <i class="pi pi-times"></i>
               </button>
             </div>
-            
+
             <div class="p-6 overflow-y-auto flex-1">
               @if (loadingSlots()) {
                 <div class="flex flex-col items-center justify-center py-12">
                   <i class="pi pi-spin pi-spinner text-3xl text-sky-500 mb-4"></i>
                   <p class="text-gray-500 text-sm font-medium">Recherche des disponibilités du coach...</p>
                 </div>
-              } @else if (availableSlots().length === 0) {
+              } @else if (availableGroups().length === 0) {
                 <div class="bg-orange-50 border border-orange-200 rounded-2xl p-6 text-center">
                   <i class="pi pi-calendar-times text-3xl text-orange-400 mb-3 block"></i>
                   <p class="text-orange-800 font-bold mb-1">Aucune disponibilité trouvée</p>
-                  <p class="text-orange-600 text-xs">Votre coach n'a pas défini de nouveaux créneaux libres pour le moment. Veuillez le contacter directement par message.</p>
+                  <p class="text-orange-600 text-xs">Votre coach n'a pas défini de nouveaux créneaux libres pour le moment.</p>
                 </div>
               } @else {
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  @for (slot of availableSlots(); track slot.id) {
-                    <div class="border-2 rounded-2xl p-4 cursor-pointer transition-all hover:border-sky-300"
-                         [class]="selectedSlotId() === slot.id ? 'border-sky-500 bg-sky-50 shadow-md shadow-sky-100' : 'border-gray-100 bg-white'"
-                         (click)="selectedSlotId.set(slot.id)">
-                      <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl bg-sky-100 text-sky-600 flex flex-col items-center justify-center">
-                          <span class="text-[9px] font-black uppercase">{{ formatMonth(slot.dateSession) }}</span>
-                          <span class="text-sm font-black">{{ formatDay(slot.dateSession) }}</span>
+                <div class="space-y-4">
+                  @for (group of availableGroups(); track group.sessionGroupId) {
+                    <div class="rounded-2xl border-2 overflow-hidden"
+                      [class]="group.reservedByMe ? 'border-green-200 opacity-70' : 'border-gray-100'">
+
+                      <div class="flex items-center justify-between px-4 py-3 border-b"
+                        [class]="group.reservedByMe ? 'bg-green-50 border-green-100' : 'bg-gray-50 border-gray-100'">
+                        <div class="flex items-center gap-2">
+                          <i class="pi text-sm" [class]="group.reservedByMe ? 'pi-check-circle text-green-500' : 'pi-calendar text-blue-400'"></i>
+                          <span class="text-sm font-black text-[#1A1A2E]">{{ group.sessionTitle }}</span>
+                          <span class="text-[10px] text-gray-400 font-medium">{{ group.slots.length }} créneau{{ group.slots.length > 1 ? 'x' : '' }}</span>
                         </div>
-                        <div>
-                          <div class="text-sm font-black text-[#1A1A2E]">{{ formatTimeOnly(slot.heureDebut) }} - {{ formatTimeOnly(slot.heureFin) }}</div>
-                          <div class="text-[10px] text-gray-500 font-medium flex items-center gap-1 mt-1">
-                            <i class="pi" [class.pi-video]="slot.typeSession === 'EN_LIGNE'" [class.pi-users]="slot.typeSession !== 'EN_LIGNE'"></i>
-                            {{ slot.typeSession === 'EN_LIGNE' ? 'En ligne' : 'Présentiel' }}
-                          </div>
-                        </div>
-                        @if (selectedSlotId() === slot.id) {
-                          <div class="ml-auto w-5 h-5 rounded-full bg-sky-500 text-white flex items-center justify-center shadow-sm">
-                            <i class="pi pi-check text-[10px] font-bold"></i>
+                        @if (group.reservedByMe) {
+                          <span class="text-[10px] font-black text-green-700 bg-green-100 px-2 py-1 rounded-full flex items-center gap-1">
+                            <i class="pi pi-check-circle text-xs"></i> Déjà réservé
+                          </span>
+                        }
+                      </div>
+
+                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4">
+                        @for (slot of group.slots; track slot.id) {
+                          <div class="border-2 rounded-2xl p-4 transition-all"
+                               [class]="group.reservedByMe
+                                 ? 'border-gray-100 bg-gray-50 cursor-not-allowed'
+                                 : (selectedSlotId() === slot.id
+                                   ? 'border-sky-500 bg-sky-50 shadow-md shadow-sky-100 cursor-pointer'
+                                   : 'border-gray-100 bg-white hover:border-sky-300 cursor-pointer')"
+                               (click)="!group.reservedByMe && selectedSlotId.set(slot.id)">
+                            <div class="flex items-center gap-3">
+                              <div class="w-10 h-10 rounded-xl flex flex-col items-center justify-center"
+                                [class]="selectedSlotId() === slot.id && !group.reservedByMe ? 'bg-sky-500 text-white' : 'bg-sky-50 text-sky-600'">
+                                <span class="text-[9px] font-black uppercase">{{ formatMonth(slot.dateSession) }}</span>
+                                <span class="text-sm font-black">{{ formatDay(slot.dateSession) }}</span>
+                              </div>
+                              <div>
+                                <div class="text-sm font-black text-[#1A1A2E]">{{ formatTimeOnly(slot.heureDebut) }} – {{ formatTimeOnly(slot.heureFin) }}</div>
+                                <div class="text-[10px] text-gray-500 font-medium flex items-center gap-1 mt-1">
+                                  <i class="pi" [class.pi-video]="slot.typeSession === 'EN_LIGNE'" [class.pi-users]="slot.typeSession !== 'EN_LIGNE'"></i>
+                                  {{ slot.typeSession === 'EN_LIGNE' ? 'En ligne' : 'Présentiel' }}
+                                </div>
+                              </div>
+                              @if (selectedSlotId() === slot.id && !group.reservedByMe) {
+                                <div class="ml-auto w-5 h-5 rounded-full bg-sky-500 text-white flex items-center justify-center">
+                                  <i class="pi pi-check text-[10px]"></i>
+                                </div>
+                              }
+                            </div>
                           </div>
                         }
                       </div>
@@ -292,17 +307,16 @@ const STATUT_BADGE: Record<string, { label: string; bg: string; color: string }>
                   }
                 </div>
               }
-              
-              <!-- Custom Date Fallback -->
+
               <div class="mt-8 pt-6 border-t border-gray-100">
                 <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Ou proposer une date manuellement</p>
                 <div class="flex items-center gap-3">
-                  <input type="datetime-local" [(ngModel)]="customRescheduleDate" 
+                  <input type="datetime-local" [(ngModel)]="customRescheduleDate"
                     class="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-all">
                 </div>
               </div>
             </div>
-            
+
             <div class="p-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
               <button (click)="closeRescheduleModal()" class="px-5 py-2.5 rounded-xl text-sm font-bold text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 transition-colors">
                 Annuler
@@ -338,6 +352,7 @@ export class EntrepreneurSessionsComponent implements OnInit {
   selectedCoachId = signal<number | null>(null);
   loadingSlots = signal<boolean>(false);
   availableSlots = signal<any[]>([]);
+  availableGroups = signal<SessionGroupDTO[]>([]);
   selectedSlotId = signal<number | null>(null);
   customRescheduleDate = '';
 
@@ -483,31 +498,28 @@ export class EntrepreneurSessionsComponent implements OnInit {
       alert("Impossible de reprogrammer cette session : le coach n'est pas identifié.");
       return;
     }
-    
+
     const user = this.authSvc.currentUser$.value;
     if (!user) return;
-    
+
     this.rescheduleSessionId.set(session.id);
     this.selectedCoachId.set(session.coach.id);
     this.selectedSlotId.set(null);
     this.customRescheduleDate = '';
-    
+    this.availableGroups.set([]);
+    this.availableSlots.set([]);
+
     this.loadingSlots.set(true);
-    this.coachSvc.getAvailableSessionsForEntrepreneur(session.coach.id, Number(user.id)).subscribe({
-      next: (slots: any[]) => {
-        // filter future slots only
-        const now = new Date().getTime();
-        const futureSlots = (slots || []).filter((s: any) => {
-          if(!s.dateSession || !s.heureDebut) return false;
-          const slotTime = new Date(s.dateSession + 'T' + s.heureDebut).getTime();
-          return slotTime > now;
-        });
-        
-        this.availableSlots.set(futureSlots);
+    this.coachSvc.getAvailableSessionsGrouped(session.coach.id, Number(user.id)).subscribe({
+      next: (groups: SessionGroupDTO[]) => {
+        this.availableGroups.set(groups || []);
+        const allSlots = (groups || []).flatMap(g => g.slots);
+        this.availableSlots.set(allSlots);
         this.loadingSlots.set(false);
       },
       error: (err: any) => {
         console.error('Error fetching available slots', err);
+        this.availableGroups.set([]);
         this.availableSlots.set([]);
         this.loadingSlots.set(false);
       }
@@ -531,7 +543,6 @@ export class EntrepreneurSessionsComponent implements OnInit {
     if (this.selectedSlotId()) {
       const slot = this.availableSlots().find(s => s.id === this.selectedSlotId());
       if (slot) {
-        // Compose proper datetime string
         newDateStr = slot.dateSession + 'T' + slot.heureDebut;
       }
     } else if (this.customRescheduleDate) {
@@ -548,7 +559,7 @@ export class EntrepreneurSessionsComponent implements OnInit {
         next: () => {
            alert('Demande de reprogrammation envoyée au coach.');
            this.closeRescheduleModal();
-           this.loadSessions(); // Refresh list
+           this.loadSessions(); 
         },
         error: (err: any) => {
            console.error(err);

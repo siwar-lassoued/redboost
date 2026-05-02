@@ -19,7 +19,15 @@ export interface SessionCoachDTO {
   dateSession: string;
   heureDebut: string;
   heureFin: string;
-  typeSession?: string; // EN_LIGNE or PRESENTIEL
+  typeSession?: string; 
+  sessionGroupId?: string; 
+}
+
+export interface SessionGroupDTO {
+  sessionGroupId: string;
+  sessionTitle: string;
+  reservedByMe: boolean;
+  slots: SessionCoachDTO[];
 }
 
 export interface SeanceExceptionnelleDTO {
@@ -290,6 +298,11 @@ export class CoachService {
   }
   getAvailableSessionsForEntrepreneur(coachId: number, entrepreneurId: number): Observable<SessionCoachDTO[]> {
     return this.http.get<SessionCoachDTO[]>(`${this.apiUrl}/${coachId}/available-sessions?entrepreneurId=${entrepreneurId}`);
+  }
+
+  /** Returns sessions grouped by sessionGroupId with a reservedByMe flag per group */
+  getAvailableSessionsGrouped(coachId: number, entrepreneurId: number): Observable<SessionGroupDTO[]> {
+    return this.http.get<SessionGroupDTO[]>(`${this.apiUrl}/${coachId}/available-sessions-grouped?entrepreneurId=${entrepreneurId}`);
   }
 
   // RAPPORT MISSION COACH

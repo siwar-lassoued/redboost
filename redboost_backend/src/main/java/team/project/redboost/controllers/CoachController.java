@@ -186,6 +186,14 @@ public class CoachController {
         return ResponseEntity.ok(coachService.getAvailableSessionsForEntrepreneur(coachId, entrepreneurId));
     }
 
+   
+    @GetMapping("/{coachId}/available-sessions-grouped")
+    public ResponseEntity<List<java.util.Map<String, Object>>> getAvailableSessionsGrouped(
+            @PathVariable Long coachId,
+            @RequestParam Long entrepreneurId) {
+        return ResponseEntity.ok(coachService.getAvailableSessionsGrouped(coachId, entrepreneurId));
+    }
+
     // --- PLANNING DÉTAILLÉ ---
 
     @GetMapping("/{coachId}/planning")

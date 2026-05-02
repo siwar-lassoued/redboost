@@ -21,7 +21,7 @@ const STATUT_CFG: Record<string, { label: string; bg: string; color: string }> =
   imports: [CommonModule, RouterLink],
   template: `
     <div class="p-6 bg-[#F8FAFC] min-h-screen">
-      <!-- Header -->
+      
       <div class="mb-8">
         <h1 class="text-3xl font-black text-[#1A1A2E] tracking-tight">Mon Programme</h1>
         <p class="text-gray-500 mt-1 font-medium">Détails et avancement de votre programme d'accompagnement</p>
@@ -33,11 +33,11 @@ const STATUT_CFG: Record<string, { label: string; bg: string; color: string }> =
         </div>
       } @else if (programme()) {
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <!-- Programme Card (main) -->
+          
           <div class="lg:col-span-2 space-y-6">
-            <!-- Programme Info -->
+            
             <div class="bg-white rounded-3xl overflow-hidden shadow-xl shadow-gray-200/50 border border-gray-100">
-              <div class="p-8 text-white relative overflow-hidden" style="background: linear-gradient(135deg, #1A3A3A 0%, #3aafff 100%)">
+              <div class="p-8 text-white relative overflow-hidden" style="background: linear-gradient(135deg, #3B82A6 0%, #475569 100%)">
                 <div class="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-white/10"></div>
                 <div class="relative">
                   <span class="text-[10px] px-3 py-1 rounded-full font-black uppercase tracking-widest"
@@ -50,7 +50,7 @@ const STATUT_CFG: Record<string, { label: string; bg: string; color: string }> =
               </div>
 
               <div class="p-6">
-                <!-- Key Info -->
+                
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                   <div class="p-4 bg-gray-50 rounded-2xl text-center">
                     <i class="pi pi-calendar mx-auto mb-2 text-[#3aafff] text-xl block"></i>
@@ -74,7 +74,7 @@ const STATUT_CFG: Record<string, { label: string; bg: string; color: string }> =
                   </div>
                 </div>
 
-                <!-- Secteurs -->
+                
                 @if (programme()!.secteurs?.length) {
                   <div class="mb-6">
                     <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Secteurs</p>
@@ -89,7 +89,7 @@ const STATUT_CFG: Record<string, { label: string; bg: string; color: string }> =
               </div>
             </div>
 
-            <!-- Progress -->
+            
             <div class="bg-white rounded-3xl p-6 shadow-xl shadow-gray-200/50 border border-gray-100">
               <h3 class="text-lg font-black text-[#1A1A2E] mb-6 flex items-center gap-2">
                 <i class="pi pi-chart-bar text-[#a17dfd]"></i>
@@ -111,7 +111,7 @@ const STATUT_CFG: Record<string, { label: string; bg: string; color: string }> =
             </div>
           </div>
 
-          <!-- Sidebar: Coach Info -->
+          
           <div class="space-y-6">
             @if (coach()) {
               <div class="bg-white rounded-3xl p-6 shadow-xl shadow-gray-200/50 border border-gray-100">
@@ -121,7 +121,7 @@ const STATUT_CFG: Record<string, { label: string; bg: string; color: string }> =
                 </h3>
                 <div class="text-center mb-5">
                   <div class="w-20 h-20 rounded-2xl flex items-center justify-center text-white text-2xl font-black mx-auto mb-3 shadow-lg"
-                    style="background: linear-gradient(135deg, #1A3A3A, #3aafff)">
+                    style="background: linear-gradient(135deg, #3B82A6, #10B981)">
                     {{ coach()!.nom[0] }}
                   </div>
                   <h4 class="font-black text-[#1A1A2E]">{{ coach()!.nom }}</h4>
@@ -130,7 +130,7 @@ const STATUT_CFG: Record<string, { label: string; bg: string; color: string }> =
                 <div class="space-y-2">
                   <button [routerLink]="['/entrepreneur/chat']" [queryParams]="{with: coach()!.id}"
                     class="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-black text-white transition-all hover:scale-[1.02] shadow-lg cursor-pointer border-none"
-                    style="background: linear-gradient(135deg, #ff3d91, #a17dfd)">
+                    style="background: linear-gradient(135deg, #F97316, #EF4444)">
                     <i class="pi pi-comments mr-1"></i>
                     Envoyer un message
                   </button>
@@ -143,7 +143,7 @@ const STATUT_CFG: Record<string, { label: string; bg: string; color: string }> =
               </div>
             }
 
-            <!-- Quick Links -->
+            
             <div class="bg-white rounded-3xl p-6 shadow-xl shadow-gray-200/50 border border-gray-100">
               <h3 class="text-sm font-black text-gray-400 uppercase tracking-widest mb-4">Accès rapides</h3>
               <div class="space-y-2">
@@ -162,7 +162,7 @@ const STATUT_CFG: Record<string, { label: string; bg: string; color: string }> =
           </div>
         </div>
       } @else {
-        <!-- No programme -->
+        
         <div class="flex flex-col items-center justify-center py-24 bg-white rounded-3xl border-2 border-dashed border-gray-200">
           <i class="pi pi-book text-5xl text-gray-200 mb-4 block"></i>
           <h3 class="font-black text-gray-500 mb-2">Aucun programme assigné</h3>
@@ -186,10 +186,10 @@ export class EntrepreneurProgrammeComponent implements OnInit {
   progressBars = signal<any[]>([]);
 
   quickLinks = [
-    { label: 'Mes Sessions', route: '/entrepreneur/mes-sessions', icon: 'calendar', bg: '#EFF6FF', color: '#3aafff' },
-    { label: 'Mes Tâches', route: '/entrepreneur/mes-taches', icon: 'list', bg: '#F0FDF4', color: '#22c55e' },
-    { label: 'Mes Livrables', route: '/entrepreneur/mes-livrables', icon: 'file-pdf', bg: '#FDF2F8', color: '#ff3d91' },
-    { label: 'Mon Statut', route: '/entrepreneur/status', icon: 'chart-line', bg: '#FEF3C7', color: '#d97706' },
+    { label: 'Mes Sessions', route: '/entrepreneur/mes-sessions', icon: 'calendar', bg: '#EFF6FF', color: '#3B82A6' },
+    { label: 'Mes Tâches', route: '/entrepreneur/mes-taches', icon: 'list', bg: '#F0FDF4', color: '#10B981' },
+    { label: 'Mes Livrables', route: '/entrepreneur/mes-livrables', icon: 'file-pdf', bg: '#FAF5FF', color: '#A855F7' },
+    { label: 'Mon Statut', route: '/entrepreneur/status', icon: 'chart-line', bg: '#FFF5F5', color: '#EF4444' },
   ];
 
   ngOnInit(): void {
@@ -224,7 +224,7 @@ export class EntrepreneurProgrammeComponent implements OnInit {
       next: (taches: any) => {
         const arr = Array.isArray(taches) ? taches : [];
         const total = arr.length;
-        const done = arr.filter((t: any) => t.statut === 'TERMINEE').length;
+        const done = arr.filter((t: any) => t.status === 'TERMINEE').length;
         const taskPct = total > 0 ? Math.round((done / total) * 100) : 0;
 
         this.livrableSvc.getAll({ entrepreneurId: userId }).subscribe({
@@ -235,15 +235,15 @@ export class EntrepreneurProgrammeComponent implements OnInit {
             const livPct = livTotal > 0 ? Math.round((livDone / livTotal) * 100) : 0;
 
             this.progressBars.set([
-              { label: 'Tâches complétées', value: taskPct, color: '#a17dfd', gradient: 'linear-gradient(90deg, #a17dfd, #7B52D3)' },
-              { label: 'Livrables approuvés', value: livPct, color: '#22c55e', gradient: 'linear-gradient(90deg, #22c55e, #16a34a)' },
-              { label: 'Progression globale', value: Math.round((taskPct + livPct) / 2), color: '#3aafff', gradient: 'linear-gradient(90deg, #3aafff, #1A3A3A)' },
+              { label: 'Tâches complétées', value: taskPct, color: '#A855F7', gradient: 'linear-gradient(90deg, #A855F7, #7C3339)' },
+              { label: 'Livrables approuvés', value: livPct, color: '#10B981', gradient: 'linear-gradient(90deg, #10B981, #059669)' },
+              { label: 'Progression globale', value: Math.round((taskPct + livPct) / 2), color: '#3B82A6', gradient: 'linear-gradient(90deg, #3B82A6, #475569)' },
             ]);
             this.loading.set(false);
           },
           error: () => {
             this.progressBars.set([
-              { label: 'Tâches complétées', value: taskPct, color: '#a17dfd', gradient: 'linear-gradient(90deg, #a17dfd, #7B52D3)' },
+              { label: 'Tâches complétées', value: taskPct, color: '#A855F7', gradient: 'linear-gradient(90deg, #A855F7, #7C3339)' },
             ]);
             this.loading.set(false);
           }
