@@ -153,9 +153,10 @@ public class CoachController {
     @PostMapping("/sessions/{sessionCoachId}/book")
     public ResponseEntity<?> bookSession(
             @PathVariable Long sessionCoachId,
-            @RequestParam Long entrepreneurId) {
+            @RequestParam Long entrepreneurId,
+            @RequestParam(required = false) String notes) {
         try {
-            return ResponseEntity.ok(coachService.bookSession(sessionCoachId, entrepreneurId));
+            return ResponseEntity.ok(coachService.bookSession(sessionCoachId, entrepreneurId, notes));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
         }

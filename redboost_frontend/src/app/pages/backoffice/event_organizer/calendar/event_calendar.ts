@@ -70,6 +70,7 @@ export class CalendarComponent implements OnInit {
   isEntrepreneur = false;
   matchedCoaches: any[] = [];
   coachGroupsMap: { [coachId: string]: any[] } = {};
+  coachThematiquesMap: { [coachId: string]: any[] } = {};
   
   // Selected slot for reservation
   selectedSlot: any | null = null;
@@ -177,9 +178,23 @@ export class CalendarComponent implements OnInit {
             const slotsArray = allData.slice(0, numCoaches);
             const groupsArray = allData.slice(numCoaches);
 
-            // Populate coachGroupsMap
+            // Populate coachGroupsMap and group by thematique
             response.coaches.forEach((c: any, index: number) => {
-              this.coachGroupsMap[c.id] = groupsArray[index] || [];
+              const groups: any[] = groupsArray[index] || [];
+              this.coachGroupsMap[c.id] = groups;
+              
+              // New grouping by thematique
+              const groupedByThem: any[] = [];
+              groups.forEach(g => {
+                const themName = g.slots[0]?.thematiqueNom || 'Thématique Générale';
+                let them = groupedByThem.find(t => t.name === themName);
+                if (!them) {
+                  them = { name: themName, sessionGroups: [] };
+                  groupedByThem.push(them);
+                }
+                them.sessionGroups.push(g);
+              });
+              this.coachThematiquesMap[c.id] = groupedByThem;
             });
 
             const allSlots = (slotsArray as any[]).flat();
@@ -230,7 +245,7 @@ export class CalendarComponent implements OnInit {
     if (!this.selectedSlot || !currentUser) return;
 
     this.isBooking = true;
-    this.coachService.bookSession(Number(this.selectedSlot.id), Number(currentUser.id)).subscribe({
+    this.coachService.bookSession(Number(this.selectedSlot.id), Number(currentUser.id), this.bookingNotes).subscribe({
       next: () => {
         this.isBooking = false;
         this.snackBar.open('Session réservée avec succès !', 'Fermer', { duration: 3000 });
@@ -239,7 +254,9 @@ export class CalendarComponent implements OnInit {
       },
       error: (err) => {
         this.isBooking = false;
-        this.snackBar.open(err.error?.error || 'Erreur lors de la réservation', 'Fermer', { duration: 3000 });
+        const msg = err.error?.error || 'Erreur lors de la réservation';
+        this.snackBar.open(msg, 'Fermer', { duration: 5000 });
+        console.error('Booking error:', err);
       }
     });
   }

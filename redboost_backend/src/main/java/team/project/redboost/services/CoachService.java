@@ -617,6 +617,9 @@ public class CoachService {
         dto.setHeureFin(s.getHeureFin());
         dto.setTypeSession(s.getTypeSession() != null ? s.getTypeSession().name() : "EN_LIGNE");
         dto.setSessionGroupId(s.getSessionGroupId());
+        if (s.getDisponibilite() != null && s.getDisponibilite().getThematique() != null) {
+            dto.setThematiqueNom(s.getDisponibilite().getThematique().getNom());
+        }
         return dto;
     }
 
@@ -672,7 +675,7 @@ public class CoachService {
     // --- BOOKING (entrepreneur reserves a coach session) ---
 
     @Transactional
-    public Map<String, Object> bookSession(Long sessionCoachId, Long entrepreneurId) {
+    public Map<String, Object> bookSession(Long sessionCoachId, Long entrepreneurId, String notes) {
         SessionCoach sc = sessionCoachRepository.findByIdWithLock(sessionCoachId)
                 .orElseThrow(() -> new ValidationException("Session non trouvée"));
         User entrepreneur = userRepository.findById(entrepreneurId)
@@ -702,6 +705,7 @@ public class CoachService {
                 .bookePar(entrepreneur)
                 .dateBooking(LocalDateTime.now())
                 .disponibiliteId(String.valueOf(sc.getId()))
+                .notesEntrepreneur(notes)
                 .build();
         Session saved = sessionRepository.save(session);
 

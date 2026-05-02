@@ -184,24 +184,38 @@
                      </div>
                    </div>
 
-                   <div class="session-groups-list">
-                      <div *ngFor="let group of getCoachGroups(coach.id)" class="session-group-item" [class.reserved]="group.reservedByMe">
-                        <div class="group-title">
-                          <mat-icon>bookmark</mat-icon>
-                          <span>{{ group.sessionTitle }}</span>
+                   <div class="coach-thematiques-list scrollable-sidebar-content">
+                      <div *ngFor="let them of coachThematiquesMap[coach.id]" class="thematique-section">
+                        <div class="thematique-header">
+                          <mat-icon>label</mat-icon>
+                          <span>{{ them.name }}</span>
                         </div>
-                        
-                        <div class="slots-grid">
-                          <button *ngFor="let slot of group.slots" class="slot-btn" 
-                            [class.selected]="selectedSlot?.id === slot.id"
-                            [disabled]="slot.isBooked || group.reservedByMe"
-                            (click)="selectSlot(slot, group.sessionTitle, coach)">
-                            <span class="slot-date">{{ formatSlotDay(slot.dateSession) }} {{ formatSlotMonth(slot.dateSession) }}</span>
-                            <span class="slot-time">{{ formatSlotTime(slot.heureDebut) }}</span>
-                          </button>
+
+                        <div class="session-groups-list">
+                          <div *ngFor="let group of them.sessionGroups" class="session-group-item" [class.reserved]="group.reservedByMe">
+                            <div class="group-title">
+                              <div class="title-left">
+                                <mat-icon>bookmark</mat-icon>
+                                <span>{{ group.sessionTitle }}</span>
+                              </div>
+                              <span class="session-count">{{ group.slots.length }} créneau{{ group.slots.length > 1 ? 'x' : '' }}</span>
+                            </div>
+                            
+                            <div class="slots-container scrollable-slots">
+                              <div class="slots-grid">
+                                <button *ngFor="let slot of group.slots" class="slot-btn" 
+                                  [class.selected]="selectedSlot?.id === slot.id"
+                                  [disabled]="slot.isBooked || group.reservedByMe"
+                                  (click)="selectSlot(slot, group.sessionTitle, coach)">
+                                  <span class="slot-date">{{ formatSlotDay(slot.dateSession) }} {{ formatSlotMonth(slot.dateSession) }}</span>
+                                  <span class="slot-time">{{ formatSlotTime(slot.heureDebut) }}</span>
+                                </button>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                      <div *ngIf="getCoachGroups(coach.id).length === 0" class="empty-coach-slots">
+                      <div *ngIf="!coachThematiquesMap[coach.id] || coachThematiquesMap[coach.id].length === 0" class="empty-coach-slots">
                         Pas de créneaux disponibles
                       </div>
                    </div>

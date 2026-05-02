@@ -21,6 +21,7 @@ export interface SessionCoachDTO {
   heureFin: string;
   typeSession?: string; 
   sessionGroupId?: string; 
+  thematiqueNom?: string;
   isBooked?: boolean;
   isBookedByMe?: boolean;
   isGroupReservedByMe?: boolean;
@@ -290,8 +291,10 @@ export class CoachService {
   }
 
   // BOOKING (Entrepreneur)
-  bookSession(sessionCoachId: number, entrepreneurId: number): Observable<any> {
-    return this.http.post(`${this.apiUrl}/sessions/${sessionCoachId}/book?entrepreneurId=${entrepreneurId}`, {});
+  bookSession(sessionCoachId: number, entrepreneurId: number, notes?: string): Observable<any> {
+    let url = `${this.apiUrl}/sessions/${sessionCoachId}/book?entrepreneurId=${entrepreneurId}`;
+    if (notes) url += `&notes=${encodeURIComponent(notes)}`;
+    return this.http.post(url, {});
   }
   rescheduleSession(sessionId: string, newDate: string, entrepreneurId: number): Observable<any> {
     return this.http.put(`${this.apiUrl}/sessions/${sessionId}/reschedule?newDate=${newDate}&entrepreneurId=${entrepreneurId}`, {});
