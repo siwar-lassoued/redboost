@@ -9,6 +9,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { FormsModule } from '@angular/forms';
 import { EventService, EventResponse } from '../event.service';
 import { TypeFormationService, TypeFormation } from '../type-formation.service';
 import { MatTooltip } from '@angular/material/tooltip';
@@ -54,7 +55,8 @@ interface EventTypeWithColor {
     MatDialogModule,
     MatCardModule,
     MatProgressSpinnerModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    FormsModule
   ],
 })
 export class CalendarComponent implements OnInit {
@@ -66,6 +68,15 @@ export class CalendarComponent implements OnInit {
   isLoading = false;
   totalEventsCount = 0;
   isEntrepreneur = false;
+  matchedCoaches: any[] = [];
+  coachGroupsMap: { [coachId: string]: any[] } = {};
+  
+  // Selected slot for reservation
+  selectedSlot: any | null = null;
+  selectedCoachForBooking: any | null = null;
+  selectedGroupTitle: string = '';
+  bookingNotes: string = '';
+  isBooking: boolean = false;
   
   // Selected date and its event
   selectedDate: Date | null = null;
@@ -73,21 +84,21 @@ export class CalendarComponent implements OnInit {
 
   eventTypes: EventTypeWithColor[] = [];
   private colorPalette = [
-    '#EF4444', // Red
     '#3B82A6', // Blue
-    '#7C3339', // Burgundy
-    '#475569', // Slate
-    '#A855F7', // Purple
-    '#F97316', // Orange
     '#10B981', // Green
     '#F59E0B', // Amber
+    '#EF4444', // Red
     '#8B5CF6', // Violet
     '#EC4899', // Pink
     '#14B8A6', // Teal
     '#F43F5E', // Rose
+    '#7C3339', // Burgundy
+    '#475569', // Slate
+    '#A855F7', // Purple
+    '#F97316', // Orange
   ];
 
-  // Icon mapping for event type
+  // ... (rest of colors)
   private iconMapping: { [key: string]: string } = {
     'pitch deck': 'campaign',
     'pitch': 'campaign',
@@ -127,6 +138,7 @@ export class CalendarComponent implements OnInit {
     const year = this.currentMonth.getFullYear();
     const month = this.currentMonth.getMonth() + 1;
     const currentUser = this.authService.currentUser$.value;
+    
     const dataSources: any = {
       types: this.typeFormationService.getAllTypes(),
       events: this.eventService.getEventsByMonth(year, month)
@@ -149,24 +161,40 @@ export class CalendarComponent implements OnInit {
         }
 
         if (response.coaches && response.coaches.length > 0) {
+          this.matchedCoaches = response.coaches;
+          const entrepreneurId = Number(currentUser?.id);
           
-            const slotRequests = response.coaches.map((c: any) => 
-                this.coachService.getAvailableSessionsForEntrepreneur(Number(c.id), Number(currentUser?.id)).pipe(catchError(() => of([])))
-            );
-            
-            forkJoin(slotRequests).subscribe((slotsArray: any) => {
-                const allSlots = (slotsArray as any[]).flat();
-                const slotsMapped = this.mapAvailableSlotsToCalendarEvents(allSlots);
-                this.events = [...allCalendarEvents, ...slotsMapped];
-                this.totalEventsCount = this.events.length;
-                this.generateCalendar();
-                this.isLoading = false;
+          const slotRequests = response.coaches.map((c: any) => 
+            this.coachService.getAvailableSessionsForEntrepreneur(Number(c.id), entrepreneurId).pipe(catchError(() => of([])))
+          );
+
+          const groupRequests = response.coaches.map((c: any) => 
+            this.coachService.getAvailableSessionsGrouped(Number(c.id), entrepreneurId).pipe(catchError(() => of([])))
+          );
+          
+          forkJoin([...slotRequests, ...groupRequests]).subscribe((allData: any[]) => {
+            const numCoaches = response.coaches.length;
+            const slotsArray = allData.slice(0, numCoaches);
+            const groupsArray = allData.slice(numCoaches);
+
+            // Populate coachGroupsMap
+            response.coaches.forEach((c: any, index: number) => {
+              this.coachGroupsMap[c.id] = groupsArray[index] || [];
             });
-        } else {
-            this.events = allCalendarEvents;
+
+            const allSlots = (slotsArray as any[]).flat();
+            const slotsMapped = this.mapAvailableSlotsToCalendarEvents(allSlots);
+            
+            this.events = [...allCalendarEvents, ...slotsMapped];
             this.totalEventsCount = this.events.length;
             this.generateCalendar();
             this.isLoading = false;
+          });
+        } else {
+          this.events = allCalendarEvents;
+          this.totalEventsCount = this.events.length;
+          this.generateCalendar();
+          this.isLoading = false;
         }
       },
       error: (error) => {
@@ -181,10 +209,45 @@ export class CalendarComponent implements OnInit {
     });
   }
 
+  getCoachGroups(coachId: string): any[] {
+    return this.coachGroupsMap[coachId] || [];
+  }
+
+  getCoachColor(coachId: string): string {
+    const index = this.matchedCoaches.findIndex(c => c.id === coachId);
+    return this.colorPalette[index % this.colorPalette.length];
+  }
+
+  selectSlot(slot: any, groupTitle: string, coach: any): void {
+    this.selectedSlot = slot;
+    this.selectedGroupTitle = groupTitle;
+    this.selectedCoachForBooking = coach;
+    this.bookingNotes = '';
+  }
+
+  confirmBooking(): void {
+    const currentUser = this.authService.currentUser$.value;
+    if (!this.selectedSlot || !currentUser) return;
+
+    this.isBooking = true;
+    this.coachService.bookSession(Number(this.selectedSlot.id), Number(currentUser.id)).subscribe({
+      next: () => {
+        this.isBooking = false;
+        this.snackBar.open('Session réservée avec succès !', 'Fermer', { duration: 3000 });
+        this.selectedSlot = null;
+        this.loadEventTypesAndEvents(); // Refresh everything
+      },
+      error: (err) => {
+        this.isBooking = false;
+        this.snackBar.open(err.error?.error || 'Erreur lors de la réservation', 'Fermer', { duration: 3000 });
+      }
+    });
+  }
+
   mapBookedSessionsToCalendarEvents(sessions: any[]): CalendarEvent[] {
     return sessions.map(s => ({
       id: 'booked-' + s.id,
-      title: 'Session Coaching : ' + (s.titre || ''),
+      title: 'Coaching : ' + (s.titre || ''),
       date: new Date(s.date),
       time: new Date(s.date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
       type: 'Coaching (Confirmé)',
@@ -194,24 +257,39 @@ export class CalendarComponent implements OnInit {
       description: s.description || '',
       participants: [],
       meetLink: s.meetLink,
-      isDisabled: true // For entrepreneurs, booked sessions are disabled in the calendar view
+      isDisabled: true
     }));
   }
 
   mapAvailableSlotsToCalendarEvents(slots: any[]): CalendarEvent[] {
     return slots.map(s => ({
       id: 'slot-' + s.id,
-      title: 'Dispo: ' + (s.titre || 'Créneau libre'),
+      title: 'Dispo: ' + (s.titre || 'Créneau'),
       date: new Date(s.dateSession),
       time: s.heureDebut.substring(0, 5) + ' - ' + s.heureFin.substring(0, 5),
-      type: s.titre || 'Créneau Disponible', // Distinct color per session title
+      type: s.titre || 'Créneau Disponible',
       location: s.typeSession === 'EN_LIGNE' ? 'En ligne' : (s.adresse || 'En personne'),
       mode: s.typeSession === 'EN_LIGNE' ? 'virtuel' : 'en-personne',
       program: '',
-      description: 'Cliquez pour réserver ce créneau via l\'onglet "Mes Coachs"',
+      description: 'Réservez via le panneau de droite',
       participants: [],
-      isDisabled: s.isBooked || s.isGroupReservedByMe || false // Disabled if it's booked by anyone OR part of a group that is already reserved
+      isDisabled: s.isBooked || s.isGroupReservedByMe || false
     }));
+  }
+
+  formatSlotDay(dateStr: string): string {
+    if (!dateStr) return '';
+    return new Date(dateStr).getDate().toString();
+  }
+
+  formatSlotMonth(dateStr: string): string {
+    if (!dateStr) return '';
+    return new Date(dateStr).toLocaleDateString('fr-FR', { month: 'short' }).toUpperCase();
+  }
+
+  formatSlotTime(timeStr: string | undefined): string {
+    if (!timeStr) return '';
+    return timeStr.substring(0, 5).replace(':', 'h');
   }
 
   mapTypesToEventTypes(types: TypeFormation[]): EventTypeWithColor[] {

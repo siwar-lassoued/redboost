@@ -3,7 +3,6 @@
   <!-- Loading Overlay -->
   <div class="loading-overlay" *ngIf="isLoading">
     <mat-spinner diameter="50"></mat-spinner>
-    <p>Chargement des événements...</p>
   </div>
 
   <div class="calendar-wrapper">
@@ -163,8 +162,55 @@
 
         <!-- Sidebar -->
         <div class="sidebar">
-          <!-- Upcoming Events -->
-          <div>
+          
+          <ng-container *ngIf="isEntrepreneur">
+            <!-- Center of Reservation -->
+            <div class="reservation-center">
+              <div class="sidebar-header">
+                <h3>Réserver une session</h3>
+                <mat-icon matTooltip="Centralisez vos réservations ici">help_outline</mat-icon>
+              </div>
+
+              <!-- List of coaches with their availabilities -->
+               <div class="coach-booking-list">
+                 <div *ngFor="let coach of matchedCoaches" class="coach-booking-section" [style.border-left-color]="getCoachColor(coach.id)">
+                   <div class="coach-header">
+                     <div class="coach-avatar" [style.background]="getCoachColor(coach.id)">
+                       {{ coach.nom ? coach.nom[0] : 'C' }}
+                     </div>
+                     <div class="coach-info">
+                       <h4>{{ coach.nom }}</h4>
+                       <p>{{ coach.specialite || 'Coach Expert' }}</p>
+                     </div>
+                   </div>
+
+                   <div class="session-groups-list">
+                      <div *ngFor="let group of getCoachGroups(coach.id)" class="session-group-item" [class.reserved]="group.reservedByMe">
+                        <div class="group-title">
+                          <mat-icon>bookmark</mat-icon>
+                          <span>{{ group.sessionTitle }}</span>
+                        </div>
+                        
+                        <div class="slots-grid">
+                          <button *ngFor="let slot of group.slots" class="slot-btn" 
+                            [class.selected]="selectedSlot?.id === slot.id"
+                            [disabled]="slot.isBooked || group.reservedByMe"
+                            (click)="selectSlot(slot, group.sessionTitle, coach)">
+                            <span class="slot-date">{{ formatSlotDay(slot.dateSession) }} {{ formatSlotMonth(slot.dateSession) }}</span>
+                            <span class="slot-time">{{ formatSlotTime(slot.heureDebut) }}</span>
+                          </button>
+                        </div>
+                      </div>
+                      <div *ngIf="getCoachGroups(coach.id).length === 0" class="empty-coach-slots">
+                        Pas de créneaux disponibles
+                      </div>
+                   </div>
+                 </div>
+               </div>
+            </div>
+          </ng-container>
+
+          <ng-container *ngIf="!isEntrepreneur">
             <div class="upcoming-section">
               <h3>Événements à venir</h3>
               <span class="badge-count">{{ getUpcomingEventsCount() }}</span>
@@ -181,7 +227,6 @@
                   </div>
 
                   <div class="event-info">
-                    <!-- ✅ Title row: title + program badge side by side -->
                     <div class="event-title-row">
                       <h5>{{ event.title }}</h5>
                       <span class="event-program-badge" *ngIf="event.program">
@@ -189,7 +234,6 @@
                         {{ event.program }}
                       </span>
                     </div>
-                    <!-- Type badge on its own row below -->
                     <div class="event-badges">
                       <span class="event-type-badge" [style.background-color]="getEventTypeColor(event.type)">
                         {{ event.type }}
@@ -217,9 +261,45 @@
                 </div>
               </mat-card>
             </div>
-          </div>
+          </ng-container>
 
         </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Booking Confirmation Modal -->
+<div class="booking-modal-overlay" *ngIf="selectedSlot">
+  <div class="booking-modal">
+    <div class="modal-header">
+      <h3>Confirmer la réservation</h3>
+      <p>{{ selectedGroupTitle }} — {{ selectedCoachForBooking?.nom }}</p>
+    </div>
+    <div class="modal-body">
+      <div class="slot-summary">
+        <div class="summary-item">
+          <mat-icon>event</mat-icon>
+          <span>{{ selectedSlot.dateSession | date:'fullDate':'':'fr' }}</span>
+        </div>
+        <div class="summary-item">
+          <mat-icon>schedule</mat-icon>
+          <span>{{ formatSlotTime(selectedSlot.heureDebut) }} à {{ formatSlotTime(selectedSlot.heureFin) }}</span>
+        </div>
+      </div>
+
+      <div class="notes-field">
+        <label>Notes pour le coach (optionnel)</label>
+        <textarea [(ngModel)]="bookingNotes" placeholder="Précisez vos besoins..."></textarea>
+      </div>
+
+      <div class="modal-actions">
+        <button class="cancel-btn" (click)="selectedSlot = null">Annuler</button>
+        <button class="confirm-btn" (click)="confirmBooking()" [disabled]="isBooking">
+          <mat-icon *ngIf="!isBooking">check</mat-icon>
+          <mat-icon *ngIf="isBooking" class="pi-spin">sync</mat-icon>
+          {{ isBooking ? 'Réservation...' : 'Confirmer' }}
+        </button>
       </div>
     </div>
   </div>

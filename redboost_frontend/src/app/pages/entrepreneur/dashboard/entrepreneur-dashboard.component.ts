@@ -66,7 +66,7 @@ import { OnInit, computed } from '@angular/core';
           @if (assignedCoach()) {
             <div class="flex items-center gap-4 mb-4">
               <div class="w-16 h-16 rounded-2xl flex items-center justify-center text-white text-xl font-black shadow-lg"
-                style="background: linear-gradient(135deg, #3B82A6, #10B981)">
+                style="background-color: #3B82A6">
                 {{ assignedCoach()!.nom ? assignedCoach()!.nom[0] : 'C' }}
               </div>
               <div>
@@ -92,14 +92,14 @@ import { OnInit, computed } from '@angular/core';
             </div>
 
               <div class="flex gap-2">
-                <button routerLink="/entrepreneur/mes-coachs"
-                  class="flex-1 py-3 rounded-2xl text-sm font-black text-white transition-all hover:scale-[1.02] shadow-lg shadow-[#3B82A6]/20"
-                  style="background: linear-gradient(135deg, #3B82A6, #475569)">
+                <button routerLink="/calendar"
+                  class="flex-1 py-3 rounded-2xl text-sm font-black text-white transition-all hover:opacity-90 shadow-lg"
+                  style="background-color: #3B82A6">
                   Profil complet
                 </button>
                 <button [routerLink]="['/entrepreneur/chat']" [queryParams]="{with: assignedCoach()!.id}"
-                  class="w-14 py-3 rounded-2xl flex items-center justify-center text-white transition-all hover:scale-[1.05] shadow-lg shadow-[#F97316]/20"
-                  style="background: linear-gradient(135deg, #F97316, #EF4444)">
+                  class="w-14 py-3 rounded-2xl flex items-center justify-center text-white transition-all hover:opacity-90 shadow-lg"
+                  style="background-color: #F97316">
                   <i class="pi pi-comments"></i>
                 </button>
               </div>
@@ -155,7 +155,7 @@ import { OnInit, computed } from '@angular/core';
 
           @if (nextSession()) {
             
-            <div class="rounded-2xl p-5 mb-4 text-white" style="background: linear-gradient(135deg, #3B82A6 0%, #475569 100%)">
+            <div class="rounded-2xl p-5 mb-4 text-white" style="background-color: #3B82A6">
               <div class="flex items-center gap-2.5 mb-2">
                 <i class="pi pi-calendar opacity-75"></i>
                 <span class="text-sm font-black">{{ nextSession()!.date }}</span>
@@ -180,7 +180,7 @@ import { OnInit, computed } from '@angular/core';
             <div class="py-12 text-center">
               <i class="pi pi-calendar text-5xl text-gray-200 mb-3 block"></i>
               <p class="text-sm font-black text-gray-400 uppercase tracking-widest mb-4">Aucune session planifiée</p>
-              <button routerLink="/entrepreneur/mes-sessions"
+              <button routerLink="/calendar"
                 class="flex items-center gap-1.5 text-sm font-black text-[#3B82A6] mx-auto hover:underline uppercase tracking-widest">
                 Réserver maintenant <i class="pi pi-chevron-right text-[10px]"></i>
               </button>
@@ -276,12 +276,12 @@ export class EntrepreneurDashboardComponent implements OnInit {
         subtext: coach ? coach.specialite || 'Expert' : 'En attente', 
         footer: 'Accompagnement actif', 
         icon: 'user-edit', 
-        gradient: 'linear-gradient(135deg, #F97316 0%, #EF4444 100%)', 
-        shadow: '0 4px 16px rgba(249,115,22,0.30)' 
+        gradient: '#F97316', 
+        shadow: '0 4px 16px rgba(249,115,22,0.15)' 
       },
-      { label: 'SESSION', value: this.nextSession() ? 'OUI' : 'NON', subtext: 'prochaine', footer: this.nextSession() ? 'Planifiée' : 'Aucune', icon: 'calendar', gradient: 'linear-gradient(135deg, #A855F7 0%, #7C3339 100%)', shadow: '0 4px 16px rgba(168,85,247,0.30)' },
-      { label: 'TÂCHES', value: this.totalTasks().toString(), subtext: 'à faire', footer: 'En cours', icon: 'list', gradient: 'linear-gradient(135deg, #3B82A6 0%, #475569 100%)', shadow: '0 4px 16px rgba(59,130,166,0.25)' },
-      { label: 'PROGRESSION', value: this.progress() + '%', subtext: 'globale', footer: 'Performance', icon: 'chart-line', gradient: 'linear-gradient(135deg, #10B981 0%, #059669 100%)', shadow: '0 4px 16px rgba(16,185,129,0.25)' },
+      { label: 'SESSION', value: this.nextSession() ? 'OUI' : 'NON', subtext: 'prochaine', footer: this.nextSession() ? 'Planifiée' : 'Aucune', icon: 'calendar', gradient: '#8B5CF6', shadow: '0 4px 16px rgba(139,92,246,0.15)' },
+      { label: 'TÂCHES', value: this.totalTasks().toString(), subtext: 'à faire', footer: 'En cours', icon: 'list', gradient: '#3B82A6', shadow: '0 4px 16px rgba(59,130,166,0.15)' },
+      { label: 'PROGRESSION', value: this.progress() + '%', subtext: 'globale', footer: 'Performance', icon: 'chart-line', gradient: '#10B981', shadow: '0 4px 16px rgba(16,185,129,0.15)' },
     ];
   });
 }

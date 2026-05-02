@@ -17,6 +17,12 @@ interface SessionView {
   editEnd: string;
 }
 
+interface SessionFormGroup {
+  titre: string;
+  typeSession: string;
+  dateSlotGroups: DateSlotGroup[];
+}
+
 interface DateGroupView {
   date: string;
   disponibiliteId: number;
@@ -151,7 +157,6 @@ interface DateGroupView {
                   <button class="close-btn" (click)="showDispoModal = false"><i class="pi pi-times"></i></button>
               </div>
               <div class="modal-body">
-
                 <!-- STEP 1: Thématique -->
                 <div class="form-group">
                     <label>Étape 1 — Thématique <span style="color:#E53E3E">*</span></label>
@@ -167,92 +172,103 @@ interface DateGroupView {
                     <i class="pi pi-info-circle"></i>
                     <span>Disponibilités du <strong>{{ selectedThematiqueObj.dateDebut | date:'dd/MM/yyyy' }}</strong> au <strong>{{ selectedThematiqueObj.dateFin | date:'dd/MM/yyyy' }}</strong></span>
                 </div>
+                  <!-- STEP 2: Sessions List -->
+                <div *ngIf="selectedThematiqueId" class="sessions-batch-container">
+                  <div class="batch-instruction">
+                    <i class="pi pi-info-circle"></i>
+                    <span>Définissez vos sessions pour cette thématique. Chaque session peut avoir plusieurs dates et créneaux.</span>
+                  </div>
 
-                <!-- STEP 2: Session Title (required before showing créneaux form) -->
-                <div class="form-group" *ngIf="selectedThematiqueId">
-                    <label>
-                      Étape 2 — Titre de la session <span style="color:#E53E3E">*</span>
-                    </label>
-                    <input type="text" class="premium-input" [(ngModel)]="newDispoTitle"
-                      placeholder="Ex: Session 1, Workshop Pitch Deck, Module Financement..."
-                      (ngModelChange)="onSessionTitleChange()">
-                    <div *ngIf="newDispoTitle.trim()" class="thematique-dates-banner" style="margin-top:6px; background:#F0FFF4; border-color:#C6F6D5; color:#276749;">
-                      <i class="pi pi-check-circle"></i>
-                      <span>Session <strong>"{{ newDispoTitle }}"</strong> — Ajoutez maintenant les créneaux ci-dessous</span>
+                  <div *ngFor="let sForm of sessionForms; let si = index" class="session-form-card" [class.first-card]="si === 0">
+                    <div class="s-form-header">
+                      <div class="s-form-title-row">
+                        <span class="s-form-badge">Session #{{ si + 1 }}</span>
+                        <button *ngIf="sessionForms.length > 1" class="btn-remove-session" (click)="removeSessionForm(si)" title="Supprimer cette session">
+                          <i class="pi pi-trash"></i>
+                        </button>
+                      </div>
+                      <div class="form-group mb-0">
+                        <label class="premium-label">Titre de la session *</label>
+                        <input type="text" class="premium-input title-input" [(ngModel)]="sForm.titre" 
+                          placeholder="Ex: Workshop #1, Session Stratégie...">
+                      </div>
                     </div>
-                    <div *ngIf="selectedThematiqueId && !newDispoTitle.trim()" class="error-banner" style="margin-top:6px;">
-                      <i class="pi pi-info-circle"></i>
-                      <span>Entrez un titre de session pour continuer</span>
+
+                    <div class="s-form-body">
+                      <!-- Dates & Slots for this session -->
+                      <div class="form-group">
+                        <label class="premium-label">Dates & Créneaux horaires *</label>
+                        <div class="dsg-container">
+                          <div *ngFor="let group of sForm.dateSlotGroups; let gi = index" class="date-slot-group">
+                            <div class="dsg-header">
+                              <div class="dsg-date-row">
+                                <i class="pi pi-calendar-plus text-sky-500"></i>
+                                <input type="date" class="premium-input dsg-date-input" [(ngModel)]="group.date"
+                                  [min]="selectedThematiqueObj?.dateDebut" [max]="selectedThematiqueObj?.dateFin">
+                                <button *ngIf="sForm.dateSlotGroups.length > 1" class="btn-remove-inline" (click)="removeDateGroupFromForm(si, gi)">
+                                  <i class="pi pi-times"></i>
+                                </button>
+                              </div>
+                            </div>
+                            <div class="dsg-slots">
+                              <div *ngFor="let slot of group.slots; let sli = index" class="slot-row">
+                                <div class="slot-inputs">
+                                  <div class="time-input-group">
+                                    <span class="time-label">De</span>
+                                    <input type="time" class="premium-input" [(ngModel)]="slot.start">
+                                  </div>
+                                  <div class="time-input-group">
+                                    <span class="time-label">À</span>
+                                    <input type="time" class="premium-input" [(ngModel)]="slot.end">
+                                  </div>
+                                </div>
+                                <button *ngIf="group.slots.length > 1" class="btn-remove-slot-minimal" (click)="removeSlotFromFormGroup(si, gi, sli)">
+                                  <i class="pi pi-minus-circle"></i>
+                                </button>
+                              </div>
+                              <button class="btn-add-slot-minimal" (click)="addSlotToFormGroup(si, gi)">
+                                <i class="pi pi-plus"></i> Ajouter un autre créneau à cette date
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                        <button class="btn-add-date-minimal" (click)="addDateGroupToForm(si)">
+                          <i class="pi pi-calendar-plus"></i> Ajouter une autre date pour cette session
+                        </button>
+                      </div>
+
+                      <div class="form-group mb-0">
+                        <label class="premium-label">Lieu / Mode *</label>
+                        <div class="type-session-selector-premium">
+                          <button class="type-btn-premium" [class.active]="sForm.typeSession === 'EN_LIGNE'" (click)="sForm.typeSession = 'EN_LIGNE'">
+                            <i class="pi pi-video"></i>
+                            <span>Visioconférence</span>
+                          </button>
+                          <button class="type-btn-premium" [class.active]="sForm.typeSession === 'PRESENTIEL'" (click)="sForm.typeSession = 'PRESENTIEL'">
+                            <i class="pi pi-building"></i>
+                            <span>En présentiel</span>
+                          </button>
+                        </div>
+                      </div>
                     </div>
+                  </div>
+
+                  <div class="batch-actions-footer">
+                    <button class="btn-add-session-major" (click)="addSessionForm()">
+                      <i class="pi pi-plus-circle"></i> Ajouter une autre session (nouveau titre)
+                    </button>
+                  </div>
                 </div>
 
                 <div *ngIf="dispoValidationError" class="error-banner">
                     <i class="pi pi-exclamation-triangle"></i> {{ dispoValidationError }}
                 </div>
-
-                <!-- STEP 3: Dates & Créneaux (only shown once session title is filled) -->
-                <div *ngIf="newDispoTitle.trim()">
-                  <div class="form-group">
-                    <label>Étape 3 — Dates & Créneaux <span style="color:#E53E3E">*</span></label>
-                    <p class="field-help">Chaque date possède ses propres créneaux horaires (tous liés à la session « {{ newDispoTitle }} »)</p>
-
-                    <div *ngFor="let group of dateSlotGroups; let gi = index" class="date-slot-group">
-                      <div class="dsg-header">
-                        <div class="dsg-date-row">
-                          <span class="dsg-badge"> Date {{ gi + 1 }}</span>
-                          <input type="date" class="premium-input dsg-date-input" [(ngModel)]="group.date"
-                            [min]="selectedThematiqueObj?.dateDebut" [max]="selectedThematiqueObj?.dateFin">
-                          <button *ngIf="dateSlotGroups.length > 1" class="btn-remove-inline" (click)="removeDateGroup(gi)">
-                            <i class="pi pi-times"></i>
-                          </button>
-                        </div>
-                      </div>
-                      <div class="dsg-slots">
-                        <div *ngFor="let slot of group.slots; let si = index" class="slot-card">
-                          <div class="slot-title">Créneau {{ si + 1 }}</div>
-                          <div class="slot-grid">
-                            <div>
-                              <label class="slot-label">Heure de début</label>
-                              <input type="time" class="premium-input" [(ngModel)]="slot.start">
-                            </div>
-                            <div>
-                              <label class="slot-label">Heure de fin</label>
-                              <input type="time" class="premium-input" [(ngModel)]="slot.end">
-                            </div>
-                          </div>
-                          <button *ngIf="group.slots.length > 1" class="btn-remove-slot" (click)="removeSlotFromGroup(gi, si)">
-                            <i class="pi pi-trash"></i> Supprimer ce créneau
-                          </button>
-                        </div>
-                        <button class="btn-inline-slot" (click)="addSlotToGroup(gi)">
-                          <i class="pi pi-plus"></i> Ajouter un créneau à cette date
-                        </button>
-                      </div>
-                    </div>
-
-                    <button class="btn-inline mt-2" (click)="addDateGroup()">
-                      <i class="pi pi-plus"></i> Ajouter une autre date
-                    </button>
-                  </div>
-
-                  <div class="form-group">
-                    <label>Type de session <span style="color:#E53E3E">*</span></label>
-                    <div class="type-session-selector">
-                      <button class="type-btn" [class.active]="newSessionType === 'EN_LIGNE'" (click)="newSessionType = 'EN_LIGNE'">
-                        <i class="pi pi-video"></i> En ligne
-                      </button>
-                      <button class="type-btn" [class.active]="newSessionType === 'PRESENTIEL'" (click)="newSessionType = 'PRESENTIEL'">
-                        <i class="pi pi-building"></i> Présentiel
-                      </button>
-                    </div>
-                  </div>
-                </div>
               </div>
               <div class="modal-actions">
                     <button class="btn-outline" (click)="showDispoModal = false">Annuler</button>
                     <button class="btn-primary"
-                      [disabled]="!selectedThematiqueId || !newDispoTitle.trim()"
-                      (click)="addDisponibilite()">Ajouter la disponibilité</button>
+                      [disabled]="!selectedThematiqueId || isSessionFormsEmpty()"
+                      (click)="addDisponibilite()">Ajouter les disponibilités</button>
               </div>
           </div>
       </div>
@@ -508,6 +524,39 @@ interface DateGroupView {
     .btn-outline-sm:hover { background: #F7FAFC; }
     .btn-primary-sm { background: var(--gradient-pink); color: white; border: none; padding: 6px 16px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: transform .2s; }
     .btn-primary-sm:hover { transform: translateY(-1px); }
+
+    .session-form-card { background: white; border: 1px solid #E2E8F0; border-radius: 20px; margin-bottom: 20px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.02); }
+    .s-form-header { background: #F8FAFC; padding: 16px; border-bottom: 1px solid #E2E8F0; }
+    .s-form-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .s-form-badge { background: #3B82A6; color: white; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+    .btn-remove-session { background: #FFF5F5; color: #E53E3E; border: none; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .s-form-body { padding: 16px; }
+    .btn-add-session-major { width: 100%; padding: 12px; border: 2px dashed #3B82A6; background: #F0F9FF; color: #3B82A6; border-radius: 16px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; }
+    .btn-add-session-major:hover { background: #E0F2FE; transform: scale(1.01); }
+    .batch-instruction { display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: #F0F9FF; border: 1px solid #BAE6FD; border-radius: 12px; margin-bottom: 20px; font-size: 13px; color: #0369A1; }
+    .batch-instruction i { font-size: 16px; }
+    .premium-label { font-size: 0.85rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: block; }
+    .title-input { font-size: 1.1rem; font-weight: 700; color: #1e293b; border-width: 2px; }
+    .title-input:focus { border-color: #3B82A6; }
+    .dsg-container { display: flex; flex-direction: column; gap: 12px; margin-bottom: 12px; }
+    .dsg-date-row i { font-size: 18px; }
+    .dsg-date-input { border-radius: 12px; font-weight: 600; }
+    .slot-row { display: flex; align-items: center; gap: 12px; background: white; padding: 8px 12px; border-radius: 12px; border: 1px solid #f1f5f9; margin-bottom: 6px; }
+    .slot-inputs { display: flex; gap: 16px; flex: 1; }
+    .time-input-group { display: flex; align-items: center; gap: 8px; flex: 1; }
+    .time-label { font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; }
+    .btn-remove-slot-minimal { background: transparent; color: #cbd5e1; border: none; font-size: 18px; cursor: pointer; transition: color 0.2s; }
+    .btn-remove-slot-minimal:hover { color: #ef4444; }
+    .btn-add-slot-minimal { background: transparent; border: 1px dashed #e2e8f0; color: #94a3b8; width: 100%; padding: 8px; border-radius: 10px; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+    .btn-add-slot-minimal:hover { border-color: #3B82A6; color: #3B82A6; background: #F0F9FF; }
+    .btn-add-date-minimal { background: #f8fafc; border: 1px solid #e2e8f0; color: #64748b; width: 100%; padding: 10px; border-radius: 12px; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; }
+    .btn-add-date-minimal:hover { background: #f1f5f9; border-color: #cbd5e1; }
+    .type-session-selector-premium { display: flex; gap: 12px; }
+    .type-btn-premium { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px; border-radius: 16px; border: 2px solid #f1f5f9; background: #f8fafc; color: #64748b; cursor: pointer; transition: all 0.2s; }
+    .type-btn-premium i { font-size: 20px; }
+    .type-btn-premium span { font-size: 12px; font-weight: 700; }
+    .type-btn-premium.active { border-color: #3B82A6; background: #F0F9FF; color: #3B82A6; box-shadow: 0 4px 12px rgba(59,130,166,0.1); }
+    .batch-actions-footer { padding-top: 10px; border-top: 1px solid #f1f5f9; }
   `]
 })
 export class DisponibilitesComponent implements OnInit {
@@ -518,11 +567,10 @@ export class DisponibilitesComponent implements OnInit {
   selectedThematiqueId: number | null = null;
   selectedDispoToEditId: number | null = null;
   editThematiqueId: number | null = null;
-  newDispoTitle: string = '';
-  defaultTitle: string = '';
-  dateSlotGroups: DateSlotGroup[] = [{ date: '', slots: [{ start: '', end: '' }] }];
-  sessionDuration: string = '1h';
-  newSessionType: string = 'EN_LIGNE';
+  
+  // Multiple Session Forms for "Add" modal
+  sessionForms: SessionFormGroup[] = [];
+  
   dispoValidationError: string | null = null;
   editValidationError: string | null = null;
 // ===== EDIT DISPONIBILITE =====
@@ -601,11 +649,8 @@ dispoIdsForActiveTheme: number[] = [];
 
   openDispoModal(): void {
     this.showDispoModal = true;
-    // Pre-fill title with first matched programme name
-    if (this.programmes.length > 0) {
-      this.defaultTitle = this.programmes[0].nom;
-      this.newDispoTitle = this.programmes[0].nom;
-    }
+    this.sessionForms = [];
+    this.addSessionForm(); // Start with one empty session form
   }
   openEditDispoModal(dispo?: DisponibiliteDTO): void {
     this.showEditDispoModal = true;
@@ -746,49 +791,57 @@ private mapCalendarEvents(events: CoachCalendarEventDTO[]): any[] {
   }
 
   addDisponibilite() {
-    if (!this.selectedThematiqueId || !this.newDispoTitle.trim()) return;
+    if (!this.selectedThematiqueId || this.isSessionFormsEmpty()) return;
+    
     const thematique = this.thematiques.find(t => t.id === this.selectedThematiqueId);
     if (thematique) {
       const thStart = new Date(thematique.dateDebut);
       const thEnd = new Date(thematique.dateFin);
-      for (const group of this.dateSlotGroups) {
-        if (group.date) {
-          const d = new Date(group.date);
-          if (d < thStart || d > thEnd) {
-            this.dispoValidationError = `La date ${d.toLocaleDateString('fr-FR')} est en dehors de la plage autorisée (${thStart.toLocaleDateString('fr-FR')} — ${thEnd.toLocaleDateString('fr-FR')}). Veuillez corriger.`;
-            return;
+      for (const sForm of this.sessionForms) {
+        for (const group of sForm.dateSlotGroups) {
+          if (group.date) {
+            const d = new Date(group.date);
+            if (d < thStart || d > thEnd) {
+              this.dispoValidationError = `La date ${d.toLocaleDateString('fr-FR')} (Session: ${sForm.titre}) est en dehors de la thématique.`;
+              return;
+            }
           }
         }
       }
     }
+    
     this.dispoValidationError = null;
     this.loading = true;
-
-    // Generate ONE sessionGroupId for this entire session batch (all créneaux share it)
-    const sessionGroupId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36);
 
     this.coachService.addDisponibilite(this.coachId, this.selectedThematiqueId!).subscribe({
       next: (dispoCreated) => {
         if (dispoCreated && dispoCreated.id) {
           const sessionPromises: Promise<any>[] = [];
 
-          for (const group of this.dateSlotGroups) {
-            if (!group.date) continue;
-            for (const slot of group.slots) {
-              if (slot.start && slot.end) {
-                const sStart = slot.start.length === 5 ? `${slot.start}:00` : slot.start;
-                const sEnd = slot.end.length === 5 ? `${slot.end}:00` : slot.end;
+          for (const sForm of this.sessionForms) {
+            if (!sForm.titre.trim()) continue;
+            
+            // Generate unique group ID for this session's batch of slots
+            const sessionGroupId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36);
 
-                const sessionPayload: SessionCoachDTO = {
-                  disponibiliteId: dispoCreated.id,
-                  titre: this.newDispoTitle.trim(),
-                  dateSession: group.date,
-                  heureDebut: sStart,
-                  heureFin: sEnd,
-                  typeSession: this.newSessionType,
-                  sessionGroupId  // All créneaux of this session share the same group ID
-                };
-                sessionPromises.push(firstValueFrom(this.coachService.addSession(dispoCreated.id, sessionPayload)));
+            for (const group of sForm.dateSlotGroups) {
+              if (!group.date) continue;
+              for (const slot of group.slots) {
+                if (slot.start && slot.end) {
+                  const sStart = slot.start.length === 5 ? `${slot.start}:00` : slot.start;
+                  const sEnd = slot.end.length === 5 ? `${slot.end}:00` : slot.end;
+
+                  const sessionPayload: SessionCoachDTO = {
+                    disponibiliteId: dispoCreated.id,
+                    titre: sForm.titre.trim(),
+                    dateSession: group.date,
+                    heureDebut: sStart,
+                    heureFin: sEnd,
+                    typeSession: sForm.typeSession,
+                    sessionGroupId
+                  };
+                  sessionPromises.push(firstValueFrom(this.coachService.addSession(dispoCreated.id, sessionPayload)));
+                }
               }
             }
           }
@@ -799,6 +852,7 @@ private mapCalendarEvents(events: CoachCalendarEventDTO[]): any[] {
             this.loadData();
             this.loading = false;
           };
+          
           if (sessionPromises.length > 0) {
             Promise.all(sessionPromises).then(finish).catch(finish);
           } else {
@@ -810,14 +864,43 @@ private mapCalendarEvents(events: CoachCalendarEventDTO[]): any[] {
     });
   }
 
-  onSessionTitleChange(): void {
-    // When the title changes, reset the dateSlotGroups so the form feels fresh
-    // (but only if it was pristine — don't wipe data if user already added dates)
-    const hasData = this.dateSlotGroups.some(g => g.date || g.slots.some(s => s.start || s.end));
-    if (!hasData) {
-      this.dateSlotGroups = [{ date: '', slots: [{ start: '', end: '' }] }];
-    }
+  isSessionFormsEmpty(): boolean {
+    return this.sessionForms.length === 0 || !this.sessionForms.some(s => s.titre.trim());
   }
+
+  addSessionForm(): void {
+    let title = '';
+    if (this.programmes.length > 0) {
+      title = this.programmes[0].nom;
+    }
+    this.sessionForms.push({
+      titre: title,
+      typeSession: 'EN_LIGNE',
+      dateSlotGroups: [{ date: '', slots: [{ start: '', end: '' }] }]
+    });
+  }
+
+  removeSessionForm(idx: number): void {
+    this.sessionForms.splice(idx, 1);
+  }
+
+  addDateGroupToForm(sIdx: number): void {
+    this.sessionForms[sIdx].dateSlotGroups.push({ date: '', slots: [{ start: '', end: '' }] });
+  }
+
+  removeDateGroupFromForm(sIdx: number, gIdx: number): void {
+    this.sessionForms[sIdx].dateSlotGroups.splice(gIdx, 1);
+  }
+
+  addSlotToFormGroup(sIdx: number, gIdx: number): void {
+    this.sessionForms[sIdx].dateSlotGroups[gIdx].slots.push({ start: '', end: '' });
+  }
+
+  removeSlotFromFormGroup(sIdx: number, gIdx: number, sliIdx: number): void {
+    this.sessionForms[sIdx].dateSlotGroups[gIdx].slots.splice(sliIdx, 1);
+  }
+
+
 
   saveSessionEdit(sv: SessionView, group: DateGroupView) {
     if (!sv.editStart || !sv.editEnd) {
@@ -949,41 +1032,17 @@ private mapCalendarEvents(events: CoachCalendarEventDTO[]): any[] {
     this.dispoValidationError = null;
     const th = this.selectedThematiqueObj;
     if (th) {
-      // Do not auto-populate the date input with the theme's start date
-      this.dateSlotGroups = [{ date: '', slots: [{ start: '', end: '' }] }];
-      const prog = this.programmes.find(p => p.id === th.programmeId);
-      if (prog) {
-        this.defaultTitle = prog.nom;
-        this.newDispoTitle = prog.nom;
-      }
+      // Re-initialize session forms if th changed
+      this.sessionForms = [];
+      this.addSessionForm();
     }
 }
 
-  addDateGroup(): void {
-    this.dateSlotGroups.push({ date: '', slots: [{ start: '', end: '' }] });
-}
 
-  removeDateGroup(gi: number): void {
-    if (this.dateSlotGroups.length <= 1) return;
-    this.dateSlotGroups.splice(gi, 1);
-  }
-
-  addSlotToGroup(gi: number): void {
-    this.dateSlotGroups[gi].slots.push({ start: '', end: '' });
-  }
-
-  removeSlotFromGroup(gi: number, si: number): void {
-    if (this.dateSlotGroups[gi].slots.length <= 1) return;
-    this.dateSlotGroups[gi].slots.splice(si, 1);
-  }
 
   private resetModalForm() {
     this.selectedThematiqueId = null;
-    this.newDispoTitle = '';
-    this.defaultTitle = '';
-    this.dateSlotGroups = [{ date: '', slots: [{ start: '', end: '' }] }];
-    this.sessionDuration = '1h';
-    this.newSessionType = 'EN_LIGNE';
+    this.sessionForms = [];
     this.showDispoModal = false;
   }
 
