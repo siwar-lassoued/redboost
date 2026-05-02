@@ -34,10 +34,7 @@ const STATUT_BADGE: Record<string, { label: string; bg: string; color: string }>
             <div class="lg:col-span-1">
               <div class="bg-white rounded-3xl p-6 shadow-xl shadow-gray-200/50 border border-gray-100 sticky top-6">
                 <div class="text-center mb-6">
-                  <div class="w-24 h-24 rounded-3xl flex items-center justify-center text-white text-3xl font-black mx-auto mb-4 shadow-lg"
-                    style="background-color: #3B82A6">
-                    {{ coach.nom ? coach.nom[0] : 'C' }}
-                  </div>
+                  
                   <div class="flex items-center justify-center gap-2 mb-1">
                     <h2 class="text-xl font-black text-[#1A1A2E]">{{ coach.nom }}</h2>
                     <i class="pi pi-check-circle text-blue-500 text-lg"></i>
@@ -56,15 +53,11 @@ const STATUT_BADGE: Record<string, { label: string; bg: string; color: string }>
                 <div class="space-y-3">
                   <button [routerLink]="['/gestion_comm']" [queryParams]="{with: coach.id}"
                     class="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-black text-white transition-all hover:opacity-90 shadow-md"
-                    style="background-color: #F97316">
+                    style="background-color: #ef4444">
                     <i class="pi pi-comments pb-1 px-1"></i>
                     Discuter avec ce coach
                   </button>
-                  <button routerLink="/backoffice/event-calendar"
-                    class="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-black text-[#3B82A6] bg-sky-50 border-2 border-sky-100 transition-all hover:bg-sky-100">
-                    <i class="pi pi-calendar-plus"></i>
-                    Réserver une séance
-                  </button>
+                
                 </div>
               </div>
             </div>

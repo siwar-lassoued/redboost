@@ -1,8 +1,8 @@
-// event_calendar.component.ts
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { AddEventDialogComponent } from '../dialogs/add_event_dialog/add_event_dialog';
-import { CommonModule } from '@angular/common';
+import { CommonModule, registerLocaleData } from '@angular/common';
+import localeFr from '@angular/common/locales/fr';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
@@ -129,8 +129,11 @@ export class CalendarComponent implements OnInit {
     private authService: AuthService,
     private matchingService: MatchingService,
     private coachService: CoachService,
-    private sessionService: SessionService
-  ) {}
+    private sessionService: SessionService,
+    private cdr: ChangeDetectorRef
+  ) {
+    registerLocaleData(localeFr);
+  }
 
   ngOnInit(): void {
     this.loadEventTypesAndEvents();
@@ -207,12 +210,14 @@ export class CalendarComponent implements OnInit {
             this.totalEventsCount = this.events.length;
             this.generateCalendar();
             this.isLoading = false;
+            this.cdr.detectChanges();
           });
         } else {
           this.events = allCalendarEvents;
           this.totalEventsCount = this.events.length;
           this.generateCalendar();
           this.isLoading = false;
+          this.cdr.detectChanges();
         }
       },
       error: (error) => {
@@ -291,7 +296,7 @@ export class CalendarComponent implements OnInit {
         title: 'Dispo: ' + (s.titre || 'Créneau'),
         date: new Date(dateStr),
         time: s.heureDebut.substring(0, 5) + ' - ' + s.heureFin.substring(0, 5),
-        type: s.titre || 'Créneau Disponible',
+        type: 'creneau', // Removed accent for safer matching
         location: s.typeSession === 'EN_LIGNE' ? 'En ligne' : (s.adresse || 'En personne'),
         mode: s.typeSession === 'EN_LIGNE' ? 'virtuel' : 'en-personne',
         program: '',
@@ -386,16 +391,21 @@ export class CalendarComponent implements OnInit {
     this.calendarDays = [];
     const currentDate = new Date(startDate);
     
-    while (this.calendarDays.length < 35) {
-      const dayEvents = this.events.filter(event => 
-        event.date.getDate() === currentDate.getDate() &&
-        event.date.getMonth() === currentDate.getMonth() &&
-        event.date.getFullYear() === currentDate.getFullYear()
-      );
+    // Generate 42 days (6 full weeks) to handle all month lengths
+    while (this.calendarDays.length < 42) {
+      const currentYear = currentDate.getFullYear();
+      const currentMonth = currentDate.getMonth();
+      const currentDay = currentDate.getDate();
+
+      const currentDayStr = new Date(currentYear, currentMonth, currentDay).toDateString();
+
+      const dayEvents = this.events.filter(event => {
+        return event.date.toDateString() === currentDayStr;
+      });
       
       this.calendarDays.push({
         date: new Date(currentDate),
-        day: currentDate.getDate(),
+        day: currentDay,
         isCurrentMonth: currentDate.getMonth() === month,
         events: dayEvents
       });
@@ -628,6 +638,7 @@ isSelectedDate(date: Date): boolean {
       'présentation': 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
       'presentation': 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
       'coaching': 'linear-gradient(135deg, #3B82A6 0%, #2a6b8e 100%)',
+      'creneau': 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
       'créneau': 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
       'dispo': 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
       'workshop': 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',

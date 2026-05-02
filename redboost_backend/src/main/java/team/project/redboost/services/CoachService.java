@@ -681,15 +681,22 @@ public class CoachService {
         User entrepreneur = userRepository.findById(entrepreneurId)
                 .orElseThrow(() -> new ValidationException("Entrepreneur non trouvé"));
         User coach = sc.getDisponibilite().getCoach();
-        Disponibilite dispo = sc.getDisponibilite();
 
-        // Check not already booked by this entrepreneur
-        List<Session> existing = sessionRepository.findByEntrepreneurIdAndCoachIdAndStatut(
-                entrepreneurId, coach.getId(), Session.Statut.CONFIRME);
-        boolean alreadyBooked = existing.stream()
-                .anyMatch(s -> s.getDisponibiliteId() != null && s.getDisponibiliteId().equals(String.valueOf(sc.getId())));
-        if (alreadyBooked) {
-            throw new ValidationException("Vous avez déjà réservé ce créneau.");
+        // Check if this specific slot (disponibiliteId) is already booked by ANYONE
+        // We use findAll and filter because findByCoachIdAndDisponibiliteId might be tricky with nulls
+        List<Session> slotBookings = sessionRepository.findAll().stream()
+                .filter(s -> java.util.Objects.equals(String.valueOf(sc.getId()), s.getDisponibiliteId()))
+                .filter(s -> s.getStatut() == Session.Statut.CONFIRME || s.getStatut() == Session.Statut.DEMANDE || s.getStatut() == Session.Statut.PLANIFIE)
+                .collect(Collectors.toList());
+
+        if (!slotBookings.isEmpty()) {
+            boolean alreadyByMe = slotBookings.stream()
+                    .anyMatch(s -> s.getEntrepreneur().getId().equals(entrepreneurId));
+            if (alreadyByMe) {
+                throw new ValidationException("Vous avez déjà réservé ce créneau.");
+            } else {
+                throw new ValidationException("Ce créneau est déjà réservé par un autre entrepreneur.");
+            }
         }
 
         // Create the Session entity
