@@ -2,6 +2,7 @@ import { Component, OnInit, signal, computed, inject, ChangeDetectionStrategy } 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { KpiFormService, KpiForm, KpiFormQuestion } from './kpi-form.service';
+import { ProgrammeService } from '../programmes/programme.service';
 
 @Component({
   selector: 'rb-admin-kpi-forms',
@@ -55,7 +56,16 @@ import { KpiFormService, KpiForm, KpiFormQuestion } from './kpi-form.service';
                     <p class="text-sm font-black text-gray-900">{{ f.title }}</p>
                     <p class="text-[11px] text-gray-500 line-clamp-1 border-gray-50">{{ f.description }}</p>
                   </td>
-                  <td class="px-6 py-5 text-sm font-medium text-gray-600">ID: {{ f.programmeId || 'N/A' }}</td>
+                  <div>
+                  <label class="block text-xs font-black text-gray-700 uppercase tracking-widest mb-2">Programme</label>
+                  <select [(ngModel)]="editingForm.programmeId" 
+                    class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white focus:ring-2 focus:ring-red-600 focus:border-transparent outline-none">
+                    <option [value]="null">-- Sélectionner un programme --</option>
+                    @for (p of programmes(); track p.id) {
+                      <option [value]="p.id">{{ p.nom }}</option>
+                    }
+                  </select>
+                </div>
                   <td class="px-6 py-5 text-[11px] text-gray-500 font-medium">{{ f.createdAt | date:'dd/MM/yyyy' }}</td>
                   <td class="px-6 py-5 text-[11px] text-red-600 font-bold">{{ f.deadline | date:'dd/MM/yyyy' }}</td>
                   <td class="px-6 py-5 text-sm font-black text-gray-900">{{ f.questions.length || 0 }}</td>
@@ -113,8 +123,13 @@ import { KpiFormService, KpiForm, KpiFormQuestion } from './kpi-form.service';
                    <textarea [(ngModel)]="editingForm.description" rows="2" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-red-600 focus:border-transparent outline-none"></textarea>
                  </div>
                  <div>
-                   <label class="block text-xs font-black text-gray-700 uppercase tracking-widest mb-2">ID Programme</label>
-                   <input type="number" [(ngModel)]="editingForm.programmeId" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-red-600 focus:border-transparent outline-none">
+                   <label class="block text-xs font-black text-gray-700 uppercase tracking-widest mb-2">Programme *</label>
+                   <select [(ngModel)]="editingForm.programmeId" class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white focus:ring-2 focus:ring-red-600 focus:border-transparent outline-none">
+                     <option [value]="null">-- Sélectionner un programme --</option>
+                     @for (p of programmes(); track p.id) {
+                       <option [value]="p.id">{{ p.nom }}</option>
+                     }
+                   </select>
                  </div>
                  <div>
                    <label class="block text-xs font-black text-gray-700 uppercase tracking-widest mb-2">Date limite</label>
@@ -231,7 +246,8 @@ import { KpiFormService, KpiForm, KpiFormQuestion } from './kpi-form.service';
 })
 export class AdminKpiFormsComponent implements OnInit {
   private svc = inject(KpiFormService);
-
+  private programmeSvc = inject(ProgrammeService); 
+  programmes = signal<{id: number, nom: string}[]>([]);
   forms = signal<KpiForm[]>([]);
   
   showFormModal = false;
@@ -241,9 +257,12 @@ export class AdminKpiFormsComponent implements OnInit {
   formToSend: KpiForm | null = null;
   entrepreneurIdsString = '';
 
-  ngOnInit(): void {
-    this.loadForms();
-  }
+  ngOnInit() {
+  this.loadForms();
+    this.programmeSvc.getAllProgrammesBasic().subscribe(p => 
+  this.programmes.set(p.filter(prog => prog.id !== undefined) as {id: number, nom: string}[])
+);
+}
 
   loadForms() {
     this.svc.getAllForms().subscribe(r => this.forms.set(r || []));
