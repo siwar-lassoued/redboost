@@ -707,8 +707,8 @@ public class CoachService {
                 .entrepreneur(entrepreneur)
                 .date(sc.getDateSession().atTime(sc.getHeureDebut()))
                 .dureeMinutes((int) java.time.Duration.between(sc.getHeureDebut(), sc.getHeureFin()).toMinutes())
-                .statut(Session.Statut.CONFIRME)
-                .bookingStatut(Session.BookingStatut.CONFIRME)
+                .statut(Session.Statut.PLANIFIE)
+                .bookingStatut(Session.BookingStatut.EN_ATTENTE)
                 .bookePar(entrepreneur)
                 .dateBooking(LocalDateTime.now())
                 .disponibiliteId(String.valueOf(sc.getId()))
@@ -761,7 +761,7 @@ public class CoachService {
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("sessionId", saved.getId());
-        result.put("status", "CONFIRME");
+        result.put("status", "PLANIFIE");
         result.put("meetLink", saved.getMeetLink());
         result.put("googleEventId", saved.getGoogleEventId());
         return result;
