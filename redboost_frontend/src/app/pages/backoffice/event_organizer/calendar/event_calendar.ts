@@ -254,11 +254,22 @@ export class CalendarComponent implements OnInit {
 
     this.isBooking = true;
     this.coachService.bookSession(Number(this.selectedSlot.id), Number(currentUser.id), this.bookingNotes).subscribe({
-      next: () => {
+      next: (res: any) => {
         this.isBooking = false;
-        this.snackBar.open('Session réservée avec succès !', 'Fermer', { duration: 3000 });
+        const meetLink = res?.meetLink;
+        if (meetLink) {
+          this.snackBar.open(
+            '✅ Session réservée ! Lien Meet disponible dans votre espace.',
+            'Ouvrir Meet',
+            { duration: 8000, panelClass: ['success-snackbar'] }
+          ).onAction().subscribe(() => window.open(meetLink, '_blank'));
+        } else {
+          this.snackBar.open('✅ Session réservée avec succès !', 'Fermer', {
+            duration: 5000, panelClass: ['success-snackbar']
+          });
+        }
         this.selectedSlot = null;
-        this.loadEventTypesAndEvents(); // Refresh everything
+        this.loadEventTypesAndEvents(); // Refresh calendar
       },
       error: (err) => {
         this.isBooking = false;

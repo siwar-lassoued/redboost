@@ -716,6 +716,23 @@ public class CoachService {
                 .build();
         Session saved = sessionRepository.save(session);
 
+        // --- Google Calendar: Create Meet event and invite both parties ---
+        try {
+            LocalDateTime start = sc.getDateSession().atTime(sc.getHeureDebut());
+            LocalDateTime end   = sc.getDateSession().atTime(sc.getHeureFin());
+            GoogleCalendarService.GoogleEventResult meetResult =
+                    googleCalendarService.createMeetEvent(sc.getTitre(), start, end,
+                            coach.getEmail(), entrepreneur.getEmail());
+            if (meetResult != null) {
+                saved.setGoogleEventId(meetResult.getEventId());
+                saved.setMeetLink(meetResult.getMeetLink());
+                saved = sessionRepository.save(saved);
+                log.info("Google Meet created for session {}: {}", saved.getId(), meetResult.getMeetLink());
+            }
+        } catch (Exception e) {
+            log.warn("Google Calendar event creation failed (non-blocking): {}", e.getMessage());
+        }
+
         // Notifications
         notificationService.createAndSendNotification(
                 coach.getId(),
@@ -726,14 +743,18 @@ public class CoachService {
                 "Réservation confirmée pour \"" + sc.getTitre() + "\" avec " + coach.getFirstName() + " " + coach.getLastName(),
                 "SESSION_BOOKING", null);
 
-        // Email entrepreneur
+        // Email entrepreneur with Meet link
         try {
+            String meetLinkText = saved.getMeetLink() != null
+                    ? "\n\nLien Google Meet : " + saved.getMeetLink()
+                    : "";
             emailService.sendEmail(entrepreneur.getEmail(),
                     "Réservation de session confirmée",
                     "Bonjour " + entrepreneur.getFirstName() + ",\n\n" +
-                    "Votre réservation pour la session \"" + sc.getTitre() + "\" le " + sc.getDateSession() + 
+                    "Votre réservation pour la session \"" + sc.getTitre() + "\" le " + sc.getDateSession() +
                     " de " + sc.getHeureDebut() + " à " + sc.getHeureFin() + " est confirmée.\n\n" +
-                    "Coach : " + coach.getFirstName() + " " + coach.getLastName() + "\n\nCordialement,\nRedBoost");
+                    "Coach : " + coach.getFirstName() + " " + coach.getLastName() +
+                    meetLinkText + "\n\nCordialement,\nRedBoost");
         } catch (Exception e) {
             log.warn("Email booking confirmation failed: {}", e.getMessage());
         }
@@ -742,6 +763,7 @@ public class CoachService {
         result.put("sessionId", saved.getId());
         result.put("status", "CONFIRME");
         result.put("meetLink", saved.getMeetLink());
+        result.put("googleEventId", saved.getGoogleEventId());
         return result;
     }
 
