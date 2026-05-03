@@ -482,25 +482,42 @@ export class CoachChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     const content = this.newMessage.trim();
     if (!content || !this.selectedContact) return;
 
-    // Send via WebSocket for real-time delivery
-    this.socketService.sendMessage({
-      expediteurId: this.currentUserId,
-      destinataireId: this.selectedContact.id,
-      contenu: content
+    // Send via HTTP POST instead of WebSocket to guarantee delivery even if WSS is blocked
+    this.messageService.sendMessage(this.currentUserId, this.selectedContact.id, content).subscribe({
+      next: (msg) => {
+        // HTTP API returns the saved MessageDTO, add it to the UI
+        this.messages = [...this.messages, {
+          id: msg.id || Date.now(),
+          expediteurId: msg.expediteurId,
+          expediteurNom: '',
+          expediteurPrenom: '',
+          destinataireId: msg.destinataireId,
+          contenu: msg.type === 'FILE' ? (msg.fichierNom || 'Fichier') : msg.contenu,
+          type: msg.type || 'TEXT',
+          lu: false,
+          timestamp: new Date(msg.timestamp || msg.sentAt || Date.now()),
+          sentAt: new Date(msg.timestamp || msg.sentAt || Date.now()),
+          fichierUrl: msg.fichierUrl,
+          fichierNom: msg.fichierNom,
+        }];
+      },
+      error: (err) => {
+        console.error('Failed to send message via HTTP', err);
+        // Fallback: add locally anyway
+        this.messages = [...this.messages, {
+          id: Date.now(),
+          expediteurId: this.currentUserId,
+          expediteurNom: '',
+          expediteurPrenom: '',
+          destinataireId: this.selectedContact!.id,
+          contenu: content,
+          type: 'TEXT',
+          lu: false,
+          timestamp: new Date(),
+        }];
+      }
     });
-
-    // Optimistic local add
-    this.messages = [...this.messages, {
-      id: Date.now(),
-      expediteurId: this.currentUserId,
-      expediteurNom: '',
-      expediteurPrenom: '',
-      destinataireId: this.selectedContact.id,
-      contenu: content,
-      type: 'TEXT',
-      lu: false,
-      timestamp: new Date(),
-    }];
+    
     this.newMessage = '';
   }
 

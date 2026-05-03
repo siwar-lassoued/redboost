@@ -411,25 +411,36 @@ export class EntrepreneurChatComponent implements OnInit, AfterViewChecked {
     const content = this.newMessage().trim();
     const timeString = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 
-    // Create message for WebSocket
-    const wsMessage: ChatMessage = {
-      expediteurId: this.currentUserId,
-      destinataireId: this.selected()!.id,
-      contenu: content
-    };
-
-    // Send via WebSocket
-    this.socketService.sendMessage(wsMessage);
-
-    // Add to local list immediately
-    this.messages.update(msgs => [...msgs, {
-      id: Date.now(),
-      sender: 'entrepreneur',
-      content: content,
-      time: timeString,
-      date: "Aujourd'hui",
-      lu: false
-    }]);
+    // Send via HTTP POST instead of WebSocket to guarantee delivery even if WSS is blocked
+    this.messageService.sendMessage(this.currentUserId, this.selected()!.id, content).subscribe({
+      next: (msg) => {
+        // HTTP API returns the saved MessageDTO, add it to the UI
+        const timeStr = new Date(msg.timestamp || msg.sentAt || Date.now()).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+        this.messages.update(msgs => [...msgs, {
+          id: msg.id || Date.now(),
+          sender: 'entrepreneur',
+          content: msg.type === 'FILE' ? (msg.fichierNom || 'Fichier') : msg.contenu,
+          time: timeStr,
+          date: "Aujourd'hui",
+          lu: false,
+          type: msg.type,
+          fichierUrl: msg.fichierUrl,
+          fichierNom: msg.fichierNom
+        }]);
+      },
+      error: (err) => {
+        console.error('Failed to send message via HTTP', err);
+        // Fallback: add locally anyway
+        this.messages.update(msgs => [...msgs, {
+          id: Date.now(),
+          sender: 'entrepreneur',
+          content: content,
+          time: timeString,
+          date: "Aujourd'hui",
+          lu: false
+        }]);
+      }
+    });
 
     this.newMessage.set('');
   }

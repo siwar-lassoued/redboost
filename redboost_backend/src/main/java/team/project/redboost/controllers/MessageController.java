@@ -12,10 +12,11 @@ import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/messages")
-@RequiredArgsConstructor
+@lombok.RequiredArgsConstructor
 public class MessageController {
 
     private final MessageService messageService;
+    private final org.springframework.messaging.simp.SimpMessagingTemplate messagingTemplate;
 
     @GetMapping("/history/{userId1}/{userId2}")
     public ResponseEntity<Map<String, Object>> getHistory(
@@ -34,6 +35,13 @@ public class MessageController {
             Long destinataireId = Long.parseLong(payload.get("destinataireId"));
             String contenu = payload.get("contenu");
             MessageDTO saved = messageService.save(expediteurId, destinataireId, contenu);
+            
+            // Broadcast to recipient via WebSocket
+            messagingTemplate.convertAndSendToUser(
+                    destinataireId.toString(),
+                    "/queue/messages",
+                    saved);
+                    
             Map<String, Object> res = new HashMap<>();
             res.put("data", saved);
             return ResponseEntity.ok(res);
