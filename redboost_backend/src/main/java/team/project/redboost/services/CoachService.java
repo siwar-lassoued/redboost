@@ -699,6 +699,27 @@ public class CoachService {
             }
         }
 
+        // Check if the entrepreneur has already booked another slot in the same session group
+        if (sc.getSessionGroupId() != null) {
+            boolean alreadyBookedInGroup = sessionRepository.findByCoachId(coach.getId()).stream()
+                    .filter(s -> s.getEntrepreneur() != null && s.getEntrepreneur().getId().equals(entrepreneurId))
+                    .filter(s -> s.getStatut() == Session.Statut.CONFIRME || s.getStatut() == Session.Statut.DEMANDE || s.getStatut() == Session.Statut.PLANIFIE)
+                    .filter(s -> s.getDisponibiliteId() != null)
+                    .anyMatch(s -> {
+                        try {
+                            Long slotId = Long.parseLong(s.getDisponibiliteId());
+                            return sessionCoachRepository.findById(slotId)
+                                    .map(c -> java.util.Objects.equals(c.getSessionGroupId(), sc.getSessionGroupId()))
+                                    .orElse(false);
+                        } catch (NumberFormatException e) {
+                            return false;
+                        }
+                    });
+            if (alreadyBookedInGroup) {
+                throw new ValidationException("Vous avez déjà réservé un créneau pour cette session.");
+            }
+        }
+
         // Create the Session entity
         Session session = Session.builder()
                 .titre(sc.getTitre())
@@ -733,17 +754,20 @@ public class CoachService {
             log.warn("Google Calendar event creation failed (non-blocking): {}", e.getMessage());
         }
 
-        // Notifications
-        notificationService.createAndSendNotification(
-                coach.getId(),
-                entrepreneur.getFirstName() + " " + entrepreneur.getLastName() + " a réservé la session \"" + sc.getTitre() + "\"",
-                "SESSION_BOOKING", null);
-        notificationService.createAndSendNotification(
-                entrepreneurId,
-                "Réservation confirmée pour \"" + sc.getTitre() + "\" avec " + coach.getFirstName() + " " + coach.getLastName(),
-                "SESSION_BOOKING", null);
+  
+        try {
+            notificationService.createAndSendNotification(
+                    coach.getId(),
+                    entrepreneur.getFirstName() + " " + entrepreneur.getLastName() + " a réservé la session \"" + sc.getTitre() + "\"",
+                    "SESSION_BOOKING", null);
+            notificationService.createAndSendNotification(
+                    entrepreneurId,
+                    "Réservation confirmée pour \"" + sc.getTitre() + "\" avec " + coach.getFirstName() + " " + coach.getLastName(),
+                    "SESSION_BOOKING", null);
+        } catch (Exception e) {
+            log.warn("Notification sending failed (non-blocking): {}", e.getMessage());
+        }
 
-        // Email entrepreneur with Meet link
         try {
             String meetLinkText = saved.getMeetLink() != null
                     ? "\n\nLien Google Meet : " + saved.getMeetLink()
@@ -963,7 +987,7 @@ public class CoachService {
         // Collect all sessionGroupIds already booked by this entrepreneur
         List<Session> myBookings = sessionRepository.findByCoachId(coachId).stream()
                 .filter(s -> s.getEntrepreneur() != null && s.getEntrepreneur().getId().equals(entrepreneurUserId))
-                .filter(s -> s.getStatut() == Session.Statut.CONFIRME || s.getStatut() == Session.Statut.DEMANDE)
+                .filter(s -> s.getStatut() == Session.Statut.CONFIRME || s.getStatut() == Session.Statut.DEMANDE || s.getStatut() == Session.Statut.PLANIFIE)
                 .collect(Collectors.toList());
 
         Set<String> bookedGroupIds = new java.util.HashSet<>();

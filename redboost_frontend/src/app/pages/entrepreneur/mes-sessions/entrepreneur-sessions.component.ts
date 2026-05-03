@@ -238,7 +238,7 @@ type Tab = 'PLANIFIEE' | 'REALISEE' | 'ANNULEE';
       width: 100%; padding: 12px 16px 12px 40px; border: 1px solid #E5E7EB;
       border-radius: 12px; font-size: 14px; outline: none; color: #333; transition: all .2s; background: #fff; box-sizing: border-box;
     }
-    .search-input:focus { border-color: #ea5073; box-shadow: 0 0 0 3px rgba(234, 80, 115, 0.1); }
+    .search-input:focus { border-color: #3B82A6; box-shadow: 0 0 0 3px rgba(59, 130, 166, 0.1); }
 
     .table-card { background: #fff; border-radius: 20px; overflow: hidden; box-shadow: 0 2px 16px rgba(0,0,0,0.07); border: 1px solid #F1F5F9; }
     .table-scroll { overflow-x: auto; min-width: 100%; }
@@ -264,8 +264,8 @@ type Tab = 'PLANIFIEE' | 'REALISEE' | 'ANNULEE';
       padding: 5px 12px; border-radius: 20px; font-size: 10px; font-weight: 800;
       display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; text-transform: uppercase;
     }
-    .btn-detail { padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; color: #ea5073; background: none; border: none; cursor: pointer; transition: all .2s; }
-    .btn-detail:hover { background: #FFE4EA; }
+    .btn-detail { padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; color: #3B82A6; background: none; border: none; cursor: pointer; transition: all .2s; }
+    .btn-detail:hover { background: #EBF5FF; }
 
     .empty-state { text-align: center; padding: 60px 20px; background: #fff; border-radius: 20px; border: 2px dashed #E5E7EB; }
     .empty-text { color: #6B7280; font-weight: 700; font-size: 16px; margin-top: 8px; }
@@ -294,10 +294,10 @@ type Tab = 'PLANIFIEE' | 'REALISEE' | 'ANNULEE';
       background: transparent; color: #94A3B8; border-bottom: 2px solid transparent;
       transition: all .2s; text-transform: uppercase; letter-spacing: 1px;
     }
-    .modal-tab.active { color: #1E293B; border-bottom-color: #ea5073; }
+    .modal-tab.active { color: #1E293B; border-bottom-color: #3B82A6; }
 
     .answers-list { display: flex; flex-direction: column; gap: 16px; }
-    .answer-item { background: #F8FAFC; border-radius: 16px; padding: 20px; border-left: 5px solid #ea5073; }
+    .answer-item { background: #F8FAFC; border-radius: 16px; padding: 20px; border-left: 5px solid #3B82A6; }
     .answer-q-text { font-weight: 800; font-size: 12px; color: #64748B; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
     .answer-text { font-size: 15px; color: #1E293B; font-weight: 600; line-height: 1.5; margin: 0; }
 
@@ -332,7 +332,8 @@ export class EntrepreneurSessionsComponent implements OnInit {
     const search = this.searchText().toLowerCase().trim();
     
     return this.allSessions().filter(s => {
-      const statut = (s.statut === 'TERMINE' || s.statut === 'REALISEE') ? 'REALISEE' : s.statut;
+      let statut = (s.statut === 'TERMINE' || s.statut === 'REALISEE') ? 'REALISEE' : s.statut;
+      if (statut === 'PLANIFIE') statut = 'PLANIFIEE';
       if (statut !== tab) return false;
       
       if (!search) return true;
@@ -363,7 +364,8 @@ export class EntrepreneurSessionsComponent implements OnInit {
 
   getCount(statut: Tab): number {
     return this.allSessions().filter(s => {
-      const st = (s.statut === 'TERMINE' || s.statut === 'REALISEE') ? 'REALISEE' : s.statut;
+      let st = (s.statut === 'TERMINE' || s.statut === 'REALISEE') ? 'REALISEE' : s.statut;
+      if (st === 'PLANIFIE') st = 'PLANIFIEE';
       return st === statut;
     }).length;
   }
@@ -375,11 +377,13 @@ export class EntrepreneurSessionsComponent implements OnInit {
 
   getBadge(statut: string) {
     const config: Record<string, { label: string; bg: string; color: string }> = {
-      PLANIFIEE: { label: 'Planifiée', bg: '#EFF6FF', color: '#2563EB' },
-      REALISEE:  { label: 'Terminée', bg: '#F0FDF4', color: '#16A34A' },
-      TERMINE:   { label: 'Terminée', bg: '#F0FDF4', color: '#16A34A' },
-      ANNULEE:   { label: 'Annulée',  bg: '#FEF2F2', color: '#DC2626' },
+      PLANIFIE:  { label: 'Planifiée', bg: '#EBF5FF', color: '#3B82A6' },
+      PLANIFIEE: { label: 'Planifiée', bg: '#EBF5FF', color: '#3B82A6' },
+      REALISEE:  { label: 'Terminée', bg: '#ECFDF5', color: '#10B981' },
+      TERMINE:   { label: 'Terminée', bg: '#ECFDF5', color: '#10B981' },
+      ANNULEE:   { label: 'Annulée',  bg: '#FEF2F2', color: '#EF4444' },
+      ANNULE:    { label: 'Annulée',  bg: '#FEF2F2', color: '#EF4444' },
     };
-    return config[statut] || { label: statut, bg: '#F3F4F6', color: '#374151' };
+    return config[statut] || { label: statut, bg: '#F1F5F9', color: '#475569' };
   }
 }
