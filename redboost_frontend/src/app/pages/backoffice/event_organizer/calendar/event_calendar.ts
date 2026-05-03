@@ -273,8 +273,12 @@ export class CalendarComponent implements OnInit {
       },
       error: (err) => {
         this.isBooking = false;
-        console.error('Full Booking Error Response:', err);
-        const msg = err.error?.error || 'Erreur lors de la réservation';
+        console.error('ERREUR BACKEND DÉTAILLÉE:', err);
+        const msg = err.error?.error || err.error?.message || err.message || 'Erreur lors de la réservation';
+        
+        // Affiche l'erreur exacte dans une alerte pour être sûr de la voir !
+        alert("ERREUR DU SERVEUR : " + msg);
+        
         this.snackBar.open(msg, 'Fermer', { duration: 5000 });
       }
     });

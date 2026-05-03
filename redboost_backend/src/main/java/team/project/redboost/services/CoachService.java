@@ -737,7 +737,7 @@ public class CoachService {
                 .build();
         Session saved = sessionRepository.save(session);
 
-        // --- Google Calendar: Create Meet event and invite both parties ---
+     
         try {
             LocalDateTime start = sc.getDateSession().atTime(sc.getHeureDebut());
             LocalDateTime end   = sc.getDateSession().atTime(sc.getHeureFin());
