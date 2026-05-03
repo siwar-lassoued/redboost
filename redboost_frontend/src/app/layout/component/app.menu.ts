@@ -167,7 +167,7 @@ export class AppMenu implements OnInit {
             },
             
             {
-                label: 'SUIVI D\'ACCOMPAGNEMENT',
+                label: 'SUIVI ACCOMPAGNEMENT',
                 icon: 'pi pi-fw pi-star',
                 items: [
                     {
