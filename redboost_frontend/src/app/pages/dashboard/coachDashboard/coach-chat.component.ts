@@ -436,9 +436,9 @@ export class CoachChatComponent implements OnInit, OnDestroy, AfterViewChecked {
       next: (users) => {
         this.contacts = users.map((u) => ({
           id: String(u.id),
-          name: `${u.firstName || u.prenom || ''} ${u.lastName || u.nom || ''}`.trim(),
+          name: `${(u as any).firstName || u.prenom || ''} ${(u as any).lastName || u.nom || ''}`.trim() || 'Utilisateur Inconnu',
           company: u.entreprise || u.startupName || u.startup || '',
-          avatar: `${(u.firstName || u.prenom || '?')[0]}${(u.lastName || u.nom || '?')[0]}`.toUpperCase(),
+          avatar: `${((u as any).firstName || u.prenom || '?')[0]}${((u as any).lastName || u.nom || '?')[0]}`.toUpperCase(),
         }));
         this.filteredContacts = [...this.contacts];
         if (this.filteredContacts.length) {

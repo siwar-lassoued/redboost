@@ -318,8 +318,8 @@ export class EntrepreneurChatComponent implements OnInit, AfterViewChecked {
       next: (users) => {
         const convs: Conversation[] = users.map(u => ({
           id: u.id,
-          name: `${u.prenom} ${u.nom}`,
-          avatar: `${u.prenom?.[0] || ''}${u.nom?.[0] || ''}`.toUpperCase()
+          name: `${(u as any).firstName || u.prenom} ${(u as any).lastName || u.nom}`,
+          avatar: `${((u as any).firstName || u.prenom)?.[0] || ''}${((u as any).lastName || u.nom)?.[0] || ''}`.toUpperCase()
         }));
         this.conversations.set(convs);
         this.isLoadingConversations.set(false);

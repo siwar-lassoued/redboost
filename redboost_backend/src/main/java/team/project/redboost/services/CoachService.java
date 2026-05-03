@@ -915,7 +915,7 @@ public class CoachService {
         log.info(" Sessions totales futures pour le coach: {}", coachSessions.size());
         
         List<Session> bookedSessions = sessionRepository.findByCoachId(coachId).stream()
-                .filter(s -> s.getStatut() == Session.Statut.CONFIRME || s.getStatut() == Session.Statut.DEMANDE)
+                .filter(s -> s.getStatut() == Session.Statut.CONFIRME || s.getStatut() == Session.Statut.DEMANDE || s.getStatut() == Session.Statut.PLANIFIE)
                 .collect(Collectors.toList());
         
         Set<String> bookedSessionCoachIds = bookedSessions.stream()
