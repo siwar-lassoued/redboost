@@ -72,8 +72,17 @@ public class GoogleCalendarService {
         ensureValidCredential();
 
         com.google.api.services.calendar.model.Event googleEvent = new com.google.api.services.calendar.model.Event()
-                .setSummary(title)
-                .setDescription("Session de coaching sur RedBoost.");
+                .setSummary("[RedBoost] " + title)
+                .setDescription(
+                    "Session de coaching RedBoost\n" +
+                    "════════════════════\n" +
+                    "Session : " + title + "\n" +
+                    "Coach    : " + coachEmail + "\n" +
+                    "Début    : " + start.toLocalDate() + " à " + start.toLocalTime() + "\n" +
+                    "Fin      : " + end.toLocalTime() + "\n\n" +
+                    " Accédez à votre espace RedBoost : https://redboost.tn\n" +
+                    "\nCe lien Google Meet vous sera envoyé automatiquement dans cette invitation."
+                );
 
         EventDateTime startEvent = new EventDateTime()
                 .setDateTime(new DateTime(java.util.Date.from(start.atZone(ZoneId.of("Africa/Tunis")).toInstant())))

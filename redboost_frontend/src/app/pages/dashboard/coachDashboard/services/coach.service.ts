@@ -25,6 +25,7 @@ export interface SessionCoachDTO {
   isBooked?: boolean;
   isBookedByMe?: boolean;
   isGroupReservedByMe?: boolean;
+  meetLink?: string;
 }
 
 export interface SessionGroupDTO {

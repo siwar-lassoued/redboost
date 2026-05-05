@@ -154,6 +154,22 @@
                       <span>{{ event.participants.length }} participant{{ event.participants.length !== 1 ? 's' : '' }}</span>
                     </div>
                   </div>
+
+                  <!-- Google Calendar & Meet action buttons -->
+                  <div class="calendar-action-buttons">
+                    <button class="gcal-btn" (click)="openGoogleCalendar(event)" matTooltip="Voir dans Google Agenda">
+                      <img src="https://ssl.gstatic.com/calendar/images/dynamiclogo_2020q4/calendar_31_2x.png" 
+                           alt="Google Calendar" class="gcal-icon"
+                           onerror="this.style.display='none'" />
+                      <mat-icon style="color:#4285F4" *ngIf="!event.googleEventId">event</mat-icon>
+                      <span>{{ event.googleEventId ? 'Voir dans Google Agenda' : 'Ajouter à Google Agenda' }}</span>
+                    </button>
+
+                    <button class="meet-btn" *ngIf="event.meetLink" (click)="openMeetLink(event)" matTooltip="Rejoindre le Google Meet">
+                      <mat-icon style="color:#00832D">videocam</mat-icon>
+                      <span>Rejoindre le Meet</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

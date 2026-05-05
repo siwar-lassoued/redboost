@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import team.project.redboost.entities.Session;
 import team.project.redboost.services.SessionService;
+import team.project.redboost.services.SessionService.MyCalendarEvent;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
@@ -43,6 +44,17 @@ public class SessionController {
             @RequestParam Long entrepreneurId,
             @RequestParam String sessionId) {
         return ResponseEntity.ok(sessionService.shouldPromptRating(entrepreneurId, sessionId));
+    }
+
+    /**
+     * Unified calendar feed for the current user.
+     * GET /api/sessions/my-calendar?userId={id}&role={COACH|ENTREPRENEUR}
+     */
+    @GetMapping("/my-calendar")
+    public ResponseEntity<List<MyCalendarEvent>> getMyCalendar(
+            @RequestParam Long userId,
+            @RequestParam String role) {
+        return ResponseEntity.ok(sessionService.getMyCalendarSessions(userId, role));
     }
 
     @PostMapping

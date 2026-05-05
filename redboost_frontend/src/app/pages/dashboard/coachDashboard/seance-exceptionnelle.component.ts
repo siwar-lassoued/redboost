@@ -10,197 +10,187 @@ import { ToastrService } from 'ngx-toastr';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="seance-page">
-      <!-- Page Header -->
-      <div class="page-header">
-          <div class="page-title-row">
-              <div class="page-icon">🎯</div>
-              <div>
-                  <h1>Séances Exceptionnelles</h1>
-                  <p>Programmez des séances hors-disponibilités habituelles</p>
-              </div>
+    <div class="cand-page">
+      <!-- PAGE HEADER -->
+      <div class="cand-header">
+          <div>
+              <h1 class="cand-title">Séances Exceptionnelles</h1>
+              <p class="cand-subtitle">Programmez des séances hors-disponibilités habituelles</p>
           </div>
-          <button class="btn-primary shadow-glow" (click)="showModal = true">
-              <i class="pi pi-plus"></i> Planifier une séance
-          </button>
-      </div>
-
-      <!-- KPI Bar -->
-      <div class="kpi-bar">
-          <div class="kpi-item">
-              <span class="kpi-value">{{ seances.length }}</span>
-              <span class="kpi-label">Séances planifiées</span>
-          </div>
-          <div class="kpi-item">
-              <span class="kpi-value">{{ getUpcomingCount() }}</span>
-              <span class="kpi-label">À venir</span>
-          </div>
-          <div class="kpi-item">
-              <span class="kpi-value">{{ getPastCount() }}</span>
-              <span class="kpi-label">Terminées</span>
+          <div class="cand-header-actions">
+              <button class="add-event-btn" (click)="showModal = true" style="background: #ea5073; color: white; padding: 10px 24px; border-radius: 12px; font-weight: 500; border: none; cursor: pointer; box-shadow: 0 4px 12px rgba(234, 80, 115, 0.3);">
+                  <i class="pi pi-plus" style="margin-right: 8px;"></i> Planifier une séance
+              </button>
           </div>
       </div>
 
-      <!-- Filter Pills -->
-      <div class="filter-pills">
-          <button class="pill" [class.active]="activeFilter === 'all'" (click)="setFilter('all')">Toutes ({{ seances.length }})</button>
-          <button class="pill" [class.active]="activeFilter === 'upcoming'" (click)="setFilter('upcoming')">À venir ({{ getUpcomingCount() }})</button>
-          <button class="pill" [class.active]="activeFilter === 'past'" (click)="setFilter('past')">Terminées ({{ getPastCount() }})</button>
+      <!-- SEARCH & FILTERS -->
+      <div class="cand-filters">
+          <div class="filter-selects" style="flex: 1; display: flex; gap: 12px;">
+            <select [(ngModel)]="activeFilter" (ngModelChange)="setFilter(activeFilter)" class="filter-select">
+                <option value="all">Toutes ({{ seances.length }})</option>
+                <option value="upcoming">À venir ({{ getUpcomingCount() }})</option>
+                <option value="past">Terminées ({{ getPastCount() }})</option>
+            </select>
+          </div>
       </div>
 
-      <!-- Sessions List -->
-      <div class="sessions-list">
-          <div *ngFor="let s of filteredSeances" class="session-card">
-              <div class="session-main">
-                  <div class="avatar" [style.background]="getAvatarColor(s.entrepreneurName || s.titre)">
-                      {{ getInitials(s.entrepreneurName || s.titre) }}
-                  </div>
-                  <div class="session-info">
-                      <div class="session-name"><strong>{{ s.titre }}</strong></div>
-                      <div class="session-meta">
-                          <span><i class="pi pi-user"></i> {{ s.entrepreneurName || 'N/A' }}</span>
-                          <span><i class="pi pi-calendar"></i> {{ s.dateSeance }}</span>
-                          <span><i class="pi pi-clock"></i> {{ s.heureDebut }} — {{ s.heureFin }}</span>
+      <!-- SESSIONS TABLE -->
+      @if (filteredSeances.length > 0) {
+        <div class="table-card">
+          <div class="table-scroll">
+            <table class="cand-table">
+              <thead>
+                <tr>
+                  <th>Entrepreneur</th>
+                  <th>Titre de la Séance</th>
+                  <th>Dates & Horaires</th>
+                  <th>Statut</th>
+                </tr>
+              </thead>
+              <tbody>
+                <ng-container *ngFor="let s of filteredSeances">
+                  <tr class="table-row">
+                    <td>
+                      <div class="name-cell">
+                        <span class="name-text">{{ s.entrepreneurName || 'N/A' }}</span>
                       </div>
-                  </div>
-              </div>
-              <div class="session-actions">
-                  <span class="status-badge" [class]="isUpcoming(s) ? 'badge-upcoming' : 'badge-past'">
-                      {{ isUpcoming(s) ? 'À venir' : 'Terminée' }}
-                  </span>
-              </div>
+                    </td>
+                    <td>
+                      <div class="name-cell">
+                        <span class="name-text">{{ s.titre }}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="date-cell-custom">
+                        <div class="mini-date-badge">
+                           {{ s.dateSeance | date:'dd/MM/yyyy' }} &#64; {{ s.heureDebut.substring(0,5) }} - {{ s.heureFin.substring(0,5) }}
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="status-badge" [class.upcoming]="isUpcoming(s)" [class.past]="!isUpcoming(s)">
+                        <i class="pi" [class.pi-calendar-clock]="isUpcoming(s)" [class.pi-check-circle]="!isUpcoming(s)"></i>
+                        {{ isUpcoming(s) ? 'À venir' : 'Terminée' }}
+                      </div>
+                    </td>
+                  </tr>
+                </ng-container>
+              </tbody>
+            </table>
           </div>
-          <div *ngIf="filteredSeances.length === 0 && !loading" class="empty-state">
-              <i class="pi pi-calendar" style="font-size: 2rem; color: #CBD5E0;"></i>
-              <p>Aucune séance exceptionnelle trouvée.</p>
-          </div>
-      </div>
+        </div>
+      } @else if (!loading) {
+        <div class="empty-state">
+          <i class="pi pi-calendar-times" style="font-size: 3rem; color: #D1D5DB; margin-bottom: 1rem; display: block;"></i>
+          <p class="empty-text">Aucune séance trouvée</p>
+          <p class="empty-sub">Ajustez vos filtres ou créez de nouvelles séances.</p>
+        </div>
+      }
 
       <!-- Modal: Planifier une séance -->
-      <div *ngIf="showModal" class="modal-backdrop" (click)="showModal = false">
-          <div class="modal-content" (click)="$event.stopPropagation()">
+      <div *ngIf="showModal" class="modal-overlay" (click)="showModal = false">
+          <div class="modal-box" (click)="$event.stopPropagation()">
               <div class="modal-header">
-                  <div>
-                      <h2>🎯 Planifier une séance exceptionnelle</h2>
+                  <div class="modal-header-info">
+                      <h2 class="modal-name">Planifier une séance exceptionnelle</h2>
                       <p class="modal-subtitle">En dehors de vos disponibilités habituelles</p>
                   </div>
-                  <button class="close-btn" (click)="showModal = false"><i class="pi pi-times"></i></button>
+                  <button class="modal-close" (click)="showModal = false"><i class="pi pi-times"></i></button>
               </div>
               <div class="modal-body">
-                  <div class="form-group">
-                      <label>Entrepreneur *</label>
-                      <select class="premium-input" [(ngModel)]="newSeance.entrepreneurId">
+                  <div class="form-group" style="margin-bottom: 12px;">
+                      <label style="font-size: 13px; font-weight: 600; margin-bottom: 6px; display: block;">Entrepreneur *</label>
+                      <select class="search-input" [(ngModel)]="newSeance.entrepreneurId" style="padding: 10px 16px;">
                           <option [ngValue]="0">Sélectionnez un entrepreneur...</option>
                           <option *ngFor="let e of entrepreneurs" [ngValue]="e.id">{{ e.firstName }} {{ e.lastName }} — {{ e.entreprise || 'N/A' }}</option>
                       </select>
                   </div>
-                  <div class="form-group">
-                      <label>Titre de la séance *</label>
-                      <input type="text" class="premium-input" [(ngModel)]="newSeance.titre" placeholder="Ex: Point stratégique exceptionnel">
+                  <div class="form-group" style="margin-bottom: 12px;">
+                      <label style="font-size: 13px; font-weight: 600; margin-bottom: 6px; display: block;">Titre de la séance *</label>
+                      <input type="text" class="search-input" [(ngModel)]="newSeance.titre" placeholder="Ex: Point stratégique exceptionnel" style="padding: 10px 16px;">
                   </div>
-                  <div class="form-row">
-                      <div class="form-group">
-                          <label>Date *</label>
-                          <input type="date" class="premium-input" [(ngModel)]="newSeance.dateSeance">
+                  <div class="form-row" style="display: flex; gap: 12px; margin-bottom: 12px;">
+                      <div class="form-group" style="flex: 1;">
+                          <label style="font-size: 13px; font-weight: 600; margin-bottom: 6px; display: block;">Date *</label>
+                          <input type="date" class="search-input" [(ngModel)]="newSeance.dateSeance" style="padding: 10px 16px;">
                       </div>
-                      <div class="form-group">
-                          <label>Heure de début *</label>
-                          <input type="time" class="premium-input" [(ngModel)]="newSeance.heureDebut">
+                      <div class="form-group" style="flex: 1;">
+                          <label style="font-size: 13px; font-weight: 600; margin-bottom: 6px; display: block;">Début *</label>
+                          <input type="time" class="search-input" [(ngModel)]="newSeance.heureDebut" style="padding: 10px 16px;">
                       </div>
-                      <div class="form-group">
-                          <label>Heure de fin *</label>
-                          <input type="time" class="premium-input" [(ngModel)]="newSeance.heureFin">
+                      <div class="form-group" style="flex: 1;">
+                          <label style="font-size: 13px; font-weight: 600; margin-bottom: 6px; display: block;">Fin *</label>
+                          <input type="time" class="search-input" [(ngModel)]="newSeance.heureFin" style="padding: 10px 16px;">
                       </div>
                   </div>
-                  <div *ngIf="modalError" class="error-banner">
+                  <div *ngIf="modalError" style="color: #E53E3E; background: #FFF5F5; padding: 10px; border-radius: 8px; font-size: 13px; margin-top: 12px;">
                       <i class="pi pi-exclamation-triangle"></i> {{ modalError }}
                   </div>
               </div>
-              <div class="modal-actions">
-                  <button class="btn-outline" (click)="showModal = false">Annuler</button>
-                  <button class="btn-primary" (click)="submit()" [disabled]="saving">
-                      <i class="pi" [class.pi-check]="!saving" [class.pi-spin]="saving" [class.pi-spinner]="saving"></i>
-                      {{ saving ? 'Planification...' : 'Planifier la séance' }}
+              <div class="modal-footer">
+                  <button class="btn-close-modal" (click)="showModal = false" style="margin-right: 12px;">Annuler</button>
+                  <button class="btn-detail" (click)="submit()" [disabled]="saving" style="background: #ea5073; color: white;">
+                      <i class="pi" [class.pi-check]="!saving" [class.pi-spin]="saving" [class.pi-spinner]="saving" style="margin-right: 6px;"></i>
+                      {{ saving ? 'Planification...' : 'Planifier' }}
                   </button>
               </div>
           </div>
       </div>
 
-      <!-- Loading -->
-      <div *ngIf="loading" class="loading-overlay">
+      <!-- Main Loading Overlay -->
+      <div *ngIf="loading" class="modal-overlay" style="background: rgba(255,255,255,0.7)">
           <div class="spinner"></div>
       </div>
     </div>
   `,
   styles: [`
-    .seance-page { padding: 2rem; background: #f8f9fa; min-height: calc(100vh - 70px); font-family: var(--font-family); margin-top: -1rem; }
-    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
-    .page-title-row { display: flex; align-items: center; gap: 1rem; }
-    .page-icon { width: 50px; height: 50px; background: linear-gradient(135deg, #FFF5F7, #FFE0E8); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
-    .page-header h1 { font-size: 2rem; font-weight: 700; color: #2D3748; margin: 0; }
-    .page-header p { color: #718096; font-size: 1rem; margin-top: 0.2rem; }
+    .cand-page { padding: 24px; background: #F5F6FA; min-height: 100vh; position: relative; }
+    .cand-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 24px; }
+    .cand-title { font-size: 28px; font-weight: 800; color: #1A1A2E; margin: 0; }
+    .cand-subtitle { color: #8a8a8a; font-size: 14px; margin-top: 4px; }
+    .cand-count-badge { background: #E2E8F0; color: #4A5568; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+    
+    .cand-filters { display: flex; align-items: stretch; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+    .search-input { width: 100%; border: 1px solid #E5E7EB; border-radius: 12px; font-size: 14px; outline: none; color: #333; transition: border-color .2s; background: #fff; box-sizing: border-box; }
+    .filter-select { padding: 10px 14px; border: 1px solid #E5E7EB; border-radius: 12px; font-size: 13px; outline: none; color: #333; cursor: pointer; background: #fff; }
 
-    .kpi-bar { display: flex; gap: 1.5rem; margin-bottom: 1.5rem; }
-    .kpi-item { background: white; border-radius: 1rem; padding: 1.2rem 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.03); display: flex; flex-direction: column; min-width: 140px; }
-    .kpi-value { font-size: 2rem; font-weight: 700; color: #2D3748; }
-    .kpi-label { font-size: 0.85rem; color: #718096; margin-top: 0.2rem; }
+    .table-card { background: #fff; border-radius: 20px; overflow: hidden; box-shadow: 0 2px 16px rgba(0,0,0,0.07); }
+    .cand-table { width: 100%; border-collapse: collapse; text-align: left; }
+    .cand-table th { padding: 12px 16px; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; background: #F9FAFB; border-bottom: 1px solid #F3F4F6; }
+    .cand-table td { padding: 14px 16px; border-bottom: 1px solid #F3F4F6; }
+    .table-row:hover { background: #FFF5F8; }
 
-    .filter-pills { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
-    .pill { padding: 0.5rem 1.2rem; border-radius: 25px; border: 1px solid #E2E8F0; background: white; font-family: inherit; font-size: 0.85rem; color: #4A5568; cursor: pointer; font-weight: 500; transition: all 0.2s; }
-    .pill.active { background: #2D3748; color: white; border-color: #2D3748; }
+    .name-cell { display: flex; flex-direction: column; }
+    .name-text { font-weight: 700; font-size: 14px; color: #1A1A2E; }
+    
+    .mini-date-badge { display: inline-block; background: #F3F4F6; color: #4A5568; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; margin-right: 4px; margin-bottom: 4px; }
+    
+    .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; }
+    .status-badge.upcoming { background: #D1FAE5; color: #065F46; }
+    .status-badge.past { background: #F3F4F6; color: #9CA3AF; }
 
-    .sessions-list { display: flex; flex-direction: column; }
-    .session-card { display: flex; justify-content: space-between; align-items: center; padding: 1.5rem 2rem; background: white; border-bottom: 1px solid #EDF2F7; }
-    .session-card:first-child { border-radius: 1rem 1rem 0 0; }
-    .session-card:last-child { border-radius: 0 0 1rem 1rem; border-bottom: none; }
-    .session-card:hover { background: #FAFBFC; }
-    .session-main { display: flex; align-items: center; gap: 1rem; flex: 1; }
-    .avatar { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 0.85rem; flex-shrink: 0; }
-    .session-info { flex: 1; }
-    .session-name strong { font-size: 1rem; color: #2D3748; }
-    .session-meta { display: flex; align-items: center; gap: 1rem; margin-top: 0.3rem; font-size: 0.8rem; color: #718096; }
-    .session-meta span { display: flex; align-items: center; gap: 0.3rem; }
-    .session-actions { display: flex; align-items: center; gap: 0.6rem; }
-    .status-badge { font-size: 0.75rem; padding: 0.35rem 0.8rem; border-radius: 20px; font-weight: 600; }
-    .badge-upcoming { background: #C6F6D5; color: #276749; }
-    .badge-past { background: #E2E8F0; color: #4A5568; }
+    .empty-state { text-align: center; padding: 60px 20px; background: #fff; border-radius: 20px; }
+    .empty-text { font-weight: 700; font-size: 16px; color: #4A5568; }
+    .empty-sub { font-size: 13px; color: #9CA3AF; }
 
-    .empty-state { text-align: center; padding: 3rem; color: #A0AEC0; background: white; border-radius: 1rem; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+    .modal-box { background: white; border-radius: 24px; width: 100%; max-width: 600px; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.15); }
+    .modal-header { padding: 24px; border-bottom: 1px solid #F1F5F9; display: flex; justify-content: space-between; align-items: center; }
+    .modal-header-info { flex: 1; }
+    .modal-name { font-size: 20px; font-weight: 800; color: #1E293B; margin: 0 0 8px; }
+    .modal-subtitle { font-size: 13px; color: #64748B; margin: 0; }
+    .modal-close { background: #F8FAFC; border: none; width: 36px; height: 36px; border-radius: 12px; cursor: pointer; color: #64748B; }
+    
+    .modal-body { padding: 24px; overflow-y: auto; }
+    
+    .modal-footer { padding: 20px 24px; border-top: 1px solid #F1F5F9; display: flex; justify-content: flex-end; }
+    .btn-close-modal { padding: 10px 24px; border-radius: 12px; background: #F1F5F9; border: none; font-weight: 700; color: #475569; cursor: pointer; }
+    .btn-detail { padding: 10px 24px; border-radius: 12px; font-size: 13px; font-weight: 700; color: #ea5073; border: 1px solid #ea5073; background: transparent; cursor: pointer; transition: all .2s; }
+    .btn-detail:hover { opacity: 0.9; }
 
-    .btn-primary { background: linear-gradient(135deg, #FF6B9E 0%, #E83E8C 100%); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 12px; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; transition: transform 0.2s; font-family: inherit; }
-    .btn-primary:hover { transform: translateY(-2px); }
-    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-    .shadow-glow { box-shadow: 0 4px 15px rgba(233,30,99,0.4); }
-    .btn-outline { background: white; border: 1px solid #E2E8F0; color: #4A5568; padding: 0.8rem 1.5rem; border-radius: 12px; font-weight: 600; cursor: pointer; font-family: inherit; }
-
-    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 2rem; }
-    .modal-content { background: white; border-radius: 1.5rem; width: 100%; max-width: 620px; max-height: calc(100vh - 4rem); box-shadow: 0 20px 40px rgba(0,0,0,0.1); animation: slide-up 0.3s ease-out; overflow: hidden; display: flex; flex-direction: column; }
-    .modal-header { display: flex; justify-content: space-between; align-items: flex-start; padding: 1.4rem 1.6rem 1rem; border-bottom: 1px solid #EDF2F7; }
-    .modal-header h2 { font-size: 1.3rem; font-weight: 700; color: #2D3748; margin: 0; }
-    .modal-subtitle { font-size: 0.85rem; color: #718096; margin-top: 0.3rem; }
-    .close-btn { background: #F7FAFC; border: none; width: 32px; height: 32px; border-radius: 50%; color: #A0AEC0; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-    .close-btn:hover { background: #EDF2F7; color: #4A5568; }
-    .modal-body { overflow-y: auto; padding: 1.4rem 1.6rem; display: flex; flex-direction: column; gap: 1rem; }
-    .modal-actions { display: flex; justify-content: flex-end; gap: 1rem; padding: 1rem 1.6rem 1.2rem; border-top: 1px solid #EDF2F7; }
-
-    .form-group { display: flex; flex-direction: column; }
-    .form-group label { display: block; font-size: 0.9rem; font-weight: 600; color: #4A5568; margin-bottom: 0.5rem; }
-    .premium-input { width: 100%; padding: 0.75rem 1rem; border-radius: 10px; border: 1px solid #E2E8F0; background: #F8FAFC; font-family: inherit; font-size: 0.95rem; color: #2D3748; outline: none; }
-    .premium-input:focus { border-color: #FF4D85; box-shadow: 0 0 0 3px rgba(255,77,133,0.1); }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
-
-    .error-banner { padding: 0.8rem 1rem; background: #FFF5F5; border: 1px solid #FED7D7; border-radius: 10px; color: #E53E3E; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem; }
-
-    .loading-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.7); z-index: 999; display: flex; align-items: center; justify-content: center; }
-    .spinner { width: 40px; height: 40px; border: 4px solid #EDF2F7; border-top-color: #FF4D85; border-radius: 50%; animation: spin 0.8s linear infinite; }
+    .spinner { width: 40px; height: 40px; border: 4px solid #F1F5F9; border-top-color: #ea5073; border-radius: 50%; animation: spin 0.8s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
-    @keyframes slide-up { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-    @media (max-width: 768px) {
-        .form-row { grid-template-columns: 1fr; }
-        .kpi-bar { flex-wrap: wrap; }
-        .page-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
-    }
   `]
 })
 export class SeanceExceptionnelleComponent implements OnInit {

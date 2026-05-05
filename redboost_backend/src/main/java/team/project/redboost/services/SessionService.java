@@ -1,5 +1,6 @@
 package team.project.redboost.services;
 
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -9,9 +10,13 @@ import team.project.redboost.entities.User;
 import team.project.redboost.repositories.SessionRepository;
 import team.project.redboost.repositories.UserRepository;
 import team.project.redboost.repositories.CoachRatingRepository;
+import team.project.redboost.repositories.SessionCoachRepository;
+import team.project.redboost.entities.SessionCoach;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +27,24 @@ public class SessionService {
     private final UserRepository userRepository;
     private final CoachRatingRepository coachRatingRepository;
     private final GoogleCalendarService googleCalendarService;
+    private final SessionCoachRepository sessionCoachRepository;
+
+    // ── Inner DTO returned by my-calendar endpoint ──────────────────────────
+    @Data
+    public static class MyCalendarEvent {
+        private String id;
+        private String title;
+        private String description;
+        private String dateTime;          // ISO-8601 e.g. "2025-06-10T14:00:00"
+        private String endDateTime;
+        private String type;              // SESSION | SESSION_SLOT | SEANCE
+        private String statut;            // PLANIFIE | CONFIRME | TERMINE | ANNULE
+        private String meetLink;
+        private String googleEventId;
+        private String coachName;
+        private String entrepreneurName;
+        private boolean isOnline;
+    }
 
     public List<Session> getAll() {
         return sessionRepository.findAll();
@@ -44,6 +67,72 @@ public class SessionService {
         return sessionRepository.findByDateBetween(
                 LocalDateTime.now(),
                 LocalDateTime.now().plusYears(1));
+    }
+
+    public List<MyCalendarEvent> getMyCalendarSessions(Long userId, String role) {
+        List<MyCalendarEvent> events = new ArrayList<>();
+
+        if ("COACH".equalsIgnoreCase(role)) {
+            // Booked sessions where this user is the coach
+            List<Session> sessions = sessionRepository.findByCoachId(userId);
+            for (Session s : sessions) {
+                if (s.getStatut() == Session.Statut.ANNULE) continue;
+                events.add(mapSessionToCalendarEvent(s, "SESSION"));
+            }
+            // Also include coach's available slots (SessionCoach)
+            List<SessionCoach> slots = sessionCoachRepository.findByDisponibiliteCoachId(userId);
+            for (SessionCoach slot : slots) {
+                MyCalendarEvent ev = new MyCalendarEvent();
+                ev.setId("slot-" + slot.getId());
+                ev.setTitle(slot.getTitre() != null ? slot.getTitre() : "Créneau disponible");
+                ev.setDescription("Créneau de disponibilité");
+                LocalDateTime start = slot.getDateSession().atTime(slot.getHeureDebut());
+                LocalDateTime end   = slot.getDateSession().atTime(slot.getHeureFin());
+                ev.setDateTime(start.toString());
+                ev.setEndDateTime(end.toString());
+                ev.setType("SESSION_SLOT");
+                ev.setStatut("DISPONIBLE");
+                ev.setOnline(slot.getTypeSession() == SessionCoach.TypeSession.EN_LIGNE);
+                events.add(ev);
+            }
+        } else {
+            // Entrepreneur: sessions booked by them
+            List<Session> sessions = sessionRepository.findByEntrepreneurId(userId);
+            for (Session s : sessions) {
+                if (s.getStatut() == Session.Statut.ANNULE) continue;
+                events.add(mapSessionToCalendarEvent(s, "SESSION"));
+            }
+        }
+
+        // Sort chronologically
+        events.sort((a, b) -> {
+            if (a.getDateTime() == null) return 1;
+            if (b.getDateTime() == null) return -1;
+            return a.getDateTime().compareTo(b.getDateTime());
+        });
+        return events;
+    }
+
+    private MyCalendarEvent mapSessionToCalendarEvent(Session s, String type) {
+        MyCalendarEvent ev = new MyCalendarEvent();
+        ev.setId(s.getId());
+        ev.setTitle(s.getTitre());
+        ev.setDescription(s.getDescription());
+        ev.setDateTime(s.getDate() != null ? s.getDate().toString() : null);
+        int dur = s.getDureeMinutes() != null ? s.getDureeMinutes() : 60;
+        ev.setEndDateTime(s.getDate() != null ? s.getDate().plusMinutes(dur).toString() : null);
+        ev.setType(type);
+        ev.setStatut(s.getStatut() != null ? s.getStatut().name() : "PLANIFIE");
+        ev.setMeetLink(s.getMeetLink());
+        ev.setGoogleEventId(s.getGoogleEventId());
+        ev.setOnline(s.getTypeSession() == Session.TypeSession.EN_LIGNE);
+        if (s.getCoach() != null) {
+            ev.setCoachName(s.getCoach().getFirstName() + " " + s.getCoach().getLastName());
+        }
+        if (s.getEntrepreneur() != null) {
+            ev.setEntrepreneurName(s.getEntrepreneur().getFirstName() + " " + s.getEntrepreneur().getLastName());
+        }
+        return ev;
     }
 
     @Transactional

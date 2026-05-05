@@ -14,6 +14,7 @@ export interface SessionGroup {
   totalSlots: number;
   bookedSlots: number;
   isUpcoming: boolean;
+  meetLink?: string;
 }
 
 @Component({
@@ -83,9 +84,16 @@ export interface SessionGroup {
                       </div>
                     </td>
                     <td>
-                      <span class="type-badge" [class.online]="g.typeSession === 'EN_LIGNE'" [class.presentiel]="g.typeSession === 'PRESENTIEL'">
-                        <i class="pi" [class.pi-video]="g.typeSession === 'EN_LIGNE'" [class.pi-building]="g.typeSession === 'PRESENTIEL'"></i>
-                        {{ g.typeSession === 'PRESENTIEL' ? 'Présentiel' : 'En ligne' }}
+                      <ng-container *ngIf="g.typeSession === 'EN_LIGNE'">
+                        <a *ngIf="g.meetLink" [href]="g.meetLink" target="_blank" class="type-badge online" style="text-decoration:none; cursor:pointer; background:#E0F2FE; color:#0369A1;" title="Rejoindre le Meet">
+                          <i class="pi pi-video"></i> Rejoindre Meet
+                        </a>
+                        <span *ngIf="!g.meetLink" class="type-badge online">
+                          <i class="pi pi-video"></i> En ligne
+                        </span>
+                      </ng-container>
+                      <span *ngIf="g.typeSession === 'PRESENTIEL'" class="type-badge presentiel">
+                        <i class="pi pi-building"></i> Présentiel
                       </span>
                     </td>
                     <td>
@@ -355,6 +363,7 @@ export class SessionsComponent implements OnInit {
       groupsMap[gid].totalSlots++;
       if (s.isBooked) groupsMap[gid].bookedSlots++;
       if (this.isUpcoming(s)) groupsMap[gid].isUpcoming = true;
+      if (s.meetLink && !groupsMap[gid].meetLink) groupsMap[gid].meetLink = s.meetLink;
     });
 
     return Object.values(groupsMap).map(g => {

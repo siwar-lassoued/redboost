@@ -1700,3 +1700,83 @@
   width: 20px;
   height: 20px;
 }
+
+// ── Google Calendar & Meet Action Buttons ─────────────────────────────────────
+.calendar-action-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.gcal-btn,
+.meet-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  border: none;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.10);
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  .gcal-icon {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+  }
+}
+
+.gcal-btn {
+  background: #ffffff;
+  border: 1.5px solid #dadce0;
+  color: #3c4043;
+
+  &:hover {
+    background: #f8f9fa;
+    border-color: #4285F4;
+    color: #4285F4;
+  }
+}
+
+.meet-btn {
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+  border: 1.5px solid #a5d6a7;
+  color: #1b5e20;
+
+  mat-icon {
+    color: #00832D;
+  }
+
+  &:hover {
+    background: linear-gradient(135deg, #00832D 0%, #006729 100%);
+    border-color: #00832D;
+    color: white;
+
+    mat-icon {
+      color: white;
+    }
+  }
+}

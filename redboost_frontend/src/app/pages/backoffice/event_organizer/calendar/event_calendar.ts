@@ -32,6 +32,7 @@ interface CalendarEvent {
   description: string;
   participants: string[];
   meetLink?: string;
+  googleEventId?: string;   // Google Calendar event ID for deep-link
   isDisabled?: boolean;
 }
 
@@ -68,6 +69,7 @@ export class CalendarComponent implements OnInit {
   isLoading = false;
   totalEventsCount = 0;
   isEntrepreneur = false;
+  isCoach = false;
   matchedCoaches: any[] = [];
   coachGroupsMap: { [coachId: string]: any[] } = {};
   coachThematiquesMap: { [coachId: string]: any[] } = {};
@@ -157,8 +159,14 @@ export class CalendarComponent implements OnInit {
 
     if (currentUser && currentUser.role === 'ENTREPRENEUR') {
       this.isEntrepreneur = true;
+      this.isCoach = false;
       dataSources.bookedSessions = this.sessionService.getByEntrepreneur(currentUser.id).pipe(catchError(() => of([])));
       dataSources.coaches = this.matchingService.getEntrepreneurCoaches(currentUser.id).pipe(catchError(() => of([])));
+      dataSources.myCalendar = this.sessionService.getMyCalendar(currentUser.id, 'ENTREPRENEUR').pipe(catchError(() => of([])));
+    } else if (currentUser && currentUser.role === 'COACH') {
+      this.isCoach = true;
+      this.isEntrepreneur = false;
+      dataSources.myCalendar = this.sessionService.getMyCalendar(currentUser.id, 'COACH').pipe(catchError(() => of([])));
     }
 
     forkJoin(dataSources).subscribe({
@@ -169,6 +177,15 @@ export class CalendarComponent implements OnInit {
         if (response.bookedSessions) {
           const bookedMapped = this.mapBookedSessionsToCalendarEvents(response.bookedSessions);
           allCalendarEvents = [...allCalendarEvents, ...bookedMapped];
+        }
+
+        // Load coach's own sessions from the unified my-calendar endpoint
+        if (response.myCalendar && response.myCalendar.length > 0) {
+          const myCalMapped = this.mapMyCalendarEventsToCalendarEvents(response.myCalendar);
+          // Avoid duplicates with already mapped booked sessions
+          const existingIds = new Set(allCalendarEvents.map(e => e.id));
+          const deduplicated = myCalMapped.filter(e => !existingIds.has(e.id));
+          allCalendarEvents = [...allCalendarEvents, ...deduplicated];
         }
 
         if (response.coaches && response.coaches.length > 0) {
@@ -270,12 +287,12 @@ export class CalendarComponent implements OnInit {
         const meetLink = res?.meetLink;
         if (meetLink) {
           this.snackBar.open(
-            '✅ Session réservée ! Lien Meet disponible dans votre espace.',
+            ' Session réservée ! Lien Meet disponible dans votre espace.',
             'Ouvrir Meet',
             { duration: 8000, panelClass: ['success-snackbar'] }
           ).onAction().subscribe(() => window.open(meetLink, '_blank'));
         } else {
-          this.snackBar.open('✅ Session réservée avec succès !', 'Fermer', {
+          this.snackBar.open(' Session réservée avec succès !', 'Fermer', {
             duration: 5000, panelClass: ['success-snackbar']
           });
         }
@@ -303,13 +320,39 @@ export class CalendarComponent implements OnInit {
       time: new Date(s.date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
       type: 'Coaching (Confirmé)',
       location: s.meetLink ? 'En ligne' : 'À définir',
-      mode: s.meetLink ? 'virtuel' : 'en-personne',
+      mode: (s.meetLink ? 'virtuel' : 'en-personne') as 'en-personne' | 'virtuel' | 'hybrid',
       program: '',
       description: s.description || '',
       participants: [],
       meetLink: s.meetLink,
+      googleEventId: s.googleEventId,
       isDisabled: true
     }));
+  }
+
+  /** Map MyCalendarEvent[] (from /api/sessions/my-calendar) to CalendarEvent[] */
+  mapMyCalendarEventsToCalendarEvents(items: any[]): CalendarEvent[] {
+    return items.map(s => {
+      const dateObj = s.dateTime ? new Date(s.dateTime) : new Date();
+      const endObj  = s.endDateTime ? new Date(s.endDateTime) : null;
+      const startTime = dateObj.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+      const endTime   = endObj   ? endObj.toLocaleTimeString('fr-FR',   { hour: '2-digit', minute: '2-digit' }) : '';
+      return {
+        id: s.id,
+        title: s.title || 'Session',
+        date: dateObj,
+        time: endTime ? `${startTime} - ${endTime}` : startTime,
+        type: s.statut === 'DISPONIBLE' ? 'creneau' : 'Coaching (Confirmé)',
+        location: s.isOnline ? 'En ligne' : 'À définir',
+        mode: (s.isOnline ? 'virtuel' : 'en-personne') as 'en-personne' | 'virtuel' | 'hybrid',
+        program: '',
+        description: s.description || '',
+        participants: [],
+        meetLink: s.meetLink,
+        googleEventId: s.googleEventId,
+        isDisabled: s.type === 'SESSION_SLOT'
+      };
+    });
   }
 
   mapAvailableSlotsToCalendarEvents(slots: any[]): CalendarEvent[] {
@@ -759,4 +802,31 @@ deleteEvent(event: CalendarEvent): void {
     });
   }
 }
+
+  
+  openGoogleCalendar(event: CalendarEvent): void {
+    let url: string;
+    if (event.googleEventId) {
+      // Direct deep-link to the event in Google Calendar
+      url = `https://calendar.google.com/calendar/r/eventedit/${event.googleEventId}`;
+    } else {
+      // Fallback: pre-fill a new Google Calendar event with event details
+      const start = event.date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+      const endDate = new Date(event.date);
+      endDate.setHours(endDate.getHours() + 1);
+      const end = endDate.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+      const title = encodeURIComponent(`[RedBoost] ${event.title}`);
+      const details = encodeURIComponent(event.description || 'Session RedBoost');
+      const location = encodeURIComponent(event.meetLink || event.location || '');
+      url = `https://calendar.google.com/calendar/r/eventedit?text=${title}&dates=${start}/${end}&details=${details}&location=${location}`;
+    }
+    window.open(url, '_blank');
+  }
+
+
+  openMeetLink(event: CalendarEvent): void {
+    if (event.meetLink) {
+      window.open(event.meetLink, '_blank');
+    }
+  }
 }

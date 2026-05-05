@@ -620,6 +620,16 @@ public class CoachService {
         if (s.getDisponibilite() != null && s.getDisponibilite().getThematique() != null) {
             dto.setThematiqueNom(s.getDisponibilite().getThematique().getNom());
         }
+
+        List<team.project.redboost.entities.Session> bookings = sessionRepository.findAll().stream()
+                .filter(b -> String.valueOf(s.getId()).equals(b.getDisponibiliteId()))
+                .collect(java.util.stream.Collectors.toList());
+
+        dto.setIsBooked(!bookings.isEmpty());
+        if (!bookings.isEmpty()) {
+            dto.setMeetLink(bookings.get(0).getMeetLink());
+        }
+
         return dto;
     }
 

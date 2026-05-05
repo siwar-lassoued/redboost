@@ -15,6 +15,22 @@ export interface SessionFilters {
     limit?: number;
 }
 
+/** Mirrors SessionService.MyCalendarEvent from the backend */
+export interface MyCalendarEvent {
+    id: string;
+    title: string;
+    description?: string;
+    dateTime: string;        // ISO-8601
+    endDateTime?: string;
+    type: 'SESSION' | 'SESSION_SLOT' | 'SEANCE';
+    statut: string;          // PLANIFIE | CONFIRME | TERMINE | DISPONIBLE
+    meetLink?: string;
+    googleEventId?: string;
+    coachName?: string;
+    entrepreneurName?: string;
+    isOnline: boolean;
+}
+
 @Injectable({ providedIn: 'root' })
 export class SessionService {
     private readonly http = inject(HttpClient);
@@ -69,6 +85,16 @@ export class SessionService {
         return this.http.put<any>(
             `${environment.apiUrl}/coach/sessions/${sessionId}/reschedule?newDate=${newDate}&entrepreneurId=${entrepreneurId}`, 
             {}
+        );
+    }
+
+    /**
+     * Unified calendar feed for the current user.
+     * Returns all sessions + slots visible to this user, sorted by date.
+     */
+    getMyCalendar(userId: string | number, role: string): Observable<MyCalendarEvent[]> {
+        return this.http.get<MyCalendarEvent[]>(
+            `${this.baseUrl}/my-calendar?userId=${userId}&role=${role}`
         );
     }
 }
