@@ -29,28 +29,32 @@ public class MessageController {
 
     @PostMapping
     public ResponseEntity<Map<String, Object>> sendMessage(
-            @RequestBody Map<String, String> payload) {
+            @RequestBody Map<String, Object> payload) {
         try {
-            String expediteurIdStr   = payload.get("expediteurId");
-            String destinataireIdStr = payload.get("destinataireId");
-            String contenu           = payload.get("contenu");
+            Object expediteurObj = payload.get("expediteurId");
+            Object destinataireObj = payload.get("destinataireId");
+            Object contenuObj = payload.get("contenu");
 
             // Validate required fields before hitting the database
-            if (expediteurIdStr == null || expediteurIdStr.isBlank()) {
+            if (expediteurObj == null || String.valueOf(expediteurObj).isBlank()) {
                 Map<String, Object> err = new HashMap<>();
                 err.put("error", "expediteurId is required");
                 return ResponseEntity.badRequest().body(err);
             }
-            if (destinataireIdStr == null || destinataireIdStr.isBlank()) {
+            if (destinataireObj == null || String.valueOf(destinataireObj).isBlank()) {
                 Map<String, Object> err = new HashMap<>();
                 err.put("error", "destinataireId is required");
                 return ResponseEntity.badRequest().body(err);
             }
-            if (contenu == null || contenu.isBlank()) {
+            if (contenuObj == null || String.valueOf(contenuObj).isBlank()) {
                 Map<String, Object> err = new HashMap<>();
                 err.put("error", "contenu is required");
                 return ResponseEntity.badRequest().body(err);
             }
+
+            String expediteurIdStr = String.valueOf(expediteurObj);
+            String destinataireIdStr = String.valueOf(destinataireObj);
+            String contenu = String.valueOf(contenuObj);
 
             Long expediteurId   = Long.parseLong(expediteurIdStr.trim());
             Long destinataireId = Long.parseLong(destinataireIdStr.trim());
