@@ -55,12 +55,35 @@ public class SessionService {
                 .orElseThrow(() -> new RuntimeException("Session introuvable: " + id));
     }
 
+    private void autoUpdatePastSessions(List<Session> sessions) {
+        boolean changed = false;
+        LocalDateTime now = LocalDateTime.now();
+        for (Session s : sessions) {
+            if (s.getStatut() == null || s.getStatut() == Session.Statut.PLANIFIE) {
+                if (s.getDate() != null) {
+                    int duree = s.getDureeMinutes() != null ? s.getDureeMinutes() : 60;
+                    if (now.isAfter(s.getDate().plusMinutes(duree))) {
+                        s.setStatut(Session.Statut.TERMINE);
+                        changed = true;
+                    }
+                }
+            }
+        }
+        if (changed) {
+            sessionRepository.saveAll(sessions);
+        }
+    }
+
     public List<Session> getByCoach(Long coachId) {
-        return sessionRepository.findByCoachId(coachId);
+        List<Session> sessions = sessionRepository.findByCoachId(coachId);
+        autoUpdatePastSessions(sessions);
+        return sessions;
     }
 
     public List<Session> getByEntrepreneur(Long entrepreneurId) {
-        return sessionRepository.findByEntrepreneurId(entrepreneurId);
+        List<Session> sessions = sessionRepository.findByEntrepreneurId(entrepreneurId);
+        autoUpdatePastSessions(sessions);
+        return sessions;
     }
 
     public List<Session> getUpcoming() {

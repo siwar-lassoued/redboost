@@ -338,8 +338,10 @@ export class SessionsComponent implements OnInit {
     this.filterSessions();
   }
 
-  isUpcoming(session: SessionCoachDTO): boolean {
-    return new Date(session.dateSession) >= new Date();
+  isUpcoming(s: any): boolean {
+    if (!s.dateSession || !s.heureFin) return false;
+    const sessionDate = new Date(s.dateSession + 'T' + s.heureFin);
+    return sessionDate.getTime() > new Date().getTime();
   }
 
   groupSessions(sessions: SessionCoachDTO[]): SessionGroup[] {

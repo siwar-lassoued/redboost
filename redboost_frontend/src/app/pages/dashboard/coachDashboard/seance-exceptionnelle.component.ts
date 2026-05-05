@@ -252,8 +252,10 @@ export class SeanceExceptionnelleComponent implements OnInit {
       else { this.filteredSeances = this.seances.filter(s => !this.isUpcoming(s)); }
   }
 
-  isUpcoming(s: SeanceExceptionnelleDTO): boolean {
-      return new Date(s.dateSeance) >= new Date(new Date().toDateString());
+  isUpcoming(s: any): boolean {
+      if (!s.dateSeance || !s.heureFin) return false;
+      const sessionEnd = new Date(s.dateSeance + 'T' + s.heureFin);
+      return sessionEnd.getTime() > new Date().getTime();
   }
 
   getUpcomingCount(): number { return this.seances.filter(s => this.isUpcoming(s)).length; }
