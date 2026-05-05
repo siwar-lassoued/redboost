@@ -72,6 +72,11 @@ export class CalendarComponent implements OnInit {
   coachGroupsMap: { [coachId: string]: any[] } = {};
   coachThematiquesMap: { [coachId: string]: any[] } = {};
   
+  // Entrepreneur Slot Statistics
+  availableSlotsCount = 0;
+  totalSlotsCount = 0;
+  reservedSlotsCount = 0;
+  
   // Selected slot for reservation
   selectedSlot: any | null = null;
   selectedCoachForBooking: any | null = null;
@@ -204,6 +209,12 @@ export class CalendarComponent implements OnInit {
 
             // Instead of separate slotRequests, we use slots from the groups to ensure consistency
             const allSlotsFromGroups = groupsArray.flat().map(g => g.slots).flat();
+            
+            // Calculate slot statistics
+            this.totalSlotsCount = allSlotsFromGroups.length;
+            this.reservedSlotsCount = response.bookedSessions ? response.bookedSessions.length : 0;
+            this.availableSlotsCount = allSlotsFromGroups.filter(s => !s.isBooked && !s.isGroupReservedByMe).length;
+
             const slotsMapped = this.mapAvailableSlotsToCalendarEvents(allSlotsFromGroups);
             
             this.events = [...allCalendarEvents, ...slotsMapped];

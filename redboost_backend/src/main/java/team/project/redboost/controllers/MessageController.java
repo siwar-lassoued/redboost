@@ -31,12 +31,33 @@ public class MessageController {
     public ResponseEntity<Map<String, Object>> sendMessage(
             @RequestBody Map<String, String> payload) {
         try {
-            Long expediteurId = Long.parseLong(payload.get("expediteurId"));
-            Long destinataireId = Long.parseLong(payload.get("destinataireId"));
-            String contenu = payload.get("contenu");
-            MessageDTO saved = messageService.save(expediteurId, destinataireId, contenu);
+            String expediteurIdStr   = payload.get("expediteurId");
+            String destinataireIdStr = payload.get("destinataireId");
+            String contenu           = payload.get("contenu");
+
+            // Validate required fields before hitting the database
+            if (expediteurIdStr == null || expediteurIdStr.isBlank()) {
+                Map<String, Object> err = new HashMap<>();
+                err.put("error", "expediteurId is required");
+                return ResponseEntity.badRequest().body(err);
+            }
+            if (destinataireIdStr == null || destinataireIdStr.isBlank()) {
+                Map<String, Object> err = new HashMap<>();
+                err.put("error", "destinataireId is required");
+                return ResponseEntity.badRequest().body(err);
+            }
+            if (contenu == null || contenu.isBlank()) {
+                Map<String, Object> err = new HashMap<>();
+                err.put("error", "contenu is required");
+                return ResponseEntity.badRequest().body(err);
+            }
+
+            Long expediteurId   = Long.parseLong(expediteurIdStr.trim());
+            Long destinataireId = Long.parseLong(destinataireIdStr.trim());
+
+            MessageDTO saved = messageService.save(expediteurId, destinataireId, contenu.trim());
             
-            // Broadcast to recipient via WebSocket
+            // Broadcast to recipient via WebSocket (principal name = userId string)
             messagingTemplate.convertAndSendToUser(
                     destinataireId.toString(),
                     "/queue/messages",
@@ -45,6 +66,10 @@ public class MessageController {
             Map<String, Object> res = new HashMap<>();
             res.put("data", saved);
             return ResponseEntity.ok(res);
+        } catch (NumberFormatException e) {
+            Map<String, Object> err = new HashMap<>();
+            err.put("error", "Invalid numeric ID: " + e.getMessage());
+            return ResponseEntity.badRequest().body(err);
         } catch (Exception e) {
             e.printStackTrace();
             Map<String, Object> err = new HashMap<>();

@@ -413,7 +413,7 @@ export class CoachChatComponent implements OnInit, OnDestroy, AfterViewChecked {
         if (this.selectedContact && msg.expediteurId === this.selectedContact.id) {
           // Map ChatMessage → Message shape
           this.messages = [...this.messages, {
-            id: msg.id || Date.now(),
+            id: msg.id || String(Date.now()),
             expediteurId: msg.expediteurId,
             expediteurNom: '',
             expediteurPrenom: '',
@@ -487,7 +487,7 @@ export class CoachChatComponent implements OnInit, OnDestroy, AfterViewChecked {
       next: (msg) => {
         // HTTP API returns the saved MessageDTO, add it to the UI
         this.messages = [...this.messages, {
-          id: msg.id || Date.now(),
+          id: msg.id || String(Date.now()),
           expediteurId: msg.expediteurId,
           expediteurNom: '',
           expediteurPrenom: '',
@@ -505,7 +505,7 @@ export class CoachChatComponent implements OnInit, OnDestroy, AfterViewChecked {
         console.error('Failed to send message via HTTP', err);
         // Fallback: add locally anyway
         this.messages = [...this.messages, {
-          id: Date.now(),
+          id: String(Date.now()),
           expediteurId: this.currentUserId,
           expediteurNom: '',
           expediteurPrenom: '',

@@ -5,10 +5,11 @@ import { map } from 'rxjs/operators';
 import { environment } from '../../../environment';
 
 export interface Message {
-    id: number;
+    id: string;           // UUID from backend
     expediteurId: string;
     expediteurNom: string;
     expediteurPrenom: string;
+    expediteurPhotoUrl?: string;
     destinataireId: string;
     contenu: string;
     type: string;

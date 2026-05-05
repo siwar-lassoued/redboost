@@ -6,6 +6,8 @@ import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBr
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 
+import java.security.Principal;
+
 @Configuration
 @EnableWebSocketMessageBroker
 @lombok.RequiredArgsConstructor
@@ -46,12 +48,17 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                     if (authToken != null && authToken.startsWith("Bearer ")) {
                         String token = authToken.substring(7);
                         if (jwtUtils.validateToken(token)) {
-                            String email = jwtUtils.extractEmail(token);
-                            org.springframework.security.core.userdetails.UserDetails userDetails = userDetailsService
-                                    .loadUserByUsername(email);
-                            org.springframework.security.authentication.UsernamePasswordAuthenticationToken auth = new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
-                                    userDetails, null, userDetails.getAuthorities());
-                            accessor.setUser(auth);
+                            // Use userId as the STOMP principal name so that
+                            // messagingTemplate.convertAndSendToUser(userId, ...) routes correctly.
+                            String userId = jwtUtils.extractUserId(token);
+                            if (userId != null && !userId.isBlank()) {
+                                Principal userIdPrincipal = () -> userId;
+                                accessor.setUser(userIdPrincipal);
+                            } else {
+                                // Fallback: use email as principal
+                                String email = jwtUtils.extractEmail(token);
+                                accessor.setUser(() -> email);
+                            }
                         }
                     }
                 }

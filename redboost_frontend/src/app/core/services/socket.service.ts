@@ -43,7 +43,7 @@ export class SocketService implements OnDestroy {
                 transports: ['websocket', 'xhr-streaming', 'xhr-polling']
             }),
             connectHeaders: { Authorization: `Bearer ${token}` },
-            reconnectDelay: 5000,
+            reconnectDelay: 10000,  // 10s between reconnect attempts to reduce noise
             onConnect: (_frame: IFrame) => {
                 this.subscription = this.client!.subscribe(
                     '/user/queue/messages',
@@ -78,8 +78,15 @@ export class SocketService implements OnDestroy {
                     this.callSignal$.next({ ...JSON.parse(f.body), type: 'hangup' });
                 });
             },
+            onDisconnect: () => {
+                // Silently handle disconnect — HTTP fallback remains active
+                console.info('[SocketService] WebSocket disconnected. HTTP fallback is active.');
+            },
             onStompError: frame => {
-                console.error('STOMP error:', frame.headers['message']);
+                console.warn('[SocketService] STOMP error:', frame.headers['message']);
+            },
+            onWebSocketError: (event) => {
+                console.warn('[SocketService] WebSocket error — falling back to HTTP polling for message delivery.');
             },
         });
 
