@@ -168,6 +168,15 @@ interface DateGroupView {
                     </select>
                 </div>
 
+                <!-- STEP 1B: Nom du programme (linked to thematique) -->
+                <div class="form-group" *ngIf="selectedThematiqueId">
+                    <label>Nom du programme <span style="color:#E53E3E">*</span></label>
+                    <select class="premium-input" [(ngModel)]="selectedProgrammeId">
+                      <option [ngValue]="null">Sélectionner un programme...</option>
+                      <option *ngFor="let p of programmesForSelectedThematique" [ngValue]="p.id">{{ p.nom }}</option>
+                    </select>
+                </div>
+
                 <div *ngIf="selectedThematiqueObj" class="thematique-dates-banner">
                     <i class="pi pi-info-circle"></i>
                     <span>Disponibilités du <strong>{{ selectedThematiqueObj.dateDebut | date:'dd/MM/yyyy' }}</strong> au <strong>{{ selectedThematiqueObj.dateFin | date:'dd/MM/yyyy' }}</strong></span>
@@ -267,7 +276,7 @@ interface DateGroupView {
               <div class="modal-actions">
                     <button class="btn-outline" (click)="showDispoModal = false">Annuler</button>
                     <button class="btn-primary"
-                      [disabled]="!selectedThematiqueId || isSessionFormsEmpty()"
+                      [disabled]="!selectedThematiqueId || !selectedProgrammeId || isSessionFormsEmpty()"
                       (click)="addDisponibilite()">Ajouter les disponibilités</button>
               </div>
           </div>
@@ -568,6 +577,10 @@ export class DisponibilitesComponent implements OnInit {
   selectedDispoToEditId: number | null = null;
   editThematiqueId: number | null = null;
   
+  // Programme selection
+  selectedProgrammeId: number | null = null;
+  programmesForSelectedThematique: ProgrammeDTO[] = [];
+  
   // Multiple Session Forms for "Add" modal
   sessionForms: SessionFormGroup[] = [];
   
@@ -640,11 +653,38 @@ dispoIdsForActiveTheme: number[] = [];
       error: () => {}
     });
 
-    // Load programmes for title pre-fill
-    this.coachService.getCoachProgrammes(this.coachId).subscribe({
-      next: (data) => this.programmes = data,
-      error: () => {}
+     // Load programmes from both endpoints to avoid missing entries.
+    this.coachService.getProgrammes().subscribe({
+      next: (allProgrammes) => {
+        this.coachService.getCoachProgrammes(this.coachId).subscribe({
+          next: (coachProgrammes) => {
+            const merged = [...(allProgrammes || []), ...(coachProgrammes || [])];
+            this.programmes = merged.filter((p, i, arr) => !!p?.id && i === arr.findIndex(x => x.id === p.id));
+            if (this.selectedThematiqueObj) {
+              this.loadProgrammesForThematique(this.selectedThematiqueObj.programmeId);
+            }
+          },
+          error: () => {
+            this.programmes = allProgrammes || [];
+            if (this.selectedThematiqueObj) {
+              this.loadProgrammesForThematique(this.selectedThematiqueObj.programmeId);
+            }
+          }
+        });
+      },
+      error: () => {
+        this.coachService.getCoachProgrammes(this.coachId).subscribe({
+          next: (coachProgrammes) => {
+            this.programmes = coachProgrammes || [];
+            if (this.selectedThematiqueObj) {
+              this.loadProgrammesForThematique(this.selectedThematiqueObj.programmeId);
+            }
+          },
+          error: () => { this.programmes = []; }
+        });
+      }
     });
+   
   }
 
   openDispoModal(): void {
@@ -870,7 +910,12 @@ private mapCalendarEvents(events: CoachCalendarEventDTO[]): any[] {
 
   addSessionForm(): void {
     let title = '';
-    if (this.programmes.length > 0) {
+    const selectedTheme = this.selectedThematiqueObj;
+    if (selectedTheme) {
+      const linkedProgramme = this.programmes.find(p => p.id === selectedTheme.programmeId);
+      if (linkedProgramme) title = linkedProgramme.nom;
+    }
+    if (!title && this.programmes.length > 0) {
       title = this.programmes[0].nom;
     }
     this.sessionForms.push({
@@ -1028,20 +1073,48 @@ private mapCalendarEvents(events: CoachCalendarEventDTO[]): any[] {
     return this.thematiques.find(t => t.id === this.selectedThematiqueId) || null;
   }
 
+  get selectedProgrammeObj(): ProgrammeDTO | null {
+    if (!this.selectedProgrammeId) return null;
+    return this.programmesForSelectedThematique.find(p => p.id === this.selectedProgrammeId) || null;
+  }
+
   onThematiqueSelected(): void {
-    this.dispoValidationError = null;
-    const th = this.selectedThematiqueObj;
-    if (th) {
-      // Re-initialize session forms if th changed
-      this.sessionForms = [];
-      this.addSessionForm();
-    }
+  this.dispoValidationError = null;
+  this.selectedProgrammeId = null;
+  const th = this.selectedThematiqueObj;
+  if (!th) return;
+
+  if (this.programmes.length === 0) {
+    // Recharger si pas encore disponible
+    this.coachService.getProgrammes().subscribe({
+      next: (data) => {
+        this.programmes = data || [];
+        this.loadProgrammesForThematique(th.programmeId);
+      }
+    });
+  } else {
+    this.loadProgrammesForThematique(th.programmeId);
+  }
+  
+  this.sessionForms = [];
+  this.addSessionForm();
+}
+
+  loadProgrammesForThematique(programmeId: number): void {
+  // Afficher TOUS les programmes disponibles
+  this.programmesForSelectedThematique = this.programmes;
+  
+  // Pré-sélectionner le programme lié à la thématique s'il existe
+  const linked = this.programmes.find(p => p.id === programmeId);
+  this.selectedProgrammeId = linked ? linked.id : (this.programmes[0]?.id ?? null);
 }
 
 
 
   private resetModalForm() {
     this.selectedThematiqueId = null;
+    this.selectedProgrammeId = null;
+    this.programmesForSelectedThematique = [];
     this.sessionForms = [];
     this.showDispoModal = false;
   }
