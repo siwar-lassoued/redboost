@@ -11,6 +11,7 @@ const STATUT_BADGE: Record<string, { label: string; bg: string; color: string }>
   REALISEE:  { label: 'Terminée', bg: '#F0FDF4', color: '#16A34A' },
   ANNULEE:   { label: 'Annulée',  bg: '#FEF2F2', color: '#DC2626' },
   TERMINE:   { label: 'Terminée', bg: '#F0FDF4', color: '#16A34A' },
+  PLANIFIE:  { label: 'Planifiée', bg: '#EFF6FF', color: '#2563EB' },
 };
 
 @Component({
@@ -23,11 +24,21 @@ const STATUT_BADGE: Record<string, { label: string; bg: string; color: string }>
       
       <div class="mb-8">
         <h1 class="text-3xl font-black text-[#1A1A2E] tracking-tight">Mes Coachs</h1>
-        <p class="text-gray-500 mt-1 font-medium">Profils et accompagnements personnalisés</p>
+        <p class="text-gray-500 mt-1 font-medium">Profils et accompagnements personnalisés par thématique</p>
       </div>
 
       @if (matchings().length > 0) {
-        @for (coach of matchings(); track coach.id) {
+        @for (coach of matchings(); track (coach.id + '_' + coach.thematiqueId)) {
+
+          <!-- ══ THÉMATIQUE HEADER BANNER ══ -->
+          <div class="thematique-banner mb-4">
+            <div class="thematique-banner-inner">
+              <i class="pi pi-tag text-white opacity-80"></i>
+              <span class="thematique-banner-label">Thématique</span>
+              <span class="thematique-banner-name">{{ coach.thematiqueName || 'Accompagnement' }}</span>
+            </div>
+          </div>
+
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
             
             <!-- Left: Coach Profile -->
@@ -51,7 +62,7 @@ const STATUT_BADGE: Record<string, { label: string; bg: string; color: string }>
                 </div>
 
                 <div class="space-y-3">
-                  <button [routerLink]="['/gestion_comm']" [queryParams]="{with: coach.id}"
+                  <button [routerLink]="['/entrepreneur/chat']" [queryParams]="{with: coach.id}"
                     class="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-black text-white transition-all hover:opacity-90 shadow-md"
                     style="background-color: #ef4444">
                     <i class="pi pi-comments pb-1 px-1"></i>
@@ -68,20 +79,20 @@ const STATUT_BADGE: Record<string, { label: string; bg: string; color: string }>
                 <div class="flex items-center justify-between mb-6 border-b border-gray-50 pb-4">
                   <h3 class="text-lg font-black text-[#1A1A2E] flex items-center gap-2">
                     <i class="pi pi-history text-[#3B82A6]"></i>
-                    Historique & Planning
+                    Sessions — {{ coach.thematiqueName || 'Accompagnement' }}
                   </h3>
-                  <span class="text-xs font-bold text-gray-400">{{ getCoachSessions(coach.id).length }} sessions</span>
+                  <span class="text-xs font-bold text-gray-400">{{ getThematiqueCoachSessions(coach.id, coach.thematiqueId).length }} sessions</span>
                 </div>
 
-                @if (getCoachSessions(coach.id).length > 0) {
+                @if (getThematiqueCoachSessions(coach.id, coach.thematiqueId).length > 0) {
                   <div class="space-y-4">
-                    @for (s of getCoachSessions(coach.id); track s.id) {
+                    @for (s of getThematiqueCoachSessions(coach.id, coach.thematiqueId); track s.id) {
                       <div class="p-5 rounded-3xl border-2 transition-all flex items-center gap-5"
-                        [class]="isPast(s.date) ? 'border-gray-50 bg-gray-50/30 opacity-60' : (isNextSession(s, coach.id) ? 'border-[#EC4899] bg-[#FFF1F2]' : 'border-gray-100 bg-white shadow-sm')">
+                        [class]="isPast(s.date) ? 'border-gray-50 bg-gray-50/30 opacity-60' : (isNextSession(s, coach.id, coach.thematiqueId) ? 'border-[#EC4899] bg-[#FFF1F2]' : 'border-gray-100 bg-white shadow-sm')">
                         
                         <!-- Date Badge -->
                         <div class="w-14 h-14 rounded-2xl flex flex-col items-center justify-center flex-shrink-0 shadow-sm"
-                          [class]="isPast(s.date) ? 'bg-gray-200 text-gray-500' : (isNextSession(s, coach.id) ? 'bg-[#EC4899] text-white' : 'bg-[#3B82A6] text-white')">
+                          [class]="isPast(s.date) ? 'bg-gray-200 text-gray-500' : (isNextSession(s, coach.id, coach.thematiqueId) ? 'bg-[#EC4899] text-white' : 'bg-[#3B82A6] text-white')">
                           <span class="text-[10px] font-black uppercase leading-none">{{ formatMonth(s.date) }}</span>
                           <span class="text-xl font-black leading-tight">{{ formatDay(s.date) }}</span>
                         </div>
@@ -89,10 +100,10 @@ const STATUT_BADGE: Record<string, { label: string; bg: string; color: string }>
                         <!-- Info -->
                         <div class="flex-1 min-w-0">
                           <div class="flex items-center gap-3 mb-1">
-                            <h4 class="text-base font-black truncate" [class]="isNextSession(s, coach.id) ? 'text-[#9D174D]' : 'text-[#1A1A2E]'">
+                            <h4 class="text-base font-black truncate" [class]="isNextSession(s, coach.id, coach.thematiqueId) ? 'text-[#9D174D]' : 'text-[#1A1A2E]'">
                               {{ s.titre || 'Session de Coaching' }}
                             </h4>
-                            @if (isNextSession(s, coach.id)) {
+                            @if (isNextSession(s, coach.id, coach.thematiqueId)) {
                               <span class="px-2.5 py-1 bg-[#EC4899] text-white text-[9px] font-black rounded-lg uppercase tracking-wider">Prochaine</span>
                             }
                           </div>
@@ -110,7 +121,7 @@ const STATUT_BADGE: Record<string, { label: string; bg: string; color: string }>
                         @if (!isPast(s.date) && s.meetLink) {
                           <a [href]="s.meetLink" target="_blank" 
                              class="w-10 h-10 rounded-full flex items-center justify-center text-white transition-all hover:scale-110 shadow-lg"
-                             [style.background-color]="isNextSession(s, coach.id) ? '#EC4899' : '#3B82A6'">
+                             [style.background-color]="isNextSession(s, coach.id, coach.thematiqueId) ? '#EC4899' : '#3B82A6'">
                              <i class="pi pi-video"></i>
                           </a>
                         }
@@ -120,7 +131,7 @@ const STATUT_BADGE: Record<string, { label: string; bg: string; color: string }>
                 } @else {
                   <div class="flex flex-col items-center justify-center py-20 border-2 border-dashed border-gray-100 rounded-[2.5rem]">
                     <i class="pi pi-calendar-minus text-5xl text-gray-200 mb-4"></i>
-                    <p class="text-sm font-black text-gray-400 uppercase tracking-widest">Aucune session enregistrée</p>
+                    <p class="text-sm font-black text-gray-400 uppercase tracking-widest">Aucune session pour cette thématique</p>
                   </div>
                 }
               </div>
@@ -152,7 +163,35 @@ const STATUT_BADGE: Record<string, { label: string; bg: string; color: string }>
       }
     </div>
   `,
-  styles: [`:host { display: block; }`]
+  styles: [`
+    :host { display: block; }
+
+    .thematique-banner {
+      border-radius: 18px;
+      overflow: hidden;
+    }
+    .thematique-banner-inner {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 24px;
+      background: linear-gradient(135deg, #3B82A6 0%, #1E3A5F 100%);
+      border-radius: 18px;
+    }
+    .thematique-banner-label {
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: rgba(255,255,255,0.65);
+    }
+    .thematique-banner-name {
+      font-size: 15px;
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: -0.2px;
+    }
+  `]
 })
 export class MesCoachsComponent implements OnInit {
   private matchSvc = inject(MatchingService);
@@ -176,9 +215,23 @@ export class MesCoachsComponent implements OnInit {
     });
   }
 
-  getCoachSessions(coachId: string): any[] {
+  /**
+   * Returns sessions filtered by BOTH coachId AND thematiqueId.
+   * A session is linked to a thématique via the coach+thematique pair so we
+   * use the session's own thematiqueId field (if present) or fall back to just coachId.
+   */
+  getThematiqueCoachSessions(coachId: string, thematiqueId?: string): any[] {
     return this.allSessions()
-      .filter(s => s.coach && String(s.coach.id) === String(coachId))
+      .filter(s => {
+        const coachMatch = s.coach && String(s.coach.id) === String(coachId);
+        if (!coachMatch) return false;
+        // Match thematique strictly if provided
+        if (thematiqueId) {
+          const sThemId = s.thematiqueId || (s.thematique && s.thematique.id);
+          return sThemId && String(sThemId) === String(thematiqueId);
+        }
+        return coachMatch;
+      })
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }
 
@@ -186,16 +239,11 @@ export class MesCoachsComponent implements OnInit {
     return new Date(date) < new Date();
   }
 
-  isNextSession(session: any, coachId: string): boolean {
-    const coachSessions = this.getCoachSessions(coachId);
+  isNextSession(session: any, coachId: string, thematiqueId?: string): boolean {
+    const sessions = this.getThematiqueCoachSessions(coachId, thematiqueId);
     const now = new Date();
-    const futureSessions = coachSessions.filter(s => new Date(s.date) >= now);
+    const futureSessions = sessions.filter(s => new Date(s.date) >= now);
     return futureSessions.length > 0 && futureSessions[0].id === session.id;
-  }
-
-  getPointsForts(coach: MatchingView): string[] {
-    try { return JSON.parse(coach.pointsForts || '[]'); }
-    catch(e) { return ['Expertise', 'Accompagnement']; }
   }
 
   getBadge(statut: string) {

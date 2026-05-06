@@ -86,8 +86,21 @@ export class UserProfileComponent implements OnInit {
     matchedGroups: any[] = [];
     isLoadingMatched = false;
 
-    // Assigned coaches (Entrepreneur only)
+    // Assigned coaches (Entrepreneur only) — raw list
     entrepreneurCoaches: any[] = [];
+
+    /** Coaches grouped by thématique for display */
+    get entrepreneurCoachesByThematique(): { thematiqueName: string; thematiqueId: string; coaches: any[] }[] {
+        const map = new Map<string, { thematiqueName: string; thematiqueId: string; coaches: any[] }>();
+        for (const c of this.entrepreneurCoaches) {
+            const key = c.thematiqueId || 'default';
+            if (!map.has(key)) {
+                map.set(key, { thematiqueName: c.thematiqueName || 'Accompagnement', thematiqueId: key, coaches: [] });
+            }
+            map.get(key)!.coaches.push(c);
+        }
+        return Array.from(map.values());
+    }
 
     stats = [
 /*         { currentValue: 0, label: 'Projects' },
@@ -537,9 +550,9 @@ export class UserProfileComponent implements OnInit {
 
     openChat(userId: number): void {
         if (this.user.role === 'COACH') {
-            this.router.navigate(['/coach-chat'], { queryParams: { userId: userId } });
+            this.router.navigate(['/coach-chat'], { queryParams: { with: userId } });
         } else {
-            this.router.navigate(['/gestion_comm'], { queryParams: { with: userId } });
+            this.router.navigate(['/entrepreneur/chat'], { queryParams: { with: userId } });
         }
     }
 }

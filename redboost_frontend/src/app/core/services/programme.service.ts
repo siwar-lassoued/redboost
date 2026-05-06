@@ -24,7 +24,7 @@ export interface ProgrammeStats {
 @Injectable({ providedIn: 'root' })
 export class ProgrammeService {
     private readonly http = inject(HttpClient);
-    private readonly baseUrl = `${environment.apiUrl}/programmes`;
+    private readonly baseUrl = `${environment.apiUrl}/backoffice/programmes`;
 
     getAll(filters?: ProgrammeFilters): Observable<PaginatedResponse<Programme>> {
         let params = new HttpParams();

@@ -489,7 +489,7 @@
             <div class="matched-header">
                 <div>
                     <h2 class="matched-title">Mes Coachs Assignés</h2>
-                    <p class="matched-subtitle">Liste de vos coachs experts pour ce programme</p>
+                    <p class="matched-subtitle">Liste de vos coachs experts, regroupés par thématique de coaching</p>
                 </div>
             </div>
 
@@ -503,7 +503,15 @@
                 <p class="empty-sub">Vos coachs apparaîtront ici une fois le matching validé</p>
             </div>
 
-            <div *ngIf="!isLoadingMatched && entrepreneurCoaches.length > 0" class="matched-thematique-block">
+            <!-- One block per thématique -->
+            <div *ngFor="let group of entrepreneurCoachesByThematique" class="matched-thematique-block">
+                <!-- Thématique Header -->
+                <div class="thematique-tab-header">
+                    <i class="pi pi-tag" style="font-size:13px;"></i>
+                    <span class="thematique-label">{{ group.thematiqueName }}</span>
+                    <span class="thematique-badge-count">{{ group.coaches.length }}</span>
+                </div>
+
                 <!-- Table Card -->
                 <div class="matched-table-card" style="border-radius: 20px;">
                     <div class="matched-table-scroll">
@@ -518,7 +526,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr *ngFor="let coach of entrepreneurCoaches" class="matched-table-row">
+                                <tr *ngFor="let coach of group.coaches" class="matched-table-row">
                                     <td>
                                         <div class="matched-name-cell">
                                             <span class="matched-name-text">{{ coach.nom || coach.firstName + ' ' + coach.lastName }}</span>
@@ -539,6 +547,7 @@
                 </div>
             </div>
         </div>
+
     
     <!-- Profile Update Dialog -->
     <app-profile-update-dialog

@@ -26,6 +26,8 @@ export interface MatchingView {
     calendlyUrl?: string;
     programmeId: string;
     programmeName?: string;
+    thematiqueId?: string;
+    thematiqueName?: string;
     scoreMatching: number;
     progressMatching?: number;
     justificationMatching: string;

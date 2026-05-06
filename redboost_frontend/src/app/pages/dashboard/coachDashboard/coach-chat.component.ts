@@ -5,6 +5,7 @@ import { MessageService, Message } from '../../../core/services/message.service'
 import { UserService } from '../../../core/services/user.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { SocketService, ChatMessage } from '../../../core/services/socket.service';
+import { ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
 
 interface CoachContact {
@@ -392,6 +393,7 @@ export class CoachChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     private authService: AuthService,
     private messageService: MessageService,
     private socketService: SocketService,
+    private route: ActivatedRoute,
   ) {}
 
   ngOnInit(): void {
@@ -434,13 +436,27 @@ export class CoachChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   loadAssignedEntrepreneurs(): void {
     this.userService.getEntrepreneursByCoach(this.currentUserId).subscribe({
       next: (users) => {
-        this.contacts = users.map((u) => ({
-          id: String(u.id),
-          name: `${(u as any).firstName || u.prenom || ''} ${(u as any).lastName || u.nom || ''}`.trim() || 'Utilisateur Inconnu',
-          company: u.entreprise || u.startupName || u.startup || '',
-          avatar: `${((u as any).firstName || u.prenom || '?')[0]}${((u as any).lastName || u.nom || '?')[0]}`.toUpperCase(),
-        }));
+        const contactsMap = new Map<string, CoachContact>();
+        users.forEach(u => {
+          const id = String(u.id);
+          if (!contactsMap.has(id)) {
+            contactsMap.set(id, {
+              id: id,
+              name: `${(u as any).firstName || u.prenom || ''} ${(u as any).lastName || u.nom || ''}`.trim() || 'Utilisateur Inconnu',
+              company: u.entreprise || u.startupName || u.startup || '',
+              avatar: `${((u as any).firstName || u.prenom || '?')[0]}${((u as any).lastName || u.nom || '?')[0]}`.toUpperCase(),
+            });
+          }
+        });
+        this.contacts = Array.from(contactsMap.values());
         this.filteredContacts = [...this.contacts];
+
+        // Auto-select contact from query param '?with=<userId>'
+        const withId = this.route.snapshot.queryParamMap.get('with');
+        if (withId) {
+          const target = this.contacts.find(c => c.id === withId);
+          if (target) { this.selectContact(target); return; }
+        }
         if (this.filteredContacts.length) {
           this.selectContact(this.filteredContacts[0]);
         }
