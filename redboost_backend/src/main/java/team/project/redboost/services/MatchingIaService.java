@@ -1021,12 +1021,20 @@ public class MatchingIaService {
             view.put("id", String.valueOf(coach.getId()));
             view.put("nom", ((coach.getFirstName() != null ? coach.getFirstName() : "") + " " +
                     (coach.getLastName() != null ? coach.getLastName() : "")).trim());
+            view.put("email", coach.getEmail());
             view.put("specialite", coach.getExpertise());
             view.put("sector", coach.getSecteur());
             view.put("programmeId", String.valueOf(m.getProgrammeId()));
 
             programmeRepo.findById(m.getProgrammeId()).ifPresent(p ->
                     view.put("programmeName", p.getNom()));
+
+            // ── Thématique ──────────────────────────────────────────────
+            if (m.getThematiqueId() != null) {
+                view.put("thematiqueId", String.valueOf(m.getThematiqueId()));
+                thematiqueRepo.findById(m.getThematiqueId()).ifPresent(t ->
+                        view.put("thematiqueName", t.getNom()));
+            }
 
             view.put("scoreMatching", m.getScoreIa() != null ? m.getScoreIa() : 0);
             view.put("justificationMatching", m.getJustification());

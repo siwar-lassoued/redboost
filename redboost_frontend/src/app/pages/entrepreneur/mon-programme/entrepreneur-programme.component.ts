@@ -113,22 +113,32 @@ const STATUT_CFG: Record<string, { label: string; bg: string; color: string }> =
 
           
           <div class="space-y-6">
-            @if (coach()) {
+            @for (c of coaches(); track (c.id + '_' + c.thematiqueId)) {
               <div class="bg-white rounded-3xl p-6 shadow-xl shadow-gray-200/50 border border-gray-100">
-                <h3 class="text-lg font-black text-[#1A1A2E] mb-5 flex items-center gap-2">
+                <h3 class="text-lg font-black text-[#1A1A2E] mb-1 flex items-center gap-2">
                   <i class="pi pi-user-edit text-[#ff3d91]"></i>
                   Mon Coach
                 </h3>
+                <!-- Thématique badge -->
+                @if (c.thematiqueName) {
+                  <div class="mb-4">
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest"
+                      style="background: #EFF6FF; color: #2563EB">
+                      <i class="pi pi-tag" style="font-size:9px"></i>
+                      {{ c.thematiqueName }}
+                    </span>
+                  </div>
+                }
                 <div class="text-center mb-5">
                   <div class="w-20 h-20 rounded-2xl flex items-center justify-center text-white text-2xl font-black mx-auto mb-3 shadow-lg"
                     style="background: linear-gradient(135deg, #3B82A6, #10B981)">
-                    {{ coach()!.nom[0] }}
+                    {{ c.nom[0] }}
                   </div>
-                  <h4 class="font-black text-[#1A1A2E]">{{ coach()!.nom }}</h4>
-                  <p class="text-xs text-gray-400 font-medium">{{ coach()!.specialite || 'Coach Expert' }}</p>
+                  <h4 class="font-black text-[#1A1A2E]">{{ c.nom }}</h4>
+                  <p class="text-xs text-gray-400 font-medium">{{ c.specialite || 'Coach Expert' }}</p>
                 </div>
                 <div class="space-y-2">
-                  <button [routerLink]="['/entrepreneur/chat']" [queryParams]="{with: coach()!.id}"
+                  <button [routerLink]="['/entrepreneur/chat']" [queryParams]="{with: c.id}"
                     class="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-black text-white transition-all hover:scale-[1.02] shadow-lg cursor-pointer border-none"
                     style="background: linear-gradient(135deg, #F97316, #EF4444)">
                     <i class="pi pi-comments mr-1"></i>
@@ -143,7 +153,6 @@ const STATUT_CFG: Record<string, { label: string; bg: string; color: string }> =
               </div>
             }
 
-            
             <div class="bg-white rounded-3xl p-6 shadow-xl shadow-gray-200/50 border border-gray-100">
               <h3 class="text-sm font-black text-gray-400 uppercase tracking-widest mb-4">Accès rapides</h3>
               <div class="space-y-2">
@@ -181,7 +190,8 @@ export class EntrepreneurProgrammeComponent implements OnInit {
   private authSvc = inject(AuthService);
 
   programme = signal<any>(null);
-  coach = signal<MatchingView | null>(null);
+  coach = signal<MatchingView | null>(null);   // kept for backward compat (first coach)
+  coaches = signal<MatchingView[]>([]);         // all matched coaches (one per thématique)
   loading = signal(true);
   progressBars = signal<any[]>([]);
 
@@ -196,12 +206,13 @@ export class EntrepreneurProgrammeComponent implements OnInit {
     const user = this.authSvc.currentUser$.value;
     if (!user) { this.loading.set(false); return; }
 
-    // Load matching to find the programme
+    // Load matching to find the programme + all coaches per thématique
     this.matchSvc.getEntrepreneurCoaches(user.id).subscribe({
       next: (matches) => {
         if (matches.length > 0) {
           const m = matches[0];
           this.coach.set(m);
+          this.coaches.set(matches);
 
           // Load programme details
           this.progSvc.getById(m.programmeId).subscribe({
