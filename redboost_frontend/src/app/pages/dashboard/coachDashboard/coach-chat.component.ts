@@ -436,12 +436,19 @@ export class CoachChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   loadAssignedEntrepreneurs(): void {
     this.userService.getEntrepreneursByCoach(this.currentUserId).subscribe({
       next: (users) => {
-        this.contacts = users.map((u) => ({
-          id: String(u.id),
-          name: `${(u as any).firstName || u.prenom || ''} ${(u as any).lastName || u.nom || ''}`.trim() || 'Utilisateur Inconnu',
-          company: u.entreprise || u.startupName || u.startup || '',
-          avatar: `${((u as any).firstName || u.prenom || '?')[0]}${((u as any).lastName || u.nom || '?')[0]}`.toUpperCase(),
-        }));
+        const contactsMap = new Map<string, CoachContact>();
+        users.forEach(u => {
+          const id = String(u.id);
+          if (!contactsMap.has(id)) {
+            contactsMap.set(id, {
+              id: id,
+              name: `${(u as any).firstName || u.prenom || ''} ${(u as any).lastName || u.nom || ''}`.trim() || 'Utilisateur Inconnu',
+              company: u.entreprise || u.startupName || u.startup || '',
+              avatar: `${((u as any).firstName || u.prenom || '?')[0]}${((u as any).lastName || u.nom || '?')[0]}`.toUpperCase(),
+            });
+          }
+        });
+        this.contacts = Array.from(contactsMap.values());
         this.filteredContacts = [...this.contacts];
 
         // Auto-select contact from query param '?with=<userId>'
