@@ -62,7 +62,7 @@ const STATUT_BADGE: Record<string, { label: string; bg: string; color: string }>
                 </div>
 
                 <div class="space-y-3">
-                  <button [routerLink]="['/gestion_comm']" [queryParams]="{with: coach.id}"
+                  <button [routerLink]="['/entrepreneur/chat']" [queryParams]="{with: coach.id}"
                     class="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-black text-white transition-all hover:opacity-90 shadow-md"
                     style="background-color: #ef4444">
                     <i class="pi pi-comments pb-1 px-1"></i>

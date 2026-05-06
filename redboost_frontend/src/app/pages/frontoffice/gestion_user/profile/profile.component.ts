@@ -550,9 +550,9 @@ export class UserProfileComponent implements OnInit {
 
     openChat(userId: number): void {
         if (this.user.role === 'COACH') {
-            this.router.navigate(['/coach-chat'], { queryParams: { userId: userId } });
+            this.router.navigate(['/coach-chat'], { queryParams: { with: userId } });
         } else {
-            this.router.navigate(['/gestion_comm'], { queryParams: { with: userId } });
+            this.router.navigate(['/entrepreneur/chat'], { queryParams: { with: userId } });
         }
     }
 }

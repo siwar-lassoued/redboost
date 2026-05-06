@@ -54,6 +54,9 @@ public class UserController {
     @Autowired
     private team.project.redboost.repositories.CandidatureRedstarterRepository candidatureRedstarterRepository;
 
+    @Autowired
+    private team.project.redboost.repositories.ThematiqueRepository thematiqueRepository;
+
     @PatchMapping("/updateprofile")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> updateUserProfile(
@@ -838,7 +841,8 @@ public class UserController {
 
     @GetMapping("/entrepreneurs/{entrepreneurId}/coaches")
     public ResponseEntity<List<Map<String, Object>>> getCoachesForEntrepreneur(@PathVariable Long entrepreneurId) {
-        Set<Long> seenCoachIds = new HashSet<>();
+        // Use a composite key coachId+thematiqueId to allow same coach in multiple thématiques
+        Set<String> seenKeys = new HashSet<>();
         List<Map<String, Object>> coaches = new ArrayList<>();
 
         // Bridge User ID → Candidature ID via email
@@ -849,9 +853,26 @@ public class UserController {
                 List<Matching> matchings = matchingRepository.findByEntrepreneurIdAndStatut(
                         cand.getId(), Matching.StatutMatching.VALIDE);
                 for (Matching m : matchings) {
-                    if (seenCoachIds.add(m.getCoachId())) {
+                    String key = m.getCoachId() + "_" + m.getThematiqueId();
+                    if (seenKeys.add(key)) {
                         User coach = userService.findById(m.getCoachId());
-                        if (coach != null) coaches.add(buildUserResponse(coach));
+                        if (coach != null) {
+                            Map<String, Object> coachView = new java.util.LinkedHashMap<>();
+                            coachView.put("id", String.valueOf(coach.getId()));
+                            coachView.put("firstName", coach.getFirstName());
+                            coachView.put("lastName", coach.getLastName());
+                            coachView.put("nom", ((coach.getFirstName() != null ? coach.getFirstName() : "") + " " + (coach.getLastName() != null ? coach.getLastName() : "")).trim());
+                            coachView.put("email", coach.getEmail());
+                            coachView.put("expertise", coach.getExpertise());
+                            coachView.put("specialite", coach.getExpertise());
+                            coachView.put("profilePictureUrl", coach.getProfilePictureUrl());
+                            if (m.getThematiqueId() != null) {
+                                coachView.put("thematiqueId", String.valueOf(m.getThematiqueId()));
+                                thematiqueRepository.findById(m.getThematiqueId()).ifPresent(t ->
+                                        coachView.put("thematiqueName", t.getNom()));
+                            }
+                            coaches.add(coachView);
+                        }
                     }
                 }
             }
@@ -861,9 +882,26 @@ public class UserController {
         List<Matching> directMatchings = matchingRepository.findByEntrepreneurIdAndStatut(
                 entrepreneurId, Matching.StatutMatching.VALIDE);
         for (Matching m : directMatchings) {
-            if (seenCoachIds.add(m.getCoachId())) {
+            String key = m.getCoachId() + "_" + m.getThematiqueId();
+            if (seenKeys.add(key)) {
                 User coach = userService.findById(m.getCoachId());
-                if (coach != null) coaches.add(buildUserResponse(coach));
+                if (coach != null) {
+                    Map<String, Object> coachView = new java.util.LinkedHashMap<>();
+                    coachView.put("id", String.valueOf(coach.getId()));
+                    coachView.put("firstName", coach.getFirstName());
+                    coachView.put("lastName", coach.getLastName());
+                    coachView.put("nom", ((coach.getFirstName() != null ? coach.getFirstName() : "") + " " + (coach.getLastName() != null ? coach.getLastName() : "")).trim());
+                    coachView.put("email", coach.getEmail());
+                    coachView.put("expertise", coach.getExpertise());
+                    coachView.put("specialite", coach.getExpertise());
+                    coachView.put("profilePictureUrl", coach.getProfilePictureUrl());
+                    if (m.getThematiqueId() != null) {
+                        coachView.put("thematiqueId", String.valueOf(m.getThematiqueId()));
+                        thematiqueRepository.findById(m.getThematiqueId()).ifPresent(t ->
+                                coachView.put("thematiqueName", t.getNom()));
+                    }
+                    coaches.add(coachView);
+                }
             }
         }
 

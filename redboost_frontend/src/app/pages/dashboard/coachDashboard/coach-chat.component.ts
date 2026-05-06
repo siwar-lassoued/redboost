@@ -5,6 +5,7 @@ import { MessageService, Message } from '../../../core/services/message.service'
 import { UserService } from '../../../core/services/user.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { SocketService, ChatMessage } from '../../../core/services/socket.service';
+import { ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
 
 interface CoachContact {
@@ -392,6 +393,7 @@ export class CoachChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     private authService: AuthService,
     private messageService: MessageService,
     private socketService: SocketService,
+    private route: ActivatedRoute,
   ) {}
 
   ngOnInit(): void {
@@ -441,6 +443,13 @@ export class CoachChatComponent implements OnInit, OnDestroy, AfterViewChecked {
           avatar: `${((u as any).firstName || u.prenom || '?')[0]}${((u as any).lastName || u.nom || '?')[0]}`.toUpperCase(),
         }));
         this.filteredContacts = [...this.contacts];
+
+        // Auto-select contact from query param '?with=<userId>'
+        const withId = this.route.snapshot.queryParamMap.get('with');
+        if (withId) {
+          const target = this.contacts.find(c => c.id === withId);
+          if (target) { this.selectContact(target); return; }
+        }
         if (this.filteredContacts.length) {
           this.selectContact(this.filteredContacts[0]);
         }
