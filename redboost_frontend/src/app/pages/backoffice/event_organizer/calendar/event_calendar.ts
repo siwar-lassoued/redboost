@@ -260,8 +260,16 @@ export class CalendarComponent implements OnInit {
     });
   }
 
-  getCoachGroups(coachId: string): any[] {
-    return this.coachGroupsMap[coachId] || [];
+  getCoachThematiques(coachId: string): any[] {
+    return this.coachThematiquesMap[coachId] || [];
+  }
+
+  getAvailableCount(slots: any[]): number {
+    return slots.filter(s => !s.isBooked).length;
+  }
+
+  getBookedCount(slots: any[]): number {
+    return slots.filter(s => s.isBooked).length;
   }
 
   getCoachColor(coachId: string): string {

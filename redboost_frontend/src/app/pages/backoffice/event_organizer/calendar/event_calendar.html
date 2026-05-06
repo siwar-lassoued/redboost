@@ -171,20 +171,198 @@
                     </button>
                   </div>
                 </div>
+<!-- event_calendar.html -->
+<div class="calendar-container">
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" *ngIf="isLoading">
+    <mat-spinner diameter="50"></mat-spinner>
+  </div>
+
+  <div class="calendar-wrapper">
+    <div class="calendar-main-card">
+      <!-- Header -->
+      <div class="calendar-header">
+        <div class="header-left">
+          <div class="calendar-icon">
+            <mat-icon>calendar_today</mat-icon>
+            <span class="badge">{{ totalEventsCount }}</span>
+          </div>
+          <div class="header-info">
+            <h1>Calendrier Global</h1>
+            <p>Tous les événements et formations du programme</p>
+          </div>
+        </div>
+        <div class="header-right">
+         <button class="scheduled-events" mat-button>
+    <div class="pulse-dot"></div>
+    <span>{{ totalEventsCount }} événement{{ totalEventsCount !== 1 ? 's' : '' }} programmé{{ totalEventsCount !== 1 ? 's' : '' }}</span>
+</button>
+          <button class="add-event-btn" *ngIf="!isEntrepreneur" mat-raised-button (click)="openAddEventDialog()">
+            <mat-icon>add</mat-icon>
+            Ajouter un événement
+          </button>
+        </div>
+      </div>
+
+      <div class="calendar-content">
+        <!-- Calendar Main Section -->
+        <div class="calendar-main">
+          <!-- Month Navigation -->
+          <div class="month-navigation">
+            <h2>{{ getMonthYear() }}</h2>
+            <div class="nav-buttons">
+              <button mat-icon-button (click)="previousMonth()" [disabled]="isLoading">
+                <mat-icon>chevron_left</mat-icon>
+              </button>
+              <button mat-icon-button (click)="nextMonth()" [disabled]="isLoading">
+                <mat-icon>chevron_right</mat-icon>
+              </button>
+            </div>
+          </div>
+
+          <!-- Calendar Grid -->
+          <div class="calendar-card">
+            <!-- Weekday Headers -->
+            <div class="calendar-grid">
+              <div class="weekday-header" *ngFor="let day of weekDays">
+                {{ day }}
+              </div>
+            </div>
+
+            <!-- Calendar Days -->
+            <div class="calendar-grid">
+              <mat-card 
+                class="calendar-day" 
+                *ngFor="let day of calendarDays"
+                [class.other-month]="!day.isCurrentMonth"
+                [class.has-events]="day.events.length > 0"
+                [class.selected]="isSelectedDate(day.date)"
+                [class.today]="isToday(day.date)"
+                (click)="onDayClick(day)">
+                <div class="day-number" [class.is-today]="isToday(day.date)">
+                  {{ day.day }}
+                </div>
+                <div class="day-events">
+                  <div 
+                    class="event-chip" 
+                    *ngFor="let event of day.events.slice(0, 2)"
+                    [style.background]="getEventGradient(event.type)"
+                    [class.disabled]="event.isDisabled"
+                    [matTooltip]="event.title"
+                    matTooltipPosition="above">
+                    <span class="event-title">{{ event.title }}</span>
+                    <mat-icon *ngIf="event.meetLink" class="meet-icon">videocam</mat-icon>
+                  </div>
+                  <div class="more-events" *ngIf="day.events.length > 2">
+                    +{{ day.events.length - 2 }}
+                  </div>
+                </div>
+              </mat-card>
+            </div>
+          </div>
+
+          <!-- Event Details Section -->
+          <div class="event-details-section" *ngIf="selectedDateEvents.length > 0">
+            <div class="event-details-header">
+              <h3>Événements du {{ getSelectedDateFormatted() }}</h3>
+            </div>
+
+            <div class="event-cards">
+              <div class="event-detail-card" *ngFor="let event of selectedDateEvents">
+                <div class="event-card-header">
+                  <div class="event-icon" [style.background]="getEventGradient(event.type)">
+                    <mat-icon>{{ getEventTypeIcon(event.type) }}</mat-icon>
+                  </div>
+
+                  <div class="event-card-title">
+                    <!-- ✅ Title row: title + program badge side by side -->
+                    <div class="event-title-row">
+                      <h4>{{ event.title }}</h4>
+                      <span class="event-program-badge" *ngIf="event.program">
+                        <mat-icon>track_changes</mat-icon>
+                        {{ event.program }}
+                      </span>
+                    </div>
+                    <!-- Type badge on its own row below -->
+                    <div class="event-badges">
+                      <span class="event-type-badge" [style.background-color]="getEventTypeColor(event.type)">
+                        {{ event.type }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div class="event-actions" *ngIf="!isEntrepreneur">
+                    <button mat-icon-button (click)="openEditEventDialog(event)">
+                      <mat-icon>edit</mat-icon>
+                    </button>
+                    <button mat-icon-button (click)="deleteEvent(event)">
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="event-card-body">
+                  <p class="event-description" *ngIf="event.description">
+                    {{ event.description }}
+                  </p>
+
+                  <div class="event-info-grid">
+                    <div class="event-info-item" *ngIf="event.time">
+                      <mat-icon>schedule</mat-icon>
+                      <span>{{ event.time }}</span>
+                    </div>
+
+                    <div class="event-info-item" *ngIf="event.location">
+                      <mat-icon>{{ getModeIcon(event.mode) }}</mat-icon>
+                      <span>{{ event.location }}</span>
+                    </div>
+
+                    <div class="event-info-item" *ngIf="event.meetLink">
+                      <mat-icon>videocam</mat-icon>
+                      <a [href]="event.meetLink" target="_blank" class="meet-link">Rejoindre la réunion</a>
+                    </div>
+
+                    <div class="event-info-item">
+                      <mat-icon>email</mat-icon>
+                      <span>{{ event.participants.length }} participant{{ event.participants.length !== 1 ? 's' : '' }}</span>
+                    </div>
+                  </div>
+
+                  <!-- Google Calendar & Meet action buttons -->
+                  <div class="calendar-action-buttons">
+                    <button class="gcal-btn" (click)="openGoogleCalendar(event)" matTooltip="Voir dans Google Agenda">
+                      <img src="https://ssl.gstatic.com/calendar/images/dynamiclogo_2020q4/calendar_31_2x.png" 
+                           alt="Google Calendar" class="gcal-icon"
+                           onerror="this.style.display='none'" />
+                      <mat-icon style="color:#4285F4" *ngIf="!event.googleEventId">event</mat-icon>
+                      <span>{{ event.googleEventId ? 'Voir dans Google Agenda' : 'Ajouter à Google Agenda' }}</span>
+                    </button>
+
+                    <button class="meet-btn" *ngIf="event.meetLink" (click)="openMeetLink(event)" matTooltip="Rejoindre le Google Meet">
+                      <mat-icon style="color:#00832D">videocam</mat-icon>
+                      <span>Rejoindre le Meet</span>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         <!-- Sidebar -->
-        <div class="sidebar">
-          
-          <ng-container *ngIf="isEntrepreneur">
+        <div class="sidebar">          <ng-container *ngIf="isEntrepreneur">
             <!-- Center of Reservation -->
             <div class="reservation-center">
               <div class="sidebar-header">
                 <h3>Réserver une session</h3>
-                <mat-icon matTooltip="Centralisez vos réservations ici">help_outline</mat-icon>
+                <mat-icon matTooltip="Créneaux verts = disponibles, gris = réservés">help_outline</mat-icon>
+              </div>
+
+              <!-- Slot legend -->
+              <div class="slot-legend">
+                <span class="legend-item available"><mat-icon>event_available</mat-icon>Disponible</span>
+                <span class="legend-item booked"><mat-icon>lock</mat-icon>Réservé</span>
+                <span class="legend-item mine"><mat-icon>check_circle</mat-icon>Ma réservation</span>
               </div>
 
               <!-- List of coaches with their availabilities -->
@@ -201,12 +379,15 @@
                    </div>
 
                    <div class="coach-thematiques-list scrollable-sidebar-content">
+                      <!-- Grouped by thematique -->
                       <div *ngFor="let them of coachThematiquesMap[coach.id]" class="thematique-section">
+                        <!-- Thematique name header -->
                         <div class="thematique-header">
                           <mat-icon>label</mat-icon>
-                          <span>{{ them.name }}</span>
+                          <span class="thematique-name">{{ them.name }}</span>
                         </div>
 
+                        <!-- Session groups inside this thematique -->
                         <div class="session-groups-list">
                           <div *ngFor="let group of them.sessionGroups" class="session-group-item" [class.reserved]="group.reservedByMe">
                             <div class="group-title">
@@ -214,15 +395,40 @@
                                 <mat-icon>bookmark</mat-icon>
                                 <span>{{ group.sessionTitle }}</span>
                               </div>
-                              <span class="session-count">{{ group.slots.length }} créneau{{ group.slots.length > 1 ? 'x' : '' }}</span>
+                              <div class="group-slot-counts">
+                                <span class="count-badge available-count"
+                                  matTooltip="Créneaux disponibles">
+                                  ✓ {{ getAvailableCount(group.slots) }}
+                                </span>
+                                <span class="count-badge booked-count"
+                                  *ngIf="getBookedCount(group.slots) > 0"
+                                  matTooltip="Créneaux réservés">
+                                  🔒 {{ getBookedCount(group.slots) }}
+                                </span>
+                              </div>
+                            </div>
+
+                            <!-- Already reserved banner -->
+                            <div class="reserved-by-me-banner" *ngIf="group.reservedByMe">
+                              <mat-icon>check_circle</mat-icon>
+                              <span>Session déjà réservée</span>
                             </div>
                             
+                            <!-- Slot buttons -->
                             <div class="slots-container scrollable-slots">
                               <div class="slots-grid">
-                                <button *ngFor="let slot of group.slots" class="slot-btn" 
+                                <button *ngFor="let slot of group.slots" 
+                                  class="slot-btn"
                                   [class.selected]="selectedSlot?.id === slot.id"
+                                  [class.slot-available]="!slot.isBooked && !group.reservedByMe"
+                                  [class.slot-booked]="slot.isBooked && !slot.isBookedByMe"
+                                  [class.slot-booked-by-me]="slot.isBookedByMe"
                                   [disabled]="slot.isBooked || group.reservedByMe"
-                                  (click)="selectSlot(slot, group.sessionTitle, coach)">
+                                  (click)="selectSlot(slot, group.sessionTitle, coach)"
+                                  [matTooltip]="slot.isBookedByMe ? 'Votre réservation' : slot.isBooked ? 'Créneau déjà réservé' : group.reservedByMe ? 'Vous avez déjà réservé dans cette session' : 'Cliquez pour réserver'">
+                                  <mat-icon class="slot-status-icon" style="font-size:14px;width:14px;height:14px;line-height:14px">
+                                    {{ slot.isBookedByMe ? 'check_circle' : slot.isBooked ? 'lock' : 'event_available' }}
+                                  </mat-icon>
                                   <span class="slot-date">{{ formatSlotDay(slot.dateSession) }} {{ formatSlotMonth(slot.dateSession) }}</span>
                                   <span class="slot-time">{{ formatSlotTime(slot.heureDebut) }}</span>
                                 </button>
@@ -231,7 +437,9 @@
                           </div>
                         </div>
                       </div>
+
                       <div *ngIf="!coachThematiquesMap[coach.id] || coachThematiquesMap[coach.id].length === 0" class="empty-coach-slots">
+                        <mat-icon>event_busy</mat-icon>
                         Pas de créneaux disponibles
                       </div>
                    </div>
@@ -309,6 +517,11 @@
       <div class="header-text">
         <h3>Confirmer la réservation</h3>
         <p>{{ selectedGroupTitle }}<span *ngIf="selectedCoachForBooking"> — {{ selectedCoachForBooking.nom }}</span></p>
+        <!-- Thematique badge in modal -->
+        <span class="booking-thematique-badge" *ngIf="selectedSlot?.thematiqueNom">
+          <mat-icon style="font-size:13px;width:13px;height:13px;line-height:13px;vertical-align:middle;margin-right:3px">label</mat-icon>
+          {{ selectedSlot.thematiqueNom }}
+        </span>
       </div>
       <button class="close-modal-btn" (click)="selectedSlot = null">
         <mat-icon>close</mat-icon>
