@@ -225,9 +225,10 @@ export class MesCoachsComponent implements OnInit {
       .filter(s => {
         const coachMatch = s.coach && String(s.coach.id) === String(coachId);
         if (!coachMatch) return false;
-        // If the session carries its own thematiqueId, enforce the match
-        if (thematiqueId && s.thematiqueId) {
-          return String(s.thematiqueId) === String(thematiqueId);
+        // Match thematique strictly if provided
+        if (thematiqueId) {
+          const sThemId = s.thematiqueId || (s.thematique && s.thematique.id);
+          return sThemId && String(sThemId) === String(thematiqueId);
         }
         return coachMatch;
       })
