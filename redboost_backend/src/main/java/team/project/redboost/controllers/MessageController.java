@@ -1,6 +1,7 @@
 package team.project.redboost.controllers;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import team.project.redboost.dto.MessageDTO;
@@ -10,9 +11,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/messages")
-@lombok.RequiredArgsConstructor
+@RequiredArgsConstructor
 public class MessageController {
 
     private final MessageService messageService;
@@ -71,14 +73,17 @@ public class MessageController {
             res.put("data", saved);
             return ResponseEntity.ok(res);
         } catch (NumberFormatException e) {
+            log.warn("[MessageController] Invalid ID format: {}", e.getMessage());
             Map<String, Object> err = new HashMap<>();
             err.put("error", "Invalid numeric ID: " + e.getMessage());
             return ResponseEntity.badRequest().body(err);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("[MessageController] Failed to save message — expediteurId={}, destinataireId={} | {}: {}",
+                    payload.get("expediteurId"), payload.get("destinataireId"),
+                    e.getClass().getSimpleName(), e.getMessage(), e);
             Map<String, Object> err = new HashMap<>();
             err.put("error", e.getMessage());
-            err.put("type", e.getClass().getName());
+            err.put("type", e.getClass().getSimpleName());
             return ResponseEntity.status(500).body(err);
         }
     }

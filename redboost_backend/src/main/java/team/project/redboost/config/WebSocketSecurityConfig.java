@@ -1,25 +1,33 @@
 package team.project.redboost.config;
 
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.messaging.simp.stomp.StompCommand;
-import org.springframework.security.config.annotation.web.messaging.MessageSecurityMetadataSourceRegistry;
-import org.springframework.security.config.annotation.web.socket.AbstractSecurityWebSocketMessageBrokerConfigurer;
-import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
+import org.springframework.messaging.Message;
+import org.springframework.security.authorization.AuthorizationManager;
+import org.springframework.security.config.annotation.web.socket.EnableWebSocketSecurity;
+import org.springframework.security.messaging.access.intercept.MessageMatcherDelegatingAuthorizationManager;
 
+/**
+ * WebSocket Security Configuration — Spring Security 6 (Spring Boot 3.x).
+ *
+ * NOTE: @EnableWebSocketMessageBroker is declared only once, in WebSocketConfig.java.
+ *       AbstractSecurityWebSocketMessageBrokerConfigurer was removed in Spring Security 6;
+ *       we use @EnableWebSocketSecurity + AuthorizationManager<Message<?>> instead.
+ */
 @Configuration
-@EnableWebSocketMessageBroker
-public class WebSocketSecurityConfig extends AbstractSecurityWebSocketMessageBrokerConfigurer {
+@EnableWebSocketSecurity
+public class WebSocketSecurityConfig {
 
-    @Override
-    protected void configureInbound(MessageSecurityMetadataSourceRegistry messages) {
+    @Bean
+    AuthorizationManager<Message<?>> messageAuthorizationManager(
+            MessageMatcherDelegatingAuthorizationManager.Builder messages) {
         messages
-//                .simpTypeMatchers(StompCommand.CONNECT).permitAll() // Allow CONNECT without restrictions
-                .simpDestMatchers("/topic/**", "/queue/**").permitAll() // Require authentication for STOMP destinations
-                .anyMessage().permitAll(); // Require authentication for all messages
+            // Authenticated users only can send to /app/** (server-side handlers)
+            .simpDestMatchers("/app/**").authenticated()
+            // Authenticated users only can subscribe to user queues and topics
+            .simpSubscribeDestMatchers("/user/**", "/topic/**", "/queue/**").authenticated()
+            // Everything else is open (e.g. CONNECT, DISCONNECT frames)
+            .anyMessage().permitAll();
+        return messages.build();
     }
-
-    @Override
-    protected boolean sameOriginDisabled() {
-        return true; // Disable CSRF for WebSocket
-    }
-}
+}

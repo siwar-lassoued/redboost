@@ -37,29 +37,42 @@ public class JwtRequestFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
-        // Extract JWT from Authorization header
+
         final String authorizationHeader = request.getHeader("Authorization");
         String email = null;
         String jwtToken = null;
 
+        // ── Extract token from Authorization header ──────────────────────────
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             jwtToken = authorizationHeader.substring(7);
-            email = jwtUtil.extractEmail(jwtToken);
-            String userId = jwtUtil.extractUserId(jwtToken);
-            logger.info("JWT Token extracted. Email: " + email + ", UserId: " + userId);
+            try {
+                email = jwtUtil.extractEmail(jwtToken);
+                String userId = jwtUtil.extractUserId(jwtToken);
+                logger.info("JWT Token extracted. Email: " + email + ", UserId: " + userId);
+            } catch (io.jsonwebtoken.ExpiredJwtException ex) {
+                logger.warn("JWT token expired for request [" + request.getServletPath() + "]. Proceeding unauthenticated.");
+                jwtToken = null; // treat as missing
+            } catch (Exception ex) {
+                logger.warn("Invalid JWT token for request [" + request.getServletPath() + "]: " + ex.getMessage());
+                jwtToken = null; // treat as missing
+            }
         }
 
-        // Extract JWT from cookies if not in header
+        // ── Fallback: try cookie ─────────────────────────────────────────────
         if (jwtToken == null) {
             jwtToken = getJwtFromCookies(request);
+            if (jwtToken != null) {
+                try {
+                    email = jwtUtil.extractEmail(jwtToken);
+                } catch (Exception ex) {
+                    logger.warn("Invalid JWT in cookie: " + ex.getMessage());
+                    jwtToken = null;
+                }
+            }
         }
 
-        // Validate token and authenticate user
-        if (jwtToken != null) {
-            email = jwtUtil.extractEmail(jwtToken);
-        }
-
-        if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+        // ── Validate and set authentication ──────────────────────────────────
+        if (email != null && jwtToken != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             try {
                 UserDetails userDetails = this.userDetailsService.loadUserByUsername(email);
                 logger.info("UserDetails loaded: " + userDetails.getUsername());
@@ -72,11 +85,14 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                 }
             } catch (org.springframework.security.core.userdetails.UsernameNotFoundException ex) {
                 logger.warn("JWT token parsed, but User not found: " + email + ". Ignoring token.");
+            } catch (Exception ex) {
+                logger.warn("Error authenticating user [" + email + "]: " + ex.getMessage());
             }
         }
 
         chain.doFilter(request, response);
     }
+
 
     private String getJwtFromCookies(HttpServletRequest request) {
         if (request.getCookies() != null) {
