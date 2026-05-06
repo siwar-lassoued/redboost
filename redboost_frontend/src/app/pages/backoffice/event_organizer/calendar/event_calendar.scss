@@ -1913,3 +1913,57 @@
   font-weight: 600;
   color: #1d4ed8;
 }
+
+// ─────────────────────────────────────────────────────────────
+// Date grouping inside session groups
+// ─────────────────────────────────────────────────────────────
+
+.date-groups-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.date-group-item {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.date-group-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  background: linear-gradient(90deg, #f0f9ff 0%, #f8fafc 100%);
+  border-bottom: 1px solid #e0f2fe;
+  font-size: 11px;
+  font-weight: 700;
+  color: #0369a1;
+
+  mat-icon {
+    font-size: 13px;
+    width: 13px;
+    height: 13px;
+    color: #38bdf8;
+  }
+
+  .date-slot-count {
+    margin-left: auto;
+    font-size: 10px;
+    font-weight: 600;
+    color: #64748b;
+    background: #e2e8f0;
+    padding: 1px 6px;
+    border-radius: 20px;
+  }
+}
+
+.date-group-item .slots-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding: 8px;
+}
+

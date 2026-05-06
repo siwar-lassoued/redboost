@@ -320,11 +320,6 @@ export class AppMenu implements OnInit {
                         icon: 'pi pi-fw pi-file-pdf',
                         routerLink: ['/entrepreneur/mes-livrables'],
                     },
-                    {
-                        label: 'Mon Statut',
-                        icon: 'pi pi-fw pi-chart-line',
-                        routerLink: ['/entrepreneur/status'],
-                    },
                 ],
             },
             {

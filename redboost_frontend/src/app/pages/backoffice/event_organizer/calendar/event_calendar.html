@@ -413,25 +413,34 @@
                               <mat-icon>check_circle</mat-icon>
                               <span>Session déjà réservée</span>
                             </div>
-                            
-                            <!-- Slot buttons -->
-                            <div class="slots-container scrollable-slots">
-                              <div class="slots-grid">
-                                <button *ngFor="let slot of group.slots" 
-                                  class="slot-btn"
-                                  [class.selected]="selectedSlot?.id === slot.id"
-                                  [class.slot-available]="!slot.isBooked && !group.reservedByMe"
-                                  [class.slot-booked]="slot.isBooked && !slot.isBookedByMe"
-                                  [class.slot-booked-by-me]="slot.isBookedByMe"
-                                  [disabled]="slot.isBooked || group.reservedByMe"
-                                  (click)="selectSlot(slot, group.sessionTitle, coach)"
-                                  [matTooltip]="slot.isBookedByMe ? 'Votre réservation' : slot.isBooked ? 'Créneau déjà réservé' : group.reservedByMe ? 'Vous avez déjà réservé dans cette session' : 'Cliquez pour réserver'">
-                                  <mat-icon class="slot-status-icon" style="font-size:14px;width:14px;height:14px;line-height:14px">
-                                    {{ slot.isBookedByMe ? 'check_circle' : slot.isBooked ? 'lock' : 'event_available' }}
-                                  </mat-icon>
-                                  <span class="slot-date">{{ formatSlotDay(slot.dateSession) }} {{ formatSlotMonth(slot.dateSession) }}</span>
-                                  <span class="slot-time">{{ formatSlotTime(slot.heureDebut) }}</span>
-                                </button>
+
+                            <!-- Slots grouped by date -->
+                            <div class="date-groups-list">
+                              <div *ngFor="let dateGroup of groupSlotsByDate(group.slots)" class="date-group-item">
+                                <!-- Date header -->
+                                <div class="date-group-header">
+                                  <mat-icon>calendar_today</mat-icon>
+                                  <span>{{ dateGroup.dateLabel }}</span>
+                                  <span class="date-slot-count">{{ dateGroup.slots.length }} créneau{{ dateGroup.slots.length > 1 ? 'x' : '' }}</span>
+                                </div>
+                                <!-- Slots for that date -->
+                                <div class="slots-grid">
+                                  <button *ngFor="let slot of dateGroup.slots"
+                                    class="slot-btn"
+                                    [class.selected]="selectedSlot?.id === slot.id"
+                                    [class.slot-available]="!slot.isBooked && !group.reservedByMe"
+                                    [class.slot-booked]="slot.isBooked && !slot.isBookedByMe"
+                                    [class.slot-booked-by-me]="slot.isBookedByMe"
+                                    [disabled]="slot.isBooked || group.reservedByMe"
+                                    (click)="selectSlot(slot, group.sessionTitle, coach)"
+                                    [matTooltip]="slot.isBookedByMe ? 'Votre réservation' : slot.isBooked ? 'Créneau déjà réservé' : group.reservedByMe ? 'Session déjà réservée' : 'Cliquez pour réserver'">
+                                    <mat-icon class="slot-status-icon" style="font-size:13px;width:13px;height:13px;line-height:13px">
+                                      {{ slot.isBookedByMe ? 'check_circle' : slot.isBooked ? 'lock' : 'event_available' }}
+                                    </mat-icon>
+                                    <span class="slot-time">{{ formatSlotTime(slot.heureDebut) }}</span>
+                                    <span class="slot-time-end" style="font-size:9px;opacity:.6">→ {{ formatSlotTime(slot.heureFin) }}</span>
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           </div>
