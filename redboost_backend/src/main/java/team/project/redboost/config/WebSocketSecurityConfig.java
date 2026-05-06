@@ -30,4 +30,16 @@ public class WebSocketSecurityConfig {
             .anyMessage().permitAll();
         return messages.build();
     }
+
+    /**
+     * Disable CSRF for WebSockets in Spring Security 6.
+     * Since we use JWT (Stateless), CSRF is not needed.
+     * Providing a no-op ChannelInterceptor named 'csrfChannelInterceptor' disables the default CSRF check.
+     */
+    @Bean(name = "csrfChannelInterceptor")
+    org.springframework.messaging.support.ChannelInterceptor csrfChannelInterceptor() {
+        return new org.springframework.messaging.support.ChannelInterceptor() {
+        };
+    }
+
 }
