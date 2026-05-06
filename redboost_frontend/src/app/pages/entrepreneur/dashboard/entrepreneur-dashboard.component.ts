@@ -164,6 +164,20 @@ import { OnInit, computed } from '@angular/core';
                 <i class="pi pi-clock opacity-75"></i>
                 <span class="text-sm font-medium">{{ nextSession()!.time }} — {{ nextSession()!.duration }} min</span>
               </div>
+
+              @if (nextSession()!.coachName) {
+                <div class="flex items-center gap-2.5 mb-2 pt-2 border-t border-white/20 mt-2">
+                  <i class="pi pi-user opacity-75"></i>
+                  <span class="text-sm font-medium">{{ nextSession()!.coachName }}</span>
+                </div>
+              }
+              @if (nextSession()!.thematiqueName) {
+                <div class="flex items-center gap-2.5 mb-3">
+                  <i class="pi pi-tag opacity-75"></i>
+                  <span class="text-[13px] font-medium opacity-90 truncate max-w-[200px]">{{ nextSession()!.thematiqueName }}</span>
+                </div>
+              }
+
               <span class="text-[10px] px-2.5 py-1 rounded-full font-black uppercase"
                 style="background: rgba(34,197,94,0.25); color: #86EFAC">
                 ● Confirmé
@@ -200,7 +214,7 @@ export class EntrepreneurDashboardComponent implements OnInit {
   private userSvc = inject(UserService);
 
   urgentTasks = signal<any[]>([]);
-  nextSession = signal<{ date: string; time: string; duration: number; meetLink?: string } | null>(null);
+  nextSession = signal<{ date: string; time: string; duration: number; meetLink?: string; coachName?: string; thematiqueName?: string } | null>(null);
   assignedCoach = signal<MatchingView | null>(null);
   coachTags = signal<string[]>([]);
   currentUserProfile: any = null;
@@ -257,11 +271,16 @@ export class EntrepreneurDashboardComponent implements OnInit {
         .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())[0];
 
       if (upcoming) {
+        const coachName = upcoming.coach ? `${upcoming.coach.firstName || upcoming.coach.prenom || ''} ${upcoming.coach.lastName || upcoming.coach.nom || ''}`.trim() : undefined;
+        const thematiqueName = upcoming.thematique?.nom || upcoming.thematiqueName || upcoming.titre;
+
         this.nextSession.set({
           date: new Date(upcoming.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'short' }),
           time: new Date(upcoming.date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
           duration: 60,
           meetLink: upcoming.meetLink,
+          coachName: coachName || undefined,
+          thematiqueName: thematiqueName || undefined
         });
       }
     });
