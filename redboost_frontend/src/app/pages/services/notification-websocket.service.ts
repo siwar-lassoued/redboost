@@ -25,7 +25,7 @@ export class NotificationWebSocketService {
   // backend endpoints
   private apiUrl = `${environment.apiUrl}/notifications`;
   // SockJS needs http/https URL — it handles the ws upgrade internally
-  private wsUrl = environment.apiUrl + '/ws';
+  private wsUrl = environment.apiUrl.replace('/api', '') + '/ws';
 
   private stompClient: Client | null = null;
   
