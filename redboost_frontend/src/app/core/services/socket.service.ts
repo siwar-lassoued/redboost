@@ -36,7 +36,7 @@ export class SocketService implements OnDestroy {
         if (this.client?.active) return;
 
         // Use SockJS with apiUrl to respect the context path (e.g. /api)
-        const wsUrl = environment.apiUrl + '/ws';
+        const wsUrl = environment.apiUrl.replace('/api', '') + '/ws';
 
         this.client = new Client({
             webSocketFactory: () => new SockJS(wsUrl, null, {
