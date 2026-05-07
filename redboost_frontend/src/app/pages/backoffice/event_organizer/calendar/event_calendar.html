@@ -224,7 +224,7 @@
                                   [disabled]="slot.isBooked || group.reservedByMe"
                                   (click)="selectSlot(slot, group.sessionTitle, coach)">
                                   <span class="slot-date">{{ formatSlotDay(slot.dateSession) }} {{ formatSlotMonth(slot.dateSession) }}</span>
-                                  <span class="slot-time">{{ formatSlotTime(slot.heureDebut) }}</span>
+                                  <span class="slot-time">{{ formatSlotTime(slot.heureDebut) }} → {{ formatSlotTime(slot.heureFin) }}</span>
                                 </button>
                               </div>
                             </div>
@@ -277,7 +277,7 @@
                   <span>{{ formatEventDate(event.date) }}</span>
                   <span *ngIf="event.time">•</span>
                   <mat-icon *ngIf="event.time">schedule</mat-icon>
-                  <span *ngIf="event.time">{{ event.time.split(' - ')[0] }}</span>
+                  <span *ngIf="event.time">{{ event.time }}</span>
                 </div>
 
                 <div class="event-location" *ngIf="event.location">
