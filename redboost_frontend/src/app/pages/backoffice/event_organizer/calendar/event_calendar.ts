@@ -14,7 +14,7 @@ import { EventService, EventResponse } from '../event.service';
 import { TypeFormationService, TypeFormation } from '../type-formation.service';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { forkJoin, of } from 'rxjs';
-import { catchError, switchMap } from 'rxjs/operators';
+import { catchError, filter, take } from 'rxjs/operators';
 import { AuthService } from '../../../../core/services/auth.service';
 import { MatchingService } from '../../../../core/services/matching.service';
 import { CoachService } from '../../../dashboard/coachDashboard/services/coach.service';
@@ -143,7 +143,22 @@ export class CalendarComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadEventTypesAndEvents();
+    // Wait for the authenticated user before loading — currentUser$.value is often null on first render
+    this.authService.currentUser$.pipe(
+      filter(u => !!u),
+      take(1)
+    ).subscribe(() => {
+      this.loadEventTypesAndEvents();
+    });
+
+    // Fallback: if already null after 500ms (not logged in), still render the calendar skeleton
+    setTimeout(() => {
+      if (!this.authService.currentUser$.value) {
+        this.isLoading = false;
+        this.generateCalendar();
+        this.cdr.detectChanges();
+      }
+    }, 500);
   }
 
   loadEventTypesAndEvents(): void {
@@ -151,26 +166,32 @@ export class CalendarComponent implements OnInit {
     const year = this.currentMonth.getFullYear();
     const month = this.currentMonth.getMonth() + 1;
     const currentUser = this.authService.currentUser$.value;
+    console.log('Calendar loading for role:', currentUser?.role, 'User ID:', currentUser?.id);
     
     const dataSources: any = {
-      types: this.typeFormationService.getAllTypes(),
-      events: this.eventService.getEventsByMonth(year, month)
+      types: this.typeFormationService.getAllTypes().pipe(catchError(() => of([]))),
+      events: this.eventService.getEventsByMonth(year, month).pipe(catchError(() => of([])))
     };
 
-    if (currentUser && currentUser.role === 'ENTREPRENEUR') {
+    if (currentUser && (currentUser.role === 'ENTREPRENEUR' || currentUser.role === 'ROLE_ENTREPRENEUR')) {
+      console.log('Detected ENTREPRENEUR role');
       this.isEntrepreneur = true;
       this.isCoach = false;
-      dataSources.bookedSessions = this.sessionService.getByEntrepreneur(currentUser.id).pipe(catchError(() => of([])));
-      dataSources.coaches = this.matchingService.getEntrepreneurCoaches(currentUser.id).pipe(catchError(() => of([])));
-      dataSources.myCalendar = this.sessionService.getMyCalendar(currentUser.id, 'ENTREPRENEUR').pipe(catchError(() => of([])));
-    } else if (currentUser && currentUser.role === 'COACH') {
+      const userIdStr = String(currentUser.id);
+      dataSources.bookedSessions = this.sessionService.getByEntrepreneur(userIdStr).pipe(catchError((err) => { console.error('Error bookedSessions:', err); return of([]); }));
+      dataSources.coaches = this.matchingService.getEntrepreneurCoaches(userIdStr).pipe(catchError((err) => { console.error('Error coaches:', err); return of([]); }));
+      dataSources.myCalendar = this.sessionService.getMyCalendar(userIdStr, 'ENTREPRENEUR').pipe(catchError((err) => { console.error('Error myCalendar:', err); return of([]); }));
+    } else if (currentUser && (currentUser.role === 'COACH' || currentUser.role === 'ROLE_COACH')) {
+      console.log('Detected COACH role');
       this.isCoach = true;
       this.isEntrepreneur = false;
-      dataSources.myCalendar = this.sessionService.getMyCalendar(currentUser.id, 'COACH').pipe(catchError(() => of([])));
+      const userIdStr = String(currentUser.id);
+      dataSources.myCalendar = this.sessionService.getMyCalendar(userIdStr, 'COACH').pipe(catchError((err) => { console.error('Error myCalendar:', err); return of([]); }));
     }
 
     forkJoin(dataSources).subscribe({
       next: (response: any) => {
+        console.log('Main data sources loaded:', Object.keys(response));
         this.eventTypes = this.mapTypesToEventTypes(response.types);
         let allCalendarEvents = this.mapResponseToCalendarEvents(response.events);
         

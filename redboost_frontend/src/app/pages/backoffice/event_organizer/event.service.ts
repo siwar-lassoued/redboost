@@ -1,7 +1,7 @@
 // event.service.ts
-import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../../../environment';
 
 export interface CreateEventRequest {
   title: string;
@@ -36,7 +36,7 @@ export interface EventResponse {
   providedIn: 'root'
 })
 export class EventService {
-  private apiUrl = 'https://redboost.tn/api/events';
+  private apiUrl = `${environment.apiUrl}/events`;
 
   constructor(private http: HttpClient) {}
 

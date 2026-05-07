@@ -58,17 +58,31 @@ public class MessageController {
             Long destinataireId = destinataireObj instanceof Number ? ((Number) destinataireObj).longValue() : Long.parseLong(String.valueOf(destinataireObj).trim());
             String contenu = String.valueOf(contenuObj);
 
+            // 1. Save to DB — this MUST succeed
             MessageDTO saved = messageService.save(expediteurId, destinataireId, contenu.trim());
-            
-            // Broadcast to recipient via WebSocket (principal name = userId string)
-            messagingTemplate.convertAndSendToUser(
-                    destinataireId.toString(),
-                    "/queue/messages",
-                    saved);
-                    
+
+            // 2. Broadcast via WebSocket — best-effort, never fail the HTTP response
+            try {
+                messagingTemplate.convertAndSendToUser(
+                        destinataireId.toString(),
+                        "/queue/messages",
+                        saved);
+            } catch (Exception wsEx) {
+                log.warn("[MessageController] WebSocket broadcast failed (message saved to DB) — destinataireId={}: {}",
+                        destinataireId, wsEx.getMessage());
+            }
+
+            // 3. Update sender presence in Redis
+            try {
+                messageService.setUserOnline(expediteurId);
+            } catch (Exception redisEx) {
+                log.warn("[MessageController] Redis presence update failed: {}", redisEx.getMessage());
+            }
+
             Map<String, Object> res = new HashMap<>();
             res.put("data", saved);
             return ResponseEntity.ok(res);
+
         } catch (NumberFormatException e) {
             log.warn("[MessageController] Invalid ID format: {}", e.getMessage());
             Map<String, Object> err = new HashMap<>();
@@ -84,6 +98,7 @@ public class MessageController {
             return ResponseEntity.status(500).body(err);
         }
     }
+
 
     @PutMapping("/read/{userId}/{otherUserId}")
     public ResponseEntity<Void> markRead(@PathVariable Long userId, @PathVariable Long otherUserId) {
@@ -111,4 +126,11 @@ public class MessageController {
         messageService.setUserOnline(userId);
         return ResponseEntity.ok().build();
     }
+
+    @PostMapping("/presence/offline")
+    public ResponseEntity<Void> setOffline(@RequestParam Long userId) {
+        messageService.setUserOffline(userId);
+        return ResponseEntity.ok().build();
+    }
 }
+
