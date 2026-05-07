@@ -176,7 +176,7 @@ interface ChatMessageDisplay {
                     }
                     <div
                       class="max-w-[85%] sm:max-w-xs lg:max-w-md px-4 py-3 text-sm leading-relaxed shadow-sm flex flex-col"
-                      [class]="msg.sender === 'entrepreneur' ? 'rounded-2xl rounded-tr-sm text-white' : 'rounded-2xl rounded-tl-sm bg-white text-gray-800'"
+                      [class]="msg.sender === 'entrepreneur' ? 'rounded-2xl rounded-tr-sm text-white' : 'rounded-2xl rounded-tl-sm bg-gray-200 text-gray-800'"
                       [style.background]="msg.sender === 'entrepreneur' ? 'linear-gradient(135deg, #3B82A6, #2563A0)' : ''"
                     >
                       @if (msg.type === 'FILE') {
