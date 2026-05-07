@@ -173,7 +173,7 @@ export class CalendarComponent implements OnInit {
       events: this.eventService.getEventsByMonth(year, month).pipe(catchError(() => of([])))
     };
 
-    if (currentUser && (currentUser.role === 'ENTREPRENEUR' || currentUser.role === 'ROLE_ENTREPRENEUR')) {
+    if (currentUser && (String(currentUser.role) === 'ENTREPRENEUR' || String(currentUser.role) === 'ROLE_ENTREPRENEUR')) {
       console.log('Detected ENTREPRENEUR role');
       this.isEntrepreneur = true;
       this.isCoach = false;
@@ -181,7 +181,7 @@ export class CalendarComponent implements OnInit {
       dataSources.bookedSessions = this.sessionService.getByEntrepreneur(userIdStr).pipe(catchError((err) => { console.error('Error bookedSessions:', err); return of([]); }));
       dataSources.coaches = this.matchingService.getEntrepreneurCoaches(userIdStr).pipe(catchError((err) => { console.error('Error coaches:', err); return of([]); }));
       dataSources.myCalendar = this.sessionService.getMyCalendar(userIdStr, 'ENTREPRENEUR').pipe(catchError((err) => { console.error('Error myCalendar:', err); return of([]); }));
-    } else if (currentUser && (currentUser.role === 'COACH' || currentUser.role === 'ROLE_COACH')) {
+    } else if (currentUser && (String(currentUser.role) === 'COACH' || String(currentUser.role) === 'ROLE_COACH')) {
       console.log('Detected COACH role');
       this.isCoach = true;
       this.isEntrepreneur = false;
