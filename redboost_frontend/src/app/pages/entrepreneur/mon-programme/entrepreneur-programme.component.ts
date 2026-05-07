@@ -1,6 +1,6 @@
 import { Component, signal, inject, ChangeDetectionStrategy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+
 import { MatchingService, MatchingView } from '../../../core/services/matching.service';
 import { ProgrammeService } from '../../../core/services/programme.service';
 import { TacheService } from '../../../core/services/tache.service';
@@ -19,7 +19,7 @@ const STATUT_CFG: Record<string, { label: string; bg: string; color: string }> =
   selector: 'rb-entrepreneur-programme',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule],
   template: `
     <div class="cand-page">
       <!-- PAGE HEADER -->
@@ -182,17 +182,17 @@ export class EntrepreneurProgrammeComponent implements OnInit {
       next: (sessions) => {
         const rows = matches.map(m => {
           // Filter sessions for this specific coach
-          const coachSessions = sessions.filter(s => s.coach?.id?.toString() === m.coachId.toString());
+          const coachSessions = sessions.filter(s => s.coachId?.toString() === m.id.toString());
           const totalSessions = coachSessions.length;
-          const passedSessions = coachSessions.filter(s => s.statut === 'REALISEE' || s.statut === 'TERMINE').length;
+          const passedSessions = coachSessions.filter(s => s.statut === 'REALISEE').length;
           const progressPct = totalSessions > 0 ? Math.round((passedSessions / totalSessions) * 100) : 0;
 
           return {
             id: m.id + '_' + m.thematiqueId,
             programmeName: this.programme()?.nom || 'Programme Assigné',
             thematiqueName: m.thematiqueName || 'Non spécifié',
-            coachName: m.coach ? (m.coach.prenom + ' ' + m.coach.nom).trim() : 'Coach Non assigné',
-            coachSpecialite: m.coach?.specialite || 'Coach',
+            coachName: m.nom || 'Coach Non assigné',
+            coachSpecialite: m.specialite || 'Coach',
             totalSessions,
             passedSessions,
             progressPct
@@ -208,8 +208,8 @@ export class EntrepreneurProgrammeComponent implements OnInit {
             id: m.id + '_' + m.thematiqueId,
             programmeName: this.programme()?.nom || 'Programme Assigné',
             thematiqueName: m.thematiqueName || 'Non spécifié',
-            coachName: m.coach ? (m.coach.prenom + ' ' + m.coach.nom).trim() : 'Coach Non assigné',
-            coachSpecialite: m.coach?.specialite || 'Coach',
+            coachName: m.nom || 'Coach Non assigné',
+            coachSpecialite: m.specialite || 'Coach',
             totalSessions: 0,
             passedSessions: 0,
             progressPct: 0
