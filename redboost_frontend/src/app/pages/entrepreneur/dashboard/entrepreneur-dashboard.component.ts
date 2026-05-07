@@ -221,6 +221,8 @@ export class EntrepreneurDashboardComponent implements OnInit {
 
   totalTasks = signal(0);
   progress = signal(0);
+  totalCoaches = signal(0);
+  upcomingSessionsCount = signal(0);
 
   ngOnInit() {
     const userSnapshot = (this.auth as any).currentUser$ ? (this.auth as any).currentUser$.value : null;
@@ -233,6 +235,7 @@ export class EntrepreneurDashboardComponent implements OnInit {
 
     // Load Coach
     this.matchSvc.getEntrepreneurCoaches(userSnapshot.id).subscribe(matches => {
+      this.totalCoaches.set(matches?.length || 0);
       if (matches.length > 0) {
         this.assignedCoach.set(matches[0]);
         try {
@@ -258,27 +261,36 @@ export class EntrepreneurDashboardComponent implements OnInit {
           deadline: new Date(t.dateEcheance!).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
         }));
       this.urgentTasks.set(urgent);
-
-      const completed = myTaches.filter((t: any) => t.status === 'TERMINEE').length;
-      this.progress.set(myTaches.length ? Math.round((completed / myTaches.length) * 100) : 0);
     });
 
     // Load Sessions
     this.sessionSvc.getByEntrepreneur(userSnapshot.id).subscribe((sessions: any) => {
       const mySessions: any[] = Array.isArray(sessions) ? sessions : (sessions?.data || []);
-      const upcoming = mySessions
-        .filter((s: any) => new Date(s.date).getTime() > Date.now())
-        .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())[0];
+      
+      const now = Date.now();
+      const upcoming = mySessions.filter((s: any) => new Date(s.date).getTime() > now);
+      this.upcomingSessionsCount.set(upcoming.length);
 
-      if (upcoming) {
-        const coachName = upcoming.coach ? `${upcoming.coach.firstName || upcoming.coach.prenom || ''} ${upcoming.coach.lastName || upcoming.coach.nom || ''}`.trim() : undefined;
-        const thematiqueName = upcoming.thematique?.nom || upcoming.thematiqueName || upcoming.titre;
+      // Progression calculation based on sessions
+      const totalSess = mySessions.length;
+      if (totalSess > 0) {
+        const passedCount = mySessions.filter((s: any) => new Date(s.date).getTime() < now || s.statut === 'REALISEE' || s.statut === 'TERMINE').length;
+        this.progress.set(Math.round((passedCount / totalSess) * 100));
+      } else {
+        this.progress.set(0);
+      }
+
+      const nextSess = upcoming.sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())[0];
+
+      if (nextSess) {
+        const coachName = nextSess.coach ? `${nextSess.coach.firstName || nextSess.coach.prenom || ''} ${nextSess.coach.lastName || nextSess.coach.nom || ''}`.trim() : undefined;
+        const thematiqueName = nextSess.thematique?.nom || nextSess.thematiqueName || nextSess.titre;
 
         this.nextSession.set({
-          date: new Date(upcoming.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'short' }),
-          time: new Date(upcoming.date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+          date: new Date(nextSess.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'short' }),
+          time: new Date(nextSess.date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
           duration: 60,
-          meetLink: upcoming.meetLink,
+          meetLink: nextSess.meetLink,
           coachName: coachName || undefined,
           thematiqueName: thematiqueName || undefined
         });
@@ -287,20 +299,19 @@ export class EntrepreneurDashboardComponent implements OnInit {
   }
 
   kpiCards = computed(() => {
-    const coach = this.assignedCoach();
     return [
       { 
         label: 'COACH', 
-        value: coach ? (coach.nom.length > 12 ? coach.nom.substring(0,12)+'...' : coach.nom) : 'Aucun', 
-        subtext: coach ? coach.specialite || 'Expert' : 'En attente', 
+        value: this.totalCoaches().toString(), 
+        subtext: 'assignés', 
         footer: 'Accompagnement actif', 
-        icon: 'user-edit', 
+        icon: 'users', 
         gradient: '#F97316', 
         shadow: '0 4px 16px rgba(249,115,22,0.15)' 
       },
-      { label: 'SESSION', value: this.nextSession() ? 'OUI' : 'NON', subtext: 'prochaine', footer: this.nextSession() ? 'Planifiée' : 'Aucune', icon: 'calendar', gradient: '#8B5CF6', shadow: '0 4px 16px rgba(139,92,246,0.15)' },
+      { label: 'SESSION', value: this.upcomingSessionsCount().toString(), subtext: 'à venir', footer: this.nextSession() ? 'Planifiée' : 'Aucune', icon: 'calendar', gradient: '#8B5CF6', shadow: '0 4px 16px rgba(139,92,246,0.15)' },
       { label: 'TÂCHES', value: this.totalTasks().toString(), subtext: 'à faire', footer: 'En cours', icon: 'list', gradient: '#3B82A6', shadow: '0 4px 16px rgba(59,130,166,0.15)' },
-      { label: 'PROGRESSION', value: this.progress() + '%', subtext: 'globale', footer: 'Performance', icon: 'chart-line', gradient: '#10B981', shadow: '0 4px 16px rgba(16,185,129,0.15)' },
+      { label: 'PROGRESSION', value: this.progress() + '%', subtext: 'sessions réalisées', footer: 'Avancement global', icon: 'chart-line', gradient: '#10B981', shadow: '0 4px 16px rgba(16,185,129,0.15)' },
     ];
   });
 }
