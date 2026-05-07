@@ -38,13 +38,17 @@ export class SocketService implements OnDestroy {
         // Use SockJS with apiUrl to respect the context path (e.g. /api)
         const wsUrl = environment.apiUrl.replace('/api', '') + '/ws';
 
+        let stompErrorCount = 0;
+        const MAX_STOMP_ERRORS = 3;
+
         this.client = new Client({
             webSocketFactory: () => new SockJS(wsUrl, null, {
                 transports: ['websocket', 'xhr-streaming', 'xhr-polling']
             }),
             connectHeaders: { Authorization: `Bearer ${token}` },
-            reconnectDelay: 10000,  // 10s between reconnect attempts to reduce noise
+            reconnectDelay: 30000,  // 30s between reconnect attempts
             onConnect: (_frame: IFrame) => {
+                stompErrorCount = 0;  // reset on successful connection
                 this.subscription = this.client!.subscribe(
                     '/user/queue/messages',
                     frame => {
@@ -83,15 +87,23 @@ export class SocketService implements OnDestroy {
                 console.info('[SocketService] WebSocket disconnected. HTTP fallback is active.');
             },
             onStompError: frame => {
-                console.warn('[SocketService] STOMP error:', frame.headers['message']);
+                stompErrorCount++;
+                const msg = frame.headers['message'] || 'unknown';
+                console.warn(`[SocketService] STOMP error (${stompErrorCount}/${MAX_STOMP_ERRORS}):`, msg);
+                // Stop reconnecting after too many consecutive auth errors
+                if (stompErrorCount >= MAX_STOMP_ERRORS) {
+                    console.warn('[SocketService] Max STOMP errors reached — stopping reconnect. Check your JWT token.');
+                    this.client?.deactivate();
+                }
             },
-            onWebSocketError: (event) => {
+            onWebSocketError: (_event) => {
                 console.warn('[SocketService] WebSocket error — falling back to HTTP polling for message delivery.');
             },
         });
 
         this.client.activate();
     }
+
 
     sendMessage(message: ChatMessage): void {
         if (!this.client?.active) return;
