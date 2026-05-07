@@ -102,12 +102,12 @@
                     <div class="section-content">
                         <div class="contact-item">
                             <i class="fas fa-envelope"></i>
-                            <span>{{ user?.email || "Non spécifié" }}</span>
+                            <span>{{ user?.email || 'Non renseigné' }}</span>
                         </div>
                         <div class="contact-item">
                             <i class="fas fa-phone"></i>
                             <span>{{
-                                user?.phoneNumber || "Non spécifié"
+                                user?.phoneNumber || 'Non renseigné'
                             }}</span>
                         </div>
                         <div class="social-links">
@@ -171,7 +171,7 @@
                                     "
                                     class="tag skill-tag"
                                 >
-                                    {{ skill || "Non spécifié" }}
+                                    {{ skill || 'Non renseigné' }}
                                 </span>
                             </div>
                         </div>
@@ -190,7 +190,7 @@
                                     "
                                     class="tag expertise-tag"
                                 >
-                                    {{ expertise || "Non spécifié" }}
+                                    {{ expertise || 'Non renseigné' }}
                                 </span>
                             </div>
                         </div>
@@ -242,12 +242,10 @@
                                     </div>
                                     <div class="academic-details">
                                         <span class="academic-date">{{
-                                            user?.formationAcademDate ||
-                                                "Non spécifié"
+                                            user?.formationAcademDate || 'Non renseigné'
                                         }}</span>
                                         <span class="academic-achievement">{{
-                                            user?.formationAcademRealisations ||
-                                                "Non spécifié"
+                                            user?.formationAcademRealisations || 'Non renseigné'
                                         }}</span>
                                     </div>
                                 </div>
@@ -265,12 +263,10 @@
                                     </div>
                                     <div class="academic-details">
                                         <span class="academic-date">{{
-                                            user?.competencesProDate ||
-                                                "Non spécifié"
+                                            user?.competencesProDate || 'Non renseigné'
                                         }}</span>
                                         <span class="academic-achievement">{{
-                                            user?.competencesProCertificat ||
-                                                "Non spécifié"
+                                            user?.competencesProCertificat || 'Non renseigné'
                                         }}</span>
                                     </div>
                                 </div>
@@ -352,12 +348,10 @@
                                     </div>
                                     <div class="academic-details">
                                         <span class="academic-date">{{
-                                            user?.formaAcademDate ||
-                                                "Non spécifié"
+                                            user?.formaAcademDate || 'Non renseigné'
                                         }}</span>
                                         <span class="academic-achievement">{{
-                                            user?.formaAcademRealisations ||
-                                                "Non spécifié"
+                                            user?.formaAcademRealisations || 'Non renseigné'
                                         }}</span>
                                     </div>
                                 </div>
@@ -375,12 +369,10 @@
                                     </div>
                                     <div class="academic-details">
                                         <span class="academic-date">{{
-                                            user?.apprentInformelDate ||
-                                                "Non spécifié"
+                                            user?.apprentInformelDate || 'Non renseigné'
                                         }}</span>
                                         <span class="academic-achievement">{{
-                                            user?.apprentInformelCertificat ||
-                                                "Non spécifié"
+                                            user?.apprentInformelCertificat || 'Non renseigné'
                                         }}</span>
                                     </div>
                                 </div>

@@ -155,7 +155,7 @@ type Tab = 'PLANIFIEE' | 'REALISEE' | 'ANNULEE';
                     <p class="answer-q-text">Objectif / Titre de la session</p>
                   </div>
                   <div class="answer-content">
-                    <p class="answer-text">{{ selected()!.titre || 'Non spécifié' }}</p>
+                    <p class="answer-text">{{ selected()!.titre || 'Non renseigné' }}</p>
                   </div>
                 </div>
 

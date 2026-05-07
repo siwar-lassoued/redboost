@@ -195,7 +195,7 @@ interface NoteDeSynthese {
                                     </span>
                                 </h4>
                                 <span class="startup-desc">
-                                    {{ entrepreneur.entreprise || 'N/A' }} • {{ entrepreneur.secteur || 'Non spécifié' }}
+                                    {{ entrepreneur.entreprise || 'N/A' }} • {{ entrepreneur.secteur || 'Non renseigné' }}
                                 </span>
                             </div>
                             <div class="progress-col">
