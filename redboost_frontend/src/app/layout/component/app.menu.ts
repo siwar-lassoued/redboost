@@ -6,7 +6,7 @@ import { AppMenuitem } from './app.menuitem';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { MessageService } from 'primeng/api';
-import { MessageService as ChatService } from '../../../core/services/message.service';
+import { MessageService as ChatService } from '../../core/services/message.service';
 import { environment } from '../../../environment';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
@@ -34,6 +34,7 @@ export class AppMenu implements OnInit {
     model: MenuItem[] = [];
     private readonly menuApiUrl = `${environment.apiUrl}/navigation/menu`;
 
+    constructor(
         private http: HttpClient,
         private router: Router,
         private messageService: MessageService,

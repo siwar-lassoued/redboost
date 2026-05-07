@@ -47,7 +47,9 @@ public class SessionService {
     }
 
     public List<Session> getAll() {
-        return sessionRepository.findAll();
+        List<Session> sessions = sessionRepository.findAll();
+        populateThematiqueNames(sessions);
+        return sessions;
     }
 
     public Session getById(String id) {
@@ -74,15 +76,32 @@ public class SessionService {
         }
     }
 
+    private void populateThematiqueNames(List<Session> sessions) {
+        for (Session session : sessions) {
+            if (session.getDisponibiliteId() != null) {
+                try {
+                    Long slotId = Long.parseLong(session.getDisponibiliteId());
+                    sessionCoachRepository.findById(slotId).ifPresent(slot -> {
+                        if (slot.getDisponibilite() != null && slot.getDisponibilite().getThematique() != null) {
+                            session.setThematiqueName(slot.getDisponibilite().getThematique().getNom());
+                        }
+                    });
+                } catch (NumberFormatException ignored) {}
+            }
+        }
+    }
+
     public List<Session> getByCoach(Long coachId) {
         List<Session> sessions = sessionRepository.findByCoachId(coachId);
         autoUpdatePastSessions(sessions);
+        populateThematiqueNames(sessions);
         return sessions;
     }
 
     public List<Session> getByEntrepreneur(Long entrepreneurId) {
         List<Session> sessions = sessionRepository.findByEntrepreneurId(entrepreneurId);
         autoUpdatePastSessions(sessions);
+        populateThematiqueNames(sessions);
         return sessions;
     }
 

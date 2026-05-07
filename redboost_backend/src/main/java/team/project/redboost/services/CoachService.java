@@ -869,7 +869,7 @@ public class CoachService {
     }
 
     // --- Available sessions for entrepreneur (from a specific coach) ---
-    public List<SessionCoachDTO> getAvailableSessionsForEntrepreneur(Long coachId, Long entrepreneurUserId) {
+    public List<SessionCoachDTO> getAvailableSessionsForEntrepreneur(Long coachId, Long entrepreneurUserId, Long thematiqueId) {
         log.info(" Recherche sessions pour entrepreneurId={} et coachId={}", entrepreneurUserId, coachId);
         
         User entrepreneur = userRepository.findById(entrepreneurUserId)
@@ -904,11 +904,15 @@ public class CoachService {
             if (m.getCoachId().equals(coachId)) {
                 isMatchedWithThisCoach = true;
                 if (m.getThematiqueId() != null) {
-                    matchedThematiqueIds.add(m.getThematiqueId());
-                    log.info("[DIAG] Thématique matchée trouvée: {}", m.getThematiqueId());
+                    if (thematiqueId == null || m.getThematiqueId().equals(thematiqueId)) {
+                        matchedThematiqueIds.add(m.getThematiqueId());
+                        log.info("[DIAG] Thématique matchée trouvée: {}", m.getThematiqueId());
+                    }
                 } else {
-                    hasGlobalMatching = true;
-                    log.info(" Matching GLOBAL trouvé");
+                    if (thematiqueId == null) {
+                        hasGlobalMatching = true;
+                        log.info(" Matching GLOBAL trouvé");
+                    }
                 }
             }
         }
@@ -987,9 +991,9 @@ public class CoachService {
      * Each group represents one logical "session" (e.g. Session 1 – Pitch Deck) with its créneaux.
      * The group carries a flag indicating whether the entrepreneur has already reserved a slot in it.
      */
-    public List<Map<String, Object>> getAvailableSessionsGrouped(Long coachId, Long entrepreneurUserId) {
+    public List<Map<String, Object>> getAvailableSessionsGrouped(Long coachId, Long entrepreneurUserId, Long thematiqueId) {
         // Reuse existing filtering logic
-        List<SessionCoachDTO> available = getAvailableSessionsForEntrepreneur(coachId, entrepreneurUserId);
+        List<SessionCoachDTO> available = getAvailableSessionsForEntrepreneur(coachId, entrepreneurUserId, thematiqueId);
 
         // Also fetch ALL slots for this coach (including booked ones) to determine per-session reservation status
         List<SessionCoach> allSlots = sessionCoachRepository.findByDisponibiliteCoachId(coachId);

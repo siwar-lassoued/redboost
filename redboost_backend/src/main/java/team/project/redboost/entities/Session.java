@@ -84,6 +84,9 @@ public class Session {
     @Column(name = "annulation_motif", columnDefinition = "TEXT")
     private String annulationMotif;
 
+    @Transient
+    private String thematiqueName;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

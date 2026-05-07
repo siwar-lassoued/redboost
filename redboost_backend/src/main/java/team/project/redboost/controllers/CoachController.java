@@ -183,16 +183,18 @@ public class CoachController {
     @GetMapping("/{coachId}/available-sessions")
     public ResponseEntity<List<SessionCoachDTO>> getAvailableSessionsForEntrepreneur(
             @PathVariable Long coachId,
-            @RequestParam Long entrepreneurId) {
-        return ResponseEntity.ok(coachService.getAvailableSessionsForEntrepreneur(coachId, entrepreneurId));
+            @RequestParam Long entrepreneurId,
+            @RequestParam(required = false) Long thematiqueId) {
+        return ResponseEntity.ok(coachService.getAvailableSessionsForEntrepreneur(coachId, entrepreneurId, thematiqueId));
     }
 
    
     @GetMapping("/{coachId}/available-sessions-grouped")
     public ResponseEntity<List<java.util.Map<String, Object>>> getAvailableSessionsGrouped(
             @PathVariable Long coachId,
-            @RequestParam Long entrepreneurId) {
-        return ResponseEntity.ok(coachService.getAvailableSessionsGrouped(coachId, entrepreneurId));
+            @RequestParam Long entrepreneurId,
+            @RequestParam(required = false) Long thematiqueId) {
+        return ResponseEntity.ok(coachService.getAvailableSessionsGrouped(coachId, entrepreneurId, thematiqueId));
     }
 
     // --- PLANNING DÉTAILLÉ ---

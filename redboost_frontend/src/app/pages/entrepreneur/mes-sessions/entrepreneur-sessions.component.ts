@@ -50,60 +50,87 @@ type Tab = 'PLANIFIEE' | 'REALISEE' | 'ANNULEE';
         </div>
       </div>
 
-      <!-- SESSIONS TABLE -->
-      @if (filteredSessions().length > 0) {
-        <div class="table-card">
-          <div class="table-scroll">
-            <table class="cand-table">
-              <thead>
-                <tr>
-                  <th>Session</th>
-                  <th>Coach</th>
-                  <th>Date & Heure</th>
-                  <th>Type</th>
-                  <th>Statut</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (s of filteredSessions(); track s.id) {
-                  <tr class="table-row" (click)="onViewDetail(s)">
-                    <td>
-                      <div class="name-cell">
-                        <span class="name-text">{{ s.titre || 'Session de coaching' }}</span>
-                        <span class="email-text">ID: #{{ s.id.substring(0,8) }}</span>
+      <!-- SESSIONS CARDS -->
+      @if (groupedSessions().length > 0) {
+        <div class="thematique-booking-list">
+          @for (theme of groupedSessions(); track theme.name) {
+            <div class="thematique-booking-section">
+              <div class="global-thematique-header">
+                <i class="pi pi-bookmark"></i>
+                <h3>{{ theme.name }}</h3>
+              </div>
+
+              <div class="coach-list-in-thematique">
+                @for (coachObj of theme.coaches; track coachObj.coach?.id) {
+                  <div class="coach-booking-section" [style.border-left-color]="getCoachColor(coachObj.coach?.id)">
+                    <div class="coach-header">
+                      <div class="coach-avatar" [style.background]="getCoachColor(coachObj.coach?.id)">
+                        {{ coachObj.coach?.prenom ? coachObj.coach?.prenom[0] : 'C' }}
                       </div>
-                    </td>
-                    <td>
-                      <div class="coach-cell" *ngIf="s.coach">
-                        <span class="name-text">{{ s.coach.firstName || s.coach.prenom }} {{ s.coach.lastName || s.coach.nom }}</span>
+                      <div class="coach-info">
+                        <h4>{{ coachObj.coach?.prenom }} {{ coachObj.coach?.nom }}</h4>
+                        <p>Coach Expert</p>
                       </div>
-                    </td>
-                    <td class="date-cell">
-                      <div class="flex flex-col">
-                        <span>{{ s.date | date:'dd/MM/yyyy' }}</span>
-                        <span class="text-[10px] text-gray-400">{{ s.date | date:'HH:mm' }}</span>
+                    </div>
+
+                    <div class="coach-thematiques-list">
+                      <div class="session-groups-list">
+                        <div class="session-group-item">
+                          <div class="slots-container">
+                            <div class="slots-grid">
+                              @for (s of coachObj.sessions; track s.id) {
+                                <div class="event-detail-card" (click)="onViewDetail(s)">
+                                  <div class="event-card-header">
+                                    <div class="event-icon" [style.background]="'linear-gradient(135deg, #3B82A6, #2C5282)'">
+                                      <i class="pi pi-calendar"></i>
+                                    </div>
+                                    <div class="event-card-title">
+                                      <div class="event-title-row">
+                                        <h4>{{ s.titre || 'Session' }}</h4>
+                                      </div>
+                                      <div class="event-badges">
+                                        <span class="status-badge" [style.background]="getBadge(s.statut).bg" [style.color]="getBadge(s.statut).color">
+                                          {{ getBadge(s.statut).label }}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div class="event-card-body">
+                                    <div class="event-info-grid">
+                                      <div class="event-info-item">
+                                        <i class="pi pi-clock"></i>
+                                        <span>{{ s.date | date:'dd/MM/yyyy à HH:mm' }}</span>
+                                      </div>
+                                      <div class="event-info-item">
+                                        <i class="pi pi-map-marker"></i>
+                                        <span>{{ s.lieu ? 'Présentiel' : 'En ligne' }}</span>
+                                      </div>
+                                    </div>
+                                    <div class="calendar-action-buttons">
+                                      <button class="gcal-btn" (click)="$event.stopPropagation(); onViewDetail(s)">
+                                        <i class="pi pi-info-circle" style="color: #4285F4"></i>
+                                        <span>Détails</span>
+                                      </button>
+                                      <button *ngIf="s.meetLink && (s.statut === 'PLANIFIEE' || s.statut === 'PLANIFIE')" 
+                                              class="meet-btn" 
+                                              (click)="$event.stopPropagation(); openMeetLink(s.meetLink)">
+                                        <i class="pi pi-video" style="color: #00832D"></i>
+                                        <span>Rejoindre</span>
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              }
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    </td>
-                    <td>
-                      <span class="type-badge" [class.presentiel]="s.lieu" [class.online]="!s.lieu">
-                        {{ s.lieu ? 'Présentiel' : 'À distance' }}
-                      </span>
-                    </td>
-                    <td>
-                      <div class="status-badge" [style.background]="getBadge(s.statut).bg" [style.color]="getBadge(s.statut).color">
-                        <i class="pi" [class.pi-calendar-clock]="s.statut === 'PLANIFIEE'" [class.pi-check-circle]="s.statut === 'REALISEE' || s.statut === 'TERMINE'" [class.pi-times-circle]="s.statut === 'ANNULEE'" style="font-size: 10px;"></i>
-                        {{ getBadge(s.statut).label }}
-                      </div>
-                    </td>
-                    <td>
-                      <button (click)="$event.stopPropagation(); onViewDetail(s)" class="btn-detail">Voir détails</button>
-                    </td>
-                  </tr>
+                    </div>
+                  </div>
                 }
-              </tbody>
-            </table>
-          </div>
+              </div>
+            </div>
+          }
         </div>
       } @else {
         <div class="empty-state">
@@ -240,32 +267,46 @@ type Tab = 'PLANIFIEE' | 'REALISEE' | 'ANNULEE';
     }
     .search-input:focus { border-color: #3B82A6; box-shadow: 0 0 0 3px rgba(59, 130, 166, 0.1); }
 
-    .table-card { background: #fff; border-radius: 20px; overflow: hidden; box-shadow: 0 2px 16px rgba(0,0,0,0.07); border: 1px solid #F1F5F9; }
-    .table-scroll { overflow-x: auto; min-width: 100%; }
-    .cand-table { width: 100%; border-collapse: collapse; text-align: left; }
-    .cand-table th {
-      padding: 12px 16px; font-size: 11px; font-weight: 700; color: #6B7280;
-      text-transform: uppercase; letter-spacing: 0.05em; background: #F9FAFB; border-bottom: 1px solid #F3F4F6;
-    }
-    .cand-table td { padding: 14px 16px; border-bottom: 1px solid #F3F4F6; }
-    .table-row { transition: background .15s; cursor: pointer; }
-    .table-row:hover { background: #FFF5F8; }
-
-    .name-cell { display: flex; flex-direction: column; }
-    .name-text { font-weight: 700; font-size: 14px; color: #1A1A2E; }
-    .email-text { font-size: 11px; color: #9CA3AF; margin-top: 2px; }
-    
-    .type-badge { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; }
-    .type-badge.online { background: #E0F2FE; color: #0369A1; }
-    .type-badge.presentiel { background: #FEF3C7; color: #92400E; }
-    
     .date-cell { font-size: 13px; color: #1A1A2E; font-weight: 500; }
     .status-badge {
       padding: 5px 12px; border-radius: 20px; font-size: 10px; font-weight: 800;
       display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; text-transform: uppercase;
     }
-    .btn-detail { padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; color: #3B82A6; background: none; border: none; cursor: pointer; transition: all .2s; }
-    .btn-detail:hover { background: #EBF5FF; }
+
+    /* CARD STYLES */
+    .thematique-booking-list { display: flex; flex-direction: column; gap: 32px; margin-top: 16px; }
+    .thematique-booking-section { background: #fff; border-radius: 24px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+    .global-thematique-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid #F1F5F9; }
+    .global-thematique-header i { font-size: 24px; color: #ea5073; }
+    .global-thematique-header h3 { margin: 0; font-size: 20px; font-weight: 800; color: #1E293B; }
+    
+    .coach-list-in-thematique { display: flex; flex-direction: column; gap: 20px; }
+    .coach-booking-section { border-left: 4px solid #ea5073; padding-left: 20px; }
+    .coach-header { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+    .coach-avatar { width: 48px; height: 48px; border-radius: 16px; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; }
+    .coach-info h4 { margin: 0 0 4px; font-size: 16px; font-weight: 800; color: #1E293B; }
+    .coach-info p { margin: 0; font-size: 13px; color: #64748B; font-weight: 500; }
+    
+    .slots-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+    
+    .event-detail-card { background: #fff; border-radius: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #E2E8F0; display: flex; flex-direction: column; gap: 16px; transition: transform 0.2s, box-shadow 0.2s; cursor: pointer; }
+    .event-detail-card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.08); }
+    .event-card-header { display: flex; gap: 16px; align-items: flex-start; }
+    .event-icon { width: 48px; height: 48px; border-radius: 14px; color: white; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+    .event-card-title { flex: 1; }
+    .event-title-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .event-title-row h4 { margin: 0; font-size: 16px; font-weight: 800; color: #1E293B; }
+    
+    .event-info-grid { display: flex; flex-direction: column; gap: 8px; background: #F8FAFC; border-radius: 12px; padding: 12px; margin-bottom: 16px; }
+    .event-info-item { display: flex; align-items: center; gap: 10px; font-size: 13px; color: #475569; font-weight: 600; }
+    .event-info-item i { color: #94A3B8; }
+    
+    .calendar-action-buttons { display: flex; gap: 8px; margin-top: auto; }
+    .calendar-action-buttons button { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px; border-radius: 12px; font-size: 13px; font-weight: 700; border: none; cursor: pointer; transition: all 0.2s; }
+    .gcal-btn { background: #F1F5F9; color: #475569; }
+    .gcal-btn:hover { background: #E2E8F0; color: #1E293B; }
+    .meet-btn { background: #ECFDF5; color: #00832D; }
+    .meet-btn:hover { background: #D1FAE5; }
 
     .empty-state { text-align: center; padding: 60px 20px; background: #fff; border-radius: 20px; border: 2px dashed #E5E7EB; }
     .empty-text { color: #6B7280; font-weight: 700; font-size: 16px; margin-top: 8px; }
@@ -343,6 +384,38 @@ export class EntrepreneurSessionsComponent implements OnInit {
     }).sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
   });
 
+  groupedSessions = computed<any[]>(() => {
+    const sessions = this.filteredSessions();
+    const map = new Map<string, any>(); // key: thematiqueName
+    
+    sessions.forEach(s => {
+      const themeName = s.thematiqueName || 'Thématique Générale';
+      if (!map.has(themeName)) {
+        map.set(themeName, { name: themeName, coaches: new Map<number, any>() });
+      }
+      
+      const themeObj = map.get(themeName);
+      const coachId = s.coach?.id || 0;
+      
+      if (!themeObj.coaches.has(coachId)) {
+        themeObj.coaches.set(coachId, {
+          coach: s.coach,
+          sessions: []
+        });
+      }
+      
+      themeObj.coaches.get(coachId).sessions.push(s);
+    });
+    
+    // Convert Map to Arrays for the template
+    const result: any[] = Array.from(map.values()).map(t => ({
+      name: t.name,
+      coaches: Array.from(t.coaches.values())
+    }));
+    
+    return result;
+  });
+
   ngOnInit(): void {
     this.loadSessions();
   }
@@ -385,5 +458,19 @@ export class EntrepreneurSessionsComponent implements OnInit {
       ANNULE:    { label: 'Annulée',  bg: '#FEF2F2', color: '#EF4444' },
     };
     return config[statut] || { label: statut, bg: '#F1F5F9', color: '#475569' };
+  }
+
+  getCoachColor(coachId: number | undefined): string {
+    if (!coachId) return '#3B82A6';
+    const colors = [
+      '#ea5073', '#3B82A6', '#F59E0B', '#10B981', '#8B5CF6', '#EC4899', '#14B8A6'
+    ];
+    return colors[coachId % colors.length];
+  }
+
+  openMeetLink(link: string) {
+    if (link) {
+      window.open(link, '_blank');
+    }
   }
 }

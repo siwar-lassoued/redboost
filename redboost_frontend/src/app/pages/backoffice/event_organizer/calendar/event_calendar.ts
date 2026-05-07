@@ -187,6 +187,11 @@ export class CalendarComponent implements OnInit {
       this.isEntrepreneur = false;
       const userIdStr = String(currentUser.id);
       dataSources.myCalendar = this.sessionService.getMyCalendar(userIdStr, 'COACH').pipe(catchError((err) => { console.error('Error myCalendar:', err); return of([]); }));
+    } else if (currentUser && (String(currentUser.role) === 'SUPERADMIN' || String(currentUser.role) === 'ADMIN')) {
+      console.log('Detected SUPERADMIN/ADMIN role');
+      this.isCoach = false;
+      this.isEntrepreneur = false;
+      dataSources.bookedSessions = this.sessionService.getAll().pipe(catchError((err) => { console.error('Error allSessions:', err); return of([]); }));
     }
 
     forkJoin(dataSources).subscribe({
@@ -214,11 +219,11 @@ export class CalendarComponent implements OnInit {
           const entrepreneurId = Number(currentUser?.id);
           
           const slotRequests = response.coaches.map((c: any) => 
-            this.coachService.getAvailableSessionsForEntrepreneur(Number(c.id), entrepreneurId).pipe(catchError(() => of([])))
+            this.coachService.getAvailableSessionsForEntrepreneur(Number(c.id), entrepreneurId, c.thematiqueId ? Number(c.thematiqueId) : undefined).pipe(catchError(() => of([])))
           );
 
           const groupRequests = response.coaches.map((c: any) => 
-            this.coachService.getAvailableSessionsGrouped(Number(c.id), entrepreneurId).pipe(catchError(() => of([])))
+            this.coachService.getAvailableSessionsGrouped(Number(c.id), entrepreneurId, c.thematiqueId ? Number(c.thematiqueId) : undefined).pipe(catchError(() => of([])))
           );
           
           forkJoin([...slotRequests, ...groupRequests]).subscribe((allData: any[]) => {

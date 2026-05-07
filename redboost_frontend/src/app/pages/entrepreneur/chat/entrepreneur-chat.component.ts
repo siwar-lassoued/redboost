@@ -281,6 +281,7 @@ export class EntrepreneurChatComponent implements OnInit, AfterViewChecked, OnDe
   searchTerm = signal('');
   newMessage = signal('');
   mobileView = signal<'list' | 'chat'>('list');
+  isLoadingConversations = signal(false);
   isLoadingMessages = signal(false);
   isOnline = signal(false);
   isTyping = signal(false);
@@ -362,7 +363,7 @@ export class EntrepreneurChatComponent implements OnInit, AfterViewChecked, OnDe
         }
 
         // Load unread counts
-        this.messageService.getUnreadPerSender(this.currentUserId).subscribe({
+        this.messageService.getUnreadPerSender(this.currentUserId!).subscribe({
           next: (counts) => this.unreadCounts.set(counts)
         });
       },

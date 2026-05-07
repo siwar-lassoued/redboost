@@ -305,13 +305,21 @@ export class CoachService {
   getSessionBookings(sessionCoachId: number): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/sessions/${sessionCoachId}/bookings`);
   }
-  getAvailableSessionsForEntrepreneur(coachId: number, entrepreneurId: number): Observable<SessionCoachDTO[]> {
-    return this.http.get<SessionCoachDTO[]>(`${this.apiUrl}/${coachId}/available-sessions?entrepreneurId=${entrepreneurId}`);
+  getAvailableSessionsForEntrepreneur(coachId: number, entrepreneurId: number, thematiqueId?: number): Observable<SessionCoachDTO[]> {
+    let url = `${this.apiUrl}/${coachId}/available-sessions?entrepreneurId=${entrepreneurId}`;
+    if (thematiqueId) {
+      url += `&thematiqueId=${thematiqueId}`;
+    }
+    return this.http.get<SessionCoachDTO[]>(url);
   }
 
   /** Returns sessions grouped by sessionGroupId with a reservedByMe flag per group */
-  getAvailableSessionsGrouped(coachId: number, entrepreneurId: number): Observable<SessionGroupDTO[]> {
-    return this.http.get<SessionGroupDTO[]>(`${this.apiUrl}/${coachId}/available-sessions-grouped?entrepreneurId=${entrepreneurId}`);
+  getAvailableSessionsGrouped(coachId: number, entrepreneurId: number, thematiqueId?: number): Observable<SessionGroupDTO[]> {
+    let url = `${this.apiUrl}/${coachId}/available-sessions-grouped?entrepreneurId=${entrepreneurId}`;
+    if (thematiqueId) {
+      url += `&thematiqueId=${thematiqueId}`;
+    }
+    return this.http.get<SessionGroupDTO[]>(url);
   }
 
   // RAPPORT MISSION COACH
