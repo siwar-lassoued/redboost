@@ -32,6 +32,9 @@ export class SocketService implements OnDestroy {
 
     public callSignal$ = new Subject<any>();
 
+    private typingReceived = new Subject<any>();
+    typingReceived$: Observable<any> = this.typingReceived.asObservable();
+
     connect(token: string): void {
         if (this.client?.active) return;
 
@@ -81,6 +84,11 @@ export class SocketService implements OnDestroy {
                 this.client!.subscribe('/user/queue/call-hangup', f => {
                     this.callSignal$.next({ ...JSON.parse(f.body), type: 'hangup' });
                 });
+
+                // Subscribe to typing signals
+                this.client!.subscribe('/user/queue/typing', frame => {
+                    this.typingReceived.next(JSON.parse(frame.body));
+                });
             },
             onDisconnect: () => {
                 // Silently handle disconnect — HTTP fallback remains active
@@ -110,6 +118,14 @@ export class SocketService implements OnDestroy {
         this.client.publish({
             destination: '/app/chat.send',
             body: JSON.stringify(message),
+        });
+    }
+
+    sendTypingSignal(expediteurId: string, destinataireId: string, isTyping: boolean): void {
+        if (!this.client?.active) return;
+        this.client.publish({
+            destination: '/app/chat.typing',
+            body: JSON.stringify({ expediteurId, destinataireId, isTyping })
         });
     }
 

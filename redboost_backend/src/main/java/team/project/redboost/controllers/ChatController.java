@@ -30,6 +30,18 @@ public class ChatController {
                 saved);
     }
 
+    @MessageMapping("/chat.typing")
+    public void sendTypingSignal(@Payload TypingPayload payload) {
+        messagingTemplate.convertAndSendToUser(
+                payload.destinataireId(),
+                "/queue/typing",
+                payload
+        );
+    }
+
     public record ChatMessagePayload(String expediteurId, String destinataireId, String contenu) {
+    }
+
+    public record TypingPayload(String expediteurId, String destinataireId, boolean isTyping) {
     }
 }

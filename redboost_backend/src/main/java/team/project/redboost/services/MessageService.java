@@ -145,6 +145,14 @@ public class MessageService {
         return messageRepository.countUnreadForUser(userId);
     }
 
+    public Map<Long, Integer> getUnreadPerSender(Long userId) {
+        List<Object[]> results = messageRepository.countUnreadPerSender(userId);
+        return results.stream().collect(Collectors.toMap(
+            row -> (Long) row[0],
+            row -> ((Number) row[1]).intValue()
+        ));
+    }
+
     // ── Get Conversations List ──────────────────────────────────────────────
     public List<MessageDTO> getConversations(Long userId) {
         return messageRepository.findLatestMessagePerConversation(userId)

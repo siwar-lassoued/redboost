@@ -42,6 +42,10 @@ export class MessageService {
         );
     }
 
+    getUnreadPerSender(userId: string): Observable<Record<string, number>> {
+        return this.http.get<Record<string, number>>(`${this.baseUrl}/unread-per-sender?userId=${userId}`);
+    }
+
     markAsRead(userId: string, otherUserId: string): Observable<void> {
         return this.http.put<void>(`${this.baseUrl}/read/${userId}/${otherUserId}`, {});
     }

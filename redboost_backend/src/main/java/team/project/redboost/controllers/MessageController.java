@@ -119,6 +119,11 @@ public class MessageController {
         return ResponseEntity.ok(Map.of("count", messageService.getUnreadCount(userId)));
     }
 
+    @GetMapping("/unread-per-sender")
+    public ResponseEntity<Map<Long, Integer>> getUnreadPerSender(@RequestParam Long userId) {
+        return ResponseEntity.ok(messageService.getUnreadPerSender(userId));
+    }
+
     @GetMapping("/presence/{userId}")
     public ResponseEntity<Map<String, Boolean>> getPresence(@PathVariable Long userId) {
         return ResponseEntity.ok(Map.of("online", messageService.isUserOnline(userId)));

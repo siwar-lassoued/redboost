@@ -28,6 +28,7 @@ import {
             >
                 <i [class]="item.icon"></i>
                 <span class="menu-item-text">{{ item.label }}</span>
+                <span *ngIf="item.badge" [class]="item.badgeStyleClass">{{ item.badge }}</span>
             </a>
 
             <!-- Parent menu item without routerLink or with children -->
@@ -58,6 +59,7 @@ import {
                     >
                         <i [class]="subitem.icon" *ngIf="subitem.icon"></i>
                         <span>{{ subitem.label }}</span>
+                        <span *ngIf="subitem.badge" [class]="subitem.badgeStyleClass">{{ subitem.badge }}</span>
                     </a>
                 </li>
             </ul>
