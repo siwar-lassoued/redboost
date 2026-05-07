@@ -54,12 +54,9 @@ public class MessageController {
                 return ResponseEntity.badRequest().body(err);
             }
 
-            String expediteurIdStr = String.valueOf(expediteurObj);
-            String destinataireIdStr = String.valueOf(destinataireObj);
+            Long expediteurId = expediteurObj instanceof Number ? ((Number) expediteurObj).longValue() : Long.parseLong(String.valueOf(expediteurObj).trim());
+            Long destinataireId = destinataireObj instanceof Number ? ((Number) destinataireObj).longValue() : Long.parseLong(String.valueOf(destinataireObj).trim());
             String contenu = String.valueOf(contenuObj);
-
-            Long expediteurId   = Long.parseLong(expediteurIdStr.trim());
-            Long destinataireId = Long.parseLong(destinataireIdStr.trim());
 
             MessageDTO saved = messageService.save(expediteurId, destinataireId, contenu.trim());
             

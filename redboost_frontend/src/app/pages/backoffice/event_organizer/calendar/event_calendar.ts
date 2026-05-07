@@ -12,7 +12,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { FormsModule } from '@angular/forms';
 import { EventService, EventResponse } from '../event.service';
 import { TypeFormationService, TypeFormation } from '../type-formation.service';
-import { MatTooltip } from '@angular/material/tooltip';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { forkJoin, of } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
 import { AuthService } from '../../../../core/services/auth.service';
@@ -50,7 +50,7 @@ interface EventTypeWithColor {
   imports: [
     CommonModule,
     MatIconModule,
-    MatTooltip,
+    MatTooltipModule,
     MatButtonModule,
     MatMenuModule,
     MatDialogModule,

@@ -52,13 +52,21 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                             // messagingTemplate.convertAndSendToUser(userId, ...) routes correctly.
                             String userId = jwtUtils.extractUserId(token);
                             if (userId != null && !userId.isBlank()) {
-                                Principal userIdPrincipal = () -> userId;
-                                accessor.setUser(userIdPrincipal);
+                                // Create a proper Authentication object so Spring Security recognizes it
+                                org.springframework.security.authentication.UsernamePasswordAuthenticationToken authentication =
+                                        new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                                                userId, null, java.util.Collections.emptyList()
+                                        );
+                                accessor.setUser(authentication);
                             } else {
                                 // Fallback: use email as principal
                                 String email = jwtUtils.extractEmail(token);
                                 if (email != null && !email.isBlank()) {
-                                    accessor.setUser(() -> email);
+                                    org.springframework.security.authentication.UsernamePasswordAuthenticationToken authentication =
+                                            new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                                                    email, null, java.util.Collections.emptyList()
+                                            );
+                                    accessor.setUser(authentication);
                                 } else {
                                     throw new org.springframework.messaging.MessageDeliveryException(
                                         message, "STOMP CONNECT rejected: token contains no valid user identity");

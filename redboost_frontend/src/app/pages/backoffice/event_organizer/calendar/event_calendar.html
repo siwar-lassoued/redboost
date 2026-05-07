@@ -367,12 +367,3 @@
     </div>
   </div>
 </div>
-<button class="btn-confirm-modal" (click)="confirmBooking()" [disabled]="isBooking">
-  <span *ngIf="isBooking" class="loading-spinner"></span>
-  <mat-icon *ngIf="!isBooking">check_circle</mat-icon>
-  {{ isBooking ? 'Réservation en cours...' : 'Confirmer la réservation' }}
-</button>
-</div>
-</div>
-</div>
-</div>
