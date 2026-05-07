@@ -79,9 +79,16 @@
               </mat-card>
             </div>
           </div>
+          </div>
 
+        <!-- Sidebar -->
+        <div class="sidebar">
           <!-- Event Details Section -->
-          <div class="event-details-section" *ngIf="selectedDateEvents.length > 0">
+          <div class="event-details-section sidebar-view" *ngIf="selectedDateEvents.length > 0">
+            <div class="sidebar-back-header">
+              <button mat-icon-button (click)="clearSelection()" class="back-btn"><mat-icon>arrow_back</mat-icon></button>
+              <span>Retour au calendrier</span>
+            </div>
             <div class="event-details-header">
               <h3>Événements du {{ getSelectedDateFormatted() }}</h3>
             </div>
@@ -167,13 +174,10 @@
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- Sidebar -->
-        <div class="sidebar">
-
-          <ng-container *ngIf="isEntrepreneur">
-            <!-- Center of Reservation -->
+          <ng-container *ngIf="selectedDateEvents.length === 0">
+            <ng-container *ngIf="isEntrepreneur">
+              <!-- Center of Reservation -->
             <div class="reservation-center">
               <div class="sidebar-header">
                 <h3>Réserver une session</h3>
@@ -291,8 +295,9 @@
               </mat-card>
             </div>
           </ng-container>
+        </ng-container>
 
-        </div>
+      </div>
       </div>
     </div>
   </div>

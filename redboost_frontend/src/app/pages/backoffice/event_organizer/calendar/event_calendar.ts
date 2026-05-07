@@ -567,9 +567,18 @@ export class CalendarComponent implements OnInit {
 
   onDayClick(day: any): void {
     if (day.events.length > 0) {
-      this.selectedDate = day.date;
-      this.selectedDateEvents = day.events;
+      if (this.selectedDate && this.selectedDate.getTime() === day.date.getTime()) {
+        this.clearSelection();
+      } else {
+        this.selectedDate = day.date;
+        this.selectedDateEvents = day.events;
+      }
     }
+  }
+
+  clearSelection(): void {
+    this.selectedDate = null;
+    this.selectedDateEvents = [];
   }
 
   getSelectedDateFormatted(): string {
