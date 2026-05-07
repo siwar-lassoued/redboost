@@ -72,7 +72,7 @@ export class CalendarComponent implements OnInit {
   isCoach = false;
   matchedCoaches: any[] = [];
   coachGroupsMap: { [coachId: string]: any[] } = {};
-  coachThematiquesMap: { [coachId: string]: any[] } = {};
+  thematiquesList: any[] = [];
   
   // Entrepreneur Slot Statistics
   availableSlotsCount = 0;
@@ -205,24 +205,34 @@ export class CalendarComponent implements OnInit {
             const slotsArray = allData.slice(0, numCoaches);
             const groupsArray = allData.slice(numCoaches);
 
-            // Populate coachGroupsMap and group by thematique
+            const globalThematiques: any[] = [];
+
             response.coaches.forEach((c: any, index: number) => {
               const groups: any[] = groupsArray[index] || [];
               this.coachGroupsMap[c.id] = groups;
               
-              // New grouping by thematique
-              const groupedByThem: any[] = [];
               groups.forEach(g => {
                 const themName = g.slots[0]?.thematiqueNom || 'Thématique Générale';
-                let them = groupedByThem.find(t => t.name === themName);
-                if (!them) {
-                  them = { name: themName, sessionGroups: [] };
-                  groupedByThem.push(them);
+                
+                // Find or create thematique in global list
+                let thematiqueObj = globalThematiques.find(t => t.name === themName);
+                if (!thematiqueObj) {
+                  thematiqueObj = { name: themName, coaches: [] };
+                  globalThematiques.push(thematiqueObj);
                 }
-                them.sessionGroups.push(g);
+                
+                // Find or create coach inside this thematique
+                let coachObj = thematiqueObj.coaches.find((coachEntry: any) => coachEntry.coach.id === c.id);
+                if (!coachObj) {
+                  coachObj = { coach: c, sessionGroups: [] };
+                  thematiqueObj.coaches.push(coachObj);
+                }
+                
+                // Add the session group to this coach
+                coachObj.sessionGroups.push(g);
               });
-              this.coachThematiquesMap[c.id] = groupedByThem;
             });
+            this.thematiquesList = globalThematiques;
 
             // Instead of separate slotRequests, we use slots from the groups to ensure consistency
             const allSlotsFromGroups = groupsArray.flat().map(g => g.slots).flat();
@@ -260,9 +270,6 @@ export class CalendarComponent implements OnInit {
     });
   }
 
-  getCoachThematiques(coachId: string): any[] {
-    return this.coachThematiquesMap[coachId] || [];
-  }
 
   getAvailableCount(slots: any[]): number {
     return slots.filter(s => !s.isBooked).length;

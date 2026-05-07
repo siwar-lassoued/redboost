@@ -1001,10 +1001,47 @@
   }
 }
 
-.coach-booking-list {
+.thematique-booking-list {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
+}
+
+.thematique-booking-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.global-thematique-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: linear-gradient(90deg, #f1f5f9 0%, transparent 100%);
+  border-radius: 8px;
+  
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    color: #3B82A6;
+  }
+  
+  h3 {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 800;
+    color: #334155;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+}
+
+.coach-list-in-thematique {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .coach-booking-section {
@@ -1065,34 +1102,7 @@
   }
 }
 
-.thematique-section {
-  margin-bottom: 24px;
-  
-  .thematique-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    background: linear-gradient(90deg, #f1f5f9 0%, transparent 100%);
-    border-radius: 8px;
-    margin-bottom: 12px;
-    
-    mat-icon {
-      font-size: 16px;
-      width: 16px;
-      height: 16px;
-      color: #3B82A6;
-    }
-    
-    span {
-      font-size: 11px;
-      font-weight: 800;
-      color: #334155;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-  }
-}
+
 
 .session-group-item {
   margin-bottom: 20px;

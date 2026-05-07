@@ -180,59 +180,62 @@
                 <mat-icon matTooltip="Centralisez vos réservations ici">help_outline</mat-icon>
               </div>
 
-              <!-- List of coaches with their availabilities -->
-              <div class="coach-booking-list">
-                <div *ngFor="let coach of matchedCoaches" class="coach-booking-section"
-                  [style.border-left-color]="getCoachColor(coach.id)">
-                  <div class="coach-header">
-                    <div class="coach-avatar" [style.background]="getCoachColor(coach.id)">
-                      {{ coach.nom ? coach.nom[0] : 'C' }}
-                    </div>
-                    <div class="coach-info">
-                      <h4>{{ coach.nom }}</h4>
-                      <p>{{ coach.specialite || 'Coach Expert' }}</p>
-                    </div>
+              <!-- List of thematiques with their coaches -->
+              <div class="thematique-booking-list">
+                <div *ngFor="let thematique of thematiquesList" class="thematique-booking-section">
+                  <div class="global-thematique-header">
+                    <mat-icon>label</mat-icon>
+                    <h3>{{ thematique.name }}</h3>
                   </div>
 
-                  <div class="coach-thematiques-list scrollable-sidebar-content">
-                    <div *ngFor="let them of coachThematiquesMap[coach.id]" class="thematique-section">
-                      <div class="thematique-header">
-                        <mat-icon>label</mat-icon>
-                        <span>{{ them.name }}</span>
+                  <div class="coach-list-in-thematique">
+                    <div *ngFor="let coachEntry of thematique.coaches" class="coach-booking-section"
+                      [style.border-left-color]="getCoachColor(coachEntry.coach.id)">
+                      <div class="coach-header">
+                        <div class="coach-avatar" [style.background]="getCoachColor(coachEntry.coach.id)">
+                          {{ coachEntry.coach.nom ? coachEntry.coach.nom[0] : 'C' }}
+                        </div>
+                        <div class="coach-info">
+                          <h4>{{ coachEntry.coach.nom }}</h4>
+                          <p>{{ coachEntry.coach.specialite || 'Coach Expert' }}</p>
+                        </div>
                       </div>
 
-                      <div class="session-groups-list">
-                        <div *ngFor="let group of them.sessionGroups" class="session-group-item"
-                          [class.reserved]="group.reservedByMe">
-                          <div class="group-title">
-                            <div class="title-left">
-                              <mat-icon>bookmark</mat-icon>
-                              <span>{{ group.sessionTitle }}</span>
+                      <div class="coach-thematiques-list scrollable-sidebar-content">
+                        <div class="session-groups-list">
+                          <div *ngFor="let group of coachEntry.sessionGroups" class="session-group-item"
+                            [class.reserved]="group.reservedByMe">
+                            <div class="group-title">
+                              <div class="title-left">
+                                <mat-icon>bookmark</mat-icon>
+                                <span>{{ group.sessionTitle }}</span>
+                              </div>
+                              <span class="session-count">{{ group.slots.length }} créneau{{ group.slots.length > 1 ? 'x'
+                                : '' }}</span>
                             </div>
-                            <span class="session-count">{{ group.slots.length }} créneau{{ group.slots.length > 1 ? 'x'
-                              : '' }}</span>
-                          </div>
 
-                          <div class="slots-container scrollable-slots">
-                            <div class="slots-grid">
-                              <button *ngFor="let slot of group.slots" class="slot-btn"
-                                [class.selected]="selectedSlot?.id === slot.id"
-                                [disabled]="slot.isBooked || group.reservedByMe"
-                                (click)="selectSlot(slot, group.sessionTitle, coach)">
-                                <span class="slot-date">{{ formatSlotDay(slot.dateSession) }} {{
-                                  formatSlotMonth(slot.dateSession) }}</span>
-                                <span class="slot-time">{{ formatSlotTime(slot.heureDebut) }}</span>
-                              </button>
+                            <div class="slots-container scrollable-slots">
+                              <div class="slots-grid">
+                                <button *ngFor="let slot of group.slots" class="slot-btn"
+                                  [class.selected]="selectedSlot?.id === slot.id"
+                                  [disabled]="slot.isBooked || group.reservedByMe"
+                                  (click)="selectSlot(slot, group.sessionTitle, coachEntry.coach)">
+                                  <span class="slot-date">{{ formatSlotDay(slot.dateSession) }} {{
+                                    formatSlotMonth(slot.dateSession) }}</span>
+                                  <span class="slot-time">{{ formatSlotTime(slot.heureDebut) }}</span>
+                                </button>
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                    <div *ngIf="!coachThematiquesMap[coach.id] || coachThematiquesMap[coach.id].length === 0"
-                      class="empty-coach-slots">
-                      Pas de créneaux disponibles
-                    </div>
                   </div>
+                </div>
+
+                <div *ngIf="thematiquesList.length === 0" class="empty-coach-slots">
+                  <mat-icon>event_busy</mat-icon>
+                  Pas de créneaux disponibles
                 </div>
               </div>
             </div>
