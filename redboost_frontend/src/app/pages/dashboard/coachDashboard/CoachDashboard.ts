@@ -88,187 +88,140 @@ interface NoteDeSynthese {
     standalone: true,
     imports: [CommonModule, NgChartsModule, FullCalendarModule],
     template: `
-        <div class="coach-dashboard">
-            <!-- Header -->
-            <div class="dashboard-header">
-                <div class="header-main">
-                    <h1>Bonjour, Coach <span class="wave">👋</span></h1>
-                    <p>Voici un résumé de votre activité de coaching pour aujourd'hui ✨</p>
+        <div class="coach-dashboard-premium">
+            <!-- Header Section -->
+            <div class="dash-header-lite">
+                <div class="welcome-col">
+                    <h1>Bonjour, {{ coachProfile?.firstName || 'Coach' }}</h1>
+                    <p>Voici un résumé de votre activité de coaching</p>
                 </div>
-                <div class="header-action">
-                    <span class="session-badge">
-                        <i class="pi pi-calendar-plus"></i>
-                        {{ stats.nbRendezVous || 9 }} sessions ce mois
-                    </span>
+                <div class="sessions-pill-badge">
+                    <span class="dot-blue"></span>
+                    {{ stats.nbRendezVous || 0 }} sessions ce mois
                 </div>
             </div>
 
-            <!-- Premium Stats Cards Section -->
-            <div class="stats-grid">
+            <!-- KPI Cards Grid -->
+            <div class="kpi-grid-premium">
                 <!-- Card 1: Entrepreneurs -->
-                <div class="stat-card premium-card-white">
-                    <div class="card-inner">
-                        <div class="icon-box blue-soft">
-                            <i class="pi pi-users"></i>
-                        </div>
-                        <div class="stat-info">
-                            <span class="stat-label">ENTREPRENEURS</span>
-                            <div class="stat-row">
-                                <span class="stat-value">{{ stats.nbProjet || 5 }}</span>
-                                <span class="stat-unit">assignés</span>
-                            </div>
-                        </div>
+                <div class="kpi-card pink-purple-grad">
+                    <div class="deco-circle"></div>
+                    <div class="kpi-icon-wrap">
+                        <i class="pi pi-users"></i>
                     </div>
-                    <div class="card-footer-lite">
-                         <span class="footer-dot blue"></span>
-                         Portfolio actif 🚀
+                    <p class="kpi-label">ENTREPRENEURS</p>
+                    <p class="kpi-value">{{ stats.nbProjet || 0 }}</p>
+                    <p class="kpi-sub">assignés</p>
+                    <div class="kpi-footer">
+                        <span class="footer-dot"></span>
+                        Portfolio actif
                     </div>
                 </div>
 
                 <!-- Card 2: Sessions -->
-                <div class="stat-card premium-card-white">
-                    <div class="card-inner">
-                        <div class="icon-box purple-soft">
-                            <i class="pi pi-calendar"></i>
-                        </div>
-                        <div class="stat-info">
-                            <span class="stat-label">SESSIONS</span>
-                            <div class="stat-row">
-                                <span class="stat-value">{{ stats.nbRendezVous || 9 }}</span>
-                                <span class="stat-unit">ce mois-ci</span>
-                            </div>
-                        </div>
+                <div class="kpi-card purple-indigo-grad">
+                    <div class="deco-circle"></div>
+                    <div class="kpi-icon-wrap">
+                        <i class="pi pi-calendar"></i>
                     </div>
-                    <div class="card-footer-lite">
-                        <span class="footer-dot purple"></span>
-                        En cours 📅
+                    <p class="kpi-label">SESSIONS</p>
+                    <p class="kpi-value">{{ stats.nbRendezVous || 0 }}</p>
+                    <p class="kpi-sub">ce mois-ci</p>
+                    <div class="kpi-footer">
+                        <span class="footer-dot"></span>
+                        En cours
                     </div>
                 </div>
 
-                <!-- Card 3: Tâches -->
-                <div class="stat-card premium-card-white">
-                    <div class="card-inner">
-                        <div class="icon-box pink-soft">
-                            <i class="pi pi-check-square"></i>
-                        </div>
-                        <div class="stat-info">
-                            <span class="stat-label">TÂCHES</span>
-                            <div class="stat-row">
-                                <span class="stat-value">{{ stats.nbTaches || 8 }}</span>
-                                <span class="stat-unit">en cours</span>
-                            </div>
-                        </div>
+                <!-- Card 3: Tasks -->
+                <div class="kpi-card teal-blue-grad">
+                    <div class="deco-circle"></div>
+                    <div class="kpi-icon-wrap">
+                        <i class="pi pi-check-square"></i>
                     </div>
-                    <div class="card-footer-lite">
-                        <span class="footer-dot pink"></span>
-                        Suivi actif ✅
+                    <p class="kpi-label">TÂCHES</p>
+                    <p class="kpi-value">{{ stats.nbTaches || 0 }}</p>
+                    <p class="kpi-sub">en cours</p>
+                    <div class="kpi-footer">
+                        <span class="footer-dot"></span>
+                        Suivi actif
                     </div>
                 </div>
 
-                <!-- Card 4: Complétion -->
-                <div class="stat-card premium-card-white">
-                    <div class="card-inner">
-                        <div class="icon-box green-soft">
-                            <i class="pi pi-chart-line"></i>
-                        </div>
-                        <div class="stat-info">
-                            <span class="stat-label">COMPLÉTION</span>
-                            <div class="stat-row">
-                                <span class="stat-value">{{ averageCompletionRate || 17 }}%</span>
-                                <span class="stat-unit">taux moyen</span>
-                            </div>
-                        </div>
+                <!-- Card 4: Completion -->
+                <div class="kpi-card orange-red-grad">
+                    <div class="deco-circle"></div>
+                    <div class="kpi-icon-wrap">
+                        <i class="pi pi-chart-line"></i>
                     </div>
-                    <div class="card-footer-lite">
-                        <span class="footer-dot green"></span>
-                        Performance 📈
+                    <p class="kpi-label">COMPLÉTION</p>
+                    <p class="kpi-value">{{ averageCompletionRate || 0 }}%</p>
+                    <p class="kpi-sub">taux moyen</p>
+                    <div class="kpi-footer">
+                        <span class="footer-dot"></span>
+                        Performance
                     </div>
                 </div>
             </div>
 
-            <!-- Main Content Area: Side by Side -->
-            <div class="main-content-layout">
-                
-                <!-- Left: Mes Entrepreneurs -->
-                <div class="entrepreneurs-panel premium-card-flat">
-                    <div class="panel-header">
-                        <div class="header-left">
-                             <h2>Mes Entrepreneurs 👥</h2>
-                        </div>
-                        <a href="javascript:void(0)" class="btn-link" (click)="router.navigate(['/coach-entrepreneurs'])">Voir tous ></a>
+            <!-- Main Content Grid -->
+            <div class="dash-main-grid">
+                <!-- Left Column: Entrepreneurs List -->
+                <div class="white-box-premium entrepreneurs-list-col">
+                    <div class="box-header">
+                        <h3>Mes Entrepreneurs</h3>
+                        <button class="view-all-link" (click)="router.navigate(['/coach-entrepreneurs'])">
+                            Voir tous <i class="pi pi-chevron-right"></i>
+                        </button>
                     </div>
                     
-                    <div class="panel-body">
-                        <div *ngIf="isLoadingEntrepreneurs" class="loader-p">
-                            <i class="pi pi-spin pi-spinner"></i>
-                            <span>Chargement...</span>
-                        </div>
-                        
-                        <div *ngIf="!isLoadingEntrepreneurs && entrepreneurs.length === 0" class="empty-p">
-                             <div class="empty-icon">📂</div>
-                             <p>Aucun entrepreneur assigné</p>
-                        </div>
-
-                        <div *ngFor="let ent of entrepreneurs" 
-                             class="ent-row cursor-pointer" 
-                             (click)="goToEntrepreneurDetail(ent.id)">
-                            <div class="ent-avatar" [style.background]="getAvatarGradient(ent)">
-                                {{ ent.firstName.charAt(0) }}{{ ent.lastName.charAt(0) }}
+                    <div class="ent-list-compact">
+                        <div *ngFor="let ent of entrepreneurs.slice(0, 5)" class="ent-row-item" (click)="goToEntrepreneurDetail(ent.id)">
+                            <div class="ent-avatar-mini" [style.background]="getAvatarGradient(ent)">
+                                {{ getInitialsForEnt(ent) }}
                             </div>
-                            <div class="ent-main">
-                                <div class="ent-top">
-                                    <span class="ent-name">{{ ent.firstName }} {{ ent.lastName }}</span>
-                                    <span *ngIf="(ent.delayedTasksCount || 0) > 0" class="retard-badge">
+                            <div class="ent-name-info">
+                                <div class="name-row-top">
+                                    <span class="name">{{ ent.firstName }} {{ ent.lastName }}</span>
+                                    <span class="retard-badge-mini" *ngIf="(ent.delayedTasksCount || 0) > 0">
                                         {{ ent.delayedTasksCount }} en retard
                                     </span>
                                 </div>
-                                <span class="ent-sub">{{ ent.entreprise || 'Non spécifié' }} • {{ ent.secteur || 'Non renseigné' }}</span>
+                                <p class="sub">{{ ent.entreprise }} · {{ ent.secteur }}</p>
                             </div>
-                            <div class="ent-progress">
-                                <span class="pct">{{ ent.completionRate || 0 }}%</span>
-                                <div class="p-bar">
-                                    <div class="p-fill" [style.width]="(ent.completionRate || 0) + '%'"></div>
+                            <div class="ent-progress-mini">
+                                <div class="mini-p-bar-bg">
+                                    <div class="mini-p-bar-fill" [style.width.%]="ent.completionRate || 0"></div>
                                 </div>
+                                <span class="pct">{{ ent.completionRate || 0 }}%</span>
                             </div>
-                            <i class="pi pi-chevron-right ent-arrow"></i>
+                            <i class="pi pi-chevron-right arrow-muted"></i>
                         </div>
                     </div>
                 </div>
 
-                <!-- Right: Prochaines Sessions -->
-                <div class="sessions-panel premium-card-flat">
-                    <div class="panel-header">
-                        <div class="header-left">
-                            <h2>Prochaines Sessions 🕒</h2>
-                        </div>
-                        <a href="javascript:void(0)" class="btn-link" (click)="router.navigate(['/mes-sessions'])">Voir tout</a>
+                <!-- Right Column: Upcoming Sessions -->
+                <div class="white-box-premium upcoming-sessions-col">
+                    <div class="box-header">
+                        <h3>Prochaines Sessions</h3>
+                        <button class="view-all-link" (click)="router.navigate(['/mes-sessions'])">Voir tout</button>
                     </div>
-                    
-                    <div class="panel-body">
-                        <div *ngIf="isLoadingSessions" class="loader-p">
-                            <i class="pi pi-spin pi-spinner"></i>
-                        </div>
-                        
-                        <div *ngIf="!isLoadingSessions && upcomingSessions.length === 0" class="empty-p">
-                             <p>Rien de prévu ☕</p>
-                        </div>
 
-                        <div *ngFor="let session of upcomingSessions" class="session-item-premium">
-                            <div class="time-marker">
-                                <div class="marker-dot" [class.confirmed]="session.statut === 'CONFIRMED'"></div>
+                    <div class="sessions-timeline-compact">
+                        <div *ngFor="let session of upcomingSessions.slice(0, 3); let i = index" class="timeline-item">
+                            <div class="timeline-marker" [class.confirmed]="session.statut === 'CONFIRMED'">
+                                <div class="marker-dot"></div>
                             </div>
-                            <div class="session-card-lite">
-                                <div class="sc-top">
-                                    <span class="sc-badge" [class.confirmed]="session.statut === 'CONFIRMED'">
-                                        {{ session.statut === 'CONFIRMED' ? 'Confirmé' : 'En attente' }}
-                                    </span>
+                            <div class="session-mini-card">
+                                <div class="session-status-badge" [class.confirmed]="session.statut === 'CONFIRMED'">
+                                    {{ session.statut === 'CONFIRMED' ? 'Confirmé' : 'En attente' }}
                                 </div>
-                                <h4 class="sc-title">{{ session.entrepreneurName }}</h4>
-                                <div class="sc-meta">
+                                <p class="ent-name-session">{{ session.entrepreneurName }}</p>
+                                <div class="session-time-meta">
                                     <i class="pi pi-clock"></i>
-                                    {{ session.dateSession }} à {{ session.heureDebut }}
+                                    <span>{{ session.dateSession | date:'dd/MM/yyyy' }} à {{ session.heureDebut }}</span>
                                 </div>
-                                <a *ngIf="session.meetingLink" [href]="session.meetingLink" target="_blank" class="sc-link">
+                                <a *ngIf="session.meetingLink" [href]="session.meetingLink" target="_blank" class="meet-link-mini">
                                     <i class="pi pi-video"></i> Lien Meet
                                 </a>
                             </div>
@@ -280,230 +233,6 @@ interface NoteDeSynthese {
     `,
     styles: [
         `
-            :host {
-                --coach-primary: #FF4D85;
-                --coach-bg: #F8FAFC;
-                --text-dark: #0F172A;
-                --text-muted: #64748B;
-            }
-
-            .coach-dashboard {
-                background: var(--coach-bg);
-                padding: 2.5rem;
-                min-height: 100vh;
-                animation: fadeIn 0.5s ease;
-            }
-
-            @keyframes fadeIn {
-                from { opacity: 0; transform: translateY(10px); }
-                to { opacity: 1; transform: translateY(0); }
-            }
-
-            /* Header */
-            .dashboard-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: flex-start;
-                margin-bottom: 2.5rem;
-            }
-
-            .dashboard-header h1 {
-                font-size: 2.5rem;
-                font-weight: 800;
-                color: var(--text-dark);
-                margin: 0;
-                letter-spacing: -1px;
-            }
-
-            .dashboard-header p {
-                color: var(--text-muted);
-                font-size: 1.1rem;
-                margin: 0.5rem 0 0;
-            }
-
-            .session-badge {
-                background: #1e293b;
-                color: white;
-                padding: 0.75rem 1.25rem;
-                border-radius: 100px;
-                font-weight: 700;
-                font-size: 0.9rem;
-                display: flex;
-                align-items: center;
-                gap: 0.6rem;
-                box-shadow: 0 10px 20px rgba(15, 23, 42, 0.15);
-            }
-
-            /* Stats Grid */
-            .stats-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-                gap: 1.5rem;
-                margin-bottom: 3rem;
-            }
-
-            .stat-card {
-                background: white;
-                border-radius: 24px;
-                padding: 1.5rem;
-                border: 1px solid rgba(226, 232, 240, 0.5);
-                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                position: relative;
-                overflow: hidden;
-            }
-
-            .stat-card:hover {
-                transform: translateY(-8px);
-                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
-            }
-
-            .card-inner {
-                display: flex;
-                align-items: flex-start;
-                gap: 1.25rem;
-                margin-bottom: 1.5rem;
-            }
-
-            .icon-box {
-                width: 54px;
-                height: 54px;
-                border-radius: 16px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 1.5rem;
-            }
-
-            .blue-soft { background: #eff6ff; color: #3b82f6; }
-            .purple-soft { background: #f5f3ff; color: #8b5cf6; }
-            .pink-soft { background: #fff1f2; color: #f43f5e; }
-            .green-soft { background: #f0fdf4; color: #22c55e; }
-
-            .stat-info {
-                display: flex;
-                flex-direction: column;
-            }
-
-            .stat-label {
-                font-size: 0.75rem;
-                font-weight: 700;
-                color: var(--text-muted);
-                letter-spacing: 0.1em;
-                margin-bottom: 0.25rem;
-            }
-
-            .stat-row {
-                display: flex;
-                align-items: baseline;
-                gap: 0.5rem;
-            }
-
-            .stat-value {
-                font-size: 2.2rem;
-                font-weight: 800;
-                color: var(--text-dark);
-                line-height: 1;
-            }
-
-            .stat-unit {
-                font-size: 0.9rem;
-                color: var(--text-muted);
-                font-weight: 500;
-            }
-
-            .card-footer-lite {
-                display: flex;
-                align-items: center;
-                gap: 0.5rem;
-                font-size: 0.85rem;
-                font-weight: 600;
-                color: var(--text-muted);
-                padding-top: 1rem;
-                border-top: 1px solid #f1f5f9;
-            }
-
-            .footer-dot {
-                width: 6px;
-                height: 6px;
-                border-radius: 50%;
-            }
-
-            .footer-dot.blue { background: #3b82f6; }
-            .footer-dot.purple { background: #8b5cf6; }
-            .footer-dot.pink { background: #f43f5e; }
-            .footer-dot.green { background: #22c55e; }
-
-            /* Layout Panels */
-            .main-content-layout {
-                display: grid;
-                grid-template-columns: 2fr 1fr;
-                gap: 2rem;
-            }
-
-            .premium-card-flat {
-                background: white;
-                border-radius: 32px;
-                padding: 2rem;
-                border: 1px solid rgba(226, 232, 240, 0.8);
-                box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            }
-
-            .panel-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-bottom: 2rem;
-            }
-
-            .panel-header h2 {
-                font-size: 1.5rem;
-                font-weight: 800;
-                color: var(--text-dark);
-                margin: 0;
-            }
-
-            .btn-link {
-                color: var(--coach-primary);
-                text-decoration: none;
-                font-weight: 700;
-                font-size: 0.95rem;
-                transition: opacity 0.2s;
-            }
-
-            .btn-link:hover { opacity: 0.7; }
-
-            /* Entrepreneurs Panel */
-            .ent-row {
-                display: flex;
-                align-items: center;
-                padding: 1.25rem;
-                border-radius: 20px;
-                margin-bottom: 0.5rem;
-                transition: all 0.2s;
-            }
-
-            .ent-row:hover {
-                background: #f8fafc;
-                transform: translateX(5px);
-            }
-
-            .ent-avatar {
-                width: 56px;
-                height: 56px;
-                border-radius: 18px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                color: white;
-                font-weight: 800;
-                font-size: 1.2rem;
-                margin-right: 1.25rem;
-                box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
-            }
-
-            .ent-main { flex: 1; min-width: 0; }
-
             .ent-top {
                 display: flex;
                 align-items: center;
@@ -653,7 +382,7 @@ export class CoachDashboardComponent implements OnInit, OnDestroy {
     isLoadingEntrepreneurs = false;
     isLoadingSessions = false;
     averageCompletionRate = 0;
-
+    coachProfile: any = null;
     getAvatarGradient(ent: any): string {
         const colors = [
             ['#FF4D85', '#FF758C'],
@@ -760,7 +489,8 @@ export class CoachDashboardComponent implements OnInit, OnDestroy {
         private coachService: CoachService,
     ) {}
 
-    ngOnInit() {
+    ngOnInit(): void {
+        this.loadCoachProfile();
         const rawCoachId = this.authService.getUserId();
         this.coachId =
             typeof rawCoachId === 'string'
@@ -786,10 +516,6 @@ export class CoachDashboardComponent implements OnInit, OnDestroy {
                     console.error('Error fetching stats:', err);
                 }
             });
-
-            // Remove old mockup endpoints that trigger 404s
-            // this.loadAcceptedRendezVous();
-            // this.loadTasksToValidate();
 
             // Load dynamic entrepreneurs and upcoming sessions from backend
             this.loadCoachEntrepreneurs();
@@ -1009,6 +735,22 @@ export class CoachDashboardComponent implements OnInit, OnDestroy {
     closeRendezVousCard(): void {
         this.selectedRendezVous = null;
         this.cdr.detectChanges();
+    }
+
+
+    loadCoachProfile(): void {
+        this.coachService.getCoachProfile().subscribe({
+            next: (profile) => {
+                this.coachProfile = profile;
+                this.cdr.detectChanges();
+            },
+            error: (err) => console.error('Error loading coach profile:', err)
+        });
+    }
+
+    getCoachInitials(): string {
+        if (!this.coachProfile) return 'C';
+        return (this.coachProfile.firstName?.charAt(0) || '') + (this.coachProfile.lastName?.charAt(0) || '');
     }
 
     /**

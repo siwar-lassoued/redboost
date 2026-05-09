@@ -201,7 +201,7 @@ export class MesCoachsComponent implements OnInit {
     });
   }
 
-  getCoachSessions(coachId: string, thematiqueId?: number | string): any[] {
+  getCoachSessions(coachId: any, thematiqueId?: any): any[] {
     return this.allSessions()
       .filter(s => s.coach && String(s.coach.id) === String(coachId) && 
                    (!thematiqueId || (s.thematique && String(s.thematique.id) === String(thematiqueId))))
@@ -212,7 +212,7 @@ export class MesCoachsComponent implements OnInit {
     return new Date(date) < new Date();
   }
 
-  isNextSession(session: any, coachId: string, thematiqueId?: number | string): boolean {
+  isNextSession(session: any, coachId: any, thematiqueId?: any): boolean {
     const coachSessions = this.getCoachSessions(coachId, thematiqueId);
     const now = new Date();
     const futureSessions = coachSessions.filter(s => new Date(s.date) >= now);

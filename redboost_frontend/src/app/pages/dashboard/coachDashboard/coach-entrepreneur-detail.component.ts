@@ -29,44 +29,46 @@ import { environment } from '../../../../environment';
       </div>
 
       <div *ngIf="!isLoading && entrepreneur" class="profile-container">
-        <!-- Header Section -->
-        <header class="profile-header">
-          <div class="header-bg"></div>
-          <div class="header-content">
-            <div class="avatar-col">
-              <div class="avatar-large" [style.background]="getAvatarGradient(entrepreneur)">
-                {{ getInitials(entrepreneur) }}
-                <div class="status-indicator-online"></div>
-              </div>
+        <!-- Profile Header Premium (Matching Screenshot) -->
+        <div class="profile-card-premium">
+          <div class="profile-hero"></div>
+          <div class="profile-content-wrap">
+            <div class="profile-avatar-box">
+               <div class="profile-avatar-overlap" [style.background]="getAvatarGradient(entrepreneur)">
+                  {{ getInitials(entrepreneur) }}
+                  <span class="status-indicator"></span>
+               </div>
             </div>
-            <div class="info-col">
+            
+            <div class="profile-info-main">
               <div class="name-row">
-                <h1>{{ entrepreneur.firstName }} {{ entrepreneur.lastName }}</h1>
-                <span class="category-badge">{{ entrepreneur.secteur || 'MVP' }}</span>
+                <h1 class="profile-name">{{ entrepreneur.firstName }} {{ entrepreneur.lastName }}</h1>
+                <span class="badge-stage">{{ entrepreneur.entreprise || 'Non spécifié' }}</span>
               </div>
-              <p class="startup-name">
+              
+              <div class="startup-meta">
                 <i class="pi pi-building"></i>
-                {{ entrepreneur.entreprise || 'Startup en création' }}
-              </p>
-              <div class="contact-chips">
-                <div class="chip">
+                <span>{{ entrepreneur.secteur || 'Secteur non spécifié' }}</span>
+              </div>
+
+              <div class="contact-chips-row">
+                <div class="contact-chip">
                   <i class="pi pi-envelope"></i>
                   <span>{{ entrepreneur.email }}</span>
                 </div>
-                <div class="chip">
+                <div class="contact-chip">
                   <i class="pi pi-phone"></i>
-                  <span>{{ entrepreneur.phoneNumber || 'Non renseigné' }}</span>
+                  <span>{{ entrepreneur.phoneNumber || '00000000' }}</span>
+                </div>
+                <div class="action-right-wrap">
+                  <button class="btn-new-task-minimal" (click)="openTaskModal()">
+                     <i class="pi pi-plus"></i> Nouvelle Tâche
+                  </button>
                 </div>
               </div>
             </div>
-            <div class="actions-col">
-              <button class="btn-primary-premium" (click)="openTaskModal()">
-                <i class="pi pi-plus"></i>
-                <span>Nouvelle Tâche</span>
-              </button>
-            </div>
           </div>
-        </header>
+        </div>
 
         <!-- Main Content Grid -->
         <div class="content-grid">
@@ -304,21 +306,35 @@ import { environment } from '../../../../environment';
     .loading-overlay { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 60vh; color: #64748b; }
     .premium-spinner { width: 48px; height: 48px; border: 4px solid #f1f5f9; border-top-color: #0f172a; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 1rem; }
 
-    .profile-header { background: white; border-radius: 40px; overflow: hidden; box-shadow: 0 10px 30px -10px rgba(0,0,0,0.05); border: 1px solid #f1f5f9; margin-bottom: 3rem; }
-    .header-bg { height: 120px; background: linear-gradient(90deg, #0f172a 0%, #1e293b 100%); }
-    .header-content { padding: 0 3rem 2.5rem; display: flex; align-items: flex-end; gap: 2.5rem; margin-top: -50px; }
-    
-    .avatar-large { width: 140px; height: 140px; border-radius: 45px; border: 6px solid white; display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: 800; color: white; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-    .status-indicator-online { width: 24px; height: 24px; background: #22c55e; border: 4px solid white; border-radius: 50%; position: absolute; bottom: 5px; right: 5px; }
-
-    .info-col { flex: 1; padding-top: 55px; }
-    .name-row { display: flex; align-items: center; gap: 1.25rem; margin-bottom: 0.5rem; }
-    .name-row h1 { font-size: 2.2rem; font-weight: 800; color: #0f172a; margin: 0; letter-spacing: -1px; }
     .category-badge { padding: 0.4rem 1rem; background: #eff6ff; color: #3b82f6; border-radius: 100px; font-weight: 800; font-size: 0.8rem; }
     .startup-name { font-size: 1.1rem; color: #64748b; font-weight: 600; margin: 0 0 1.25rem; display: flex; align-items: center; gap: 0.5rem; }
     
     .contact-chips { display: flex; gap: 1rem; }
     .chip { display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 1rem; background: #f8fafc; border-radius: 100px; font-size: 0.9rem; color: #475569; font-weight: 600; border: 1px solid #f1f5f9; }
+
+    /* --- Profile Card Premium (Matching Screenshot) --- */
+    .profile-card-premium { background: white; border-radius: 40px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.05); margin-bottom: 2rem; border: 1px solid #f1f5f9; position: relative; }
+    .profile-hero { height: 120px; background: #1a2234; } /* Dark navy from screenshot */
+    .profile-content-wrap { padding: 0 2.5rem 2rem; display: flex; align-items: flex-start; gap: 2rem; margin-top: -50px; }
+    
+    .profile-avatar-box { position: relative; }
+    .profile-avatar-overlap { width: 140px; height: 140px; border-radius: 35px; border: 6px solid white; display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: 900; color: white; box-shadow: 0 10px 20px rgba(0,0,0,0.1); position: relative; }
+    .status-indicator { position: absolute; bottom: 8px; right: 8px; width: 22px; height: 22px; background: #22c55e; border: 4px solid white; border-radius: 50%; }
+
+    .profile-info-main { flex: 1; padding-top: 60px; }
+    .name-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.25rem; }
+    .profile-name { font-size: 2.2rem; font-weight: 900; color: #0f172a; margin: 0; letter-spacing: -0.02em; }
+    .badge-stage { background: #eff6ff; color: #3b82f6; padding: 0.3rem 0.8rem; border-radius: 100px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; }
+    
+    .startup-meta { display: flex; align-items: center; gap: 0.5rem; color: #64748b; font-weight: 600; font-size: 0.95rem; margin-bottom: 1.5rem; }
+    
+    .contact-chips-row { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; position: relative; }
+    .contact-chip { background: #f8fafc; border: 1px solid #f1f5f9; padding: 0.5rem 1rem; border-radius: 14px; display: flex; align-items: center; gap: 0.6rem; color: #475569; font-size: 0.85rem; font-weight: 600; }
+    .contact-chip i { font-size: 0.8rem; color: #94a3b8; }
+    
+    .action-right-wrap { margin-left: auto; }
+    .btn-new-task-minimal { border: none; background: transparent; color: #0f172a; font-weight: 800; font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; transition: all 0.2s; padding: 0.5rem 1rem; border-radius: 12px; }
+    .btn-new-task-minimal:hover { background: #f1f5f9; transform: translateX(-5px); }
 
     .content-grid { display: grid; grid-template-columns: 340px 1fr; gap: 3rem; }
     

@@ -102,6 +102,8 @@ export interface CoachEntrepreneurDTO {
   completionRate?: number;
   delayedTasksCount?: number;
   completedTasksCount?: number;
+  stage?: string;
+  programName?: string;
 }
 
 export interface CoachCalendarEventDTO {
