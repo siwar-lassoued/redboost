@@ -11,7 +11,7 @@ type Tab = 'PLANIFIEE' | 'REALISEE' | 'ANNULEE';
   selector: 'rb-entrepreneur-sessions',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, RouterLink, FormsModule],
+  imports: [CommonModule, FormsModule],
   template: `
     <div class="cand-page">
       <!-- PAGE HEADER -->
@@ -117,8 +117,7 @@ type Tab = 'PLANIFIEE' | 'REALISEE' | 'ANNULEE';
         </div>
         <h3>Aucune session {{ activeTab().toLowerCase() }}</h3>
         <p>Vos sessions apparaîtront ici une fois planifiées.</p>
-      </div>
-    </div>
+        </div>
     </div>
 
     <!-- DETAIL MODAL (Admin Style) -->

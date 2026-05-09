@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { CoachService, ProgrammeDTO, UserDTO } from './services/coach.service';
 import { AuthService } from '../../frontoffice/service/auth.service';
 import { LivrableService } from '../../../core/services/livrable.service';
+import { environment } from '../../../../../environment';
 
 
 @Component({

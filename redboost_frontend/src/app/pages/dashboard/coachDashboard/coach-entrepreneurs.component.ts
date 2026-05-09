@@ -70,7 +70,7 @@ import { AuthService } from '../../frontoffice/service/auth.service';
               </div>
 
               <div class="stats-row">
-                 <div class="stat-item" [class.warning]="ent.delayedTasksCount > 0">
+                 <div class="stat-item" [class.warning]="(ent.delayedTasksCount || 0) > 0">
                    <i class="pi pi-calendar"></i>
                    <span>{{ ent.delayedTasksCount || 0 }} Retards</span>
                  </div>
@@ -242,5 +242,10 @@ export class CoachEntrepreneursComponent implements OnInit {
       "Series A": { bg: "#D1FAE5", color: "#059669" },
     };
     return stageColors[stage] || { bg: "#f1f5f9", color: "#64748b" };
+  }
+
+  getInitials(ent: CoachEntrepreneurDTO): string {
+    if (!ent.firstName && !ent.lastName) return 'E';
+    return ((ent.firstName?.[0] || '') + (ent.lastName?.[0] || '')).toUpperCase();
   }
 }

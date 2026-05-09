@@ -100,6 +100,7 @@ export interface CoachEntrepreneurDTO {
   profilePictureUrl?: string;
   completionRate?: number;
   delayedTasksCount?: number;
+  completedTasksCount?: number;
 }
 
 export interface CoachCalendarEventDTO {
