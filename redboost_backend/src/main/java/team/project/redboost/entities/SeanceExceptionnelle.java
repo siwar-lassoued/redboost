@@ -26,7 +26,7 @@ public class SeanceExceptionnelle {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "thematique_id")
-    private Thematique thematique;
+    private ThematiqueCoaching thematique;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "coach_id", nullable = false)

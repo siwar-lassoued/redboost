@@ -157,6 +157,7 @@ public class LivrableController {
             return ResponseEntity.ok(created);
 
         } catch (Exception e) {
+            System.err.println("CRITICAL ERROR: Failed to upload livrable: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
