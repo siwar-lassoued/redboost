@@ -8,8 +8,8 @@ import { environment } from '../../../environment';
 export interface LivrableFilters {
     programmeId?: string;
     statut?: string;
-    entrepreneurId?: string;
-    coachId?: string;
+    entrepreneurId?: string | number;
+    coachId?: string | number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -17,31 +17,46 @@ export class LivrableService {
     private readonly http = inject(HttpClient);
     private readonly baseUrl = `${environment.apiUrl}/livrables`;
 
-    getAll(filters?: LivrableFilters): Observable<ApiResponse<Livrable[]>> {
+    getAll(filters?: LivrableFilters): Observable<any> {
         let params = new HttpParams();
-        if (filters?.programmeId) params = params.set('programmeId', filters.programmeId);
+        if (filters?.programmeId) params = params.set('programmeId', filters.programmeId.toString());
         if (filters?.statut) params = params.set('statut', filters.statut);
-        if (filters?.entrepreneurId) params = params.set('entrepreneurId', filters.entrepreneurId);
-        if (filters?.coachId) params = params.set('coachId', filters.coachId);
-        return this.http.get<ApiResponse<Livrable[]>>(this.baseUrl, { params });
+        if (filters?.entrepreneurId) params = params.set('entrepreneurId', filters.entrepreneurId.toString());
+        if (filters?.coachId) params = params.set('coachId', filters.coachId.toString());
+        return this.http.get<any>(this.baseUrl, { params });
     }
 
     getById(id: string): Observable<Livrable> {
         return this.http.get<Livrable>(`${this.baseUrl}/${id}`);
     }
 
-    upload(programmeId: string, entrepreneurIds: string[], file: File, meta: Partial<Livrable>): Observable<ApiResponse<Livrable[]>> {
+    /**
+     * Upload a file to the server and create livrable records.
+     * @param programmeId  optional programme ID
+     * @param entrepreneurIds  list of entrepreneur user IDs
+     * @param file  the file to upload
+     * @param meta  titre, type fields
+     * @param coachId  optional coach ID so the backend can record the uploader
+     */
+    upload(
+        programmeId: string,
+        entrepreneurIds: string[],
+        file: File,
+        meta: Partial<Livrable>,
+        coachId?: string | number
+    ): Observable<any> {
         const form = new FormData();
         form.append('file', file);
-        form.append('programmeId', programmeId);
+        if (programmeId) form.append('programmeId', programmeId);
         entrepreneurIds.forEach(id => form.append('entrepreneurIds', id));
         form.append('titre', meta.titre ?? file.name);
         form.append('type', meta.type ?? 'Document');
-        return this.http.post<ApiResponse<Livrable[]>>(`${this.baseUrl}/upload`, form);
+        if (coachId) form.append('coachId', coachId.toString());
+        return this.http.post<any>(`${this.baseUrl}/upload`, form);
     }
 
-    updateStatus(id: string, statut: Livrable['statut']): Observable<ApiResponse<Livrable>> {
-        return this.http.patch<ApiResponse<Livrable>>(`${this.baseUrl}/${id}/statut`, { statut });
+    updateStatus(id: string, statut: Livrable['statut'], coachComment?: string): Observable<any> {
+        return this.http.patch<any>(`${this.baseUrl}/${id}/statut`, { statut, coachComment });
     }
 
     delete(id: string): Observable<void> {
