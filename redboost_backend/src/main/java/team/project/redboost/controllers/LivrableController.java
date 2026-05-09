@@ -87,7 +87,7 @@ public class LivrableController {
      * Upload a file and create one Livrable record per entrepreneur.
      * The uploading coach's identity is extracted from the JWT and stored on each record.
      */
-    @PostMapping("/upload")
+    @PostMapping(value = "/upload", produces = "application/json")
     public ResponseEntity<List<Livrable>> uploadLivrable(
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "programmeId", required = false) Long programmeId,
@@ -138,9 +138,14 @@ public class LivrableController {
             final team.project.redboost.entities.Programme finalProgramme = programme;
 
             // 5. Create one Livrable per entrepreneur
-            List<Livrable> created = entrepreneurIds.stream().map(entId -> {
+            // 5. Create one Livrable per entrepreneur
+            java.util.List<Livrable> created = new java.util.ArrayList<>();
+            for (Long entId : entrepreneurIds) {
                 User entrepreneur = userRepository.findById(entId).orElse(null);
-                if (entrepreneur == null) return null;
+                if (entrepreneur == null) {
+                    System.err.println("WARNING: Entrepreneur with ID " + entId + " not found.");
+                    continue;
+                }
 
                 Livrable livrable = new Livrable();
                 livrable.setTitre(titre);
@@ -152,22 +157,25 @@ public class LivrableController {
                 livrable.setStatut(Livrable.Statut.SUBMITTED);
                 livrable.setDateSoumission(LocalDateTime.now());
 
-                // Persist coach identity so we can filter later
                 if (finalCoach != null) {
                     livrable.setCoachEmail(finalCoach.getEmail());
-                    livrable.setCoachName(
-                            (finalCoach.getFirstName() != null ? finalCoach.getFirstName() : "") +
-                            " " +
-                            (finalCoach.getLastName() != null ? finalCoach.getLastName() : ""));
+                    String coachFullName = (finalCoach.getFirstName() != null ? finalCoach.getFirstName() : "") +
+                                           " " +
+                                           (finalCoach.getLastName() != null ? finalCoach.getLastName() : "");
+                    livrable.setCoachName(coachFullName.trim());
                 }
 
-                return livrableService.createLivrable(livrable);
-            }).filter(java.util.Objects::nonNull).collect(Collectors.toList());
+                Livrable saved = livrableService.createLivrable(livrable);
+                if (saved != null) {
+                    created.add(saved);
+                }
+            }
 
+            System.out.println("SUCCESS: Uploaded livrable for " + created.size() + " entrepreneurs.");
             return ResponseEntity.ok(created);
 
         } catch (Exception e) {
-            System.err.println("CRITICAL ERROR: Failed to upload livrable: " + e.getMessage());
+            System.err.println("CRITICAL ERROR in uploadLivrable: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }

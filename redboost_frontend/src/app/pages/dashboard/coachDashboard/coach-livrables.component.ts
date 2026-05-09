@@ -133,12 +133,12 @@ import { environment } from '../../../../environment';
                           <span>Consulter</span>
                       </button>
                       
-                      <div class="validation-actions" *ngIf="activeTab === 'received' && (liv.statut === 'SUBMITTED' || liv.statut === 'PENDING_REVIEW')">
-                          <button class="action-btn validate" (click)="updateLivrableStatus(liv, 'ACCEPTED')" title="Valider">
+                      <div class="validation-actions" *ngIf="activeTab === 'received' && (liv.statut === 'SUBMITTED' || liv.statut === 'PENDING_REVIEW' || liv.statut === 'REVISION')">
+                          <button class="action-btn validate" (click)="updateLivrableStatus(liv, 'ACCEPTED')" title="Accepter">
                               <i class="pi pi-check"></i>
                           </button>
-                          <button class="action-btn reject" (click)="updateLivrableStatus(liv, 'REJECTED')" title="Rejeter">
-                              <i class="pi pi-times"></i>
+                          <button class="action-btn revision" (click)="promptStatusUpdate(liv, 'REVISION')" title="Demander Révision">
+                              <i class="pi pi-sync"></i>
                           </button>
                       </div>
                       
@@ -247,6 +247,32 @@ import { environment } from '../../../../environment';
           </div>
       </div>
 
+      <!-- Decision Modal (Revision/Reject) -->
+      <div *ngIf="showDecisionModal" class="modal-overlay" (click)="showDecisionModal = false">
+          <div class="modal-box" style="max-width: 500px;" (click)="$event.stopPropagation()">
+              <div class="modal-header">
+                  <div class="modal-header-info">
+                      <h2 class="modal-name">{{ pendingStatus === 'REVISION' ? 'Demander une révision' : 'Rejeter le livrable' }}</h2>
+                      <p class="modal-subtitle">Ajoutez un commentaire pour l'entrepreneur</p>
+                  </div>
+                  <button class="modal-close" (click)="showDecisionModal = false"><i class="pi pi-times"></i></button>
+              </div>
+              <div class="modal-body">
+                  <div class="form-group">
+                      <label class="form-label">Votre commentaire *</label>
+                      <textarea class="search-input-alt" [(ngModel)]="statusComment" rows="4" placeholder="Expliquez ce qui doit être corrigé..." style="height: auto;"></textarea>
+                  </div>
+              </div>
+              <div class="modal-footer">
+                  <button class="btn-close-modal" (click)="showDecisionModal = false" style="margin-right: 12px;">Annuler</button>
+                  <button class="btn-detail" (click)="confirmStatusUpdate()" [disabled]="loading || !statusComment.trim()" 
+                          [style.background]="pendingStatus === 'REVISION' ? '#3b82f6' : '#ef4444'" style="color: white; border: none;">
+                      <i class="pi pi-send" style="margin-right: 8px;"></i> Envoyer la décision
+                  </button>
+              </div>
+          </div>
+      </div>
+
       <div *ngIf="loading && !showDepotModal" class="global-loader-wrap">
           <div class="premium-spinner"></div>
       </div>
@@ -296,8 +322,9 @@ import { environment } from '../../../../environment';
 
     .status-badge { padding: 0.4rem 0.8rem; border-radius: 8px; font-size: 0.75rem; font-weight: 800; text-align: center; }
     .status-badge.submitted, .status-badge.pending_review { background: #fef3c7; color: #d97706; }
-    .status-badge.accepted, .status-badge.valide { background: #dcfce7; color: #15803d; }
+    .status-badge.accepted, .status-badge.valide, .status-badge.approved { background: #dcfce7; color: #15803d; }
     .status-badge.rejected, .status-badge.rejete { background: #fee2e2; color: #b91c1c; }
+    .status-badge.revision { background: #eff6ff; color: #1d4ed8; }
 
     .livrable-actions { display: flex; flex-direction: column; gap: 0.5rem; }
     .action-btn { border: none; padding: 0.6rem 1rem; border-radius: 10px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: all 0.2s; font-size: 0.85rem; }
@@ -307,6 +334,8 @@ import { environment } from '../../../../environment';
     .validation-actions { display: flex; gap: 0.5rem; }
     .action-btn.validate { background: #dcfce7; color: #15803d; flex: 1; }
     .action-btn.validate:hover { background: #bbf7d0; }
+    .action-btn.revision { background: #eff6ff; color: #1d4ed8; flex: 1; }
+    .action-btn.revision:hover { background: #dbeafe; }
     .action-btn.reject { background: #fee2e2; color: #b91c1c; flex: 1; }
     .action-btn.reject:hover { background: #fecaca; }
 
@@ -422,6 +451,11 @@ export class CoachLivrablesComponent implements OnInit {
   receivedLivrables: any[] = [];
   sentLivrables: any[] = [];
   filteredLivrables: any[] = [];
+
+  showDecisionModal = false;
+  pendingLivrable: any = null;
+  pendingStatus: string = '';
+  statusComment: string = '';
 
   constructor(
     private coachService: CoachService,
@@ -556,17 +590,33 @@ export class CoachLivrablesComponent implements OnInit {
       PENDING_REVIEW: 'À valider',
       ACCEPTED: 'Validé',
       REJECTED: 'Rejeté',
+      REVISION: 'Révision demandée',
       VALIDE: 'Validé',
-      REJETE: 'Rejeté'
+      REJETE: 'Rejeté',
+      APPROVED: 'Approuvé'
     };
     return config[statut] || statut;
   }
 
-  updateLivrableStatus(liv: any, newStatus: string) {
+  promptStatusUpdate(liv: any, status: string) {
+    this.pendingLivrable = liv;
+    this.pendingStatus = status;
+    this.statusComment = '';
+    this.showDecisionModal = true;
+  }
+
+  confirmStatusUpdate() {
+    if (!this.pendingLivrable || !this.pendingStatus) return;
+    this.updateLivrableStatus(this.pendingLivrable, this.pendingStatus, this.statusComment);
+    this.showDecisionModal = false;
+  }
+
+  updateLivrableStatus(liv: any, newStatus: string, comment?: string) {
     this.loading = true;
-    this.livrableService.updateStatus(liv.id, newStatus as any).subscribe({
+    this.livrableService.updateStatus(liv.id, newStatus as any, comment).subscribe({
       next: () => {
         liv.statut = newStatus;
+        if (comment) liv.coachComment = comment;
         this.filterLivrables();
         this.loading = false;
       },
