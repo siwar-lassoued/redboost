@@ -62,6 +62,16 @@ public class LivrableController {
         return ResponseEntity.ok(livrables);
     }
 
+    @GetMapping("/received")
+    public ResponseEntity<List<Livrable>> getReceivedLivrables(@RequestParam Long coachId) {
+        return ResponseEntity.ok(livrableService.getReceivedLivrablesByCoach(coachId));
+    }
+
+    @GetMapping("/sent")
+    public ResponseEntity<List<Livrable>> getSentLivrables(@RequestParam Long coachId) {
+        return ResponseEntity.ok(livrableService.getSentLivrablesByCoach(coachId));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<Livrable> getLivrableById(@PathVariable Long id) {
         Livrable livrable = livrableService.getLivrableById(id);

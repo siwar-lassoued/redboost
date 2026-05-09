@@ -12,6 +12,7 @@ import java.util.List;
 public interface SessionRepository extends JpaRepository<Session, String> {
     List<Session> findByCoachId(Long coachId);
     List<Session> findByEntrepreneurId(Long entrepreneurId);
+    List<Session> findByCoachIdAndEntrepreneurId(Long coachId, Long entrepreneurId);
     List<Session> findByProgrammeId(Long programmeId);
     List<Session> findByDateBetween(LocalDateTime start, LocalDateTime end);
     List<Session> findByStatut(Session.Statut statut);

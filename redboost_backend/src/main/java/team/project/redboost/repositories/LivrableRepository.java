@@ -9,4 +9,5 @@ import java.util.List;
 @Repository
 public interface LivrableRepository extends JpaRepository<Livrable, Long> {
     List<Livrable> findByCoachEmail(String email);
+    List<Livrable> findByEntrepreneurIdIn(List<Long> entrepreneurIds);
 }

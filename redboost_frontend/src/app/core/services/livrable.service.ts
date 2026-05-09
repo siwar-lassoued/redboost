@@ -26,6 +26,14 @@ export class LivrableService {
         return this.http.get<any>(this.baseUrl, { params });
     }
 
+    getReceived(coachId: number | string): Observable<any[]> {
+        return this.http.get<any[]>(`${this.baseUrl}/received?coachId=${coachId}`);
+    }
+
+    getSent(coachId: number | string): Observable<any[]> {
+        return this.http.get<any[]>(`${this.baseUrl}/sent?coachId=${coachId}`);
+    }
+
     getById(id: string): Observable<Livrable> {
         return this.http.get<Livrable>(`${this.baseUrl}/${id}`);
     }
