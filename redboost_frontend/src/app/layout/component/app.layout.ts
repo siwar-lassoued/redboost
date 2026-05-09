@@ -6,6 +6,8 @@ import { AppTopbar } from './app.topbar';
 import { AppSidebar } from './app.sidebar';
 import { AppFooter } from './app.footer';
 import { LayoutService } from '../service/layout.service';
+import { AuthService } from '../../core/services/auth.service';
+import { inject } from '@angular/core';
 
 @Component({
     selector: 'app-layout',
@@ -35,13 +37,13 @@ import { LayoutService } from '../service/layout.service';
             }
 
             .layout-main-container {
-                margin-top: 70px;
-                margin-left: 280px;
+                margin-top: 80px;
+                margin-left: 300px;
                 flex: 1;
                 display: flex;
                 flex-direction: column;
-                transition: margin-left 0.3s ease;
-                min-height: calc(100vh - 70px);
+                transition: var(--transition-smooth);
+                min-height: calc(100vh - 80px);
             }
 
             .layout-main {
@@ -109,6 +111,7 @@ export class AppLayout {
         public layoutService: LayoutService,
         public renderer: Renderer2,
         public router: Router,
+        private authService: AuthService
     ) {
         this.overlayMenuOpenSubscription =
             this.layoutService.overlayOpen$.subscribe(() => {
@@ -201,6 +204,7 @@ export class AppLayout {
                 this.layoutService.layoutState().overlayMenuActive,
             'layout-mobile-active':
                 this.layoutService.layoutState().staticMenuMobileActive,
+            ['role-' + (this.authService.getRole()?.toLowerCase() || 'admin')]: true
         };
     }
 

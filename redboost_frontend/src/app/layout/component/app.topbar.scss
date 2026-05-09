@@ -5,9 +5,12 @@
     top: 0;
     left: 0;
     right: 0;
-    height: 70px;
-    background-color: #ffffff;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    height: 80px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: var(--premium-shadow-sm);
     display: flex;
     align-items: center;
     justify-content: space-between;

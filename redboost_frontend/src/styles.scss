@@ -134,25 +134,41 @@ html {
     }
 }
 
-/* Global Variables for Coach UI */
+/* Global Variables for Redboost Premium UI */
 :root {
-    --font-family: 'Poppins', Roboto, 'Helvetica Neue', sans-serif;
+    --font-family: 'Outfit', 'Poppins', Roboto, sans-serif;
     
-    /* Vibrant Gradients for Coach Cards */
-    --gradient-pink: linear-gradient(135deg, #FF6B9E 0%, #E83E8C 100%);
-    --gradient-purple: linear-gradient(135deg, #B57BEE 0%, #8553F4 100%);
-    --gradient-blue: linear-gradient(135deg, #5185A6 0%, #20A4F3 100%);
-    --gradient-orange: linear-gradient(135deg, #FF914D 0%, #FF5E00 100%);
+    /* Premium Shadows */
+    --premium-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.05);
+    --premium-shadow-md: 0 4px 20px rgba(0, 0, 0, 0.08);
+    --premium-shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.12);
     
-    /* Theme Colors */
-    --coach-primary: #FF4D85; /* Vibrant pink/red used in buttons/toggles */
-    --coach-text-main: #2C3E50;
-    --coach-text-muted: #8392A5;
+    /* Transitions */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     
-    /* Sidebar Active State */
-    --sidebar-active-bg: #FFF0F5;
-    --sidebar-active-border: #FF4D85;
+    /* Default (Admin) Theme */
+    --sidebar-bg: #ffffff;
+    --sidebar-active-bg: rgba(99, 102, 241, 0.08);
+    --sidebar-active-color: #6366F1;
+    --sidebar-text: #64748b;
+    --sidebar-text-hover: #1e293b;
+    --sidebar-icon-color: #94a3b8;
+}
+
+/* Coach Role Theme - Pink/Vibrant */
+.role-coach {
+    --sidebar-active-bg: rgba(255, 77, 133, 0.1);
     --sidebar-active-color: #FF4D85;
+    --sidebar-active-gradient: linear-gradient(135deg, #FF4D85 0%, #FF758C 100%);
+    --sidebar-icon-active: #FF4D85;
+}
+
+/* Entrepreneur Role Theme - Blue/Professional */
+.role-entrepreneur {
+    --sidebar-active-bg: rgba(37, 99, 235, 0.1);
+    --sidebar-active-color: #2563EB;
+    --sidebar-active-gradient: linear-gradient(135deg, #2563EB 0%, #3B82F6 100%);
+    --sidebar-icon-active: #2563EB;
 }
 
 html,

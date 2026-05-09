@@ -557,4 +557,18 @@ export class UserProfileComponent implements OnInit {
             this.router.navigate(['/entrepreneur/chat'], { queryParams: { with: userId } });
         }
     }
+
+    getInitials(firstName: string, lastName: string): string {
+        return (firstName?.charAt(0) || '') + (lastName?.charAt(0) || '');
+    }
+
+    getStageColor(stage: string): { bg: string; color: string } {
+        const stageColor: Record<string, { bg: string; color: string }> = {
+            "Pre-Seed": { bg: "#FEF3C7", color: "#D97706" },
+            "Seed": { bg: "#DBEAFE", color: "#2563EB" },
+            "MVP": { bg: "#F3E8FF", color: "#7C3AED" },
+            "Series A": { bg: "#D1FAE5", color: "#059669" },
+        };
+        return stageColor[stage] || { bg: "#F1F5F9", color: "#64748B" };
+    }
 }
