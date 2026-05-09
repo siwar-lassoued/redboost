@@ -10,6 +10,7 @@ export interface DisponibiliteDTO {
   thematiqueNom?: string;
   dateDebut: string;
   dateFin: string;
+  couleur?: string;
 }
 
 export interface SessionCoachDTO {
@@ -26,6 +27,7 @@ export interface SessionCoachDTO {
   isBookedByMe?: boolean;
   isGroupReservedByMe?: boolean;
   meetLink?: string;
+  couleur?: string;
 }
 
 export interface SessionGroupDTO {
@@ -224,7 +226,7 @@ export class CoachService {
 
   // PROGRAMMES
   getProgrammes(): Observable<ProgrammeDTO[]> {
-    return this.http.get<ProgrammeDTO[]>(`${environment.apiUrl}/programmes`);
+    return this.http.get<ProgrammeDTO[]>(`${environment.apiUrl}/backoffice/programmes`);
   }
 
   // THEMATIQUES

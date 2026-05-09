@@ -117,7 +117,7 @@ interface DateGroupView {
                       </div>
                       <div class="event-details">
                           <div class="event-name">{{event.title}}</div>
-                          <div class="event-thematique" *ngIf="event.thematiqueNom" style="font-size: 11px; color: #FF4D85; font-weight: 600; margin-top: 2px;">
+                          <div class="event-thematique" *ngIf="event.thematiqueNom" [style.color]="event.color || '#FF4D85'" style="font-size: 11px; font-weight: 600; margin-top: 2px;">
                             <i class="pi pi-tag" style="font-size: 10px; margin-right: 4px;"></i>
                             {{event.thematiqueNom}}
                           </div>
@@ -136,7 +136,7 @@ interface DateGroupView {
               <!-- Disponibilités actives -->
               <div class="sidebar-section">
                   <h3>Disponibilités actives <span class="count-badge">{{disponibilites.length}}</span></h3>
-                  <div *ngFor="let dispo of disponibilites" class="dispo-item">
+                  <div *ngFor="let dispo of disponibilites" class="dispo-item" [style.border-left]="'4px solid ' + (dispo.couleur || '#FF4D85')">
                       <div class="dispo-info">
                           <strong>{{dispo.thematiqueNom || 'Thématique'}}</strong>
                           <span>Du {{dispo.dateDebut | date:'dd/MM/yyyy'}} au {{dispo.dateFin | date:'dd/MM/yyyy'}}</span>
@@ -442,7 +442,7 @@ interface DateGroupView {
     .event-details { flex: 1; }
     .event-name { font-weight: 700; color: #2D3748; font-size: 0.9rem; }
     .event-datetime { font-size: 0.8rem; color: #718096; margin-top: 0.2rem; display: flex; align-items: center; gap: 0.3rem; }
-    .dispo-item { display: flex; justify-content: space-between; align-items: center; padding: 0.8rem; border-radius: 10px; background: #F8FAFC; border: 1px solid #E2E8F0; margin-bottom: 0.5rem; }
+    .dispo-item { display: flex; justify-content: space-between; align-items: center; padding: 0.8rem; border-radius: 10px; background: #F8FAFC; border: 1px solid #E2E8F0; margin-bottom: 0.5rem; border-left: 4px solid transparent; transition: all 0.2s; }
     .dispo-actions { display: flex; gap: 0.4rem; }
     .btn-icon-edit { background: #EBF8FF; color: #3182CE; border: none; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
     .btn-icon-edit:hover { background: #BEE3F8; }
