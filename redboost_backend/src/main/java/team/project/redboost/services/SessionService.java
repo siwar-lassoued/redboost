@@ -161,9 +161,6 @@ public class SessionService {
                 ev.setOnline(slot.getTypeSession() == SessionCoach.TypeSession.EN_LIGNE);
                 if (slot.getDisponibilite() != null && slot.getDisponibilite().getThematique() != null) {
                     ev.setThematiqueNom(slot.getDisponibilite().getThematique().getNom());
-                    if (slot.getDisponibilite().getThematique().getProgramme() != null) {
-                        ev.setProgrammeNom(slot.getDisponibilite().getThematique().getProgramme().getNom());
-                    }
                 }
                 events.add(ev);
             }

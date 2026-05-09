@@ -116,6 +116,10 @@ interface DateGroupView {
                       </div>
                       <div class="event-details">
                           <div class="event-name">{{event.title}}</div>
+                          <div class="event-thematique" *ngIf="event.thematiqueNom" style="font-size: 11px; color: #FF4D85; font-weight: 600; margin-top: 2px;">
+                            <i class="pi pi-tag" style="font-size: 10px; margin-right: 4px;"></i>
+                            {{event.thematiqueNom}}
+                          </div>
                           <div class="event-datetime">
                               <i class="pi pi-calendar"></i>
                               <span>{{ event.dateFormatted }} • 
@@ -445,7 +449,7 @@ interface DateGroupView {
     .dispo-info span { color: #718096; font-size: 0.8rem; margin-top: 0.1rem; }
     .btn-icon-danger { background: #FFF5F5; color: #E53E3E; border: none; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
     .btn-icon-danger:hover { background: #FED7D7; }
-    .btn-primary { background: var(--gradient-pink); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 12px; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; transition: transform 0.2s; }
+    .btn-primary { background: linear-gradient(135deg, #FF4D85, #FF75A0); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 12px; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; transition: transform 0.2s; }
     .btn-primary:hover { transform: translateY(-2px); }
     .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
     .shadow-glow { box-shadow: 0 4px 15px rgba(233,30,99,0.4); }
@@ -819,7 +823,9 @@ private mapCalendarEvents(events: CoachCalendarEventDTO[]): any[] {
       time: (ev.startTime || '').slice(0, 5),
       startTime: ev.startTime ? ev.startTime.slice(0, 5) : '',
       endTime: ev.endTime ? ev.endTime.slice(0, 5) : '',
-      color: colorByType[ev.type] || '#805AD5'
+      color: colorByType[ev.type] || '#805AD5',
+      thematiqueNom: ev.thematiqueNom,
+      programmeNom: ev.programmeNom
     }));
   }
 
@@ -836,7 +842,8 @@ private mapCalendarEvents(events: CoachCalendarEventDTO[]): any[] {
         time: e.time || '—',
         startTime: e.startTime || '',
         endTime: e.endTime || '',
-        dateFormatted: new Date(e.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })
+        dateFormatted: new Date(e.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }),
+        thematiqueNom: e.thematiqueNom || ''
       }));
   }
 

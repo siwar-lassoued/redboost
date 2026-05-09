@@ -210,40 +210,64 @@ public class CoachService {
     public List<CoachCalendarEventDTO> getCalendarEvents(Long coachId) {
         List<CoachCalendarEventDTO> events = new ArrayList<>();
 
-        sessionCoachRepository.findByDisponibiliteCoachId(coachId).forEach(s -> events.add(
-                CoachCalendarEventDTO.builder()
-                        .id("slot-" + s.getId())
-                        .type("SESSION_SLOT")
-                        .title(s.getTitre())
-                        .date(String.valueOf(s.getDateSession()))
-                        .startTime(String.valueOf(s.getHeureDebut()))
-                        .endTime(String.valueOf(s.getHeureFin()))
-                        .source("coach")
-                        .build()
-        ));
+        sessionCoachRepository.findByDisponibiliteCoachId(coachId).forEach(s -> {
+            String thematiqueNom = null;
+            if (s.getDisponibilite() != null && s.getDisponibilite().getThematique() != null) {
+                thematiqueNom = s.getDisponibilite().getThematique().getNom();
+            }
+            events.add(CoachCalendarEventDTO.builder()
+                    .id("slot-" + s.getId())
+                    .type("SESSION_SLOT")
+                    .title(s.getTitre())
+                    .date(String.valueOf(s.getDateSession()))
+                    .startTime(String.valueOf(s.getHeureDebut()))
+                    .endTime(String.valueOf(s.getHeureFin()))
+                    .source("coach")
+                    .thematiqueNom(thematiqueNom)
+                    .build());
+        });
 
-        sessionRepository.findByCoachId(coachId).forEach(s -> events.add(
-                CoachCalendarEventDTO.builder()
-                        .id("session-" + s.getId())
-                        .type("SESSION")
-                        .title(s.getTitre())
-                        .date(String.valueOf(s.getDate().toLocalDate()))
-                        .startTime(String.valueOf(s.getDate().toLocalTime()))
-                        .source("entrepreneur")
-                        .build()
-        ));
+        sessionRepository.findByCoachId(coachId).forEach(s -> {
+            String thematiqueNom = null;
+            if (s.getDisponibiliteId() != null) {
+                try {
+                    Long dispoId = Long.parseLong(s.getDisponibiliteId());
+                    sessionCoachRepository.findById(dispoId).ifPresent(slot -> {
+                        if (slot.getDisponibilite() != null && slot.getDisponibilite().getThematique() != null) {
+                            s.setThematiqueName(slot.getDisponibilite().getThematique().getNom());
+                        }
+                    });
+                } catch (Exception ignored) {}
+            }
+            thematiqueNom = s.getThematiqueName();
 
-        seanceExceptionnelleRepository.findByCoachId(coachId).forEach(s -> events.add(
-                CoachCalendarEventDTO.builder()
-                        .id("seance-" + s.getId())
-                        .type("SEANCE_EXCEPTIONNELLE")
-                        .title(s.getTitre())
-                        .date(String.valueOf(s.getDateSeance()))
-                        .startTime(String.valueOf(s.getHeureDebut()))
-                        .endTime(String.valueOf(s.getHeureFin()))
-                        .source("coach")
-                        .build()
-        ));
+            events.add(CoachCalendarEventDTO.builder()
+                    .id("session-" + s.getId())
+                    .type("SESSION")
+                    .title(s.getTitre())
+                    .date(String.valueOf(s.getDate().toLocalDate()))
+                    .startTime(String.valueOf(s.getDate().toLocalTime()))
+                    .source("entrepreneur")
+                    .thematiqueNom(thematiqueNom)
+                    .build());
+        });
+
+        seanceExceptionnelleRepository.findByCoachId(coachId).forEach(s -> {
+            String thematiqueNom = null;
+            if (s.getThematique() != null) {
+                thematiqueNom = s.getThematique().getNom();
+            }
+            events.add(CoachCalendarEventDTO.builder()
+                    .id("seance-" + s.getId())
+                    .type("SEANCE_EXCEPTIONNELLE")
+                    .title(s.getTitre())
+                    .date(String.valueOf(s.getDateSeance()))
+                    .startTime(String.valueOf(s.getHeureDebut()))
+                    .endTime(String.valueOf(s.getHeureFin()))
+                    .source("coach")
+                    .thematiqueNom(thematiqueNom)
+                    .build());
+        });
 
         events.sort(Comparator.comparing(CoachCalendarEventDTO::getDate));
         return events;

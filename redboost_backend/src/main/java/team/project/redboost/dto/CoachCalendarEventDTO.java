@@ -8,11 +8,13 @@ public class CoachCalendarEventDTO {
     private String startTime;
     private String endTime;
     private String source;
+    private String thematiqueNom;
+    private String programmeNom;
 
     public CoachCalendarEventDTO() {
     }
 
-    public CoachCalendarEventDTO(String id, String type, String title, String date, String startTime, String endTime, String source) {
+    public CoachCalendarEventDTO(String id, String type, String title, String date, String startTime, String endTime, String source, String thematiqueNom, String programmeNom) {
         this.id = id;
         this.type = type;
         this.title = title;
@@ -20,6 +22,8 @@ public class CoachCalendarEventDTO {
         this.startTime = startTime;
         this.endTime = endTime;
         this.source = source;
+        this.thematiqueNom = thematiqueNom;
+        this.programmeNom = programmeNom;
     }
 
     public String getId() {
@@ -78,6 +82,22 @@ public class CoachCalendarEventDTO {
         this.source = source;
     }
 
+    public String getThematiqueNom() {
+        return thematiqueNom;
+    }
+
+    public void setThematiqueNom(String thematiqueNom) {
+        this.thematiqueNom = thematiqueNom;
+    }
+
+    public String getProgrammeNom() {
+        return programmeNom;
+    }
+
+    public void setProgrammeNom(String programmeNom) {
+        this.programmeNom = programmeNom;
+    }
+
     public static Builder builder() {
         return new Builder();
     }
@@ -90,6 +110,8 @@ public class CoachCalendarEventDTO {
         private String startTime;
         private String endTime;
         private String source;
+        private String thematiqueNom;
+        private String programmeNom;
 
         public Builder id(String id) {
             this.id = id;
@@ -126,8 +148,18 @@ public class CoachCalendarEventDTO {
             return this;
         }
 
+        public Builder thematiqueNom(String thematiqueNom) {
+            this.thematiqueNom = thematiqueNom;
+            return this;
+        }
+
+        public Builder programmeNom(String programmeNom) {
+            this.programmeNom = programmeNom;
+            return this;
+        }
+
         public CoachCalendarEventDTO build() {
-            return new CoachCalendarEventDTO(id, type, title, date, startTime, endTime, source);
+            return new CoachCalendarEventDTO(id, type, title, date, startTime, endTime, source, thematiqueNom, programmeNom);
         }
     }
 }

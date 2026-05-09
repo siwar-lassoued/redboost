@@ -114,6 +114,8 @@ export interface CoachCalendarEventDTO {
   startTime?: string;
   endTime?: string;
   source?: 'coach' | 'entrepreneur';
+  thematiqueNom?: string;
+  programmeNom?: string;
 }
 export interface DashboardStatsDTO {
   nbRendezVous: number;
