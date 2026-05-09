@@ -72,9 +72,13 @@ public class CandidatureRedstarterService {
         if (candidature.getDynamicAnswers() == null || candidature.getDynamicAnswers().isEmpty()) return null;
         try {
             Map<String, Object> rootMap = MAPPER.readValue(candidature.getDynamicAnswers(), new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
-            return (Map<String, Object>) rootMap.get("answers");
+            // Check for nested "answers" key or return direct map
+            if (rootMap.containsKey("answers") && rootMap.get("answers") instanceof Map) {
+                return (Map<String, Object>) rootMap.get("answers");
+            }
+            return rootMap;
         } catch (Exception e) {
-            log.warn("Failed to parse dynamicAnswers JSON", e);
+            log.warn("Failed to parse dynamicAnswers JSON for ID {}: {}", candidature.getId(), e.getMessage());
             return null;
         }
     }
@@ -224,14 +228,14 @@ public class CandidatureRedstarterService {
 
         // Auto Create Account
         if (Boolean.TRUE.equals(createAccount) && newStatut == StatutCandidature.ACCEPTE) {
+            Map<String, Object> answers = getDynamicAnswersMap(candidature);
             String emailToUse = candidature.getEmail();
             
-            // Try to pull email from dynamicAnswers if null
-            if (emailToUse == null || emailToUse.isEmpty()) {
-                Map<String, Object> answersForEmail = getDynamicAnswersMap(candidature);
-                if (answersForEmail != null) {
-                    for (Map.Entry<String, Object> entry : answersForEmail.entrySet()) {
-                        if (entry.getKey().toLowerCase().contains("email")) {
+            // Try to pull email from dynamicAnswers if missing or placeholder
+            if (emailToUse == null || emailToUse.trim().isEmpty() || emailToUse.contains("non-specifie")) {
+                if (answers != null) {
+                    for (Map.Entry<String, Object> entry : answers.entrySet()) {
+                        if (entry.getKey().equalsIgnoreCase("Email")) {
                             emailToUse = entry.getValue().toString();
                             break;
                         }
@@ -266,73 +270,80 @@ public class CandidatureRedstarterService {
                     String skills = "";
                     String expertise = "";
                     
-                    String firstNameExtracted = null;
-                    String lastNameExtracted = null;
-
-                    Map<String, Object> answers = getDynamicAnswersMap(candidature);
+                    Role[] roleRef = new Role[]{Role.ENTREPRENEUR};
+                    
                     if (answers != null) {
                         for (Map.Entry<String, Object> entry : answers.entrySet()) {
-                            String key = entry.getKey().toLowerCase();
-                            String val = entry.getValue() != null ? entry.getValue().toString().trim() : "";
+                            String key = entry.getKey().trim();
+                            Object valObj = entry.getValue();
+                            String val = valObj != null ? valObj.toString().trim() : "";
                             if (val.isEmpty()) continue;
                             
-                            // Name extraction
-                            if (key.contains("prénom") || key.contains("firstname") || (key.contains("first") && key.contains("name"))) {
-                                firstNameExtracted = val;
-                            } else if (key.contains("nom") && !key.contains("prénom") && !key.contains("entreprise") && !key.contains("startup")) {
-                                lastNameExtracted = val;
-                            }
+                            String lowKey = key.toLowerCase();
 
-                            if ((nomPrenom == null || nomPrenom.isEmpty()) && (key.contains("nom et prénom") || key.contains("nom complet") || key.contains("full name"))) nomPrenom = val;
-                            if ((phone == null || phone.isEmpty()) && (key.contains("téléphone") || key.contains("phone") || key.contains("numéro") || key.contains("whatsapp"))) phone = val;
-                            if ((startup == null || startup.isEmpty()) && (key.contains("startup") || key.contains("entreprise") || key.contains("company") || key.contains("projet"))) startup = val;
-                            if ((bio == null || bio.isEmpty()) && (key.contains("bio") || key.contains("description"))) bio = val;
-                            if ((region == null || region.isEmpty()) && (key.contains("région") || key.contains("region") || key.contains("ville") || key.contains("gouvernorat"))) region = val;
-                            if ((linkedin == null || linkedin.isEmpty()) && (key.contains("linkedin") || key.contains("réseau") || key.contains("social"))) linkedin = val;
-                            if ((secteur == null || secteur.isEmpty()) && (key.contains("secteur") || key.contains("industry") || key.contains("domaine"))) secteur = val;
+                            // Exact Matches from Form Templates
+                            if (key.equalsIgnoreCase("Nom et Prénom")) {
+                                nomPrenom = val;
+                            } else if (key.equalsIgnoreCase("Email")) {
+                                emailToUse = val;
+                            } else if (key.equalsIgnoreCase("Numéro de téléphone") || key.equalsIgnoreCase("Téléphone") || lowKey.equals("phone")) {
+                                phone = val;
+                            } else if (key.equalsIgnoreCase("Nom de la startup (si applicable)") || lowKey.contains("startup") || key.equalsIgnoreCase("Nom de l'entreprise")) {
+                                startup = val;
+                            } else if (key.equalsIgnoreCase("Êtes-vous un Coach ou un Entrepreneur ?")) {
+                                if (val.toLowerCase().contains("coach")) roleRef[0] = Role.COACH;
+                                else if (val.toLowerCase().contains("entrepreneur")) roleRef[0] = Role.ENTREPRENEUR;
+                            }
+                            
+                            // Fuzzy matches for other profile fields
+                            if ((bio == null || bio.isEmpty()) && (lowKey.contains("bio") || lowKey.contains("description"))) bio = val;
+                            if ((region == null || region.isEmpty()) && (lowKey.contains("région") || lowKey.contains("ville") || lowKey.contains("region"))) region = val;
+                            if ((linkedin == null || linkedin.isEmpty()) && (lowKey.contains("linkedin") || lowKey.contains("réseau"))) linkedin = val;
+                            if ((secteur == null || secteur.isEmpty()) && (lowKey.contains("secteur") || lowKey.contains("industry") || lowKey.contains("domaine"))) secteur = val;
                             
                             // For coaches
-                            if (key.contains("compétence") || key.contains("skill")) skills = val;
-                            if (expertise.isEmpty() && (key.contains("expertise") || key.contains("domaine d'intervention"))) expertise = val;
+                            if (skills.isEmpty() && (lowKey.contains("compétence") || lowKey.contains("skill"))) skills = val;
+                            if (expertise.isEmpty() && (lowKey.contains("expertise") || lowKey.contains("domaine d'intervention"))) expertise = val;
                         }
                     }
                     
-                    // Logic to prioritize extracted names or split nomPrenom
-                    String finalFirst = firstNameExtracted;
-                    String finalLast = lastNameExtracted;
+                    // Name splitting logic
+                    String firstName = null;
+                    String lastName = null;
 
-                    if (finalFirst == null || finalLast == null) {
-                        String nameToSplit = (nomPrenom != null && !nomPrenom.trim().isEmpty()) ? nomPrenom : "";
-                        if (!nameToSplit.isEmpty()) {
-                            String[] parts = nameToSplit.trim().split("\\s+", 2);
-                            if (parts.length > 1) {
-                                if (finalFirst == null) finalFirst = parts[0];
-                                if (finalLast == null) finalLast = parts[1];
-                            } else {
-                                if (finalFirst == null) finalFirst = parts[0];
-                            }
+                    if (nomPrenom != null && !nomPrenom.trim().isEmpty()) {
+                        String[] parts = nomPrenom.trim().split("\\s+", 2);
+                        if (parts.length > 1) {
+                            firstName = parts[0];
+                            lastName = parts[1];
+                        } else {
+                            firstName = parts[0];
+                            lastName = (startup != null && startup.length() >= 2) ? startup : "Redstarter";
                         }
                     }
 
-                    // Final Fallbacks to avoid "Redboost" if possible
-                    if (finalFirst == null || finalFirst.trim().isEmpty()) finalFirst = "Candidat";
-                    if (finalLast == null || finalLast.trim().isEmpty()) {
-                        finalLast = (startup != null && startup.length() >= 2) ? startup : "Utilisateur";
+                    // Final Fallbacks to avoid validation errors
+                    if (firstName == null || firstName.trim().isEmpty()) firstName = "Candidat";
+                    if (lastName == null || lastName.trim().isEmpty()) {
+                        lastName = (startup != null && startup.length() >= 2) ? startup : "Utilisateur";
                     }
 
                     // Enforce @Size(min=2)
-                    user.setFirstName(finalFirst.length() < 2 ? finalFirst + "_" : finalFirst);
-                    user.setLastName(finalLast.length() < 2 ? finalLast + "_" : finalLast);
+                    user.setFirstName(firstName.length() < 2 ? firstName + "_" : firstName);
+                    user.setLastName(lastName.length() < 2 ? lastName + "_" : lastName);
                     
-                    user.setPhoneNumber(phone != null && !phone.trim().isEmpty() ? phone : "00000000");
-                    user.setBio(bio);
-                    user.setRegion(region);
-                    user.setLinkedinUrl(linkedin);
-                    user.setSecteur(secteur);
+                    user.setPhoneNumber(phone != null && !phone.trim().isEmpty() && !phone.equals("00000000") ? phone : candidature.getNumeroTelephone());
+                    if (user.getPhoneNumber() == null || user.getPhoneNumber().isEmpty()) user.setPhoneNumber("00000000");
+                    
+                    user.setBio(bio != null ? bio : candidature.getBreveDescription());
+                    user.setRegion(region != null ? region : candidature.getRegionBasee());
+                    user.setLinkedinUrl(linkedin != null ? linkedin : candidature.getLienReseauxSociaux());
+                    user.setSecteur(secteur != null ? secteur : candidature.getMarchePersonnasCibles());
                     user.setActive(true);
+                    user.setEntreprise(startup != null ? startup : candidature.getNomEntreprise());
+                    user.setStartupName(startup != null ? startup : candidature.getNomEntreprise());
                     
                     // Determine Role and Programme
-                    Role[] roleRef = new Role[]{Role.ENTREPRENEUR};
                     Programme[] progRef = new Programme[]{null};
 
                     if (candidature.getFormTemplateId() != null) {
@@ -389,10 +400,14 @@ public class CandidatureRedstarterService {
                     user.setRole(roleRef[0]);
                     
                     if (roleRef[0] == Role.ENTREPRENEUR) {
-                        user.setStartupName(startup != null ? startup : "Startup");
-                        user.setEntreprise(startup != null ? startup : "Startup");
+                        String finalStartup = (startup != null && !startup.isEmpty()) ? startup : candidature.getNomEntreprise();
+                        if (finalStartup == null || finalStartup.trim().isEmpty() || "Non spécifié".equals(finalStartup)) finalStartup = "Startup";
+                        user.setStartupName(finalStartup);
+                        user.setEntreprise(finalStartup);
                     } else {
-                        user.setExpertise(expertise != null && !expertise.isEmpty() ? expertise : (startup != null ? startup : "Non spécifié"));
+                        String finalExp = (expertise != null && !expertise.isEmpty()) ? expertise : (startup != null ? startup : candidature.getNomEntreprise());
+                        if (finalExp == null || finalExp.trim().isEmpty() || "Non spécifié".equals(finalExp)) finalExp = "Consultant / Coach";
+                        user.setExpertise(finalExp);
                         user.setSkills(skills);
                         user.setYearsOfExperience(1);
                     }

@@ -449,7 +449,7 @@ interface DateGroupView {
     .dispo-info span { color: #718096; font-size: 0.8rem; margin-top: 0.1rem; }
     .btn-icon-danger { background: #FFF5F5; color: #E53E3E; border: none; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
     .btn-icon-danger:hover { background: #FED7D7; }
-    .btn-primary { background: linear-gradient(135deg, #FF4D85, #FF75A0); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 12px; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; transition: transform 0.2s; }
+    .btn-primary { background: linear-gradient(135deg, #FF4D85); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 12px; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; transition: transform 0.2s; }
     .btn-primary:hover { transform: translateY(-2px); }
     .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
     .shadow-glow { box-shadow: 0 4px 15px rgba(233,30,99,0.4); }

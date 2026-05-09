@@ -36,44 +36,17 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
       <!-- Everything is displayed by default, programme filters thematiques -->
       <ng-container>
 
-        <!-- ═══ Thématique Selector + Add ═══ -->
-        <div class="card thematique-selector-card">
-          <div class="thematique-selector-row">
-            <div style="flex:1">
-              <label class="section-label">Thématiques <span class="count-chip">{{ thematiques.length }}</span></label>
-              <!-- "All" option -->
-              <div class="th-list-item" [class.th-list-item-active]="selectedThematiqueId === 0" (click)="selectedThematiqueId = 0; onThematiqueChange()">
-                <div class="th-list-item-main">
-                  <span class="th-list-nom">Toutes les thématiques</span>
-                </div>
-              </div>
-              <!-- One row per thematique -->
-              <div *ngFor="let t of thematiques"
-                   class="th-list-item"
-                   [class.th-list-item-active]="selectedThematiqueId === t.id"
-                   (click)="selectedThematiqueId = t.id!; onThematiqueChange()">
-                <div class="th-list-item-main">
-                  <span class="th-list-nom">{{ t.nom }}</span>
-                  <span class="th-list-dates">{{ t.dateDebut }} → {{ t.dateFin }}</span>
-                </div>
-                <div class="th-list-prog">
-                  <i class="pi pi-folder-open" style="font-size:11px;margin-right:4px;opacity:.7"></i>
-                  {{ getProgrammeName(t.programmeId) }}
-                </div>
-                <span class="th-list-status"
-                      [class.th-status-active]="t.statut === 'ACTIVE'"
-                      [class.th-status-done]="t.statut === 'TERMINEE'"
-                      [class.th-status-cancelled]="t.statut === 'ANNULEE'">{{ t.statut }}</span>
-              </div>
-            </div>
-            <button class="btn-add-thematique" (click)="showAddForm = !showAddForm">
-              <i class="pi pi-plus"></i> {{ showAddForm ? 'Annuler' : 'Ajouter Thématique' }}
+        <!-- ═══ Thématique Add/Edit Card (Isolated) ═══ -->
+        <div *ngIf="showAddForm" class="card thematique-form-card" style="border-left: 5px solid #ea5073; animation: slideInDown 0.3s ease-out;">
+          <div class="card-header-row">
+            <div class="card-icon"><i class="pi" [ngClass]="editingThematique ? 'pi-pencil' : 'pi-plus'"></i></div>
+            <h2 class="card-title">{{ editingThematique ? 'Modification : ' + editingThematique.nom : 'Nouvelle thématique' }}</h2>
+            <button class="btn-sm" (click)="showAddForm = false; cancelEditThematique()" title="Fermer">
+              <i class="pi pi-times"></i>
             </button>
           </div>
 
-          <!-- Add/Edit Form (collapsible) -->
-          <div *ngIf="showAddForm" class="thematique-add-form">
-            <h4>{{ editingThematique ? 'Modifier la thématique' : 'Nouvelle thématique' }}</h4>
+          <div class="thematique-add-form" style="margin-top: 0; padding-top: 0; border-top: none;">
             <div class="form-grid-3">
               <div class="form-group"><label>Programme *</label>
                 <select [(ngModel)]="newThematique.programmeId" class="form-select">
@@ -86,9 +59,72 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
               <div class="form-group"><label>Date de fin *</label><input type="date" [(ngModel)]="newThematique.dateFin" class="form-input" /></div>
             </div>
             <div class="form-group" style="margin-top:12px"><label>Description</label><textarea [(ngModel)]="newThematique.description" rows="2" placeholder="Description..." class="form-input"></textarea></div>
-            <div class="form-actions">
+            <div class="form-actions" style="justify-content: flex-end;">
+              <button class="btn-cancel" (click)="showAddForm = false; cancelEditThematique()">Annuler</button>
               <button class="btn-launch" (click)="saveThematique()">{{ editingThematique ? 'Mettre à jour' : 'Ajouter' }}</button>
-              <button *ngIf="editingThematique" class="btn-cancel" (click)="cancelEditThematique()">Annuler</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ Thématique Selector Card ═══ -->
+        <div class="card thematique-selector-card">
+          <div class="thematique-selector-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <label class="section-label" style="margin-bottom: 0;">Liste des Thématiques <span class="count-chip">{{ thematiques.length }}</span></label>
+            <button *ngIf="!showAddForm" class="btn-add-thematique" (click)="showAddForm = true">
+              <i class="pi pi-plus"></i> Ajouter Thématique
+            </button>
+          </div>
+
+          <div class="th-selector-container">
+            <!-- Modification Section (if editing an existing one) -->
+            <div *ngIf="editingThematique" class="th-group-section">
+              <span class="th-group-label">Thématique en cours de modification</span>
+              <div class="th-list-item th-list-item-editing"
+                   [class.th-list-item-active]="selectedThematiqueId === editingThematique.id"
+                   (click)="selectedThematiqueId = editingThematique.id!; onThematiqueChange()">
+                <div class="th-list-item-main">
+                  <span class="th-list-nom">{{ editingThematique.nom }}</span>
+                  <span class="th-list-dates">{{ editingThematique.dateDebut }} → {{ editingThematique.dateFin }}</span>
+                </div>
+                <div class="th-list-prog">
+                  <i class="pi pi-folder-open" style="font-size:11px;margin-right:4px;opacity:.7"></i>
+                  {{ getProgrammeName(editingThematique.programmeId) }}
+                </div>
+                <span class="th-list-status th-status-editing">EN MODIFICATION</span>
+              </div>
+            </div>
+
+            <!-- Others Section -->
+            <div class="th-group-section">
+              <span class="th-group-label" *ngIf="editingThematique">Autres thématiques</span>
+              
+              <!-- "All" option -->
+              <div class="th-list-item" [class.th-list-item-active]="selectedThematiqueId === 0" (click)="selectedThematiqueId = 0; onThematiqueChange()">
+                <div class="th-list-item-main">
+                  <span class="th-list-nom">Toutes les thématiques</span>
+                </div>
+              </div>
+
+              <!-- One row per thematique (excluding the one being edited) -->
+              <ng-container *ngFor="let t of thematiques">
+                <div *ngIf="!editingThematique || t.id !== editingThematique.id"
+                     class="th-list-item"
+                     [class.th-list-item-active]="selectedThematiqueId === t.id"
+                     (click)="selectedThematiqueId = t.id!; onThematiqueChange()">
+                  <div class="th-list-item-main">
+                    <span class="th-list-nom">{{ t.nom }}</span>
+                    <span class="th-list-dates">{{ t.dateDebut }} → {{ t.dateFin }}</span>
+                  </div>
+                  <div class="th-list-prog">
+                    <i class="pi pi-folder-open" style="font-size:11px;margin-right:4px;opacity:.7"></i>
+                    {{ getProgrammeName(t.programmeId) }}
+                  </div>
+                  <span class="th-list-status"
+                        [class.th-status-active]="t.statut === 'ACTIVE'"
+                        [class.th-status-done]="t.statut === 'TERMINEE'"
+                        [class.th-status-cancelled]="t.statut === 'ANNULEE'">{{ t.statut }}</span>
+                </div>
+              </ng-container>
             </div>
           </div>
         </div>
@@ -606,6 +642,7 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
       .th-list-item { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 10px; cursor: pointer; transition: background .15s, border-color .15s; border: 1.5px solid transparent; margin-bottom: 6px; background: #F9FAFB; }
       .th-list-item:hover { background: #F3F4F6; border-color: #E5E7EB; }
       .th-list-item-active { background: #FFF0F4 !important; border-color: #ea5073 !important; }
+      .th-list-item-editing { background: #FEF3C7 !important; border-color: #F59E0B !important; }
       .th-list-item-main { display: flex; flex-direction: column; flex: 1; min-width: 0; }
       .th-list-nom { font-size: 14px; font-weight: 600; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
       .th-list-dates { font-size: 11px; color: #9CA3AF; margin-top: 2px; }
@@ -614,6 +651,15 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
       .th-status-active { background: #D1FAE5; color: #065F46; }
       .th-status-done { background: #E5E7EB; color: #374151; }
       .th-status-cancelled { background: #FEE2E2; color: #991B1B; }
+      .th-status-editing { background: #FDE68A; color: #92400E; }
+
+      .th-group-section { margin-bottom: 20px; }
+      .th-group-label { display: block; font-size: 11px; font-weight: 800; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; padding-left: 4px; }
+
+      @keyframes slideInDown {
+        from { transform: translateY(-10px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+      }
 
       @media (max-width: 900px) {
         .manual-workspace { grid-template-columns: 1fr; }
