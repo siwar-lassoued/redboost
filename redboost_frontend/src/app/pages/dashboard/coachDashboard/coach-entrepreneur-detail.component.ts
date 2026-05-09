@@ -14,382 +14,411 @@ import { environment } from '../../../../environment';
   standalone: true,
   imports: [CommonModule, RouterModule, FormsModule],
   template: `
-    <div class="entrepreneur-detail-page">
-      <!-- Breadcrumb / Back Navigation -->
-      <a routerLink="/coach-dashboard" class="back-link">
-          <i class="pi pi-arrow-left"></i> Retour au dashboard
-      </a>
+    <div class="ent-detail-premium">
+      <!-- Top Bar / Breadcrumb -->
+      <nav class="breadcrumb-premium">
+        <a routerLink="/coach-entrepreneurs" class="back-btn">
+          <i class="pi pi-arrow-left"></i>
+          <span>Retour à mes entrepreneurs</span>
+        </a>
+      </nav>
 
-      <div *ngIf="isLoading" class="loading-state">
-          <p>Chargement des détails de l'entrepreneur...</p>
+      <div *ngIf="isLoading" class="loading-overlay">
+        <div class="premium-spinner"></div>
+        <p>Chargement du profil...</p>
       </div>
 
-      <div *ngIf="!isLoading && entrepreneur">
-        <!-- Profile Header Card -->
-        <div class="profile-header-card">
-            <div class="avatar pink-avatar">
-                {{ entrepreneur.firstName.charAt(0) }}{{ entrepreneur.lastName.charAt(0) }}
+      <div *ngIf="!isLoading && entrepreneur" class="profile-container">
+        <!-- Header Section -->
+        <header class="profile-header">
+          <div class="header-bg"></div>
+          <div class="header-content">
+            <div class="avatar-col">
+              <div class="avatar-large" [style.background]="getAvatarGradient(entrepreneur)">
+                {{ getInitials(entrepreneur) }}
+                <div class="status-indicator-online"></div>
+              </div>
             </div>
-            <div class="profile-info">
+            <div class="info-col">
+              <div class="name-row">
                 <h1>{{ entrepreneur.firstName }} {{ entrepreneur.lastName }}</h1>
-                <div class="startup-sub">{{ entrepreneur.entreprise }} · {{ entrepreneur.secteur }}</div>
-                <div class="project-desc"><b>Description du projet :</b> {{ entrepreneur.startupDescription }}</div>
-            </div>
-            <div class="header-actions">
-                <button class="btn-coach-badge" *ngIf="coachProfile">{{ coachProfile.firstName }} {{ coachProfile.lastName }}</button>
-            </div>
-        </div>
-
-        <!-- Stats Bar -->
-        <div class="stats-bar">
-            <div class="stat-item"><span class="dot dot-pink"></span> Progression <b>{{ entrepreneur.completionRate }}%</b></div>
-            <div class="stat-item"><span class="dot dot-green"></span> Email <b>{{ entrepreneur.email }}</b></div>
-            <div class="stat-item"><span class="dot dot-green"></span> Téléphone <b>{{ entrepreneur.phoneNumber }}</b></div>
-        </div>
-
-        <!-- Navigation Tabs -->
-        <div class="custom-tabs">
-            <button class="tab" [class.active]="activeTab === 'taches'" (click)="activeTab = 'taches'">Tâches</button>
-            <button class="tab" [class.active]="activeTab === 'livrables'" (click)="activeTab = 'livrables'">
-                Livrables <span class="tab-badge" *ngIf="entrepreneur.livrables.length > 0">{{ entrepreneur.livrables.length }}</span>
-            </button>
-            <button class="tab" [class.active]="activeTab === 'reporting'" (click)="activeTab = 'reporting'">
-                Reporting Sessions <span class="tab-count">{{ entrepreneur.notes.length }}</span>
-            </button>
-        </div>
-
-        <!-- Tab Content Area -->
-        <div class="tab-content">
-            <!-- Tâches View -->
-            <div *ngIf="activeTab === 'taches'">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-xl font-bold text-[#2D3748]">Plan d'action ({{ entrepreneur.tasks.length || 0 }} tâches)</h2>
-                    <button class="btn-primary" (click)="openTaskModal()">
-                        <i class="pi pi-plus"></i> Ajouter une tâche
-                    </button>
-                </div>
-
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div *ngIf="!entrepreneur.tasks || entrepreneur.tasks.length === 0" class="p-8 text-center text-gray-500">
-                    Aucune tâche spécifique assignée pour le moment.
-                </div>
-
-                <div *ngFor="let task of entrepreneur.tasks" class="task-item border-b border-gray-100 p-4 hover:bg-gray-50 flex items-center gap-4">
-                    <div class="task-checkbox">
-                        <i *ngIf="task.status === 'TERMINEE'" class="pi pi-check-circle text-green-500 text-xl"></i>
-                        <div *ngIf="task.status !== 'TERMINEE'" class="w-5 h-5 rounded-full border-2 border-gray-300"></div>
-                    </div>
-                    <div class="task-content flex-1">
-                        <h4 class="font-semibold text-gray-800 m-0">{{ task.titre }}</h4>
-                        <p class="text-sm text-gray-500 mt-1 mb-2">{{ task.description }}</p>
-
-                        <div class="task-documents" *ngIf="task.documents && task.documents.length > 0">
-                            <div class="text-xs font-bold text-gray-500 mb-1">Documents attachés :</div>
-                            <div *ngFor="let doc of task.documents" class="flex items-center gap-2 text-xs bg-gray-50 p-2 rounded mb-1">
-                                <i class="pi pi-file text-blue-500"></i>
-                                <span class="flex-1 truncate">{{ doc.nom }}</span>
-                                <a [href]="doc.cheminFichier" target="_blank" class="text-blue-500 hover:underline">Voir</a>
-                                <button (click)="deleteTaskDocument(task, doc.id)" class="text-red-500 hover:text-red-700 ml-2" title="Supprimer">
-                                    <i class="pi pi-trash"></i>
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="mt-2">
-                           <input type="file" [id]="'file_' + task.id" class="hidden"
-                                  (change)="onTaskFileSelected($event, task)" multiple />
-                           <button class="text-xs font-bold text-[#FF4D85] bg-pink-50 px-3 py-1.5 rounded-full hover:bg-pink-100 transition-colors flex items-center gap-1"
-                                   (click)="triggerFileInput(task.id)">
-                               <i class="pi pi-paperclip"></i>
-                               {{ uploadingTaskId === task.id ? 'Téléchargement...' : 'Joindre un fichier' }}
-                           </button>
-                        </div>
-                    </div>
-                    <div class="task-meta">
-                        <span class="badge" [class.badge-success]="task.status === 'TERMINEE'"
-                                          [class.badge-warning]="task.status !== 'TERMINEE'">
-                            {{ task.status === 'TERMINEE' ? 'Terminé' : 'En cours' }}
-                        </span>
-                    </div>
-                </div>
-            </div>
-            </div>
-
-            <!-- Livrables View -->
-            <div *ngIf="activeTab === 'livrables'">
-                <div class="livrable-stats">
-                    <div class="livrable-stat"><i class="pi pi-check-circle text-green-500"></i> Livrables reçus <b>{{ entrepreneur.livrables.length }}</b></div>
-                </div>
-
-                <div *ngIf="entrepreneur.livrables.length === 0" class="bg-white rounded-xl p-8 text-center text-gray-500 border border-dashed border-gray-300">
-                    Aucun livrable n'a encore été déposé par cet entrepreneur.
-                </div>
-
-                <div *ngFor="let livrable of entrepreneur.livrables" class="livrable-card">
-                    <div class="livrable-header">
-                        <div class="flex items-center gap-2">
-                            <i class="pi pi-file text-gray-400"></i>
-                            <strong>{{ livrable.tacheTitre }}</strong>
-                        </div>
-                        <span class="tag tag-blue">{{ livrable.typeFichier }}</span>
-                    </div>
-                    <div class="text-sm text-gray-500 mb-3"><i class="pi pi-calendar"></i> {{ livrable.dateUpload | date:'shortDate' }}</div>
-                    <div class="livrable-file">
-                        <i class="pi pi-file text-gray-400"></i>
-                        <div>
-                            <div class="font-medium text-gray-800">{{ livrable.nom }}</div>
-                            <div class="text-xs text-gray-400">{{ (livrable.tailleFichier / 1024) | number:'1.0-0' }} KB</div>
-                        </div>
-                        <div class="ml-auto flex gap-2">
-                            <a [href]="livrable.url" target="_blank" class="link-voir"><i class="pi pi-eye"></i> Voir</a>
-                            <a [href]="livrable.url" download class="link-dl"><i class="pi pi-download"></i> DL</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Reporting Sessions View -->
-            <div *ngIf="activeTab === 'reporting'">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-xl font-bold text-[#2D3748]">Reporting Sessions</h2>
-                    <div style="display: flex; gap: 1rem;">
-                        <button class="btn-primary" (click)="goToCreateReport(entrepreneur.id)">
-                            <i class="pi pi-plus"></i> Ajouter
-                        </button>
-                        <button class="btn-secondary" (click)="downloadConsolidatedReports(entrepreneur.id)" *ngIf="entrepreneur.notes.length > 0" [disabled]="isDownloadingPdf">
-                            <i class="pi" [class.pi-spin]="isDownloadingPdf" [class.pi-spinner]="isDownloadingPdf" [class.pi-download]="!isDownloadingPdf"></i>
-                            {{ isDownloadingPdf ? 'Génération...' : 'Rapports consolidés' }}
-                        </button>
-                    </div>
-                </div>
-
-                <div *ngIf="entrepreneur.notes.length === 0" class="bg-white rounded-xl p-8 text-center text-gray-500 border border-dashed border-gray-300">
-                    Aucune note de synthèse n'a été rédigée pour le moment.
-                </div>
-
-                <div *ngFor="let note of entrepreneur.notes" class="session-report-card">
-                    <div class="session-report-header">
-                        <div class="flex items-center gap-3">
-                            <div class="avatar-sm-dark" *ngIf="coachProfile">{{ getCoachInitials() }}</div>
-                            <div>
-                                <div class="text-white font-bold">Rapport</div>
-                                <div class="text-gray-300 text-sm">{{ note.date | date:'mediumDate' }}</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="session-report-body">
-                        <p class="text-gray-700 font-semibold">Synthèse :</p>
-                        <p class="text-gray-700">{{ note.synthese }}</p>
-                        <div class="plan-action">
-                            <div class="plan-title">APPRÉCIATION</div>
-                            <p class="text-sm text-gray-600">{{ note.appreciation }}</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-      </div>
-
-      <!-- Error State -->
-      <div *ngIf="!isLoading && !entrepreneur" class="error-state text-center p-20">
-          <i class="pi pi-exclamation-circle text-5xl text-red-500 mb-4"></i>
-          <p class="text-xl font-bold text-gray-700">Entrepreneur introuvable</p>
-          <button routerLink="/coach-dashboard" class="mt-4 text-pink-500 hover:underline">Retour au dashboard</button>
-      </div>
-
-      <!-- ══════════════════════════════════════════
-           MODAL : Ajouter une Tâche
-           ══════════════════════════════════════════ -->
-      <div *ngIf="showTaskModal" class="modal-backdrop" (click)="showTaskModal = false">
-          <div class="modal-content" (click)="$event.stopPropagation()">
-              <div class="modal-header">
-                  <h2>Nouvelle tâche</h2>
-                  <button class="close-btn" (click)="showTaskModal = false"><i class="pi pi-times"></i></button>
+                <span class="category-badge">{{ entrepreneur.secteur || 'MVP' }}</span>
               </div>
-              <div class="modal-body">
-
-
-
-                  <div class="form-group mb-4">
-                      <label>Titre de la tâche <span class="required">*</span></label>
-                      <input type="text" class="premium-input" [(ngModel)]="newTask.titre" placeholder="Ex: Finaliser le deck" />
-                  </div>
-                  <div class="form-group mb-4">
-                      <label>Description détaillée</label>
-                      <textarea class="premium-input" [(ngModel)]="newTask.description" rows="3" placeholder="Description de ce qui est attendu..."></textarea>
-                  </div>
-                
-                  <div class="form-row mb-4">
-                      <div class="form-group">
-                          <label>Date de début</label>
-                          <input type="date" class="premium-input" [(ngModel)]="newTask.dateDebut" />
-                      </div>
-                      <div class="form-group">
-                          <label>Date d'échéance <span class="required">*</span></label>
-                          <input type="date" class="premium-input" [(ngModel)]="newTask.dateLimite" />
-                      </div>
-                  </div>
-                  <div class="form-group mb-6">
-                      <label>Pièce jointe (optionnel)</label>
-                      <input type="file" class="premium-input" (change)="onNewTaskFileSelected($event)" style="padding: 0.5rem;" />
-                  </div>
-
-                  <button class="btn-primary w-full justify-center"
-                          (click)="submitNewTask()"
-                          [disabled]="isCreatingTask || !newTask.titre || !newTask.dateLimite">
-                      <i class="pi" [ngClass]="isCreatingTask ? 'pi-spinner pi-spin' : 'pi-check'"></i>
-                      {{ isCreatingTask ? 'Création en cours...' : 'Créer la tâche' }}
-                  </button>
+              <p class="startup-name">
+                <i class="pi pi-building"></i>
+                {{ entrepreneur.entreprise || 'Startup en création' }}
+              </p>
+              <div class="contact-chips">
+                <div class="chip">
+                  <i class="pi pi-envelope"></i>
+                  <span>{{ entrepreneur.email }}</span>
+                </div>
+                <div class="chip">
+                  <i class="pi pi-phone"></i>
+                  <span>{{ entrepreneur.phoneNumber || 'Non renseigné' }}</span>
+                </div>
               </div>
+            </div>
+            <div class="actions-col">
+              <button class="btn-primary-premium" (click)="openTaskModal()">
+                <i class="pi pi-plus"></i>
+                <span>Nouvelle Tâche</span>
+              </button>
+            </div>
           </div>
+        </header>
+
+        <!-- Main Content Grid -->
+        <div class="content-grid">
+          <!-- Sidebar Info -->
+          <aside class="info-sidebar">
+            <div class="info-card-premium">
+              <h3>À propos de la startup</h3>
+              <p class="startup-desc">{{ entrepreneur.startupDescription || 'Aucune description fournie.' }}</p>
+              
+              <div class="progression-tracker">
+                <div class="track-header">
+                  <span>Progression globale</span>
+                  <span class="pct">{{ entrepreneur.completionRate }}%</span>
+                </div>
+                <div class="p-bar-bg-lite">
+                  <div class="p-bar-fill-premium" [style.width.%]="entrepreneur.completionRate"></div>
+                </div>
+              </div>
+
+              <div class="meta-list">
+                <div class="meta-item">
+                  <span class="label">Date d'inscription</span>
+                  <span class="val">12 Mai 2024</span>
+                </div>
+                <div class="meta-item">
+                   <span class="label">Dernière activité</span>
+                   <span class="val">Il y a 2h</span>
+                </div>
+              </div>
+            </div>
+          </aside>
+
+          <!-- Main Tabs Area -->
+          <main class="tabs-area">
+            <div class="tabs-nav-premium">
+              <button class="tab-btn" [class.active]="activeTab === 'taches'" (click)="activeTab = 'taches'">
+                <i class="pi pi-list"></i>
+                <span>Plan d'action</span>
+              </button>
+              <button class="tab-btn" [class.active]="activeTab === 'livrables'" (click)="activeTab = 'livrables'">
+                <i class="pi pi-file-import"></i>
+                <span>Livrables</span>
+                <span class="count-pill" *ngIf="entrepreneur.livrables?.length">{{ entrepreneur.livrables.length }}</span>
+              </button>
+              <button class="tab-btn" [class.active]="activeTab === 'reporting'" (click)="activeTab = 'reporting'">
+                <i class="pi pi-chart-bar"></i>
+                <span>Reporting</span>
+              </button>
+            </div>
+
+            <div class="tab-pane-premium">
+              <!-- Tâches -->
+              <div *ngIf="activeTab === 'taches'" class="animate-in">
+                <div class="pane-header">
+                  <h2>Objectifs et Tâches</h2>
+                </div>
+                
+                <div class="tasks-list">
+                  <div *ngIf="!entrepreneur.tasks?.length" class="empty-state-lite">
+                     <i class="pi pi-info-circle"></i>
+                     <p>Aucune tâche assignée pour le moment.</p>
+                  </div>
+                  
+                  <div *ngFor="let task of entrepreneur.tasks" class="task-card-premium">
+                    <div class="task-check" [class.done]="task.status === 'TERMINEE'">
+                      <i class="pi pi-check" *ngIf="task.status === 'TERMINEE'"></i>
+                    </div>
+                    <div class="task-main">
+                      <div class="task-top">
+                        <h4>{{ task.titre }}</h4>
+                        <span class="task-badge-lite" [class.done]="task.status === 'TERMINEE'">
+                          {{ task.status === 'TERMINEE' ? 'Terminé' : 'En cours' }}
+                        </span>
+                      </div>
+                      <p class="task-desc">{{ task.description }}</p>
+                      
+                      <!-- Docs section -->
+                      <div class="task-docs-row" *ngIf="task.documents?.length">
+                         <div *ngFor="let doc of task.documents" class="doc-mini-card">
+                            <i class="pi pi-file-pdf"></i>
+                            <span class="doc-name">{{ doc.nom }}</span>
+                            <a [href]="doc.cheminFichier" target="_blank" class="doc-view-btn"><i class="pi pi-eye"></i></a>
+                         </div>
+                      </div>
+
+                      <div class="task-footer">
+                        <button class="btn-attach" (click)="triggerFileInput(task.id)">
+                          <i class="pi pi-paperclip"></i>
+                          <span>{{ uploadingTaskId === task.id ? 'Upload...' : 'Joindre un fichier' }}</span>
+                        </button>
+                        <input type="file" [id]="'file_' + task.id" class="hidden" (change)="onTaskFileSelected($event, task)" multiple />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Livrables -->
+              <div *ngIf="activeTab === 'livrables'" class="animate-in">
+                <div class="pane-header">
+                  <h2>Livrables reçus</h2>
+                </div>
+
+                <div class="livrables-grid-detail">
+                  <div *ngIf="!entrepreneur.livrables?.length" class="empty-state-lite">
+                    <i class="pi pi-folder-open"></i>
+                    <p>En attente de livrables de l'entrepreneur.</p>
+                  </div>
+
+                  <div *ngFor="let livrable of entrepreneur.livrables" class="doc-premium-card">
+                    <div class="doc-card-header">
+                      <div class="doc-icon-wrap" [class.pdf]="livrable.nom.endsWith('.pdf')">
+                        <i class="pi pi-file"></i>
+                      </div>
+                      <div class="doc-meta-info">
+                        <span class="doc-date">{{ livrable.dateUpload | date:'d MMM yyyy' }}</span>
+                        <h4 class="doc-filename">{{ livrable.nom }}</h4>
+                      </div>
+                    </div>
+                    <div class="doc-card-body">
+                      <div class="task-ref">
+                        <i class="pi pi-link"></i>
+                        <span>{{ livrable.tacheTitre || 'Livrable libre' }}</span>
+                      </div>
+                      <div class="status-badge-row">
+                         <span class="status-pill" [ngClass]="getStatusInfo(livrable.statut).class">
+                            <i [class]="getStatusInfo(livrable.statut).icon"></i>
+                            {{ getStatusInfo(livrable.statut).text }}
+                         </span>
+                      </div>
+                    </div>
+                    <div class="doc-card-actions">
+                      <a [href]="livrable.url" target="_blank" class="btn-view-glass"><i class="pi pi-eye"></i></a>
+                      <a [href]="livrable.url" download class="btn-download-glass"><i class="pi pi-download"></i></a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Reporting -->
+              <div *ngIf="activeTab === 'reporting'" class="animate-in">
+                <div class="pane-header">
+                  <h2>Notes de suivi</h2>
+                  <div class="actions">
+                    <button class="btn-lite-primary" (click)="goToCreateReport(entrepreneur.id)">
+                      <i class="pi pi-plus"></i> Ajouter une note
+                    </button>
+                    <button class="btn-lite-secondary" (click)="downloadConsolidatedReports(entrepreneur.id)" *ngIf="entrepreneur.notes?.length" [disabled]="isDownloadingPdf">
+                       <i class="pi" [class.pi-spin]="isDownloadingPdf" [class.pi-spinner]="isDownloadingPdf" [class.pi-download]="!isDownloadingPdf"></i>
+                       PDF Consolidé
+                    </button>
+                  </div>
+                </div>
+
+                <div class="reports-timeline">
+                  <div *ngIf="!entrepreneur.notes?.length" class="empty-state-lite">
+                     <p>Aucun rapport de session rédigé.</p>
+                  </div>
+
+                  <div *ngFor="let note of entrepreneur.notes" class="report-node">
+                    <div class="node-marker"></div>
+                    <div class="report-bubble">
+                      <div class="bubble-header">
+                        <span class="report-date">{{ note.date | date:'mediumDate' }}</span>
+                      </div>
+                      <div class="bubble-content">
+                        <h5>Synthèse de la séance</h5>
+                        <p>{{ note.synthese }}</p>
+                        <div class="bubble-footer-info">
+                           <strong>Appréciation :</strong> {{ note.appreciation }}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </main>
+        </div>
       </div>
 
+      <!-- Task Modal -->
+      <div *ngIf="showTaskModal" class="modal-overlay-premium" (click)="showTaskModal = false">
+        <div class="modal-box-premium" (click)="$event.stopPropagation()">
+          <div class="modal-header-premium">
+            <h2>Nouvelle Tâche 📝</h2>
+            <button class="close-circle-btn" (click)="showTaskModal = false"><i class="pi pi-times"></i></button>
+          </div>
+          <div class="modal-body-premium">
+            <div class="form-field">
+              <label>Titre de la tâche</label>
+              <input type="text" [(ngModel)]="newTask.titre" placeholder="Ex: Étude de marché" class="premium-input-field" />
+            </div>
+            <div class="form-field">
+              <label>Description</label>
+              <textarea [(ngModel)]="newTask.description" rows="3" placeholder="Détails de la mission..." class="premium-input-field"></textarea>
+            </div>
+            <div class="form-row-premium">
+              <div class="form-field">
+                <label>Date de début</label>
+                <input type="date" [(ngModel)]="newTask.dateDebut" class="premium-input-field" />
+              </div>
+              <div class="form-field">
+                <label>Date limite</label>
+                <input type="date" [(ngModel)]="newTask.dateLimite" class="premium-input-field" />
+              </div>
+            </div>
+            <div class="form-field">
+              <label>Pièce jointe</label>
+              <div class="file-drop-lite" (click)="newTaskFileInput.click()">
+                <i class="pi pi-cloud-upload"></i>
+                <span>{{ newTaskFile ? newTaskFile.name : 'Cliquez pour ajouter un document' }}</span>
+                <input type="file" #newTaskFileInput class="hidden" (change)="onNewTaskFileSelected($event)" />
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer-premium">
+            <button class="btn-cancel-lite" (click)="showTaskModal = false">Annuler</button>
+            <button class="btn-submit-premium" (click)="submitNewTask()" [disabled]="isCreatingTask || !newTask.titre || !newTask.dateLimite">
+              <i class="pi pi-spin pi-spinner" *ngIf="isCreatingTask"></i>
+              <span>{{ isCreatingTask ? 'Création...' : 'Créer la tâche' }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   `,
   styles: [`
-    .entrepreneur-detail-page {
-        padding: 2rem;
-        background: #f8f9fa;
-        min-height: calc(100vh - 70px);
-        font-family: var(--font-family);
-        margin-top: -1rem;
-    }
-    .back-link {
-        display: inline-flex; align-items: center; gap: 0.5rem;
-        color: #718096; text-decoration: none; font-weight: 500;
-        margin-bottom: 2rem; transition: color 0.2s;
-    }
-    .back-link:hover { color: #FF4D85; }
-    .profile-header-card {
-        background: white; border-radius: 1.5rem; padding: 2rem;
-        display: flex; align-items: center; gap: 2rem;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.03); margin-bottom: 2rem;
-    }
-    .avatar {
-        width: 80px; height: 80px; border-radius: 50%;
-        display: flex; align-items: center; justify-content: center;
-        font-weight: 700; font-size: 1.8rem; color: white;
-    }
-    .pink-avatar { background: linear-gradient(135deg, #FF6B9E, #FF3366); }
-    .profile-info { flex: 1; }
-    .profile-info h1 { margin: 0 0 0.5rem 0; font-size: 2rem; color: #2D3748; }
-    .startup-sub { color: #718096; font-size: 0.95rem; }
-    .project-desc { color: #4A5568; font-size: 0.9rem; margin-top: 0.5rem; line-height: 1.5; }
-    .btn-coach-badge {
-        background: #1A202C; color: white; border: none;
-        padding: 0.5rem 1.2rem; border-radius: 20px; font-weight: 600; font-size: 0.85rem; cursor: default;
-    }
-    .stats-bar {
-        background: white; border-radius: 1rem; padding: 1rem 2rem;
-        display: flex; gap: 3rem; box-shadow: 0 2px 10px rgba(0,0,0,0.03);
-        margin-bottom: 2rem; border: 1px solid #EDF2F7;
-    }
-    .stat-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; color: #4A5568; }
-    .dot { width: 10px; height: 10px; border-radius: 50%; }
-    .dot-pink { background: #FF4D85; }
-    .dot-green { background: #48BB78; }
-    .custom-tabs {
-        display: flex; gap: 2rem; border-bottom: 2px solid #EDF2F7; margin-bottom: 2rem;
-    }
-    .tab {
-        background: none; border: none; padding: 1rem 0; font-size: 1.05rem;
-        font-weight: 600; color: #A0AEC0; cursor: pointer; position: relative; transition: color 0.2s;
-    }
-    .tab:hover { color: #4A5568; }
-    .tab.active { color: #FF4D85; }
-    .tab.active::after {
-        content: ''; position: absolute; bottom: -2px; left: 0; right: 0;
-        height: 3px; background: #FF4D85; border-radius: 3px 3px 0 0;
-    }
-    .tab-badge {
-        background: #FFF5F5; color: #E53E3E; font-size: 0.7rem;
-        padding: 0.2rem 0.5rem; border-radius: 8px; font-weight: 700; margin-left: 0.4rem;
-    }
-    .tab-count {
-        background: #EDF2F7; color: #4A5568; font-size: 0.7rem;
-        padding: 0.15rem 0.5rem; border-radius: 8px; font-weight: 700; margin-left: 0.4rem;
-    }
-    .badge { font-size: 0.75rem; padding: 0.3rem 0.8rem; border-radius: 12px; font-weight: 600; }
-    .badge-warning { background: #FFF5F5; color: #E53E3E; border: 1px solid #FED7D7; }
-    .badge-success { background: #F0FFF4; color: #38A169; border: 1px solid #C6F6D5; }
-    .livrable-stats {
-        display: flex; gap: 2rem; padding: 1rem 1.5rem; background: white;
-        border-radius: 1rem; border: 1px solid #EDF2F7; margin-bottom: 1.5rem;
-    }
-    .livrable-stat { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; color: #4A5568; }
-    .livrable-card {
-        background: white; border-radius: 1rem; padding: 1.5rem;
-        margin-bottom: 1rem; border: 1px solid #EDF2F7; box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-    }
-    .livrable-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
-    .tag { font-size: 0.7rem; padding: 0.2rem 0.6rem; border-radius: 6px; font-weight: 700; }
-    .tag-blue { background: #EBF4FF; color: #3182CE; }
-    .livrable-file { display: flex; align-items: center; gap: 0.8rem; padding: 0.8rem; background: #F8FAFC; border-radius: 10px; }
-    .link-voir, .link-dl { background: none; border: none; color: #3182CE; font-weight: 600; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 0.3rem; text-decoration: none; }
-    .link-dl { color: #718096; }
-    .session-report-card { border-radius: 1rem; overflow: hidden; margin-bottom: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.06); }
-    .session-report-header { background: linear-gradient(135deg, #2D3748, #1A202C); padding: 1.5rem; }
-    .avatar-sm-dark {
-        width: 40px; height: 40px; border-radius: 50%;
-        background: rgba(255,255,255,0.15); display: flex; align-items: center;
-        justify-content: center; color: white; font-weight: 700; font-size: 0.85rem;
-    }
-    .session-report-body { padding: 1.5rem; background: white; }
-    .session-report-body p { margin: 0 0 1rem 0; line-height: 1.6; }
-    .plan-action { margin-top: 1rem; }
-    .plan-title { font-size: 0.75rem; font-weight: 700; color: #A0AEC0; letter-spacing: 1px; margin-bottom: 0.6rem; }
+    .ent-detail-premium { padding: 2rem 4rem; background: #fcfdfe; min-height: 100vh; font-family: var(--font-family); }
+    
+    .breadcrumb-premium { margin-bottom: 2rem; }
+    .back-btn { display: flex; align-items: center; gap: 0.75rem; color: #64748b; text-decoration: none; font-weight: 700; transition: color 0.2s; }
+    .back-btn:hover { color: #0f172a; }
 
-    /* ── Modal ───────────────────────────────────── */
-    .modal-backdrop {
-        position: fixed; inset: 0; background: rgba(0,0,0,0.45);
-        backdrop-filter: blur(4px); z-index: 1000;
-        display: flex; align-items: center; justify-content: center; padding: 2rem;
-    }
-    .modal-content {
-        background: white; border-radius: 1.5rem; width: 100%; max-width: 560px;
-        max-height: calc(100vh - 4rem); box-shadow: 0 20px 40px rgba(0,0,0,0.12);
-        animation: slide-up 0.25s ease-out; overflow: hidden; display: flex; flex-direction: column;
-    }
-    .modal-header {
-        display: flex; justify-content: space-between; align-items: center;
-        padding: 1.4rem 1.6rem 1rem; border-bottom: 1px solid #EDF2F7;
-    }
-    .modal-header h2 { font-size: 1.3rem; font-weight: 700; color: #2D3748; margin: 0; }
-    .close-btn { background: #F7FAFC; border: none; width: 32px; height: 32px; border-radius: 50%; color: #A0AEC0; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-    .close-btn:hover { background: #EDF2F7; color: #4A5568; }
-    .modal-body { overflow-y: auto; padding: 1.4rem 1.6rem 1.6rem; display: flex; flex-direction: column; gap: 0; }
-    .form-group { display: flex; flex-direction: column; }
-    .form-group label { font-size: 0.9rem; font-weight: 600; color: #4A5568; margin-bottom: 0.45rem; }
-    .required { color: #FF4D85; }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-    .premium-input {
-        width: 100%; padding: 0.75rem 1rem; border-radius: 10px; border: 1px solid #E2E8F0;
-        background: #F8FAFC; font-family: inherit; font-size: 0.95rem; color: #2D3748;
-        outline: none; transition: all 0.2s; box-sizing: border-box; resize: vertical;
-    }
-    .premium-input:focus { border-color: #FF4D85; box-shadow: 0 0 0 3px rgba(255,77,133,0.1); background: white; }
-    .premium-input:disabled { background: #EDF2F7; color: #A0AEC0; cursor: not-allowed; }
-    .loading-hint { display: flex; align-items: center; gap: 0.5rem; color: #718096; font-size: 0.9rem; padding: 0.75rem 1rem; background: #F8FAFC; border-radius: 10px; border: 1px solid #E2E8F0; }
-    .hint-text { font-size: 0.82rem; color: #E53E3E; margin-top: 0.4rem; display: flex; align-items: center; gap: 0.4rem; }
-    .btn-primary {
-        background: linear-gradient(135deg, #FF6B9E 0%, #E83E8C 100%); color: white; border: none;
-        padding: 0.85rem 1.5rem; border-radius: 12px; font-weight: 700; display: flex;
-        align-items: center; gap: 0.5rem; cursor: pointer; transition: all 0.2s;
-        font-family: inherit; font-size: 0.95rem;
-    }
-    .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(255,77,133,0.35); }
-    .btn-primary:disabled { background: #CBD5E0; background-image: none; cursor: not-allowed; transform: none; box-shadow: none; }
-    .btn-secondary {
-        background: white; border: 1px solid #E2E8F0; color: #4A5568;
-        padding: 0.85rem 1.5rem; border-radius: 12px; font-weight: 600;
-        cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 0.5rem;
-        font-family: inherit;
-    }
-    .btn-secondary:hover:not(:disabled) { background: #F8FAFC; border-color: #CBD5E0; }
-    .btn-secondary:disabled { opacity: 0.6; cursor: not-allowed; }
-    .w-full { width: 100%; }
-    .justify-center { justify-content: center; }
-    @keyframes slide-up { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .loading-overlay { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 60vh; color: #64748b; }
+    .premium-spinner { width: 48px; height: 48px; border: 4px solid #f1f5f9; border-top-color: #0f172a; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 1rem; }
+
+    .profile-header { background: white; border-radius: 40px; overflow: hidden; box-shadow: 0 10px 30px -10px rgba(0,0,0,0.05); border: 1px solid #f1f5f9; margin-bottom: 3rem; }
+    .header-bg { height: 120px; background: linear-gradient(90deg, #0f172a 0%, #1e293b 100%); }
+    .header-content { padding: 0 3rem 2.5rem; display: flex; align-items: flex-end; gap: 2.5rem; margin-top: -50px; }
+    
+    .avatar-large { width: 140px; height: 140px; border-radius: 45px; border: 6px solid white; display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: 800; color: white; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+    .status-indicator-online { width: 24px; height: 24px; background: #22c55e; border: 4px solid white; border-radius: 50%; position: absolute; bottom: 5px; right: 5px; }
+
+    .info-col { flex: 1; padding-top: 55px; }
+    .name-row { display: flex; align-items: center; gap: 1.25rem; margin-bottom: 0.5rem; }
+    .name-row h1 { font-size: 2.2rem; font-weight: 800; color: #0f172a; margin: 0; letter-spacing: -1px; }
+    .category-badge { padding: 0.4rem 1rem; background: #eff6ff; color: #3b82f6; border-radius: 100px; font-weight: 800; font-size: 0.8rem; }
+    .startup-name { font-size: 1.1rem; color: #64748b; font-weight: 600; margin: 0 0 1.25rem; display: flex; align-items: center; gap: 0.5rem; }
+    
+    .contact-chips { display: flex; gap: 1rem; }
+    .chip { display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 1rem; background: #f8fafc; border-radius: 100px; font-size: 0.9rem; color: #475569; font-weight: 600; border: 1px solid #f1f5f9; }
+
+    .content-grid { display: grid; grid-template-columns: 340px 1fr; gap: 3rem; }
+    
+    .info-card-premium { background: white; border-radius: 32px; padding: 2.5rem; border: 1px solid #f1f5f9; position: sticky; top: 2rem; }
+    .info-card-premium h3 { font-size: 1.1rem; font-weight: 800; color: #0f172a; margin-bottom: 1rem; }
+    .startup-desc { color: #64748b; font-size: 0.95rem; line-height: 1.6; margin-bottom: 2rem; }
+    
+    .progression-tracker { margin-bottom: 2.5rem; }
+    .track-header { display: flex; justify-content: space-between; margin-bottom: 0.75rem; font-weight: 800; font-size: 0.85rem; color: #0f172a; }
+    .p-bar-bg-lite { height: 10px; background: #f1f5f9; border-radius: 10px; }
+    .p-bar-fill-premium { height: 100%; background: linear-gradient(90deg, #FF4D85, #FF758C); border-radius: 100px; }
+
+    .meta-list { display: flex; flex-direction: column; gap: 1.25rem; }
+    .meta-item { display: flex; flex-direction: column; gap: 0.25rem; }
+    .meta-item .label { font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; }
+    .meta-item .val { font-size: 0.95rem; font-weight: 700; color: #475569; }
+
+    .tabs-nav-premium { display: flex; gap: 1rem; background: #f1f5f9; padding: 0.6rem; border-radius: 20px; margin-bottom: 2.5rem; }
+    .tab-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.75rem; padding: 0.9rem; border-radius: 15px; border: none; background: transparent; cursor: pointer; color: #64748b; font-weight: 700; transition: all 0.2s; }
+    .tab-btn.active { background: white; color: #0f172a; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+    .count-pill { background: #FF4D85; color: white; font-size: 0.7rem; padding: 0.1rem 0.5rem; border-radius: 100px; }
+
+    .animate-in { animation: slideIn 0.3s ease-out; }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    .pane-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+    .pane-header h2 { font-size: 1.6rem; font-weight: 800; color: #0f172a; margin: 0; }
+    
+    .task-card-premium { background: white; border-radius: 24px; padding: 1.5rem; border: 1px solid #f1f5f9; display: flex; gap: 1.5rem; margin-bottom: 1.25rem; transition: all 0.2s; }
+    .task-card-premium:hover { border-color: #cbd5e1; transform: translateX(5px); }
+    
+    .task-check { width: 28px; height: 28px; border-radius: 10px; border: 2px solid #e2e8f0; flex-shrink: 0; margin-top: 0.25rem; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+    .task-check.done { background: #22c55e; border-color: #22c55e; color: white; }
+    
+    .task-main { flex: 1; }
+    .task-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; }
+    .task-top h4 { font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0; }
+    .task-badge-lite { font-size: 0.7rem; font-weight: 800; padding: 0.25rem 0.75rem; border-radius: 100px; background: #f1f5f9; color: #64748b; }
+    .task-badge-lite.done { background: #ecfdf5; color: #10b981; }
+    .task-desc { color: #64748b; font-size: 0.95rem; margin-bottom: 1.25rem; }
+
+    .task-docs-row { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.25rem; }
+    .doc-mini-card { display: flex; align-items: center; gap: 0.6rem; background: #f8fafc; padding: 0.5rem 0.75rem; border-radius: 12px; border: 1px solid #f1f5f9; }
+    .doc-mini-card i { color: #ef4444; }
+    .doc-name { font-size: 0.8rem; font-weight: 600; color: #475569; max-width: 150px; overflow: hidden; text-overflow: ellipsis; }
+    .doc-view-btn { color: #64748b; cursor: pointer; }
+
+    .btn-attach { background: transparent; border: 1px dashed #cbd5e1; padding: 0.5rem 1rem; border-radius: 12px; font-weight: 700; font-size: 0.85rem; color: #64748b; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; }
+    .btn-attach:hover { background: #f8fafc; color: #0f172a; border-color: #0f172a; }
+
+    .livrables-grid-detail { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
+    .doc-premium-card { background: white; border-radius: 24px; border: 1px solid #f1f5f9; padding: 1.5rem; }
+    .doc-card-header { display: flex; gap: 1rem; margin-bottom: 1.25rem; }
+    .doc-icon-wrap { width: 48px; height: 48px; border-radius: 14px; background: #f1f5f9; color: #94a3b8; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; }
+    .doc-icon-wrap.pdf { background: #fff1f2; color: #f43f5e; }
+    .doc-meta-info .doc-date { font-size: 0.7rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; }
+    .doc-filename { font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0.2rem 0 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
+    .task-ref { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: #3b82f6; font-weight: 700; margin-bottom: 0.75rem; }
+    
+    .status-badge-row { margin-bottom: 1.5rem; }
+    .status-pill { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.3rem 0.75rem; border-radius: 100px; font-size: 0.75rem; font-weight: 800; }
+    .status-accepted { background: #ecfdf5; color: #10b981; }
+    .status-revision { background: #eff6ff; color: #3b82f6; }
+    .status-rejected { background: #fff1f2; color: #f43f5e; }
+    .status-pending { background: #fffbeb; color: #d97706; }
+
+    .doc-card-actions { display: flex; gap: 0.75rem; }
+    .btn-view-glass, .btn-download-glass { flex: 1; padding: 0.6rem; border-radius: 12px; background: #f8fafc; color: #475569; display: flex; align-items: center; justify-content: center; border: 1px solid #f1f5f9; transition: all 0.2s; }
+    .btn-view-glass:hover { background: #0f172a; color: white; }
+
+    .reports-timeline { position: relative; padding-left: 2rem; }
+    .reports-timeline::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: #f1f5f9; }
+    .report-node { position: relative; margin-bottom: 2.5rem; }
+    .node-marker { position: absolute; left: -2.3rem; top: 1.5rem; width: 12px; height: 12px; border-radius: 50%; background: white; border: 3px solid #0f172a; }
+    .report-bubble { background: white; border-radius: 24px; border: 1px solid #f1f5f9; padding: 1.5rem; }
+    .report-date { font-size: 0.85rem; font-weight: 800; color: #94a3b8; }
+    .bubble-content h5 { font-size: 1rem; font-weight: 800; color: #0f172a; margin: 1rem 0 0.5rem; }
+    .bubble-content p { color: #475569; line-height: 1.6; margin-bottom: 1.25rem; }
+    .bubble-footer-info { font-size: 0.85rem; color: #64748b; padding-top: 1rem; border-top: 1px dashed #e2e8f0; }
+
+    .modal-overlay-premium { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+    .modal-box-premium { background: white; border-radius: 32px; width: 100%; max-width: 550px; overflow: hidden; animation: zoomIn 0.2s ease-out; }
+    @keyframes zoomIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .modal-header-premium { padding: 2rem; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
+    .modal-header-premium h2 { font-size: 1.4rem; font-weight: 800; color: #0f172a; margin: 0; }
+    .close-circle-btn { width: 36px; height: 36px; border-radius: 50%; border: none; background: #f1f5f9; color: #64748b; cursor: pointer; }
+    .modal-body-premium { padding: 2rem; }
+    .form-field { margin-bottom: 1.5rem; }
+    .form-field label { display: block; font-weight: 700; font-size: 0.9rem; color: #475569; margin-bottom: 0.6rem; }
+    .premium-input-field { width: 100%; padding: 0.85rem 1.25rem; border-radius: 14px; border: 1px solid #e2e8f0; background: #f8fafc; font-size: 0.95rem; color: #0f172a; outline: none; }
+    .premium-input-field:focus { border-color: #0f172a; background: white; }
+    .form-row-premium { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .file-drop-lite { border: 2px dashed #e2e8f0; border-radius: 16px; padding: 1.5rem; text-align: center; color: #64748b; cursor: pointer; transition: all 0.2s; }
+    .file-drop-lite:hover { border-color: #0f172a; color: #0f172a; background: #f8fafc; }
+    .modal-footer-premium { padding: 1.5rem 2rem; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 1rem; }
+    .btn-cancel-lite { padding: 0.85rem 1.5rem; border-radius: 14px; border: 1px solid #e2e8f0; background: white; font-weight: 700; color: #64748b; cursor: pointer; }
+    .btn-submit-premium { padding: 0.85rem 2rem; border-radius: 14px; background: #0f172a; color: white; border: none; font-weight: 700; display: flex; align-items: center; gap: 0.75rem; cursor: pointer; }
+    .btn-submit-premium:disabled { opacity: 0.5; }
+    .hidden { display: none; }
+    @keyframes spin { to { transform: rotate(360deg); } }
   `]
 })
 export class CoachEntrepreneurDetailComponent implements OnInit {
@@ -403,6 +432,45 @@ export class CoachEntrepreneurDetailComponent implements OnInit {
   uploadingTaskId: number | null = null;
   isDownloadingPdf: boolean = false;
   coachProfile: any = null;
+
+  getAvatarGradient(ent: any): string {
+    const colors = [
+        ['#FF4D85', '#FF758C'],
+        ['#7C3AED', '#A78BFA'],
+        ['#2563EB', '#60A5FA'],
+        ['#059669', '#34D399'],
+        ['#D97706', '#FBBF24']
+    ];
+    const index = (ent.id || 0) % colors.length;
+    return `linear-gradient(135deg, ${colors[index][0]} 0%, ${colors[index][1]} 100%)`;
+  }
+
+  getInitials(ent: any): string {
+    if (!ent.firstName && !ent.lastName) return 'E';
+    return ((ent.firstName?.[0] || '') + (ent.lastName?.[0] || '')).toUpperCase();
+  }
+
+  getStatusInfo(status: string) {
+    switch (status) {
+      case 'ACCEPTED':
+      case 'VALIDE':
+      case 'APPROVED':
+      case 'APPROUVE':
+        return { text: 'Accepté', class: 'status-accepted', icon: 'pi pi-check-circle' };
+      case 'REVISION':
+      case 'EN_REVISION':
+        return { text: 'À réviser', class: 'status-revision', icon: 'pi pi-refresh' };
+      case 'REJECTED':
+      case 'REJETE':
+        return { text: 'Rejeté', class: 'status-rejected', icon: 'pi pi-times-circle' };
+      case 'PENDING':
+      case 'PENDING_REVIEW':
+      case 'SOUMIS':
+      case 'SUBMITTED':
+      default:
+        return { text: 'En attente', class: 'status-pending', icon: 'pi pi-clock' };
+    }
+  }
 
   // ── Task creation ──────────────────────────────
   newTask: any = {

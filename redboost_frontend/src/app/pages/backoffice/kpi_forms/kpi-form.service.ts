@@ -20,6 +20,7 @@ export interface KpiForm {
     description: string;
     programmeId?: number;
     status?: 'DRAFT' | 'SENT' | 'CLOSED';
+    formType?: 'KPI' | 'EVALUATION';
     deadline?: string;
     createdAt?: string;
     questions: KpiFormQuestion[];

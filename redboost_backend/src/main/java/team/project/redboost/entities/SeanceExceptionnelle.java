@@ -25,6 +25,10 @@ public class SeanceExceptionnelle {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "thematique_id")
+    private Thematique thematique;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "coach_id", nullable = false)
     private User coach;
 

@@ -9,6 +9,7 @@ public class SeanceExceptionnelleDTO {
     private Long id;
     private Long coachId;
     private Long entrepreneurId;
+    private Long thematiqueId;
     private String entrepreneurName;
     private String titre;
     private LocalDate dateSeance;

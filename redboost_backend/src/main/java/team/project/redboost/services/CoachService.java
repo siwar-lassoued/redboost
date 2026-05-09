@@ -536,9 +536,15 @@ public class CoachService {
             throw new ValidationException("L'heure de début doit être avant l'heure de fin");
         }
 
+        ThematiqueCoaching thematique = null;
+        if (dto.getThematiqueId() != null) {
+            thematique = thematiqueRepository.findById(dto.getThematiqueId()).orElse(null);
+        }
+
         SeanceExceptionnelle seance = SeanceExceptionnelle.builder()
                 .coach(coach)
                 .entrepreneur(entrepreneur)
+                .thematique(thematique)
                 .titre(dto.getTitre())
                 .dateSeance(dto.getDateSeance())
                 .heureDebut(dto.getHeureDebut())
@@ -646,6 +652,9 @@ public class CoachService {
         dto.setId(s.getId());
         dto.setCoachId(s.getCoach().getId());
         dto.setEntrepreneurId(s.getEntrepreneur().getId());
+        if (s.getThematique() != null) {
+            dto.setThematiqueId(s.getThematique().getId());
+        }
         dto.setEntrepreneurName(s.getEntrepreneur().getFirstName() + " " + s.getEntrepreneur().getLastName());
         dto.setTitre(s.getTitre());
         dto.setDateSeance(s.getDateSeance());

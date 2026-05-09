@@ -36,6 +36,7 @@ interface CalendarEvent {
   isDisabled?: boolean;
   couleur?: string;
   isExceptionnelle?: boolean;
+  isBooked?: boolean;
 }
 
 interface EventTypeWithColor {
@@ -375,22 +376,30 @@ export class CalendarComponent implements OnInit {
   }
 
   mapBookedSessionsToCalendarEvents(sessions: any[]): CalendarEvent[] {
-    return sessions.map(s => ({
-      id: 'booked-' + s.id,
-      title: 'Coaching : ' + (s.titre || ''),
-      date: new Date(s.date),
-      time: new Date(s.date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-      type: 'Coaching (Confirmé)',
-      location: s.meetLink ? 'En ligne' : 'À définir',
-      mode: (s.meetLink ? 'virtuel' : 'en-personne') as 'en-personne' | 'virtuel' | 'hybrid',
-      program: '',
-      description: s.description || '',
-      participants: [],
-      meetLink: s.meetLink,
-      googleEventId: s.googleEventId,
-      isDisabled: true,
-      isExceptionnelle: s.isExceptionnelle
-    }));
+    return sessions.map(s => {
+      const themName = s.thematique?.nom || s.thematiqueNom || 'Thématique';
+      const progName = s.programme?.nom || s.programmeNom || '';
+      const fullTitle = progName ? `${themName} — ${progName}` : themName;
+      
+      return {
+        id: 'booked-' + s.id,
+        title: s.titre ? `${fullTitle} : ${s.titre}` : fullTitle,
+        date: new Date(s.date),
+        time: new Date(s.date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+        type: 'Coaching (Confirmé)',
+        location: s.meetLink ? 'En ligne' : 'À définir',
+        mode: (s.meetLink ? 'virtuel' : 'en-personne') as 'en-personne' | 'virtuel' | 'hybrid',
+        program: themName,
+        description: s.description || '',
+        participants: [],
+        meetLink: s.meetLink,
+        googleEventId: s.googleEventId,
+        isDisabled: true,
+        isExceptionnelle: s.isExceptionnelle,
+        isBooked: true,
+        couleur: this.getThematicColor(themName)
+      };
+    });
   }
 
   /** Map MyCalendarEvent[] (from /api/sessions/my-calendar) to CalendarEvent[] */
@@ -423,10 +432,12 @@ export class CalendarComponent implements OnInit {
       // Create date with time to avoid timezone shifts to previous day
       const dateStr = s.dateSession.includes('T') ? s.dateSession : `${s.dateSession}T${s.heureDebut || '00:00:00'}`;
       const themName = s.thematiqueNom || 'Thématique Générale';
+      const progName = s.programmeNom || '';
+      const fullTitle = progName ? `${themName} — ${progName}` : themName;
       
       return {
         id: 'slot-' + s.id,
-        title: (s.titre || 'Créneau'),
+        title: s.titre ? `${fullTitle} : ${s.titre}` : fullTitle,
         date: new Date(dateStr),
         time: s.heureDebut.substring(0, 5) + ' - ' + s.heureFin.substring(0, 5),
         type: 'creneau', 
@@ -436,8 +447,9 @@ export class CalendarComponent implements OnInit {
         description: 'Réservez via le panneau de droite',
         participants: [],
         isDisabled: s.isBooked || s.isGroupReservedByMe || false,
-        couleur: s.couleur,
-        isExceptionnelle: s.isExceptionnelle
+        couleur: this.getThematicColor(themName),
+        isExceptionnelle: s.isExceptionnelle,
+        isBooked: s.isBooked
       };
     });
   }

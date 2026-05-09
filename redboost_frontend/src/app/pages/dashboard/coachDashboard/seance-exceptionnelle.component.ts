@@ -100,15 +100,22 @@ import { ToastrService } from 'ngx-toastr';
               </div>
               <div class="modal-body">
                   <div class="form-group" style="margin-bottom: 12px;">
-                      <label style="font-size: 13px; font-weight: 600; margin-bottom: 6px; display: block;">Entrepreneur *</label>
-                      <select class="search-input" [(ngModel)]="newSeance.entrepreneurId" style="padding: 10px 16px;">
-                          <option [ngValue]="0">Sélectionnez un entrepreneur...</option>
-                          <option *ngFor="let e of entrepreneurs" [ngValue]="e.id">{{ e.firstName }} {{ e.lastName }} — {{ e.entreprise || 'N/A' }}</option>
+                      <label style="font-size: 13px; font-weight: 600; margin-bottom: 6px; display: block;">Thématique *</label>
+                      <select class="search-input" [(ngModel)]="newSeance.thematiqueId" style="padding: 10px 16px;">
+                          <option [ngValue]="undefined">Sélectionnez une thématique...</option>
+                          <option *ngFor="let t of thematiques" [ngValue]="t.id">{{ t.nom }}</option>
                       </select>
                   </div>
                   <div class="form-group" style="margin-bottom: 12px;">
                       <label style="font-size: 13px; font-weight: 600; margin-bottom: 6px; display: block;">Titre de la séance *</label>
                       <input type="text" class="search-input" [(ngModel)]="newSeance.titre" placeholder="Ex: Point stratégique exceptionnel" style="padding: 10px 16px;">
+                  </div>
+                  <div class="form-group" style="margin-bottom: 12px;">
+                      <label style="font-size: 13px; font-weight: 600; margin-bottom: 6px; display: block;">Entrepreneur *</label>
+                      <select class="search-input" [(ngModel)]="newSeance.entrepreneurId" style="padding: 10px 16px;">
+                          <option [ngValue]="0">Sélectionnez un entrepreneur...</option>
+                          <option *ngFor="let e of entrepreneurs" [ngValue]="e.id">{{ e.firstName }} {{ e.lastName }} — {{ e.entreprise || 'N/A' }}</option>
+                      </select>
                   </div>
                   <div class="form-row" style="display: flex; gap: 12px; margin-bottom: 12px;">
                       <div class="form-group" style="flex: 1;">
@@ -196,6 +203,7 @@ import { ToastrService } from 'ngx-toastr';
 export class SeanceExceptionnelleComponent implements OnInit {
   coachId!: number;
   entrepreneurs: CoachEntrepreneurDTO[] = [];
+  thematiques: any[] = [];
   seances: SeanceExceptionnelleDTO[] = [];
   filteredSeances: SeanceExceptionnelleDTO[] = [];
   loading = false;
@@ -207,6 +215,7 @@ export class SeanceExceptionnelleComponent implements OnInit {
   newSeance: SeanceExceptionnelleDTO = {
     coachId: 0,
     entrepreneurId: 0,
+    thematiqueId: undefined,
     titre: '',
     dateSeance: '',
     heureDebut: '',
@@ -227,7 +236,15 @@ export class SeanceExceptionnelleComponent implements OnInit {
     this.newSeance.coachId = this.coachId;
 
     this.loadEntrepreneurs();
+    this.loadThematiques();
     this.loadSeances();
+  }
+
+  loadThematiques() {
+      this.coachService.getThematiquesAssignedToCoach(this.coachId).subscribe({
+          next: (data) => this.thematiques = data,
+          error: () => console.error('Erreur chargement thematiques')
+      });
   }
 
   loadEntrepreneurs() {
@@ -272,10 +289,13 @@ export class SeanceExceptionnelleComponent implements OnInit {
 
   submit() {
       this.modalError = null;
+      if (!this.newSeance.thematiqueId) {
+          this.modalError = 'Veuillez sélectionner une thématique.'; return;
+      }
+      if (!this.newSeance.titre) { this.modalError = 'Le titre est requis.'; return; }
       if (!this.newSeance.entrepreneurId || this.newSeance.entrepreneurId === 0) {
           this.modalError = 'Veuillez sélectionner un entrepreneur.'; return;
       }
-      if (!this.newSeance.titre) { this.modalError = 'Le titre est requis.'; return; }
       if (!this.newSeance.dateSeance) { this.modalError = 'La date est requise.'; return; }
       if (!this.newSeance.heureDebut || !this.newSeance.heureFin) { this.modalError = 'Les heures sont requises.'; return; }
       if (this.newSeance.heureDebut >= this.newSeance.heureFin) {
@@ -288,7 +308,7 @@ export class SeanceExceptionnelleComponent implements OnInit {
               this.toastr.success('Séance exceptionnelle planifiée !');
               this.seances.push(data);
               this.setFilter(this.activeFilter);
-              this.newSeance = { coachId: this.coachId, entrepreneurId: 0, titre: '', dateSeance: '', heureDebut: '', heureFin: '' };
+              this.newSeance = { coachId: this.coachId, entrepreneurId: 0, thematiqueId: undefined, titre: '', dateSeance: '', heureDebut: '', heureFin: '' };
               this.showModal = false;
               this.saving = false;
           },

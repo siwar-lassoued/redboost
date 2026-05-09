@@ -325,9 +325,15 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
 
             <!-- ═══ Matchings of this thématique ═══ -->
             <div class="card" style="margin-top:16px">
-              <div class="card-header-row">
-                <div class="card-icon"><i class="pi pi-list"></i></div>
-                <h2 class="card-title">Matchings de cette thématique</h2>
+              <div class="card-header-row" style="flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+                  <div class="card-icon"><i class="pi pi-list"></i></div>
+                  <h2 class="card-title">Matchings de cette thématique</h2>
+                </div>
+                <div class="search-wrap" style="flex: 1; min-width: 250px;">
+                  <i class="pi pi-search search-icon" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #9CA3AF;"></i>
+                  <input type="text" [(ngModel)]="searchMatching" placeholder="Rechercher par entrepreneur ou coach..." class="form-input" style="padding-left: 36px; border-radius: 20px;">
+                </div>
               </div>
 
               <div *ngIf="thematiqueMatchingsLoading" class="loading-box">Chargement...</div>
@@ -336,7 +342,7 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
                 <p>Aucun matching pour cette thématique.</p>
               </div>
 
-              <div *ngFor="let m of thematiqueMatchings" class="history-card" [class.history-valide]="m.statut === 'VALIDE'" [class.history-propose]="m.statut === 'PROPOSE'" [class.history-termine]="m.statut === 'TERMINE'" [class.history-libere]="m.statut === 'LIBERE'">
+              <div *ngFor="let m of filteredThematiqueMatchings" class="history-card" [class.history-valide]="m.statut === 'VALIDE'" [class.history-propose]="m.statut === 'PROPOSE'" [class.history-termine]="m.statut === 'TERMINE'" [class.history-libere]="m.statut === 'LIBERE'">
                 <div class="hc-left">
                   <div class="hc-pair"><div><p class="hc-role">Entrepreneur</p><p class="hc-name">{{ m.entrepreneur?.nom || 'N/A' }}</p></div></div>
                   <div class="hc-arrow"><i class="pi pi-arrow-right"></i></div>
@@ -660,6 +666,17 @@ export class AdminMatchingComponent implements OnInit {
     // Thematique matchings
     thematiqueMatchings: any[] = [];
     thematiqueMatchingsLoading = false;
+    searchMatching: string = '';
+
+    get filteredThematiqueMatchings(): any[] {
+        if (!this.searchMatching) return this.thematiqueMatchings;
+        const lowerSearch = this.searchMatching.toLowerCase();
+        return this.thematiqueMatchings.filter(m => {
+            const entName = (m.entrepreneur?.nom || '').toLowerCase();
+            const coachName = (m.coach?.prenom + ' ' + m.coach?.nom).toLowerCase();
+            return entName.includes(lowerSearch) || coachName.includes(lowerSearch);
+        });
+    }
 
     constructor(
         private http: HttpClient,
@@ -746,6 +763,7 @@ export class AdminMatchingComponent implements OnInit {
         this.manualSuccess = null;
         this.manualError = null;
         this.thematiqueMatchings = [];
+        this.searchMatching = '';
 
         if (this.selectedThematiqueId) {
             this.loadThematiqueMatchings();

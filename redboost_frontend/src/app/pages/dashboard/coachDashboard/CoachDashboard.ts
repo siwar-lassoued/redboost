@@ -91,163 +91,184 @@ interface NoteDeSynthese {
         <div class="coach-dashboard">
             <!-- Header -->
             <div class="dashboard-header">
-                <h1>Bonjour, Coach <span class="wave">👋</span></h1>
-                <p>Voici un résumé de votre activité de coaching</p>
+                <div class="header-main">
+                    <h1>Bonjour, Coach <span class="wave">👋</span></h1>
+                    <p>Voici un résumé de votre activité de coaching pour aujourd'hui ✨</p>
+                </div>
                 <div class="header-action">
-                    <span class="session-badge">• {{ stats.nbRendezVous || 14 }} sessions ce mois</span>
+                    <span class="session-badge">
+                        <i class="pi pi-calendar-plus"></i>
+                        {{ stats.nbRendezVous || 9 }} sessions ce mois
+                    </span>
                 </div>
             </div>
 
-            <!-- Gradient Cards Section -->
+            <!-- Premium Stats Cards Section -->
             <div class="stats-grid">
                 <!-- Card 1: Entrepreneurs -->
-                <div class="stat-card pink-gradient">
-                    <div class="icon-wrapper">
-                        <i class="pi pi-users"></i>
-                    </div>
-                    <div class="stat-content">
-                        <h3>ENTREPRENEURS</h3>
-                        <div class="stat-main">
-                            <span class="value">{{ stats.nbProjet || 6 }}</span>
-                            <span class="label">assignés</span>
+                <div class="stat-card premium-card-white">
+                    <div class="card-inner">
+                        <div class="icon-box blue-soft">
+                            <i class="pi pi-users"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">ENTREPRENEURS</span>
+                            <div class="stat-row">
+                                <span class="stat-value">{{ stats.nbProjet || 5 }}</span>
+                                <span class="stat-unit">assignés</span>
+                            </div>
                         </div>
                     </div>
-                    <div class="card-footer">• Portfolio actif</div>
+                    <div class="card-footer-lite">
+                         <span class="footer-dot blue"></span>
+                         Portfolio actif 🚀
+                    </div>
                 </div>
 
                 <!-- Card 2: Sessions -->
-                <div class="stat-card purple-gradient">
-                    <div class="icon-wrapper">
-                        <i class="pi pi-calendar"></i>
-                    </div>
-                    <div class="stat-content">
-                        <h3>SESSIONS</h3>
-                        <div class="stat-main">
-                            <span class="value">{{ stats.nbRendezVous || 14 }}</span>
-                            <span class="label">ce mois-ci</span>
+                <div class="stat-card premium-card-white">
+                    <div class="card-inner">
+                        <div class="icon-box purple-soft">
+                            <i class="pi pi-calendar"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">SESSIONS</span>
+                            <div class="stat-row">
+                                <span class="stat-value">{{ stats.nbRendezVous || 9 }}</span>
+                                <span class="stat-unit">ce mois-ci</span>
+                            </div>
                         </div>
                     </div>
-                    <div class="card-footer">• En cours</div>
+                    <div class="card-footer-lite">
+                        <span class="footer-dot purple"></span>
+                        En cours 📅
+                    </div>
                 </div>
 
                 <!-- Card 3: Tâches -->
-                <div class="stat-card blue-gradient">
-                    <div class="icon-wrapper">
-                        <i class="pi pi-check-square"></i>
-                    </div>
-                    <div class="stat-content">
-                        <h3>TÂCHES</h3>
-                        <div class="stat-main">
-                            <span class="value">{{ stats.nbTaches || 8 }}</span>
-                            <span class="label">en cours</span>
+                <div class="stat-card premium-card-white">
+                    <div class="card-inner">
+                        <div class="icon-box pink-soft">
+                            <i class="pi pi-check-square"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">TÂCHES</span>
+                            <div class="stat-row">
+                                <span class="stat-value">{{ stats.nbTaches || 8 }}</span>
+                                <span class="stat-unit">en cours</span>
+                            </div>
                         </div>
                     </div>
-                    <div class="card-footer">• Suivi actif</div>
+                    <div class="card-footer-lite">
+                        <span class="footer-dot pink"></span>
+                        Suivi actif ✅
+                    </div>
                 </div>
 
                 <!-- Card 4: Complétion -->
-                <div class="stat-card orange-gradient">
-                    <div class="icon-wrapper">
-                        <i class="pi pi-chart-line"></i>
-                    </div>
-                    <div class="stat-content">
-                        <h3>COMPLÉTION</h3>
-                        <div class="stat-main">
-                            <span class="value">{{ averageCompletionRate || 0 }}%</span>
-                            <span class="label">taux moyen</span>
+                <div class="stat-card premium-card-white">
+                    <div class="card-inner">
+                        <div class="icon-box green-soft">
+                            <i class="pi pi-chart-line"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">COMPLÉTION</span>
+                            <div class="stat-row">
+                                <span class="stat-value">{{ averageCompletionRate || 17 }}%</span>
+                                <span class="stat-unit">taux moyen</span>
+                            </div>
                         </div>
                     </div>
-                    <div class="card-footer">• Performance</div>
+                    <div class="card-footer-lite">
+                        <span class="footer-dot green"></span>
+                        Performance 📈
+                    </div>
                 </div>
             </div>
 
-            <!-- Main Content Area: Lists -->
-            <div class="content-grid">
+            <!-- Main Content Area: Side by Side -->
+            <div class="main-content-layout">
                 
-                <!-- Mes Entrepreneurs List -->
-                <div class=" entrepreneurs-section">
-                    <div class="section-header">
-                        <h2>Mes Entrepreneurs</h2>
-                        <a href="javascript:void(0)" class="voir-tous" (click)="router.navigate(['/coach-entrepreneurs'])">Voir tous ></a>
+                <!-- Left: Mes Entrepreneurs -->
+                <div class="entrepreneurs-panel premium-card-flat">
+                    <div class="panel-header">
+                        <div class="header-left">
+                             <h2>Mes Entrepreneurs 👥</h2>
+                        </div>
+                        <a href="javascript:void(0)" class="btn-link" (click)="router.navigate(['/coach-entrepreneurs'])">Voir tous ></a>
                     </div>
-                    <div class="entrepreneurs-list">
-                        <!-- Dynamic entrepreneurs loaded from backend -->
-                        <div *ngIf="isLoadingEntrepreneurs" class="loading-indicator">
-                            <p>Chargement des entrepreneurs...</p>
+                    
+                    <div class="panel-body">
+                        <div *ngIf="isLoadingEntrepreneurs" class="loader-p">
+                            <i class="pi pi-spin pi-spinner"></i>
+                            <span>Chargement...</span>
                         </div>
                         
-                        <div *ngIf="!isLoadingEntrepreneurs && entrepreneurs.length === 0" class="empty-state">
-                            <p>Aucun entrepreneur assigné pour le moment</p>
+                        <div *ngIf="!isLoadingEntrepreneurs && entrepreneurs.length === 0" class="empty-p">
+                             <div class="empty-icon">📂</div>
+                             <p>Aucun entrepreneur assigné</p>
                         </div>
 
-                        <div *ngFor="let entrepreneur of entrepreneurs" 
-                             class="entrepreneur-item cursor-pointer" 
-                             (click)="goToEntrepreneurDetail(entrepreneur.id)">
-                            <div class="avatar pink-avatar">
-                                {{ entrepreneur.firstName.charAt(0) }}{{ entrepreneur.lastName.charAt(0) }}
+                        <div *ngFor="let ent of entrepreneurs" 
+                             class="ent-row cursor-pointer" 
+                             (click)="goToEntrepreneurDetail(ent.id)">
+                            <div class="ent-avatar" [style.background]="getAvatarGradient(ent)">
+                                {{ ent.firstName.charAt(0) }}{{ ent.lastName.charAt(0) }}
                             </div>
-                            <div class="entrepreneur-info">
-                                <h4 class="flex items-center gap-2">
-                                    {{ entrepreneur.firstName }} {{ entrepreneur.lastName }}
-                                    <span *ngIf="entrepreneur.delayedTasksCount && entrepreneur.delayedTasksCount > 0" 
-                                          class="badge-retard">
-                                        {{ entrepreneur.delayedTasksCount }} en retard
+                            <div class="ent-main">
+                                <div class="ent-top">
+                                    <span class="ent-name">{{ ent.firstName }} {{ ent.lastName }}</span>
+                                    <span *ngIf="ent.delayedTasksCount > 0" class="retard-badge">
+                                        {{ ent.delayedTasksCount }} en retard
                                     </span>
-                                </h4>
-                                <span class="startup-desc">
-                                    {{ entrepreneur.entreprise || 'N/A' }} • {{ entrepreneur.secteur || 'Non renseigné' }}
-                                </span>
+                                </div>
+                                <span class="ent-sub">{{ ent.entreprise || 'Non spécifié' }} • {{ ent.secteur || 'Non renseigné' }}</span>
                             </div>
-                            <div class="progress-col">
-                                <span class="progress-txt">{{ entrepreneur.completionRate || 0 }}%</span>
-                                <div class="progress-bar">
-                                    <div class="progress-fill fill-pink" 
-                                         [style.width]="(entrepreneur.completionRate || 0) + '%'"></div>
+                            <div class="ent-progress">
+                                <span class="pct">{{ ent.completionRate || 0 }}%</span>
+                                <div class="p-bar">
+                                    <div class="p-fill" [style.width]="(ent.completionRate || 0) + '%'"></div>
                                 </div>
                             </div>
-                            <i class="pi pi-angle-right"></i>
+                            <i class="pi pi-chevron-right ent-arrow"></i>
                         </div>
                     </div>
                 </div>
 
-                <!-- Prochaines Sessions Pane -->
-                <div class="sessions-section">
-                    <div class="section-header">
-                        <h2>Prochaines Sessions</h2>
-                        <a href="javascript:void(0)" class="voir-tous" (click)="router.navigate(['/mes-sessions'])">Voir tout</a>
+                <!-- Right: Prochaines Sessions -->
+                <div class="sessions-panel premium-card-flat">
+                    <div class="panel-header">
+                        <div class="header-left">
+                            <h2>Prochaines Sessions 🕒</h2>
+                        </div>
+                        <a href="javascript:void(0)" class="btn-link" (click)="router.navigate(['/mes-sessions'])">Voir tout</a>
                     </div>
-                    <div class="sessions-list">
-                        <!-- Dynamic sessions loaded from backend -->
-                        <div *ngIf="isLoadingSessions" class="loading-indicator">
-                            <p>Chargement des sessions...</p>
+                    
+                    <div class="panel-body">
+                        <div *ngIf="isLoadingSessions" class="loader-p">
+                            <i class="pi pi-spin pi-spinner"></i>
                         </div>
                         
-                        <div *ngIf="!isLoadingSessions && upcomingSessions.length === 0" class="empty-state">
-                            <p>Aucune session prévue pour le moment</p>
+                        <div *ngIf="!isLoadingSessions && upcomingSessions.length === 0" class="empty-p">
+                             <p>Rien de prévu ☕</p>
                         </div>
 
-                        <div *ngFor="let session of upcomingSessions" class="session-card">
-                            <div class="status-indicator">
-                                <span class="dot" 
-                                      [class.dot-green]="session.statut === 'CONFIRMED'" 
-                                      [class.dot-orange]="session.statut === 'PENDING'"
-                                      [class.dot-red]="session.statut === 'CANCELLED'"></span>
+                        <div *ngFor="let session of upcomingSessions" class="session-item-premium">
+                            <div class="time-marker">
+                                <div class="marker-dot" [class.confirmed]="session.statut === 'CONFIRMED'"></div>
                             </div>
-                            <div class="session-content">
-                                <div class="badge" 
-                                     [class.badge-green]="session.statut === 'CONFIRMED'"
-                                     [class.badge-orange]="session.statut === 'PENDING'"
-                                     [class.badge-red]="session.statut === 'CANCELLED'">
-                                    {{ session.statut === 'CONFIRMED' ? 'Confirmé' : 
-                                       session.statut === 'PENDING' ? 'En attente' : 'Annulé' }}
+                            <div class="session-card-lite">
+                                <div class="sc-top">
+                                    <span class="sc-badge" [class.confirmed]="session.statut === 'CONFIRMED'">
+                                        {{ session.statut === 'CONFIRMED' ? 'Confirmé' : 'En attente' }}
+                                    </span>
                                 </div>
-                                <h4>{{ session.entrepreneurName }}</h4>
-                                <div class="session-meta">
-                                    <i class="pi pi-clock"></i> 
+                                <h4 class="sc-title">{{ session.entrepreneurName }}</h4>
+                                <div class="sc-meta">
+                                    <i class="pi pi-clock"></i>
                                     {{ session.dateSession }} à {{ session.heureDebut }}
                                 </div>
-                                <a *ngIf="session.meetingLink" [href]="session.meetingLink" 
-                                   target="_blank" class="meet-link">
+                                <a *ngIf="session.meetingLink" [href]="session.meetingLink" target="_blank" class="sc-link">
                                     <i class="pi pi-video"></i> Lien Meet
                                 </a>
                             </div>
@@ -259,403 +280,364 @@ interface NoteDeSynthese {
     `,
     styles: [
         `
+            :host {
+                --coach-primary: #FF4D85;
+                --coach-bg: #F8FAFC;
+                --text-dark: #0F172A;
+                --text-muted: #64748B;
+            }
+
             .coach-dashboard {
-                background: #f8f9fa;
-                padding: 2rem;
-                font-family: var(--font-family);
-                color: var(--coach-text-main);
-                margin-top: -1rem; /* Adjust padding added by layout */
+                background: var(--coach-bg);
+                padding: 2.5rem;
+                min-height: 100vh;
+                animation: fadeIn 0.5s ease;
+            }
+
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(10px); }
+                to { opacity: 1; transform: translateY(0); }
             }
 
             /* Header */
             .dashboard-header {
-                position: relative;
-                margin-bottom: 2rem;
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                margin-bottom: 2.5rem;
             }
+
             .dashboard-header h1 {
-                font-size: 2.2rem;
-                font-weight: 700;
+                font-size: 2.5rem;
+                font-weight: 800;
+                color: var(--text-dark);
                 margin: 0;
-                color: #2D3748;
+                letter-spacing: -1px;
+            }
+
+            .dashboard-header p {
+                color: var(--text-muted);
+                font-size: 1.1rem;
+                margin: 0.5rem 0 0;
+            }
+
+            .session-badge {
+                background: #1e293b;
+                color: white;
+                padding: 0.75rem 1.25rem;
+                border-radius: 100px;
+                font-weight: 700;
+                font-size: 0.9rem;
+                display: flex;
+                align-items: center;
+                gap: 0.6rem;
+                box-shadow: 0 10px 20px rgba(15, 23, 42, 0.15);
+            }
+
+            /* Stats Grid */
+            .stats-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+                gap: 1.5rem;
+                margin-bottom: 3rem;
+            }
+
+            .stat-card {
+                background: white;
+                border-radius: 24px;
+                padding: 1.5rem;
+                border: 1px solid rgba(226, 232, 240, 0.5);
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                position: relative;
+                overflow: hidden;
+            }
+
+            .stat-card:hover {
+                transform: translateY(-8px);
+                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+            }
+
+            .card-inner {
+                display: flex;
+                align-items: flex-start;
+                gap: 1.25rem;
+                margin-bottom: 1.5rem;
+            }
+
+            .icon-box {
+                width: 54px;
+                height: 54px;
+                border-radius: 16px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.5rem;
+            }
+
+            .blue-soft { background: #eff6ff; color: #3b82f6; }
+            .purple-soft { background: #f5f3ff; color: #8b5cf6; }
+            .pink-soft { background: #fff1f2; color: #f43f5e; }
+            .green-soft { background: #f0fdf4; color: #22c55e; }
+
+            .stat-info {
+                display: flex;
+                flex-direction: column;
+            }
+
+            .stat-label {
+                font-size: 0.75rem;
+                font-weight: 700;
+                color: var(--text-muted);
+                letter-spacing: 0.1em;
+                margin-bottom: 0.25rem;
+            }
+
+            .stat-row {
+                display: flex;
+                align-items: baseline;
+                gap: 0.5rem;
+            }
+
+            .stat-value {
+                font-size: 2.2rem;
+                font-weight: 800;
+                color: var(--text-dark);
+                line-height: 1;
+            }
+
+            .stat-unit {
+                font-size: 0.9rem;
+                color: var(--text-muted);
+                font-weight: 500;
+            }
+
+            .card-footer-lite {
                 display: flex;
                 align-items: center;
                 gap: 0.5rem;
+                font-size: 0.85rem;
+                font-weight: 600;
+                color: var(--text-muted);
+                padding-top: 1rem;
+                border-top: 1px solid #f1f5f9;
             }
+
+            .footer-dot {
+                width: 6px;
+                height: 6px;
+                border-radius: 50%;
+            }
+
+            .footer-dot.blue { background: #3b82f6; }
+            .footer-dot.purple { background: #8b5cf6; }
+            .footer-dot.pink { background: #f43f5e; }
+            .footer-dot.green { background: #22c55e; }
+
+            /* Layout Panels */
+            .main-content-layout {
+                display: grid;
+                grid-template-columns: 2fr 1fr;
+                gap: 2rem;
+            }
+
+            .premium-card-flat {
+                background: white;
+                border-radius: 32px;
+                padding: 2rem;
+                border: 1px solid rgba(226, 232, 240, 0.8);
+                box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            }
+
+            .panel-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 2rem;
+            }
+
+            .panel-header h2 {
+                font-size: 1.5rem;
+                font-weight: 800;
+                color: var(--text-dark);
+                margin: 0;
+            }
+
+            .btn-link {
+                color: var(--coach-primary);
+                text-decoration: none;
+                font-weight: 700;
+                font-size: 0.95rem;
+                transition: opacity 0.2s;
+            }
+
+            .btn-link:hover { opacity: 0.7; }
+
+            /* Entrepreneurs Panel */
+            .ent-row {
+                display: flex;
+                align-items: center;
+                padding: 1.25rem;
+                border-radius: 20px;
+                margin-bottom: 0.5rem;
+                transition: all 0.2s;
+            }
+
+            .ent-row:hover {
+                background: #f8fafc;
+                transform: translateX(5px);
+            }
+
+            .ent-avatar {
+                width: 56px;
+                height: 56px;
+                border-radius: 18px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-weight: 800;
+                font-size: 1.2rem;
+                margin-right: 1.25rem;
+                box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            }
+
+            .ent-main { flex: 1; min-width: 0; }
+
+            .ent-top {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                margin-bottom: 0.25rem;
+            }
+
+            .ent-name {
+                font-weight: 700;
+                font-size: 1.1rem;
+                color: var(--text-dark);
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .retard-badge {
+                background: #fff1f2;
+                color: #f43f5e;
+                padding: 0.2rem 0.75rem;
+                border-radius: 100px;
+                font-size: 0.75rem;
+                font-weight: 700;
+                white-space: nowrap;
+            }
+
+            .ent-sub {
+                display: block;
+                color: var(--text-muted);
+                font-size: 0.9rem;
+            }
+
+            .ent-progress {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-end;
+                gap: 0.5rem;
+                min-width: 120px;
+                margin: 0 1.5rem;
+            }
+
+            .pct { font-weight: 800; color: var(--coach-primary); font-size: 0.95rem; }
+
+            .p-bar {
+                width: 100%;
+                height: 8px;
+                background: #f1f5f9;
+                border-radius: 4px;
+                overflow: hidden;
+            }
+
+            .p-fill {
+                height: 100%;
+                background: linear-gradient(90deg, #FF4D85, #FF758C);
+                border-radius: 4px;
+            }
+
+            .ent-arrow { color: #cbd5e1; font-size: 1.1rem; }
+
+            /* Sessions Panel */
+            .session-item-premium {
+                display: flex;
+                gap: 1.5rem;
+                margin-bottom: 1.5rem;
+                position: relative;
+            }
+
+            .time-marker {
+                position: relative;
+                padding-top: 0.5rem;
+            }
+
+            .marker-dot {
+                width: 16px;
+                height: 16px;
+                border-radius: 50%;
+                background: #e2e8f0;
+                border: 3px solid white;
+                box-shadow: 0 0 0 1px #e2e8f0;
+                z-index: 2;
+                position: relative;
+            }
+
+            .marker-dot.confirmed { background: #22c55e; box-shadow: 0 0 0 1px #22c55e; }
+
+            .session-card-lite {
+                background: #f8fafc;
+                border: 1px solid #f1f5f9;
+                border-radius: 20px;
+                padding: 1.25rem;
+                flex: 1;
+            }
+
+            .sc-badge {
+                padding: 0.3rem 0.8rem;
+                border-radius: 100px;
+                font-size: 0.7rem;
+                font-weight: 800;
+                text-transform: uppercase;
+                background: #f1f5f9;
+                color: #64748b;
+            }
+
+            .sc-badge.confirmed { background: #ecfdf5; color: #10b981; }
+
+            .sc-title { margin: 1rem 0 0.5rem; font-size: 1.1rem; font-weight: 800; color: var(--text-dark); }
+
+            .sc-meta { display: flex; align-items: center; gap: 0.5rem; color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.75rem; }
+
+            .sc-link { display: inline-flex; align-items: center; gap: 0.5rem; color: #3b82f6; font-weight: 700; text-decoration: none; font-size: 0.9rem; }
+
+            .sc-link:hover { text-decoration: underline; }
+
+            /* Wave Animation */
             .wave {
                 display: inline-block;
                 animation: wave-animation 2.5s infinite;
                 transform-origin: 70% 70%;
             }
             @keyframes wave-animation {
-                0% { transform: rotate( 0.0deg) }
-                10% { transform: rotate(14.0deg) }  
-                20% { transform: rotate(-8.0deg) }
-                30% { transform: rotate(14.0deg) }
-                40% { transform: rotate(-4.0deg) }
-                50% { transform: rotate(10.0deg) }
-                60% { transform: rotate( 0.0deg) }  
-                100% { transform: rotate( 0.0deg) }
-            }
-            .dashboard-header p {
-                color: #718096;
-                font-size: 1.1rem;
-                margin-top: 0.5rem;
-            }
-            .header-action {
-                position: absolute;
-                right: 0;
-                top: 0;
-            }
-            .session-badge {
-                background-color: #1A365D; /* Dark blue pill */
-                color: white;
-                padding: 0.6rem 1.2rem;
-                border-radius: 20px;
-                font-weight: 500;
-                font-size: 0.95rem;
-                box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+                0%, 100% { transform: rotate(0deg); }
+                10% { transform: rotate(14deg); }
+                20% { transform: rotate(-8deg); }
+                30% { transform: rotate(14deg); }
+                40% { transform: rotate(-4deg); }
+                50% { transform: rotate(10deg); }
             }
 
-            /* Stats Grid */
-            .stats-grid {
-                display: grid;
-                grid-template-columns: repeat(4, 1fr);
-                gap: 1.5rem;
-                margin-bottom: 2.5rem;
-            }
-            .stat-card {
-                border-radius: 1.5rem;
-                padding: 1.5rem;
-                color: white;
-                display: flex;
-                flex-direction: column;
-                position: relative;
-                overflow: hidden;
-                box-shadow: 0 10px 25px rgba(0,0,0,0.08);
-                transition: transform 0.2s ease, box-shadow 0.2s ease;
-                min-height: 200px;
-            }
-            .stat-card:hover {
-                transform: translateY(-5px);
-                box-shadow: 0 15px 30px rgba(0,0,0,0.15);
-            }
-            /* Gradients matching the mockup */
-            .pink-gradient { background: var(--gradient-pink); }
-            .purple-gradient { background: var(--gradient-purple); }
-            .blue-gradient { background: var(--gradient-blue); }
-            .orange-gradient { background: var(--gradient-orange); }
-
-            /* Add the inner subtle circle decoration */
-            .stat-card::before {
-                content: '';
-                position: absolute;
-                top: -20px;
-                right: -20px;
-                width: 150px;
-                height: 150px;
-                border-radius: 50%;
-                background: rgba(255,255,255,0.1);
-                pointer-events: none;
-            }
-
-            .icon-wrapper {
-                width: 40px;
-                height: 40px;
-                border-radius: 10px;
-                background: rgba(255,255,255,0.2);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                margin-bottom: 1.5rem;
-            }
-            .icon-wrapper i {
-                font-size: 1.2rem;
-            }
-
-            .stat-content h3 {
-                font-size: 0.8rem;
-                font-weight: 600;
-                letter-spacing: 1px;
-                margin: 0 0 0.5rem 0;
-                opacity: 0.9;
-                text-transform: uppercase;
-            }
-            .stat-main {
-                display: flex;
-                flex-direction: column;
-                margin-bottom: 1.5rem;
-            }
-            .stat-main .value {
-                font-size: 3.5rem;
-                font-weight: 700;
-                line-height: 1;
-                margin-bottom: 0.2rem;
-            }
-            .stat-main .label {
-                font-size: 1.1rem;
-                font-weight: 500;
-                opacity: 0.9;
-            }
-            .card-footer {
-                margin-top: auto;
-                font-size: 0.85rem;
-                opacity: 0.8;
-                font-weight: 500;
-            }
-
-            /* Content Grid */
-            .content-grid {
-                display: grid;
-                grid-template-columns: 2fr 1fr;
-                gap: 2rem;
-            }
-
-            .section-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-bottom: 1.5rem;
-                padding: 0 0.5rem;
-            }
-            .section-header h2 {
-                font-size: 1.3rem;
-                font-weight: 700;
-                color: #2D3748;
-                margin: 0;
-            }
-            .voir-tous {
-                color: var(--coach-primary);
-                text-decoration: none;
-                font-weight: 600;
-                font-size: 0.9rem;
-            }
-            .voir-tous:hover {
-                text-decoration: underline;
-            }
-
-            /* Entrepreneurs List */
-            .entrepreneurs-section {
-                background: white;
-                border-radius: 1.5rem;
-                padding: 1.5rem;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-            }
-            .entrepreneurs-list {
-                display: flex;
-                flex-direction: column;
-                gap: 1rem;
-            }
-            .entrepreneur-item {
-                display: flex;
-                align-items: center;
-                padding: 1rem;
-                border-bottom: 1px solid #edf2f7;
-                transition: background 0.2s;
-            }
-            .entrepreneur-item:last-child {
-                border-bottom: none;
-            }
-            .entrepreneur-item:hover {
-                background: #f8f9fa;
-                border-radius: 1rem;
-            }
-            .avatar {
-                width: 50px;
-                height: 50px;
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-weight: 600;
-                font-size: 1.1rem;
-                color: white;
-                margin-right: 1rem;
-            }
-            .pink-avatar {
-                background: linear-gradient(135deg, #FF6B9E, #FF3366);
-            }
-            .entrepreneur-info {
-                flex: 1;
-            }
-            .entrepreneur-info h4 {
-                margin: 0 0 0.3rem 0;
-                font-size: 1.1rem;
-                color: #2D3748;
-                font-weight: 600;
-            }
-            .startup-desc {
-                color: #718096;
-                font-size: 0.9rem;
-            }
-            .badge-retard {
-                background: #FFF5F5;
-                color: #E53E3E;
-                font-size: 0.75rem;
-                padding: 0.2rem 0.6rem;
-                border-radius: 12px;
-                font-weight: 600;
-                border: 1px solid #FED7D7;
-            }
-            .progress-col {
-                display: flex;
-                align-items: center;
-                gap: 1rem;
-                min-width: 150px;
-                margin-right: 1.5rem;
-            }
-            .progress-txt {
-                font-weight: 600;
-                color: #4A5568;
-                min-width: 35px;
-            }
-            .progress-bar {
-                flex: 1;
-                height: 6px;
-                background: #EDF2F7;
-                border-radius: 3px;
-                overflow: hidden;
-            }
-            .progress-fill {
-                height: 100%;
-                border-radius: 3px;
-            }
-            .fill-pink {
-                background: var(--gradient-purple); /* Using purple/pink mix */
-            }
-            .entrepreneur-item > i {
-                color: #A0AEC0;
-                font-size: 1.2rem;
-                cursor: pointer;
-            }
-
-            /* Sessions List */
-            .sessions-section {
-                background: white;
-                border-radius: 1.5rem;
-                padding: 1.5rem;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-            }
-            .sessions-list {
-                display: flex;
-                flex-direction: column;
-                gap: 1.5rem;
-                position: relative;
-            }
-            /* Vertical timeline line */
-            .sessions-list::before {
-                content: '';
-                position: absolute;
-                left: 11px;
-                top: 20px;
-                bottom: 20px;
-                width: 2px;
-                background: #EDF2F7;
-            }
-
-            .session-card {
-                display: flex;
-                gap: 1.5rem;
-                position: relative;
-                z-index: 1;
-            }
-            .status-indicator {
-                padding-top: 5px;
-                background: white;
-            }
-            .dot {
-                display: block;
-                width: 24px;
-                height: 24px;
-                border-radius: 50%;
-                border: 4px solid white;
-                box-shadow: 0 0 0 1px #E2E8F0;
-            }
-            .dot-green { background: #48BB78; }
-            .dot-orange { background: #ED8936; }
-            .dot-red { background: #F56565; }
-
-            .session-content {
-                background: #F8FAFC;
-                border: 1px solid #E2E8F0;
-                border-radius: 1rem;
-                padding: 1.2rem;
-                flex: 1;
-            }
-            .badge {
-                display: inline-block;
-                padding: 0.3rem 0.8rem;
-                border-radius: 20px;
-                font-size: 0.75rem;
-                font-weight: 600;
-                margin-bottom: 0.8rem;
-            }
-            .badge-green {
-                background: #F0FFF4;
-                color: #38A169;
-            }
-            .badge-orange {
-                background: #FFFAF0;
-                color: #DD6B20;
-            }
-            .badge-red {
-                background: #FFF5F5;
-                color: #E53E3E;
-            }
-
-            /* Loading and empty state styles */
-            .loading-indicator {
-                text-align: center;
-                padding: 2rem;
-                color: #718096;
-                font-size: 0.95rem;
-            }
-
-            .empty-state {
-                text-align: center;
-                padding: 2rem;
-                color: #A0AEC0;
-                font-size: 0.95rem;
-            }
-            .session-content h4 {
-                margin: 0 0 0.5rem 0;
-                font-size: 1.1rem;
-                color: #2D3748;
-                font-weight: 600;
-            }
-            .session-meta {
-                color: #718096;
-                font-size: 0.9rem;
-                display: flex;
-                align-items: center;
-                gap: 0.5rem;
-                margin-bottom: 0.8rem;
-            }
-            .meet-link {
-                display: inline-flex;
-                align-items: center;
-                gap: 0.5rem;
-                color: #3182CE;
-                font-size: 0.9rem;
-                font-weight: 500;
-                text-decoration: none;
-            }
-            .meet-link:hover {
-                text-decoration: underline;
-            }
-
-            /* Responsive */
-            @media (max-width: 1280px) {
-                .stats-grid { grid-template-columns: repeat(2, 1fr); }
-            }
             @media (max-width: 1024px) {
-                .content-grid { grid-template-columns: 1fr; }
-            }
-            @media (max-width: 640px) {
-                .stats-grid { grid-template-columns: 1fr; }
-                .progress-col { display: none; }
+                .main-content-layout { grid-template-columns: 1fr; }
             }
         `
     ]
+})
 })
 export class CoachDashboardComponent implements OnInit, OnDestroy {
     stats: DashboardStats = {
@@ -672,6 +654,18 @@ export class CoachDashboardComponent implements OnInit, OnDestroy {
     isLoadingEntrepreneurs = false;
     isLoadingSessions = false;
     averageCompletionRate = 0;
+
+    getAvatarGradient(ent: any): string {
+        const colors = [
+            ['#FF4D85', '#FF758C'],
+            ['#7C3AED', '#A78BFA'],
+            ['#2563EB', '#60A5FA'],
+            ['#059669', '#34D399'],
+            ['#D97706', '#FBBF24']
+        ];
+        const index = (ent.id || 0) % colors.length;
+        return `linear-gradient(135deg, ${colors[index][0]} 0%, ${colors[index][1]} 100%)`;
+    }
     
     startups: Startup[] = [
         {

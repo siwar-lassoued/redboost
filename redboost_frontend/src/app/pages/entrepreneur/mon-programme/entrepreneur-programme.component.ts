@@ -55,26 +55,35 @@ const STATUT_CFG: Record<string, { label: string; bg: string; color: string }> =
                 </tr>
               </thead>
               <tbody>
-                @for (row of tableRows(); track row.id) {
+                @for (row of tableRows(); track row.id; let i = $index) {
                   <tr class="table-row">
+                    @if (i === 0) {
+                      <td [attr.rowspan]="tableRows().length" style="background: #F9FAFB; border-right: 1px solid #F1F5F9; vertical-align: top; padding-top: 24px;">
+                        <div class="name-cell">
+                          <span class="name-text" style="font-size: 16px; color: #1A1A2E;">{{ row.programmeName }}</span>
+                          <span class="email-text mt-1" *ngIf="programme()?.nbBeneficiaires">{{ programme()?.nbBeneficiaires }} Bénéficiaires</span>
+                          <div class="mt-4 p-3 bg-white rounded-xl border border-gray-100">
+                             <div class="flex flex-col gap-1">
+                               <span class="text-xs font-bold text-gray-700">Début: {{ formatDate(programme()!.dateDebut) }}</span>
+                               <span class="text-xs font-bold text-gray-500">Fin: {{ formatDate(programme()!.dateFin) }}</span>
+                             </div>
+                          </div>
+                        </div>
+                      </td>
+                    }
+                    <!-- Removed duplicate Dates td from here, it's now in the Programme column or we can keep it. Let's keep Dates for the overall prog in the first column, and here maybe just remove Dates column. No wait, the header has 'Dates', let's leave it as is but use the color palette. -->
                     <td>
-                      <div class="name-cell">
-                        <span class="name-text">{{ row.programmeName }}</span>
-                        <span class="email-text" *ngIf="programme()?.nbBeneficiaires">{{ programme()?.nbBeneficiaires }} Bénéficiaires</span>
-                      </div>
-                    </td>
-                    <td>
-                      <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest"
-                            style="background: #EFF6FF; color: #2563EB">
-                        <i class="pi pi-tag" style="font-size:9px"></i>
+                      <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black uppercase tracking-widest border"
+                            [style.background]="getThematiqueColor(row.thematiqueName).bg" 
+                            [style.color]="getThematiqueColor(row.thematiqueName).text"
+                            [style.border-color]="getThematiqueColor(row.thematiqueName).border">
+                        <i class="pi pi-tag" style="font-size:10px"></i>
                         {{ row.thematiqueName }}
                       </span>
                     </td>
                     <td class="date-cell">
-                      <div class="flex flex-col">
-                        <span class="text-xs font-bold text-gray-700">Début: {{ formatDate(programme()!.dateDebut) }}</span>
-                        <span class="text-xs font-bold text-gray-500 mt-1">Fin: {{ formatDate(programme()!.dateFin) }}</span>
-                      </div>
+                      <!-- Specific dates per thematique if exist, else we show a dash since the programme dates are on the left -->
+                      <span class="text-xs text-gray-400">—</span>
                     </td>
                     <td>
                       <div class="coach-cell">
@@ -227,5 +236,22 @@ export class EntrepreneurProgrammeComponent implements OnInit {
   formatDate(date: any): string {
     if (!date) return '—';
     return new Date(date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+  }
+
+  readonly colorPalette = [
+    { bg: '#E0F2FE', text: '#0284C7', border: '#BAE6FD' }, // Sky
+    { bg: '#FCE7F3', text: '#DB2777', border: '#FBCFE8' }, // Pink
+    { bg: '#DCFCE7', text: '#16A34A', border: '#BBF7D0' }, // Green
+    { bg: '#F3E8FF', text: '#9333EA', border: '#E9D5FF' }, // Purple
+    { bg: '#FEF3C7', text: '#D97706', border: '#FDE68A' }, // Amber
+    { bg: '#FEE2E2', text: '#DC2626', border: '#FECACA' }, // Red
+  ];
+
+  getThematiqueColor(name: string) {
+    if (!name) return this.colorPalette[0];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    const index = Math.abs(hash) % this.colorPalette.length;
+    return this.colorPalette[index];
   }
 }

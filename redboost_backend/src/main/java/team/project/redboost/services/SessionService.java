@@ -12,6 +12,8 @@ import team.project.redboost.repositories.UserRepository;
 import team.project.redboost.repositories.CoachRatingRepository;
 import team.project.redboost.repositories.SessionCoachRepository;
 import team.project.redboost.entities.SessionCoach;
+import team.project.redboost.entities.SeanceExceptionnelle;
+import team.project.redboost.repositories.SeanceExceptionnelleRepository;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -28,6 +30,7 @@ public class SessionService {
     private final CoachRatingRepository coachRatingRepository;
     private final GoogleCalendarService googleCalendarService;
     private final SessionCoachRepository sessionCoachRepository;
+    private final SeanceExceptionnelleRepository seanceExceptionnelleRepository;
 
     // ── Inner DTO returned by my-calendar endpoint ──────────────────────────
     @Data
@@ -99,9 +102,28 @@ public class SessionService {
     }
 
     public List<Session> getByEntrepreneur(Long entrepreneurId) {
-        List<Session> sessions = sessionRepository.findByEntrepreneurId(entrepreneurId);
+        List<Session> sessions = new ArrayList<>(sessionRepository.findByEntrepreneurId(entrepreneurId));
         autoUpdatePastSessions(sessions);
         populateThematiqueNames(sessions);
+
+        List<SeanceExceptionnelle> seances = seanceExceptionnelleRepository.findByEntrepreneurId(entrepreneurId);
+        for (SeanceExceptionnelle s : seances) {
+            Session mapped = Session.builder()
+                .id("seance-" + s.getId())
+                .titre(s.getTitre())
+                .coach(s.getCoach())
+                .entrepreneur(s.getEntrepreneur())
+                .date(s.getDateSeance().atTime(s.getHeureDebut()))
+                .dureeMinutes((int) java.time.Duration.between(s.getHeureDebut(), s.getHeureFin()).toMinutes())
+                .statut(s.getDateSeance().atTime(s.getHeureDebut()).plusMinutes(
+                        (long) java.time.Duration.between(s.getHeureDebut(), s.getHeureFin()).toMinutes()
+                ).isBefore(LocalDateTime.now()) ? Session.Statut.TERMINE : Session.Statut.PLANIFIE)
+                .isExceptionnelle(true)
+                .thematiqueName(s.getThematique() != null ? s.getThematique().getNom() : null)
+                .build();
+            sessions.add(mapped);
+        }
+
         return sessions;
     }
 

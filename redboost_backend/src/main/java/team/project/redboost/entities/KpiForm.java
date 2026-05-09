@@ -58,6 +58,14 @@ public class KpiForm {
         updatedAt = LocalDateTime.now();
     }
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, name = "form_type")
+    private FormType formType = FormType.KPI;
+
+    public enum FormType {
+        KPI, EVALUATION
+    }
+
     public enum KpiFormStatus {
         DRAFT, SENT, CLOSED
     }
@@ -80,6 +88,9 @@ public class KpiForm {
 
     public KpiFormStatus getStatus() { return status; }
     public void setStatus(KpiFormStatus status) { this.status = status; }
+
+    public FormType getFormType() { return formType; }
+    public void setFormType(FormType formType) { this.formType = formType; }
 
     public LocalDate getDeadline() { return deadline; }
     public void setDeadline(LocalDate deadline) { this.deadline = deadline; }

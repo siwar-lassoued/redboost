@@ -65,8 +65,12 @@
               <div class="event-mini-chip" *ngFor="let event of day.events.slice(0, 3)"
                    [style.background]="getEventGradient(event)" 
                    [class.disabled]="event.isDisabled"
+                   [class.is-booked]="event.isBooked"
                    [title]="event.title">
-                <span class="chip-title">{{ event.title }}</span>
+                <span class="chip-title">
+                  <i *ngIf="event.isBooked" class="pi pi-lock" style="font-size: 8px; margin-right: 3px;"></i>
+                  {{ event.title }}
+                </span>
               </div>
               <div class="more-events-tag" *ngIf="day.events.length > 3">
                 +{{ day.events.length - 3 }}
@@ -106,6 +110,9 @@
                 <div class="ev-badges-row">
                   <span class="ev-type-pill" [style.background-color]="getEventTypeColor(event.type) + '20'" [style.color]="getEventTypeColor(event.type)">
                     {{ event.type }}
+                  </span>
+                  <span class="ev-extra-badge" *ngIf="event.isBooked" style="background: #D1FAE5; color: #065F46;">
+                    <i class="pi pi-lock"></i> Réservée
                   </span>
                   <span class="ev-extra-badge" *ngIf="event.isExceptionnelle">
                     <i class="pi pi-star-fill"></i> Exceptionnelle

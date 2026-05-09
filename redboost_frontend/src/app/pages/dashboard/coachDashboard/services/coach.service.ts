@@ -39,6 +39,7 @@ export interface SeanceExceptionnelleDTO {
   id?: number;
   coachId: number;
   entrepreneurId: number;
+  thematiqueId?: number;
   entrepreneurName?: string;
   titre: string;
   dateSeance: string;
