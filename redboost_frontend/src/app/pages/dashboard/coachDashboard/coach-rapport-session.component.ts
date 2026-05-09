@@ -8,7 +8,7 @@ import html2canvas from 'html2canvas';
 import { ToastrService } from 'ngx-toastr';
 import { CoachService, CoachEntrepreneurDTO, UserDTO } from './services/coach.service';
 import { AuthService } from '../../frontoffice/service/auth.service';
-import { SessionService } from '../../../../core/services/session.service';
+import { SessionService } from '../../../core/services/session.service';
 
 @Component({
   selector: 'app-coach-rapport-sessions',
@@ -455,7 +455,7 @@ export class CoachRapportSessionComponent implements OnInit {
   loadCoachSessions() {
       if(!this.coachId) return;
       this.sessionService.getByCoach(this.coachId.toString()).subscribe({
-          next: (sessions) => {
+          next: (sessions: any[]) => {
               this.allCoachSessions = sessions;
               this.filterRealizedSessions();
           }

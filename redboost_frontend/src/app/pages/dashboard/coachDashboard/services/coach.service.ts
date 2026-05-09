@@ -151,6 +151,7 @@ export interface CoachEntrepreneurDetailDTO {
     tailleFichier: number;
     url: string;
     tacheTitre: string;
+    statut: string;
   }>;
   notes: Array<{
     id: number;

@@ -201,7 +201,7 @@ export class MesCoachsComponent implements OnInit {
     });
   }
 
-  getCoachSessions(coachId: string, thematiqueId?: number): any[] {
+  getCoachSessions(coachId: string, thematiqueId?: number | string): any[] {
     return this.allSessions()
       .filter(s => s.coach && String(s.coach.id) === String(coachId) && 
                    (!thematiqueId || (s.thematique && String(s.thematique.id) === String(thematiqueId))))
@@ -212,7 +212,7 @@ export class MesCoachsComponent implements OnInit {
     return new Date(date) < new Date();
   }
 
-  isNextSession(session: any, coachId: string, thematiqueId?: number): boolean {
+  isNextSession(session: any, coachId: string, thematiqueId?: number | string): boolean {
     const coachSessions = this.getCoachSessions(coachId, thematiqueId);
     const now = new Date();
     const futureSessions = coachSessions.filter(s => new Date(s.date) >= now);
@@ -259,7 +259,7 @@ export class MesCoachsComponent implements OnInit {
     { bg: '#FEE2E2', text: '#DC2626', border: '#FECACA' }, // Red
   ];
 
-  getThematiqueColor(name: string) {
+  getThematiqueColor(name: string | undefined) {
     if (!name) return this.colorPalette[0];
     let hash = 0;
     for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);

@@ -638,7 +638,6 @@ interface NoteDeSynthese {
         `
     ]
 })
-})
 export class CoachDashboardComponent implements OnInit, OnDestroy {
     stats: DashboardStats = {
         nbRendezVous: 0,
