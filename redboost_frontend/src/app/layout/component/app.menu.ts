@@ -6,6 +6,7 @@ import { AppMenuitem } from './app.menuitem';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { MessageService } from 'primeng/api';
+import { MessageService as ChatService } from '../../core/services/message.service';
 import { environment } from '../../../environment';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
@@ -37,6 +38,7 @@ export class AppMenu implements OnInit {
         private http: HttpClient,
         private router: Router,
         private messageService: MessageService,
+        private chatService: ChatService
     ) {}
 
     ngOnInit(): void {
@@ -71,6 +73,7 @@ export class AppMenu implements OnInit {
                         return;
                     }
                     this.fetchMenuFromApi(role, headers);
+                    this.fetchUnreadMessagesCount(response.id);
                 },
                 error: () => {
                     this.messageService.add({
@@ -108,6 +111,30 @@ export class AppMenu implements OnInit {
                     detail: 'Rôle utilisateur inconnu',
                 });
         }
+    }
+
+    private fetchUnreadMessagesCount(userId: number): void {
+        if (!userId) return;
+        this.chatService.getUnreadCount(userId.toString()).subscribe({
+            next: (count) => {
+                if (count > 0) {
+                    this.updateMenuBadge(count);
+                }
+            }
+        });
+    }
+
+    private updateMenuBadge(count: number): void {
+        const badgeStr = count.toString();
+        this.model.forEach(group => {
+            group.items?.forEach(item => {
+                if (item.label === 'Messagerie' || item.label === 'Chat') {
+                    item.badge = badgeStr;
+                    item.badgeStyleClass = 'coach-msg-badge';
+                }
+            });
+        });
+        this.model = [...this.model];
     }
 
     private getSuperAdminMenu(): MenuItem[] {
@@ -176,6 +203,11 @@ export class AppMenu implements OnInit {
                         routerLink: ['/admin_planning'],
                     },
                     {
+                        label: 'Vue 360° Supervision',
+                        icon: 'pi pi-fw pi-eye',
+                        routerLink: ['/admin-supervision'],
+                    },
+                    {
                         label: 'Évaluations Coach',
                         icon: 'pi pi-fw pi-star-fill',
                         routerLink: ['/admin-evaluations'],
@@ -189,6 +221,11 @@ export class AppMenu implements OnInit {
                         label: 'Livrables Coach',
                         icon: 'pi pi-fw pi-file',
                         routerLink: ['/admin-livrables'],
+                    },
+                    {
+                        label: 'Réclamations',
+                        icon: 'pi pi-fw pi-exclamation-triangle',
+                        routerLink: ['/admin-reclamations'],
                     },
                 ],
             },

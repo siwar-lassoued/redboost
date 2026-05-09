@@ -24,13 +24,13 @@ public class CoachRatingController {
     private final UserRepository userRepository;
     private final SessionRepository sessionRepository;
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN')")
     @GetMapping
     public ResponseEntity<List<CoachRating>> getAllRatings() {
         return ResponseEntity.ok(coachRatingService.getAllRatings());
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<CoachRating> getRatingById(@PathVariable Long id) {
         CoachRating rating = coachRatingService.getRatingById(id);
@@ -82,7 +82,7 @@ public class CoachRatingController {
         }
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN')")
     @PatchMapping("/{id}/status")
     public ResponseEntity<CoachRating> updateStatus(@PathVariable Long id, @RequestBody Map<String, String> payload) {
         CoachRating.RatingStatut status = CoachRating.RatingStatut.valueOf(payload.get("status"));
@@ -90,7 +90,7 @@ public class CoachRatingController {
         return updated != null ? ResponseEntity.ok(updated) : ResponseEntity.notFound().build();
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteRating(@PathVariable Long id) {
         coachRatingService.deleteRating(id);

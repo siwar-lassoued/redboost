@@ -181,48 +181,50 @@ export class UserProfileComponent implements OnInit {
         this.http.get(`${environment.apiUrl}/users/profile`, { headers }).subscribe({
             next: (response: any) => {
                 
+                const sanitize = (val: any) => (val === 'Non spécifié' || val === 'non spécifié' || val === 'null' || val === null) ? '' : val;
+
                 this.user = {
                     id: response.id || 0,
                     firstName: response.firstName || response.first_name || '',
                     lastName: response.lastName || response.last_name || '',
                     email: response.email || '',
-                    phoneNumber: response.phoneNumber || response.phone_number || '',
+                    phoneNumber: sanitize(response.phoneNumber) || sanitize(response.phone_number) || '',
                     role: response.role || '',
                     profilePictureUrl: response.profilePictureUrl || response.profile_pictureurl || '',
-                    bio: response.bio || '',
-                    facebookUrl: response.facebookUrl || '',
-                    instagramUrl: response.instagramUrl || '',
-                    linkedinUrl: response.linkedinUrl || '',
+                    bio: sanitize(response.bio) || '',
+                    facebookUrl: sanitize(response.facebookUrl) || '',
+                    instagramUrl: sanitize(response.instagramUrl) || '',
+                    linkedinUrl: sanitize(response.linkedinUrl) || '',
                     yearsOfExperience: response.yearsOfExperience || null,
-                    skills: response.skills || '',
-                    expertise: response.expertise || '',
-                    startupName: response.startupName || '',
-                    industry: response.industry || '',
-                    formationAcademNom: response.formationAcademNom || '',
-                    formationAcademDate: response.formationAcademDate || '',
-                    formationAcademRealisations: response.formationAcademRealisations || '',
+                    skills: sanitize(response.skills) || '',
+                    expertise: sanitize(response.expertise) || '',
+                    startupName: sanitize(response.startupName) || '',
+                    industry: sanitize(response.industry) || '',
+                    formationAcademNom: sanitize(response.formationAcademNom) || '',
+                    formationAcademDate: sanitize(response.formationAcademDate) || '',
+                    formationAcademRealisations: sanitize(response.formationAcademRealisations) || '',
                     nbEntreCoaches: response.nbEntreCoaches || null,
-                    competencesProNom: response.competencesProNom || '',
-                    competencesProDate: response.competencesProDate || '',
-                    competencesProCertificat: response.competencesProCertificat || '',
-                    succesClient: response.succesClient || '',
-                    engagementCommunautaire: response.engagementCommunautaire || '',
+                    competencesProNom: sanitize(response.competencesProNom) || '',
+                    competencesProDate: sanitize(response.competencesProDate) || '',
+                    competencesProCertificat: sanitize(response.competencesProCertificat) || '',
+                    succesClient: sanitize(response.succesClient) || '',
+                    engagementCommunautaire: sanitize(response.engagementCommunautaire) || '',
                     sessionEssai: response.sessionEssai || null,
-                    formaAcademNom: response.formaAcademNom || '',
-                    formaAcademDate: response.formaAcademDate || '',
-                    formaAcademRealisations: response.formaAcademRealisations || '',
-                    apprentInformelNom: response.apprentInformelNom || '',
-                    apprentInformelDate: response.apprentInformelDate || '',
-                    apprentInformelCertificat: response.apprentInformelCertificat || '',
-                    obstaclePrincipal: response.obstaclePrincipal || '',
-                    investmentFocus: response.investmentFocus || '',
+                    formaAcademNom: sanitize(response.formaAcademNom) || '',
+                    formaAcademDate: sanitize(response.formaAcademDate) || '',
+                    formaAcademRealisations: sanitize(response.formaAcademRealisations) || '',
+                    apprentInformelNom: sanitize(response.apprentInformelNom) || '',
+                    apprentInformelDate: sanitize(response.apprentInformelDate) || '',
+                    apprentInformelCertificat: sanitize(response.apprentInformelCertificat) || '',
+                    obstaclePrincipal: sanitize(response.obstaclePrincipal) || '',
+                    investmentFocus: sanitize(response.investmentFocus) || '',
                     dateNaissance: response.dateNaissance || null,
-                    secteur: response.secteur || '',
-                    region: response.region || '',
-                    entreprise: response.entreprise || '',
-                    descriptionProjet: response.descriptionProjet || '',
-                    stadeProjet: response.stadeProjet || '',
-                    besoinsCoaching: response.besoinsCoaching || '',
+                    secteur: sanitize(response.secteur) || '',
+                    region: sanitize(response.region) || '',
+                    entreprise: sanitize(response.entreprise) || '',
+                    descriptionProjet: sanitize(response.descriptionProjet) || '',
+                    stadeProjet: sanitize(response.stadeProjet) || '',
+                    besoinsCoaching: sanitize(response.besoinsCoaching) || '',
                 };
                 
                 this.userService.setUser(this.user);
@@ -554,5 +556,19 @@ export class UserProfileComponent implements OnInit {
         } else {
             this.router.navigate(['/entrepreneur/chat'], { queryParams: { with: userId } });
         }
+    }
+
+    getInitials(firstName: string, lastName: string): string {
+        return (firstName?.charAt(0) || '') + (lastName?.charAt(0) || '');
+    }
+
+    getStageColor(stage: string): { bg: string; color: string } {
+        const stageColor: Record<string, { bg: string; color: string }> = {
+            "Pre-Seed": { bg: "#FEF3C7", color: "#D97706" },
+            "Seed": { bg: "#DBEAFE", color: "#2563EB" },
+            "MVP": { bg: "#F3E8FF", color: "#7C3AED" },
+            "Series A": { bg: "#D1FAE5", color: "#059669" },
+        };
+        return stageColor[stage] || { bg: "#F1F5F9", color: "#64748B" };
     }
 }

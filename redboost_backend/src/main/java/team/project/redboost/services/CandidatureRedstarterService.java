@@ -248,11 +248,21 @@ public class CandidatureRedstarterService {
                     
                     String nomPrenom = candidature.getNomPrenom();
                     String phone = candidature.getNumeroTelephone();
+                    if ("00000000".equals(phone)) phone = null;
                     String startup = candidature.getNomEntreprise();
+                    if ("Non spécifié".equals(startup)) startup = null;
+                    
                     String bio = candidature.getBreveDescription();
+                    if ("Non spécifié".equals(bio)) bio = null;
+                    
                     String region = candidature.getRegionBasee();
+                    if ("Non spécifié".equals(region)) region = null;
+                    
                     String linkedin = candidature.getLienReseauxSociaux();
+                    
                     String secteur = candidature.getMarchePersonnasCibles();
+                    if ("Non spécifié".equals(secteur)) secteur = null;
+                    
                     String skills = "";
                     String expertise = "";
                     

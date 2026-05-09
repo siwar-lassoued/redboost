@@ -1,8 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { CoachService, SessionCoachDTO } from './services/coach.service';
+import { CoachService, SessionCoachDTO, SeanceExceptionnelleDTO } from './services/coach.service';
 import { AuthService } from '../../frontoffice/service/auth.service';
+import { forkJoin } from 'rxjs';
 import { firstValueFrom } from 'rxjs';
 
 export interface SessionGroup {
@@ -201,7 +202,12 @@ export interface SessionGroup {
                 <strong style="color: #1E293B;">{{b.entrepreneurName}}</strong>
                 <span class="booking-date" style="font-size: 11px; color: #94A3B8;">Réservé le : {{b.dateBooking | date:'dd/MM/yyyy HH:mm'}}</span>
               </div>
-              <span class="status-pill" [class]="'pill-' + b.statut?.toLowerCase()" style="font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 12px; background: #F3F4F6; color: #64748B;">{{b.statut}}</span>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="status-pill" [class]="'pill-' + b.statut?.toLowerCase()" style="font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 12px; background: #F3F4F6; color: #64748B;">{{b.statut}}</span>
+                <button class="btn-detail" style="border-color: #EF4444; color: #EF4444;" (click)="openReclamationModal(b)" onmouseover="this.style.backgroundColor='#EF4444'; this.style.color='#fff'" onmouseout="this.style.backgroundColor='transparent'; this.style.color='#EF4444'">
+                  <i class="pi pi-exclamation-triangle" style="font-size: 10px"></i> Signaler
+                </button>
+              </div>
             </div>
           </div>
           <div class="modal-footer">
@@ -213,6 +219,43 @@ export interface SessionGroup {
       <!-- Main Loading Overlay -->
       <div *ngIf="loading" class="modal-overlay" style="background: rgba(255,255,255,0.7)">
           <div class="spinner"></div>
+      </div>
+
+      <!-- Reclamation Modal -->
+      <div *ngIf="showReclamationModal" class="modal-overlay" (click)="closeReclamationModal()">
+        <div class="modal-box max-w-lg" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <div class="modal-header-info">
+              <h3 class="modal-name" style="color: #EF4444;"><i class="pi pi-exclamation-triangle"></i> Signaler un problème</h3>
+              <p class="modal-meta" style="margin-top: 4px; color: #64748B;">Signaler l'entrepreneur : <strong style="color: #1E293B;">{{reclamationTarget?.entrepreneurName}}</strong></p>
+            </div>
+            <button (click)="closeReclamationModal()" class="modal-close"><i class="pi pi-times"></i></button>
+          </div>
+          <div class="modal-body" style="display: flex; flex-direction: column; gap: 16px;">
+            <div class="form-group">
+              <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 6px; text-transform: uppercase;">Sujet de la réclamation</label>
+              <input type="text" [(ngModel)]="reclamationData.sujet" class="search-input" placeholder="Ex: Absence non justifiée" />
+            </div>
+            <div class="form-group">
+              <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 6px; text-transform: uppercase;">Type de problème</label>
+              <select [(ngModel)]="reclamationData.typeReclamation" class="filter-select w-full" style="width: 100%;">
+                <option value="RETARD">Retard excessif</option>
+                <option value="COMPORTEMENT">Comportement inapproprié</option>
+                <option value="AUTRE">Autre</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 6px; text-transform: uppercase;">Description détaillée</label>
+              <textarea [(ngModel)]="reclamationData.description" rows="4" class="search-input" style="width: 100%; border-radius: 12px; resize: none; padding: 12px;" placeholder="Décrivez le problème rencontré..."></textarea>
+            </div>
+          </div>
+          <div class="modal-footer" style="gap: 12px;">
+            <button (click)="closeReclamationModal()" class="btn-close-modal">Annuler</button>
+            <button (click)="submitReclamation()" class="action-buttons" style="background: #EF4444; color: white; border: none; padding: 10px 24px; border-radius: 12px; font-weight: 700; cursor: pointer;">
+              <i class="pi pi-send"></i> Envoyer
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   `,
@@ -305,6 +348,14 @@ export class SessionsComponent implements OnInit {
   showBookingsModal: boolean = false;
   loadingBookings: boolean = false;
   selectedSessionBookings: any[] = [];
+  
+  showReclamationModal: boolean = false;
+  reclamationTarget: any = null;
+  reclamationData = {
+    sujet: '',
+    typeReclamation: 'RETARD',
+    description: ''
+  };
 
   constructor(
     private coachService: CoachService,
@@ -321,9 +372,24 @@ export class SessionsComponent implements OnInit {
 
   loadSessions() {
     this.loading = true;
-    this.coachService.getAllSessionsByCoach(this.coachId).subscribe({
-      next: (data) => {
-        this.sessions = data;
+    forkJoin({
+      sessions: this.coachService.getAllSessionsByCoach(this.coachId),
+      seances: this.coachService.getSeancesExceptionnelles(this.coachId)
+    }).subscribe({
+      next: ({ sessions, seances }) => {
+        const mappedSeances: SessionCoachDTO[] = seances.map(se => ({
+          id: (se.id || 0) + 1000000, // offset id
+          disponibiliteId: 0,
+          titre: se.titre + ' (Session Exceptionnelle)',
+          dateSession: se.dateSeance,
+          heureDebut: se.heureDebut,
+          heureFin: se.heureFin,
+          typeSession: 'EN_LIGNE',
+          sessionGroupId: `seance-${se.id}`,
+          isBooked: true
+        } as SessionCoachDTO));
+
+        this.sessions = [...sessions, ...mappedSeances];
         this.filterSessions();
         this.loading = false;
       },
@@ -440,5 +506,42 @@ export class SessionsComponent implements OnInit {
   closeBookingsModal() {
     this.showBookingsModal = false;
     this.selectedSessionBookings = [];
+  }
+
+  openReclamationModal(booking: any) {
+    this.reclamationTarget = booking;
+    this.reclamationData = { sujet: '', typeReclamation: 'RETARD', description: '' };
+    this.showReclamationModal = true;
+  }
+
+  closeReclamationModal() {
+    this.showReclamationModal = false;
+    this.reclamationTarget = null;
+  }
+
+  submitReclamation() {
+    if (!this.reclamationData.sujet || !this.reclamationData.description) {
+      alert("Veuillez remplir tous les champs obligatoires.");
+      return;
+    }
+    this.loading = true;
+    const finalReclamation: any = {
+      ...this.reclamationData,
+      coachId: this.coachId,
+      entrepreneurId: this.reclamationTarget.entrepreneurId
+    };
+    this.coachService.addReclamation(this.coachId, this.reclamationTarget.entrepreneurId, finalReclamation)
+      .subscribe({
+        next: () => {
+          alert('Réclamation envoyée avec succès.');
+          this.loading = false;
+          this.closeReclamationModal();
+        },
+        error: (err) => {
+          alert('Erreur lors de l\'envoi de la réclamation.');
+          console.error(err);
+          this.loading = false;
+        }
+      });
   }
 }

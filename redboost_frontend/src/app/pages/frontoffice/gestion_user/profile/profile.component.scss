@@ -543,251 +543,179 @@
     }
 }
 
-/* ─── Matched Entrepreneurs Section (Coach Profile) ─── */
-/* Mirrors the admin_candidature table design system      */
-.matched-section {
-    padding: 2rem;
-    background: #F5F6FA;
-    border-radius: 0 0 12px 12px;
+/* Premium Card Grid for Matching */
+.matched-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+    padding: 1.5rem 0;
 }
 
-.matched-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    margin-bottom: 20px;
-}
-.matched-title {
-    font-size: 24px;
-    font-weight: 800;
-    color: #1A1A2E;
-    margin: 0;
-}
-.matched-subtitle {
-    color: #8a8a8a;
-    font-size: 14px;
-    margin-top: 4px;
-}
-
-.matched-empty-state {
-    text-align: center;
-    padding: 48px 20px;
-    background: #fff;
-    border-radius: 20px;
-    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.07);
-
-    .empty-text {
-        color: #6B7280;
-        font-weight: 600;
-        font-size: 15px;
-        margin-top: 8px;
-    }
-    .empty-sub {
-        color: #9CA3AF;
-        font-size: 13px;
-        margin-top: 4px;
-    }
-}
-
-.matched-thematique-block {
-    margin-bottom: 20px;
-}
-
-/* Thématique tab header — pill-style like candidature tabs */
-.thematique-tab-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 0;
-    padding: 12px 20px;
-    background: linear-gradient(135deg, #1e293b, #334155);
-    border-radius: 20px 20px 0 0;
-    color: #fff;
-
-    .thematique-label {
-        font-size: 15px;
-        font-weight: 700;
-        flex: 1;
-    }
-
-    .thematique-badge-count {
-        font-size: 12px;
-        font-weight: 700;
-        background: rgba(234, 80, 115, 0.85);
-        color: #fff;
-        padding: 2px 10px;
-        border-radius: 20px;
-        min-width: 20px;
-        text-align: center;
-    }
-
-    .thematique-status-badge {
-        font-size: 11px;
-        font-weight: 600;
-        padding: 4px 12px;
-        border-radius: 20px;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        background: rgba(255, 255, 255, 0.12);
-        color: rgba(255, 255, 255, 0.7);
-
-        &.active {
-            background: #D1FAE5;
-            color: #065F46;
-        }
-        &.done {
-            background: rgba(255, 255, 255, 0.15);
-            color: #D1D5DB;
-        }
-    }
-}
-
-/* Table card — identical to .table-card in candidature */
-.matched-table-card {
-    background: #fff;
-    border-radius: 0 0 20px 20px;
+.premium-glass-card {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 24px;
+    padding: 1.5rem;
+    box-shadow: var(--premium-shadow-sm);
+    transition: var(--transition-smooth);
+    position: relative;
     overflow: hidden;
-    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.07);
-}
-.matched-table-scroll {
-    overflow-x: auto;
-    min-width: 100%;
-}
-
-/* Table — identical to .cand-table */
-.matched-table {
-    width: 100%;
-    border-collapse: collapse;
-    text-align: left;
-
-    th {
-        padding: 12px 16px;
-        font-size: 11px;
-        font-weight: 700;
-        color: #6B7280;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        background: #F9FAFB;
-        border-bottom: 1px solid #F3F4F6;
-    }
-
-    td {
-        padding: 14px 16px;
-    }
-}
-
-.matched-table-row {
-    border-bottom: 1px solid #F3F4F6;
-    transition: background 0.15s;
-
-    &:hover {
-        background: #FFF5F8;
-    }
-    &:last-child {
-        border-bottom: none;
-    }
-}
-
-.matched-name-cell {
     display: flex;
     flex-direction: column;
-}
-.matched-name-text {
-    font-weight: 600;
-    font-size: 14px;
-    color: #1A1A2E;
-}
-.matched-email-text {
-    font-size: 13px;
-    color: #9CA3AF;
-}
-.matched-prog-text {
-    font-size: 13px;
-    color: #6B7280;
-}
-
-/* Action button — candidature style */
-.matched-btn-action {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 14px;
-    border-radius: 8px;
-    font-size: 12px;
-    font-weight: 600;
-    color: #ea5073;
-    background: none;
-    border: none;
-    cursor: pointer;
-    transition: all 0.2s;
-    white-space: nowrap;
-
-    i {
-        font-size: 13px;
-    }
 
     &:hover {
-        background: #ffe0ef;
+        transform: translateY(-8px);
+        box-shadow: var(--premium-shadow-lg);
+        background: rgba(255, 255, 255, 0.9);
     }
-}
 
-/* ─── Responsive matched section ─── */
-@media (max-width: 768px) {
-    .matched-section {
-        padding: 1rem;
-    }
-    .matched-title {
-        font-size: 20px;
-    }
-    .matched-table thead {
-        display: none;
-    }
-    .matched-table,
-    .matched-table tbody,
-    .matched-table tr,
-    .matched-table td {
-        display: block;
+    .card-top-accent {
+        position: absolute;
+        top: 0;
+        left: 0;
         width: 100%;
-    }
-    .matched-table-row {
-        padding: 14px;
-        margin-bottom: 8px;
-        border-bottom: none;
-        border-radius: 12px;
-        background: #fff;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        align-items: center;
-    }
-    .matched-table-row td {
-        padding: 0;
-    }
-    .matched-table-row td:first-child {
-        flex: 1;
-        min-width: 0;
-    }
-    .matched-table-row td:nth-child(2),
-    .matched-table-row td:nth-child(3),
-    .matched-table-row td:nth-child(4) {
-        display: none;
-    }
-    .matched-table-row td:last-child {
-        margin-left: auto;
-    }
-    .matched-btn-action {
-        background: #F9FAFB;
-        border-radius: 8px;
-        padding: 8px 12px;
+        height: 4px;
+        background: linear-gradient(90deg, #DC2626, #111827);
     }
 
-    .thematique-tab-header {
-        border-radius: 16px 16px 0 0;
-        padding: 10px 14px;
-        flex-wrap: wrap;
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1.25rem;
+
+        .avatar-initials {
+            width: 50px;
+            height: 50px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #111827, #374151);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.25rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .stage-badge {
+            padding: 0.35rem 0.8rem;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+    }
+
+    .card-body {
+        flex: 1;
+
+        .name {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: #111827;
+            margin: 0 0 0.25rem 0;
+            line-height: 1.2;
+        }
+
+        .company {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #DC2626;
+            margin-bottom: 1rem;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-bottom: 0.5rem;
+
+            i {
+                font-size: 0.9rem;
+                width: 16px;
+                color: #94a3b8;
+            }
+        }
+    }
+
+    .card-footer {
+        margin-top: 1.5rem;
+
+        .chat-btn {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.75rem;
+            border-radius: 14px;
+            background: #f8fafc;
+            color: #475569;
+            font-weight: 700;
+            font-size: 0.9rem;
+            border: 1px solid #e2e8f0;
+            transition: var(--transition-smooth);
+            cursor: pointer;
+
+            i {
+                font-size: 0.9rem;
+            }
+
+            &:hover {
+                background: #111827;
+                color: white;
+                border-color: #111827;
+                transform: scale(1.02);
+            }
+        }
     }
 }
+
+.thematique-header-premium {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 2rem 0 1rem 0;
+    padding: 1rem 1.5rem;
+    background: rgba(17, 24, 39, 0.05);
+    border-radius: 20px;
+    border-left: 5px solid #DC2626;
+
+    .icon-box {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        background: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #DC2626;
+        box-shadow: var(--premium-shadow-sm);
+    }
+
+    .label {
+        font-size: 1.1rem;
+        font-weight: 800;
+        color: #111827;
+        flex: 1;
+    }
+
+    .count {
+        background: #111827;
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 700;
+    }
+}
+
 
 @media (max-width: 480px) {
     .matched-section {

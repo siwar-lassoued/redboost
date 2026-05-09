@@ -41,4 +41,7 @@ public interface MessageRepository extends JpaRepository<Message, String> {
             "  AND m.sent_at = latest.last_date " +
             "ORDER BY m.sent_at DESC", nativeQuery = true)
     List<Message> findLatestMessagePerConversation(@org.springframework.data.repository.query.Param("userId") Long userId);
+
+    @Query("SELECT m.expediteur.id as senderId, COUNT(m) as count FROM Message m WHERE m.destinataire.id = :userId AND m.lu = false GROUP BY m.expediteur.id")
+    List<Object[]> countUnreadPerSender(@org.springframework.data.repository.query.Param("userId") Long userId);
 }

@@ -33,8 +33,8 @@ export class NotificationService {
     private counter = 0;
 
     loadAll(userId: string): Observable<AppNotification[]> {
-        return this.http.get<ApiResponse<AppNotification[]>>(`${this.baseUrl}?userId=${userId}`).pipe(
-            map(response => response?.data || []),
+        return this.http.get<any>(`${this.baseUrl}?userId=${userId}`).pipe(
+            map(response => Array.isArray(response) ? response : (response?.data || [])),
             tap(list => {
                 this.notifications$.next(list);
                 this.unreadCount$.next(list.filter(n => !n.lu).length);
@@ -43,7 +43,7 @@ export class NotificationService {
     }
 
     markAllRead(userId: string): Observable<void> {
-        return this.http.put<void>(`${this.baseUrl}/read-all?userId=${userId}`, {}).pipe(
+        return this.http.patch<void>(`${this.baseUrl}/mark-all-read?userId=${userId}`, {}).pipe(
             tap(() => {
                 const updated = this.notifications$.value.map(n => ({ ...n, lu: true }));
                 this.notifications$.next(updated);

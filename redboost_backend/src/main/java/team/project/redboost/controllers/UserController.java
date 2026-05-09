@@ -524,11 +524,11 @@ public class UserController {
         response.put("instagramUrl", user.getInstagramUrl());
         response.put("linkedinUrl", user.getLinkedinUrl());
 
-        // Common fields for all users (NEW - These were missing)
+        // Common fields for all users
         response.put("dateNaissance", user.getDateNaissance());
-        response.put("secteur", user.getSecteur());
-        response.put("region", user.getRegion());
-        response.put("entreprise", user.getEntreprise());
+        response.put("secteur", "Non spécifié".equals(user.getSecteur()) ? "" : user.getSecteur());
+        response.put("region", "Non spécifié".equals(user.getRegion()) ? "" : user.getRegion());
+        response.put("entreprise", "Non spécifié".equals(user.getEntreprise()) ? "" : user.getEntreprise());
 
         // Coach-specific fields
         if (user.getRole() == Role.COACH) {

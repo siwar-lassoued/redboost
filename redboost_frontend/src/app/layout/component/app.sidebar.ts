@@ -16,33 +16,23 @@ import { AppMenu } from './app.menu';
             .layout-sidebar {
                 position: fixed;
                 left: 0;
-                top: 70px;
+                top: 80px;
                 width: 280px;
-                height: calc(100vh - 70px);
-                background-color: #ffffff;
-                box-shadow: 2px 0 8px rgba(0, 0, 0, 0.06);
+                height: calc(100vh - 80px);
+                background: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+                border-right: 1px solid rgba(0, 0, 0, 0.05);
+                box-shadow: var(--premium-shadow-sm);
                 overflow-y: auto;
                 overflow-x: hidden;
                 z-index: 999;
-                scrollbar-width: thin;
-                scrollbar-color: #e0e0e0 transparent;
+                transition: var(--transition-smooth);
+                scrollbar-width: none;
             }
 
             .layout-sidebar::-webkit-scrollbar {
-                width: 6px;
-            }
-
-            .layout-sidebar::-webkit-scrollbar-track {
-                background: transparent;
-            }
-
-            .layout-sidebar::-webkit-scrollbar-thumb {
-                background: #e0e0e0;
-                border-radius: 3px;
-            }
-
-            .layout-sidebar::-webkit-scrollbar-thumb:hover {
-                background: #bdbdbd;
+                display: none;
             }
 
             /* Menu Styles */
@@ -67,123 +57,97 @@ import { AppMenu } from './app.menu';
             :host ::ng-deep .layout-menu > li > .menu-item-link {
                 display: flex;
                 align-items: center;
-                padding: 0.75rem 1.5rem;
-                color: #6c757d;
+                padding: 0.85rem 1.25rem;
+                margin: 0.25rem 1rem;
+                color: #64748b;
                 text-decoration: none;
-                font-size: 1rem;
-                font-weight: 560;
-                transition: all 0.2s ease;
+                font-size: 0.95rem;
+                font-weight: 500;
+                border-radius: 12px;
+                transition: var(--transition-smooth);
                 cursor: pointer;
                 position: relative;
                 user-select: none;
-                letter-spacing: 0.5px;
-                text-transform: uppercase;
             }
 
             :host ::ng-deep .layout-menu > li > a i,
             :host ::ng-deep .layout-menu > li > .menu-item-link i {
-                font-size: 1.1rem;
+                font-size: 1.25rem;
                 margin-right: 0.75rem;
-                width: 20px;
+                width: 24px;
                 text-align: center;
-                color: #6c757d;
-                transition: color 0.2s ease;
-            }
-
-            :host ::ng-deep .layout-menu > li > a .menu-toggle-icon,
-            :host
-                ::ng-deep
-                .layout-menu
-                > li
-                > .menu-item-link
-                .menu-toggle-icon {
-                margin-left: auto;
-                font-size: 0.7rem;
-                transition: transform 0.2s ease;
+                color: #94a3b8;
+                transition: var(--transition-smooth);
             }
 
             /* Hover State */
             :host ::ng-deep .layout-menu > li > a:hover,
             :host ::ng-deep .layout-menu > li > .menu-item-link:hover {
-                background-color: #f8f9fa;
-                color: #495057;
+                background-color: rgba(0, 0, 0, 0.02);
+                color: #1e293b;
+                transform: translateX(4px);
             }
 
             :host ::ng-deep .layout-menu > li > a:hover i,
             :host ::ng-deep .layout-menu > li > .menu-item-link:hover i {
-                color: #495057;
+                color: #1e293b;
             }
 
             /* Active Menu Item */
             :host ::ng-deep .layout-menu > li > a.active-route,
             :host ::ng-deep .layout-menu > li > .menu-item-link.active-route {
-                background-color: var(--sidebar-active-bg, rgba(255, 77, 133, 0.08));
-                color: var(--sidebar-active-color, #FF4D85);
-                font-weight: 600;
-                border-radius: 0 20px 20px 0; /* Add slight rounding on the right like in the mockup */
-                position: relative;
-            }
-
-            :host ::ng-deep .layout-menu > li > a.active-route::after,
-            :host ::ng-deep .layout-menu > li > .menu-item-link.active-route::after {
-                content: '';
-                position: absolute;
-                right: 1.5rem;
-                top: 50%;
-                transform: translateY(-50%);
-                width: 6px;
-                height: 6px;
-                border-radius: 50%;
-                background-color: var(--sidebar-active-color, #FF4D85);
+                background: var(--sidebar-active-bg);
+                color: var(--sidebar-active-color);
+                font-weight: 700;
+                box-shadow: var(--premium-shadow-sm);
             }
 
             :host ::ng-deep .layout-menu > li > a.active-route i,
             :host ::ng-deep .layout-menu > li > .menu-item-link.active-route i {
-                color: var(--sidebar-active-color, #FF4D85);
+                color: var(--sidebar-active-color);
+                transform: scale(1.1);
             }
 
-            /* Active Menuitem with Children */
-            :host ::ng-deep .layout-menu > li > a.active-menuitem,
-            :host
-                ::ng-deep
-                .layout-menu
-                > li
-                > .menu-item-link.active-menuitem {
-                color: var(--coach-text-main, #212529);
+            /* Decorative indicator for active route */
+            :host ::ng-deep .layout-menu > li > a.active-route::before,
+            :host ::ng-deep .layout-menu > li > .menu-item-link.active-route::before {
+                content: '';
+                position: absolute;
+                left: -1rem;
+                top: 50%;
+                transform: translateY(-50%);
+                width: 4px;
+                height: 24px;
+                background: var(--sidebar-active-color);
+                border-radius: 0 4px 4px 0;
             }
 
-            :host ::ng-deep .layout-menu > li > a.active-menuitem i:first-child,
-            :host
-                ::ng-deep
-                .layout-menu
-                > li
-                > .menu-item-link.active-menuitem
-                i:first-child {
-                color: var(--sidebar-active-color, #FF4D85);
+            /* Section Label */
+            :host ::ng-deep .menu-section-label {
+                font-size: 0.75rem;
+                font-weight: 700;
+                color: #94a3b8;
+                padding: 1.5rem 1.5rem 0.5rem;
+                text-transform: uppercase;
+                letter-spacing: 1px;
             }
 
-            :host
-                ::ng-deep
-                .layout-menu
-                > li
-                > a.active-menuitem
-                .menu-toggle-icon,
-            :host
-                ::ng-deep
-                .layout-menu
-                > li
-                > .menu-item-link.active-menuitem
-                .menu-toggle-icon {
-                transform: rotate(90deg);
+            :host ::ng-deep .menu-item-text {
+                flex: 1;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
             }
 
             /* Submenu Container */
-            :host ::ng-deep .layout-menu > li > ul {
+            :host ::ng-deep .layout-menu ul {
                 list-style: none;
                 padding: 0;
                 margin: 0;
-                overflow: hidden;
-                background-color: #fafafa;
+            }
+
+            :host ::ng-deep .layout-menu ul.root-submenu {
+                background: transparent;
             }
 
             /* Submenu Items */

@@ -84,6 +84,9 @@ public class Session {
     @Column(name = "annulation_motif", columnDefinition = "TEXT")
     private String annulationMotif;
 
+    @Transient
+    private String thematiqueName;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -94,6 +97,10 @@ public class Session {
     @Builder.Default
     @Column(name = "reminder_2h_sent")
     private Boolean reminder2hSent = false;
+
+    @Builder.Default
+    @Column(name = "is_exceptionnelle")
+    private Boolean isExceptionnelle = false;
 
     @PrePersist
     protected void onCreate() {

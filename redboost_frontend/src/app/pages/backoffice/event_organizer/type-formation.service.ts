@@ -2,6 +2,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../../../environment';
 
 export interface TypeFormation {
   id: number;
@@ -16,7 +17,7 @@ export interface CreateTypeFormationRequest {
   providedIn: 'root'
 })
 export class TypeFormationService {
-  private apiUrl = 'https://redboost.tn/api/type-formation';
+  private apiUrl = `${environment.apiUrl}/type-formation`;
 
   constructor(private http: HttpClient) {}
 

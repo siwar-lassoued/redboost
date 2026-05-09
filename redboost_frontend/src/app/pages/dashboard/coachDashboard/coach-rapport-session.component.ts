@@ -8,6 +8,7 @@ import html2canvas from 'html2canvas';
 import { ToastrService } from 'ngx-toastr';
 import { CoachService, CoachEntrepreneurDTO, UserDTO } from './services/coach.service';
 import { AuthService } from '../../frontoffice/service/auth.service';
+import { SessionService } from '../../../core/services/session.service';
 
 @Component({
   selector: 'app-coach-rapport-sessions',
@@ -36,7 +37,7 @@ import { AuthService } from '../../frontoffice/service/auth.service';
             <div style="display:flex; flex-direction:column; gap:20px;">
               <div class="form-group">
                 <label>Sélectionner un entrepreneur <span class="required">*</span></label>
-                <select [(ngModel)]="selectedEntrepreneurId" class="premium-input">
+                <select [(ngModel)]="selectedEntrepreneurId" (change)="onEntrepreneurSelect()" class="premium-input">
                   <option [ngValue]="0" disabled>Choisir un entrepreneur...</option>
                   <option *ngFor="let ent of entrepreneurs" [value]="ent.id">{{ ent.firstName }} {{ ent.lastName }} ({{ ent.entreprise }})</option>
                 </select>
@@ -47,6 +48,14 @@ import { AuthService } from '../../frontoffice/service/auth.service';
                 <select [(ngModel)]="selectedThematiqueId" class="premium-input">
                   <option [ngValue]="0" disabled>Choisir une thématique...</option>
                   <option *ngFor="let t of thematiques" [value]="t.id">{{ t.nom }}</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Session réalisée (Optionnel pour pré-remplir)</label>
+                <select [(ngModel)]="selectedSessionId" (change)="onSessionSelect()" class="premium-input">
+                  <option [ngValue]="0">-- Création manuelle --</option>
+                  <option *ngFor="let s of realizedSessions" [value]="s.id">{{ s.titre || 'Session' }} - {{ s.date | date:'shortDate' }}</option>
                 </select>
               </div>
             </div>
@@ -377,11 +386,16 @@ export class CoachRapportSessionComponent implements OnInit {
   history: any[] = [];
   currentReport: any = {};
   actions: any[] = [];
+  
+  allCoachSessions: any[] = [];
+  realizedSessions: any[] = [];
+  selectedSessionId: number = 0;
 
   constructor(
     private route: ActivatedRoute,
     private coachService: CoachService,
     private authService: AuthService,
+    private sessionService: SessionService,
     private toastr: ToastrService,
     private cdr: ChangeDetectorRef
   ) {}
@@ -408,6 +422,7 @@ export class CoachRapportSessionComponent implements OnInit {
             this.selectedEntrepreneurId = this.entrepreneurs[0].id;
         }
         this.loadHistory();
+        this.loadCoachSessions();
 
         this.route.queryParams.subscribe(params => {
           if (params['action'] === 'new' && params['entrepreneurId']) {
@@ -437,14 +452,43 @@ export class CoachRapportSessionComponent implements OnInit {
       });
   }
 
+  loadCoachSessions() {
+      if(!this.coachId) return;
+      this.sessionService.getByCoach(this.coachId.toString()).subscribe({
+          next: (sessions: any[]) => {
+              this.allCoachSessions = sessions;
+              this.filterRealizedSessions();
+          }
+      });
+  }
+
   onEntrepreneurSelect() {
-      // Future enhancements can dynamically load more context here
+      this.selectedSessionId = 0;
+      this.filterRealizedSessions();
+  }
+
+  filterRealizedSessions() {
+      if (!this.allCoachSessions) return;
+      this.realizedSessions = this.allCoachSessions.filter(s => 
+          (s.statut === 'REALISEE' || s.statut === 'TERMINE') &&
+          (this.selectedEntrepreneurId === 0 || (s.entrepreneur && s.entrepreneur.id == this.selectedEntrepreneurId))
+      );
+  }
+
+  onSessionSelect() {
+      const s = this.allCoachSessions.find(x => x.id == this.selectedSessionId);
+      if (s) {
+          if (s.entrepreneur) this.selectedEntrepreneurId = s.entrepreneur.id;
+          if (s.thematique) this.selectedThematiqueId = s.thematique.id;
+          this.filterRealizedSessions();
+      }
   }
 
   initNewReport() {
     if (this.selectedEntrepreneurId === 0) return;
     
     const ent = this.entrepreneurs.find(e => e.id == this.selectedEntrepreneurId);
+    const session = this.allCoachSessions.find(x => x.id == this.selectedSessionId);
     
     this.currentReport = {
         coachId: this.coachId,
@@ -455,12 +499,12 @@ export class CoachRapportSessionComponent implements OnInit {
         gouvernorat: '',
         beneficiaireNom: ent ? ent.firstName + ' ' + ent.lastName : '',
         coachNom: this.coachProfile ? this.coachProfile.firstName + ' ' + this.coachProfile.lastName : '',
-        typeSession: 'En ligne',
+        typeSession: session && session.meetLink ? 'En ligne' : 'Terrain',
         numeroSession: '1',
-        dateSession: new Date().toISOString().split('T')[0],
+        dateSession: session ? new Date(session.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
         
-        objectifSession: '',
-        deroulement: '',
+        objectifSession: session ? (session.titre || '') : '',
+        deroulement: session ? (session.description || '') : '',
         apprentissage: '',
         avancementActions: '',
         difficultes: '',

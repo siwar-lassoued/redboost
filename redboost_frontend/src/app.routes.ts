@@ -66,6 +66,8 @@ import { SeanceExceptionnelleComponent } from './app/pages/dashboard/coachDashbo
 import { AdminKpiFormsComponent } from './app/pages/backoffice/kpi_forms/admin-kpi-forms.component';
 import { AdminEvaluationsComponent } from './app/pages/backoffice/evaluations/admin-evaluations.component';
 import { AdminLivrablesComponent } from './app/pages/backoffice/livrables/admin-livrables.component';
+import { AdminReclamationsComponent } from './app/pages/backoffice/reclamations/admin-reclamations.component';
+import { AdminSupervisionDashboardComponent } from './app/pages/backoffice/admin-supervision/admin-supervision.component';
 import { EntrepreneurKpiFormsComponent } from './app/pages/entrepreneur/kpi_forms/entrepreneur-kpi-forms.component';
 import { EntrepreneurDashboardComponent } from './app/pages/entrepreneur/dashboard/entrepreneur-dashboard.component';
 import { MesCoachsComponent } from './app/pages/entrepreneur/mes-coachs/mes-coachs.component';
@@ -165,6 +167,8 @@ export const appRoutes: Routes = [
             { path: 'admin-kpi-forms', component: AdminKpiFormsComponent },
             { path: 'admin-evaluations', component: AdminEvaluationsComponent },
             { path: 'admin-livrables', component: AdminLivrablesComponent },
+            { path: 'admin-reclamations', component: AdminReclamationsComponent },
+            { path: 'admin-supervision', component: AdminSupervisionDashboardComponent },
             
             // Entrepreneur Profile
             { path: 'entrep-calendar', component: EntrepreneurSessionsComponent },

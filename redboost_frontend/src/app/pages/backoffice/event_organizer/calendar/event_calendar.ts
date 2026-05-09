@@ -12,9 +12,9 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { FormsModule } from '@angular/forms';
 import { EventService, EventResponse } from '../event.service';
 import { TypeFormationService, TypeFormation } from '../type-formation.service';
-import { MatTooltip } from '@angular/material/tooltip';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { forkJoin, of } from 'rxjs';
-import { catchError, switchMap } from 'rxjs/operators';
+import { catchError, filter, take } from 'rxjs/operators';
 import { AuthService } from '../../../../core/services/auth.service';
 import { MatchingService } from '../../../../core/services/matching.service';
 import { CoachService } from '../../../dashboard/coachDashboard/services/coach.service';
@@ -34,6 +34,9 @@ interface CalendarEvent {
   meetLink?: string;
   googleEventId?: string;   // Google Calendar event ID for deep-link
   isDisabled?: boolean;
+  couleur?: string;
+  isExceptionnelle?: boolean;
+  isBooked?: boolean;
 }
 
 interface EventTypeWithColor {
@@ -50,7 +53,7 @@ interface EventTypeWithColor {
   imports: [
     CommonModule,
     MatIconModule,
-    MatTooltip,
+    MatTooltipModule,
     MatButtonModule,
     MatMenuModule,
     MatDialogModule,
@@ -72,7 +75,7 @@ export class CalendarComponent implements OnInit {
   isCoach = false;
   matchedCoaches: any[] = [];
   coachGroupsMap: { [coachId: string]: any[] } = {};
-  coachThematiquesMap: { [coachId: string]: any[] } = {};
+  thematiquesList: any[] = [];
   
   // Entrepreneur Slot Statistics
   availableSlotsCount = 0;
@@ -93,11 +96,11 @@ export class CalendarComponent implements OnInit {
   eventTypes: EventTypeWithColor[] = [];
   private colorPalette = [
     '#3B82A6', // Blue
+    '#FF4D85', // Pink
     '#10B981', // Green
+    '#8B5CF6', // Violet
     '#F59E0B', // Amber
     '#EF4444', // Red
-    '#8B5CF6', // Violet
-    '#EC4899', // Pink
     '#14B8A6', // Teal
     '#F43F5E', // Rose
     '#7C3339', // Burgundy
@@ -105,6 +108,8 @@ export class CalendarComponent implements OnInit {
     '#A855F7', // Purple
     '#F97316', // Orange
   ];
+
+  private thematicColors: { [name: string]: string } = {};
 
   // ... (rest of colors)
   private iconMapping: { [key: string]: string } = {
@@ -143,7 +148,22 @@ export class CalendarComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadEventTypesAndEvents();
+    // Wait for the authenticated user before loading — currentUser$.value is often null on first render
+    this.authService.currentUser$.pipe(
+      filter(u => !!u),
+      take(1)
+    ).subscribe(() => {
+      this.loadEventTypesAndEvents();
+    });
+
+    // Fallback: if already null after 500ms (not logged in), still render the calendar skeleton
+    setTimeout(() => {
+      if (!this.authService.currentUser$.value) {
+        this.isLoading = false;
+        this.generateCalendar();
+        this.cdr.detectChanges();
+      }
+    }, 500);
   }
 
   loadEventTypesAndEvents(): void {
@@ -151,26 +171,37 @@ export class CalendarComponent implements OnInit {
     const year = this.currentMonth.getFullYear();
     const month = this.currentMonth.getMonth() + 1;
     const currentUser = this.authService.currentUser$.value;
+    console.log('Calendar loading for role:', currentUser?.role, 'User ID:', currentUser?.id);
     
     const dataSources: any = {
-      types: this.typeFormationService.getAllTypes(),
-      events: this.eventService.getEventsByMonth(year, month)
+      types: this.typeFormationService.getAllTypes().pipe(catchError(() => of([]))),
+      events: this.eventService.getEventsByMonth(year, month).pipe(catchError(() => of([])))
     };
 
-    if (currentUser && currentUser.role === 'ENTREPRENEUR') {
+    if (currentUser && (String(currentUser.role) === 'ENTREPRENEUR' || String(currentUser.role) === 'ROLE_ENTREPRENEUR')) {
+      console.log('Detected ENTREPRENEUR role');
       this.isEntrepreneur = true;
       this.isCoach = false;
-      dataSources.bookedSessions = this.sessionService.getByEntrepreneur(currentUser.id).pipe(catchError(() => of([])));
-      dataSources.coaches = this.matchingService.getEntrepreneurCoaches(currentUser.id).pipe(catchError(() => of([])));
-      dataSources.myCalendar = this.sessionService.getMyCalendar(currentUser.id, 'ENTREPRENEUR').pipe(catchError(() => of([])));
-    } else if (currentUser && currentUser.role === 'COACH') {
+      const userIdStr = String(currentUser.id);
+      dataSources.bookedSessions = this.sessionService.getByEntrepreneur(userIdStr).pipe(catchError((err) => { console.error('Error bookedSessions:', err); return of([]); }));
+      dataSources.coaches = this.matchingService.getEntrepreneurCoaches(userIdStr).pipe(catchError((err) => { console.error('Error coaches:', err); return of([]); }));
+      dataSources.myCalendar = this.sessionService.getMyCalendar(userIdStr, 'ENTREPRENEUR').pipe(catchError((err) => { console.error('Error myCalendar:', err); return of([]); }));
+    } else if (currentUser && (String(currentUser.role) === 'COACH' || String(currentUser.role) === 'ROLE_COACH')) {
+      console.log('Detected COACH role');
       this.isCoach = true;
       this.isEntrepreneur = false;
-      dataSources.myCalendar = this.sessionService.getMyCalendar(currentUser.id, 'COACH').pipe(catchError(() => of([])));
+      const userIdStr = String(currentUser.id);
+      dataSources.myCalendar = this.sessionService.getMyCalendar(userIdStr, 'COACH').pipe(catchError((err) => { console.error('Error myCalendar:', err); return of([]); }));
+    } else if (currentUser && (String(currentUser.role) === 'SUPERADMIN' || String(currentUser.role) === 'ADMIN')) {
+      console.log('Detected SUPERADMIN/ADMIN role');
+      this.isCoach = false;
+      this.isEntrepreneur = false;
+      dataSources.bookedSessions = this.sessionService.getAll().pipe(catchError((err) => { console.error('Error allSessions:', err); return of([]); }));
     }
 
     forkJoin(dataSources).subscribe({
       next: (response: any) => {
+        console.log('Main data sources loaded:', Object.keys(response));
         this.eventTypes = this.mapTypesToEventTypes(response.types);
         let allCalendarEvents = this.mapResponseToCalendarEvents(response.events);
         
@@ -193,11 +224,11 @@ export class CalendarComponent implements OnInit {
           const entrepreneurId = Number(currentUser?.id);
           
           const slotRequests = response.coaches.map((c: any) => 
-            this.coachService.getAvailableSessionsForEntrepreneur(Number(c.id), entrepreneurId).pipe(catchError(() => of([])))
+            this.coachService.getAvailableSessionsForEntrepreneur(Number(c.id), entrepreneurId, c.thematiqueId ? Number(c.thematiqueId) : undefined).pipe(catchError(() => of([])))
           );
 
           const groupRequests = response.coaches.map((c: any) => 
-            this.coachService.getAvailableSessionsGrouped(Number(c.id), entrepreneurId).pipe(catchError(() => of([])))
+            this.coachService.getAvailableSessionsGrouped(Number(c.id), entrepreneurId, c.thematiqueId ? Number(c.thematiqueId) : undefined).pipe(catchError(() => of([])))
           );
           
           forkJoin([...slotRequests, ...groupRequests]).subscribe((allData: any[]) => {
@@ -205,24 +236,34 @@ export class CalendarComponent implements OnInit {
             const slotsArray = allData.slice(0, numCoaches);
             const groupsArray = allData.slice(numCoaches);
 
-            // Populate coachGroupsMap and group by thematique
+            const globalThematiques: any[] = [];
+
             response.coaches.forEach((c: any, index: number) => {
               const groups: any[] = groupsArray[index] || [];
               this.coachGroupsMap[c.id] = groups;
               
-              // New grouping by thematique
-              const groupedByThem: any[] = [];
               groups.forEach(g => {
                 const themName = g.slots[0]?.thematiqueNom || 'Thématique Générale';
-                let them = groupedByThem.find(t => t.name === themName);
-                if (!them) {
-                  them = { name: themName, sessionGroups: [] };
-                  groupedByThem.push(them);
+                
+                // Find or create thematique in global list
+                let thematiqueObj = globalThematiques.find(t => t.name === themName);
+                if (!thematiqueObj) {
+                  thematiqueObj = { name: themName, coaches: [] };
+                  globalThematiques.push(thematiqueObj);
                 }
-                them.sessionGroups.push(g);
+                
+                // Find or create coach inside this thematique
+                let coachObj = thematiqueObj.coaches.find((coachEntry: any) => coachEntry.coach.id === c.id);
+                if (!coachObj) {
+                  coachObj = { coach: c, sessionGroups: [] };
+                  thematiqueObj.coaches.push(coachObj);
+                }
+                
+                // Add the session group to this coach
+                coachObj.sessionGroups.push(g);
               });
-              this.coachThematiquesMap[c.id] = groupedByThem;
             });
+            this.thematiquesList = globalThematiques;
 
             // Instead of separate slotRequests, we use slots from the groups to ensure consistency
             const allSlotsFromGroups = groupsArray.flat().map(g => g.slots).flat();
@@ -260,9 +301,6 @@ export class CalendarComponent implements OnInit {
     });
   }
 
-  getCoachThematiques(coachId: string): any[] {
-    return this.coachThematiquesMap[coachId] || [];
-  }
 
   getAvailableCount(slots: any[]): number {
     return slots.filter(s => !s.isBooked).length;
@@ -338,21 +376,30 @@ export class CalendarComponent implements OnInit {
   }
 
   mapBookedSessionsToCalendarEvents(sessions: any[]): CalendarEvent[] {
-    return sessions.map(s => ({
-      id: 'booked-' + s.id,
-      title: 'Coaching : ' + (s.titre || ''),
-      date: new Date(s.date),
-      time: new Date(s.date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-      type: 'Coaching (Confirmé)',
-      location: s.meetLink ? 'En ligne' : 'À définir',
-      mode: (s.meetLink ? 'virtuel' : 'en-personne') as 'en-personne' | 'virtuel' | 'hybrid',
-      program: '',
-      description: s.description || '',
-      participants: [],
-      meetLink: s.meetLink,
-      googleEventId: s.googleEventId,
-      isDisabled: true
-    }));
+    return sessions.map(s => {
+      const themName = s.thematique?.nom || s.thematiqueNom || 'Thématique';
+      const progName = s.programme?.nom || s.programmeNom || '';
+      const fullTitle = progName ? `${themName} — ${progName}` : themName;
+      
+      return {
+        id: 'booked-' + s.id,
+        title: s.titre ? `${fullTitle} : ${s.titre}` : fullTitle,
+        date: new Date(s.date),
+        time: new Date(s.date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+        type: 'Coaching (Confirmé)',
+        location: s.meetLink ? 'En ligne' : 'À définir',
+        mode: (s.meetLink ? 'virtuel' : 'en-personne') as 'en-personne' | 'virtuel' | 'hybrid',
+        program: themName,
+        description: s.description || '',
+        participants: [],
+        meetLink: s.meetLink,
+        googleEventId: s.googleEventId,
+        isDisabled: true,
+        isExceptionnelle: s.isExceptionnelle,
+        isBooked: true,
+        couleur: this.getThematicColor(themName)
+      };
+    });
   }
 
   /** Map MyCalendarEvent[] (from /api/sessions/my-calendar) to CalendarEvent[] */
@@ -370,7 +417,7 @@ export class CalendarComponent implements OnInit {
         type: s.statut === 'DISPONIBLE' ? 'creneau' : 'Coaching (Confirmé)',
         location: s.isOnline ? 'En ligne' : 'À définir',
         mode: (s.isOnline ? 'virtuel' : 'en-personne') as 'en-personne' | 'virtuel' | 'hybrid',
-        program: '',
+        program: s.programmeNom ? `${s.programmeNom} - ${s.thematiqueNom}` : (s.thematiqueNom || ''),
         description: s.description || '',
         participants: [],
         meetLink: s.meetLink,
@@ -384,19 +431,25 @@ export class CalendarComponent implements OnInit {
     return slots.map(s => {
       // Create date with time to avoid timezone shifts to previous day
       const dateStr = s.dateSession.includes('T') ? s.dateSession : `${s.dateSession}T${s.heureDebut || '00:00:00'}`;
+      const themName = s.thematiqueNom || 'Thématique Générale';
+      const progName = s.programmeNom || '';
+      const fullTitle = progName ? `${themName} — ${progName}` : themName;
       
       return {
         id: 'slot-' + s.id,
-        title: 'Dispo: ' + (s.titre || 'Créneau'),
+        title: s.titre ? `${fullTitle} : ${s.titre}` : fullTitle,
         date: new Date(dateStr),
         time: s.heureDebut.substring(0, 5) + ' - ' + s.heureFin.substring(0, 5),
-        type: 'creneau', // Removed accent for safer matching
+        type: 'creneau', 
         location: s.typeSession === 'EN_LIGNE' ? 'En ligne' : (s.adresse || 'En personne'),
         mode: s.typeSession === 'EN_LIGNE' ? 'virtuel' : 'en-personne',
-        program: '',
+        program: themName, // Use program field for thematique name in slots
         description: 'Réservez via le panneau de droite',
         participants: [],
-        isDisabled: s.isBooked || s.isGroupReservedByMe || false
+        isDisabled: s.isBooked || s.isGroupReservedByMe || false,
+        couleur: this.getThematicColor(themName),
+        isExceptionnelle: s.isExceptionnelle,
+        isBooked: s.isBooked
       };
     });
   }
@@ -539,9 +592,18 @@ export class CalendarComponent implements OnInit {
 
   onDayClick(day: any): void {
     if (day.events.length > 0) {
-      this.selectedDate = day.date;
-      this.selectedDateEvents = day.events;
+      if (this.selectedDate && this.selectedDate.getTime() === day.date.getTime()) {
+        this.clearSelection();
+      } else {
+        this.selectedDate = day.date;
+        this.selectedDateEvents = day.events;
+      }
     }
+  }
+
+  clearSelection(): void {
+    this.selectedDate = null;
+    this.selectedDateEvents = [];
   }
 
   getSelectedDateFormatted(): string {
@@ -552,17 +614,30 @@ export class CalendarComponent implements OnInit {
     });
   }
 
-  getEventTypeIcon(typeName: string): string {
-    const eventType = this.eventTypes.find(t => t.name === typeName);
-    return eventType ? eventType.icon : 'event';
+  getEventTypeIconPrime(typeName: string): string {
+    const icon = this.getIconForType(typeName);
+    const materialToPrime: { [key: string]: string } = {
+      'campaign': 'pi-megaphone',
+      'groups': 'pi-users',
+      'school': 'pi-book',
+      'construction': 'pi-cog',
+      'celebration': 'pi-gift',
+      'present_to_all': 'pi-desktop',
+      'person': 'pi-user',
+      'handyman': 'pi-wrench',
+      'group': 'pi-users',
+      'event_available': 'pi-calendar-check',
+      'event': 'pi-calendar'
+    };
+    return materialToPrime[icon] || 'pi-calendar';
   }
 
-  getModeIcon(mode: string): string {
+  getModeIconPrime(mode: string): string {
     switch (mode) {
-      case 'en-personne': return 'group';
-      case 'virtuel': return 'videocam';
-      case 'hybrid': return 'people_outline';
-      default: return 'event';
+      case 'en-personne': return 'pi-map-marker';
+      case 'virtuel': return 'pi-video';
+      case 'hybrid': return 'pi-briefcase';
+      default: return 'pi-calendar';
     }
   }
 openEditEventDialog(event: CalendarEvent): void {
@@ -720,7 +795,20 @@ isSelectedDate(date: Date): boolean {
 }
 
 
-  getEventGradient(typeName: string): string {
+  getEventGradient(event: CalendarEvent): string {
+    const typeName = event.type;
+    const themName = event.program || '';
+
+    if (event.couleur) {
+      return `linear-gradient(135deg, ${event.couleur} 0%, ${this.darkenColor(event.couleur, 20)} 100%)`;
+    }
+
+    // If it's a thematic session (creneau or coaching), use thematic color
+    if (themName && (typeName.toLowerCase().includes('creneau') || typeName.toLowerCase().includes('coaching'))) {
+      const color = this.getThematicColor(themName);
+      return `linear-gradient(135deg, ${color} 0%, ${this.darkenColor(color, 20)} 100%)`;
+    }
+
     const gradients: { [key: string]: string } = {
       'pitch deck': 'linear-gradient(135deg, #ea5073 0%, #d4476a 100%)',
       'pitch': 'linear-gradient(135deg, #ea5073 0%, #d4476a 100%)',
@@ -731,28 +819,37 @@ isSelectedDate(date: Date): boolean {
       'celebration': 'linear-gradient(135deg, #a855f7 0%, #9333ea 100%)',
       'présentation': 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
       'presentation': 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
-      'coaching': 'linear-gradient(135deg, #3B82A6 0%, #2a6b8e 100%)',
-      'creneau': 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
-      'créneau': 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
-      'dispo': 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
       'workshop': 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
     };
 
-  const lowerType = typeName.toLowerCase();
-  for (const [key, gradient] of Object.entries(gradients)) {
-    if (lowerType.includes(key)) {
-      return gradient;
+    const lowerType = typeName.toLowerCase();
+    for (const [key, gradient] of Object.entries(gradients)) {
+      if (lowerType.includes(key)) {
+        return gradient;
+      }
     }
+
+    const eventType = this.eventTypes.find(t => t.name === typeName);
+    if (eventType) {
+      return `linear-gradient(135deg, ${eventType.color} 0%, ${this.darkenColor(eventType.color, 20)} 100%)`;
+    }
+
+    return 'linear-gradient(135deg, #FF4D85 0%, #FF4D85 100%)';
   }
 
+  getThematicColor(themName: string): string {
+    if (this.thematicColors[themName]) return this.thematicColors[themName];
 
-  const eventType = this.eventTypes.find(t => t.name === typeName);
-  if (eventType) {
-    return `linear-gradient(135deg, ${eventType.color} 0%, ${this.darkenColor(eventType.color, 20)} 100%)`;
+    // Generate a consistent color based on thematic name
+    let hash = 0;
+    for (let i = 0; i < themName.length; i++) {
+      hash = themName.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const colorIndex = Math.abs(hash) % this.colorPalette.length;
+    const color = this.colorPalette[colorIndex];
+    this.thematicColors[themName] = color;
+    return color;
   }
-
-  return 'linear-gradient(135deg, #F43F5E 0%, #F43F5E 100%)';
-}
 
 
 private darkenColor(color: string, percent: number): string {

@@ -91,7 +91,7 @@ interface NoteDeSynthese {
         <div class="coach-dashboard">
             <!-- Header -->
             <div class="dashboard-header">
-                <h1>Bonjour, Coach <span class="wave">👋</span></h1>
+                <h1>Bonjour, Coach </h1>
                 <p>Voici un résumé de votre activité de coaching</p>
                 <div class="header-action">
                     <span class="session-badge">• {{ stats.nbRendezVous || 14 }} sessions ce mois</span>
@@ -195,7 +195,7 @@ interface NoteDeSynthese {
                                     </span>
                                 </h4>
                                 <span class="startup-desc">
-                                    {{ entrepreneur.entreprise || 'N/A' }} • {{ entrepreneur.secteur || 'Non spécifié' }}
+                                    {{ entrepreneur.entreprise || 'N/A' }} • {{ entrepreneur.secteur || 'Non renseigné' }}
                                 </span>
                             </div>
                             <div class="progress-col">
@@ -262,8 +262,8 @@ interface NoteDeSynthese {
             .coach-dashboard {
                 background: #f8f9fa;
                 padding: 2rem;
-                font-family: var(--font-family);
-                color: var(--coach-text-main);
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                color: #2D3748;
                 margin-top: -1rem; /* Adjust padding added by layout */
             }
 
@@ -307,13 +307,13 @@ interface NoteDeSynthese {
                 top: 0;
             }
             .session-badge {
-                background-color: #1A365D; /* Dark blue pill */
+                background: linear-gradient(to right, #DC2626, #111827);
                 color: white;
                 padding: 0.6rem 1.2rem;
                 border-radius: 20px;
-                font-weight: 500;
+                font-weight: 700;
                 font-size: 0.95rem;
-                box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+                box-shadow: 0 4px 10px rgba(220,38,38,0.2);
             }
 
             /* Stats Grid */
@@ -340,10 +340,10 @@ interface NoteDeSynthese {
                 box-shadow: 0 15px 30px rgba(0,0,0,0.15);
             }
             /* Gradients matching the mockup */
-            .pink-gradient { background: var(--gradient-pink); }
-            .purple-gradient { background: var(--gradient-purple); }
-            .blue-gradient { background: var(--gradient-blue); }
-            .orange-gradient { background: var(--gradient-orange); }
+            .pink-gradient { background: linear-gradient(135deg, #FF4D85 0%, #FF758C 100%); }
+            .purple-gradient { background: linear-gradient(135deg, #7C3AED 0%, #A78BFA 100%); }
+            .blue-gradient { background: linear-gradient(135deg, #2563EB 0%, #60A5FA 100%); }
+            .orange-gradient { background: linear-gradient(135deg, #D97706 0%, #FBBF24 100%); }
 
             /* Add the inner subtle circle decoration */
             .stat-card::before {
@@ -472,7 +472,7 @@ interface NoteDeSynthese {
                 margin-right: 1rem;
             }
             .pink-avatar {
-                background: linear-gradient(135deg, #FF6B9E, #FF3366);
+                background: linear-gradient(135deg, #DC2626, #111827);
             }
             .entrepreneur-info {
                 flex: 1;
@@ -488,13 +488,13 @@ interface NoteDeSynthese {
                 font-size: 0.9rem;
             }
             .badge-retard {
-                background: #FFF5F5;
-                color: #E53E3E;
+                background: linear-gradient(to right, #DC2626, #111827);
+                color: white;
                 font-size: 0.75rem;
                 padding: 0.2rem 0.6rem;
-                border-radius: 12px;
+                border-radius: 20px;
                 font-weight: 600;
-                border: 1px solid #FED7D7;
+                border: none;
             }
             .progress-col {
                 display: flex;
@@ -520,7 +520,7 @@ interface NoteDeSynthese {
                 border-radius: 3px;
             }
             .fill-pink {
-                background: var(--gradient-purple); /* Using purple/pink mix */
+                background: linear-gradient(to right, #DC2626, #111827);
             }
             .entrepreneur-item > i {
                 color: #A0AEC0;
@@ -588,19 +588,13 @@ interface NoteDeSynthese {
                 font-size: 0.75rem;
                 font-weight: 600;
                 margin-bottom: 0.8rem;
+                background: linear-gradient(to right, #DC2626, #111827);
+                color: white;
+                border: none;
             }
-            .badge-green {
-                background: #F0FFF4;
-                color: #38A169;
-            }
-            .badge-orange {
-                background: #FFFAF0;
-                color: #DD6B20;
-            }
-            .badge-red {
-                background: #FFF5F5;
-                color: #E53E3E;
-            }
+            .badge-green { /* Keep gradient but maybe a green tint if needed, or just let it be default */ }
+            .badge-orange { /* Keep gradient or let it be default */ }
+            .badge-red { /* Keep gradient or let it be default */ }
 
             /* Loading and empty state styles */
             .loading-indicator {

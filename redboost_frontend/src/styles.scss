@@ -35,8 +35,8 @@ html {
     background-color: #f8f9fa;
 
     .layout-main-container {
-        margin-top: 2rem !important; // ✅ Matches the actual topbar height: 4rem
-        margin-left: 100px; // Width of sidebar
+        margin-top: 80px !important; 
+        margin-left: 280px; 
         flex: 1;
         display: flex;
         flex-direction: column;
@@ -44,42 +44,8 @@ html {
 
         .layout-main {
             flex: 1;
-            padding: 0.5rem;
+            padding: 1.5rem;
             background-color: #f8f9fa;
-        }
-    }
-
-    .layout-mask {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.4);
-        z-index: 998;
-    }
-
-    // When sidebar is hidden (mobile)
-    &.layout-sidebar-inactive {
-        .layout-sidebar {
-            transform: translateX(-280px);
-        }
-
-        .layout-main-container {
-            margin-left: 0;
-        }
-    }
-
-    // Mobile active state
-    &.layout-mobile-active {
-        .layout-sidebar {
-            transform: translateX(0);
-        }
-
-        .layout-mask {
-            display: block;
-            animation: fadeIn 0.2s;
         }
     }
 }
@@ -134,25 +100,41 @@ html {
     }
 }
 
-/* Global Variables for Coach UI */
+/* Global Variables for Redboost Premium UI */
 :root {
-    --font-family: 'Poppins', Roboto, 'Helvetica Neue', sans-serif;
+    --font-family: 'Outfit', 'Poppins', Roboto, sans-serif;
     
-    /* Vibrant Gradients for Coach Cards */
-    --gradient-pink: linear-gradient(135deg, #FF6B9E 0%, #E83E8C 100%);
-    --gradient-purple: linear-gradient(135deg, #B57BEE 0%, #8553F4 100%);
-    --gradient-blue: linear-gradient(135deg, #5185A6 0%, #20A4F3 100%);
-    --gradient-orange: linear-gradient(135deg, #FF914D 0%, #FF5E00 100%);
+    /* Premium Shadows */
+    --premium-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.05);
+    --premium-shadow-md: 0 4px 20px rgba(0, 0, 0, 0.08);
+    --premium-shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.12);
     
-    /* Theme Colors */
-    --coach-primary: #FF4D85; /* Vibrant pink/red used in buttons/toggles */
-    --coach-text-main: #2C3E50;
-    --coach-text-muted: #8392A5;
+    /* Transitions */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     
-    /* Sidebar Active State */
-    --sidebar-active-bg: #FFF0F5;
-    --sidebar-active-border: #FF4D85;
+    /* Default (Admin) Theme */
+    --sidebar-bg: #ffffff;
+    --sidebar-active-bg: rgba(99, 102, 241, 0.08);
+    --sidebar-active-color: #6366F1;
+    --sidebar-text: #64748b;
+    --sidebar-text-hover: #1e293b;
+    --sidebar-icon-color: #94a3b8;
+}
+
+/* Coach Role Theme - Pink/Vibrant */
+.role-coach {
+    --sidebar-active-bg: rgba(255, 77, 133, 0.1);
     --sidebar-active-color: #FF4D85;
+    --sidebar-active-gradient: linear-gradient(135deg, #FF4D85 0%, #FF758C 100%);
+    --sidebar-icon-active: #FF4D85;
+}
+
+/* Entrepreneur Role Theme - Blue/Professional */
+.role-entrepreneur {
+    --sidebar-active-bg: rgba(37, 99, 235, 0.1);
+    --sidebar-active-color: #2563EB;
+    --sidebar-active-gradient: linear-gradient(135deg, #2563EB 0%, #3B82F6 100%);
+    --sidebar-icon-active: #2563EB;
 }
 
 html,
@@ -279,3 +261,68 @@ body.blocked-scroll {
     }
 }
 
+/* ══ Global Badge System (cohérent avec profile.component.scss) ══ */
+
+/* Badge de messages non lus dans le menu sidebar */
+.coach-msg-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    background: linear-gradient(135deg, #DC2626, #111827);
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 800;
+    border-radius: 20px;
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.4);
+    margin-left: auto;
+}
+
+/* Badge de rôle générique (utilisé dans les cartes entrepreneur, détail, dashboard) */
+.app-role-badge {
+    display: inline-block;
+    background: linear-gradient(to right, #DC2626, #111827);
+    color: white;
+    padding: 0.25rem 1rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+/* Badge de statut de session (confirmé / en attente) */
+.session-badge-confirmed {
+    background: #ecfdf5;
+    color: #059669;
+    padding: 0.25rem 0.75rem;
+    border-radius: 100px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.session-badge-pending {
+    background: #fffbeb;
+    color: #d97706;
+    padding: 0.25rem 0.75rem;
+    border-radius: 100px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+/* Badge alerte retard */
+.retard-badge-global {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #fef2f2;
+    color: #dc2626;
+    padding: 0.2rem 0.6rem;
+    border-radius: 100px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}

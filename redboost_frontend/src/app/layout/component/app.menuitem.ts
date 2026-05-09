@@ -28,11 +28,17 @@ import {
             >
                 <i [class]="item.icon"></i>
                 <span class="menu-item-text">{{ item.label }}</span>
+                <span *ngIf="item.badge" [class]="item.badgeStyleClass">{{ item.badge }}</span>
             </a>
 
-            <!-- Parent menu item without routerLink or with children -->
+            <!-- Root Section Label (if root and has items) -->
+            <div *ngIf="root && item.items" class="menu-section-label">
+                {{ item.label }}
+            </div>
+
+            <!-- Parent menu item without routerLink or with children (non-root or root without items) -->
             <a
-                *ngIf="!item.routerLink || item.items"
+                *ngIf="(!item.routerLink || item.items) && (!root || !item.items)"
                 (click)="toggleSubmenu($event)"
                 class="menu-item-link"
                 [class.active-menuitem]="isActive"
@@ -45,19 +51,24 @@ import {
                 ></i>
             </a>
 
-            <!-- Submenu -->
+            <!-- Submenu (now items for root, or actual submenu for non-root) -->
             <ul
-                *ngIf="item.items && isActive"
-                [@submenuAnimation]="isActive ? 'visible' : 'hidden'"
+                *ngIf="item.items && (isActive || root)"
+                [@submenuAnimation]="isActive || root ? 'visible' : 'hidden'"
+                [class.root-submenu]="root"
             >
                 <li *ngFor="let subitem of item.items">
+                    <!-- Standard Menu Item (subitem) -->
                     <a
+                        *ngIf="subitem.routerLink"
                         [routerLink]="subitem.routerLink"
                         [routerLinkActive]="'active-route'"
                         [routerLinkActiveOptions]="{ exact: false }"
+                        class="menu-item-link"
                     >
                         <i [class]="subitem.icon" *ngIf="subitem.icon"></i>
-                        <span>{{ subitem.label }}</span>
+                        <span class="menu-item-text">{{ subitem.label }}</span>
+                        <span *ngIf="subitem.badge" [class]="subitem.badgeStyleClass">{{ subitem.badge }}</span>
                     </a>
                 </li>
             </ul>

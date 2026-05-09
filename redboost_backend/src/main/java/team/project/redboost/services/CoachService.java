@@ -138,8 +138,8 @@ public class CoachService {
                     .id(ent.getId())
                     .firstName(ent.getFirstName())
                     .lastName(ent.getLastName())
-                    .entreprise(ent.getEntreprise())
-                    .secteur(ent.getSecteur())
+                    .entreprise("Non spécifié".equals(ent.getEntreprise()) ? (ent.getStartupName() != null ? ent.getStartupName() : "") : ent.getEntreprise())
+                    .secteur("Non spécifié".equals(ent.getSecteur()) ? (ent.getIndustry() != null ? ent.getIndustry() : "") : ent.getSecteur())
                     .profilePictureUrl(ent.getProfilePictureUrl())
                     .completionRate(progress)
                     .delayedTasksCount((int)delayed)
@@ -210,40 +210,64 @@ public class CoachService {
     public List<CoachCalendarEventDTO> getCalendarEvents(Long coachId) {
         List<CoachCalendarEventDTO> events = new ArrayList<>();
 
-        sessionCoachRepository.findByDisponibiliteCoachId(coachId).forEach(s -> events.add(
-                CoachCalendarEventDTO.builder()
-                        .id("slot-" + s.getId())
-                        .type("SESSION_SLOT")
-                        .title(s.getTitre())
-                        .date(String.valueOf(s.getDateSession()))
-                        .startTime(String.valueOf(s.getHeureDebut()))
-                        .endTime(String.valueOf(s.getHeureFin()))
-                        .source("coach")
-                        .build()
-        ));
+        sessionCoachRepository.findByDisponibiliteCoachId(coachId).forEach(s -> {
+            String thematiqueNom = null;
+            if (s.getDisponibilite() != null && s.getDisponibilite().getThematique() != null) {
+                thematiqueNom = s.getDisponibilite().getThematique().getNom();
+            }
+            events.add(CoachCalendarEventDTO.builder()
+                    .id("slot-" + s.getId())
+                    .type("SESSION_SLOT")
+                    .title(s.getTitre())
+                    .date(String.valueOf(s.getDateSession()))
+                    .startTime(String.valueOf(s.getHeureDebut()))
+                    .endTime(String.valueOf(s.getHeureFin()))
+                    .source("coach")
+                    .thematiqueNom(thematiqueNom)
+                    .build());
+        });
 
-        sessionRepository.findByCoachId(coachId).forEach(s -> events.add(
-                CoachCalendarEventDTO.builder()
-                        .id("session-" + s.getId())
-                        .type("SESSION")
-                        .title(s.getTitre())
-                        .date(String.valueOf(s.getDate().toLocalDate()))
-                        .startTime(String.valueOf(s.getDate().toLocalTime()))
-                        .source("entrepreneur")
-                        .build()
-        ));
+        sessionRepository.findByCoachId(coachId).forEach(s -> {
+            String thematiqueNom = null;
+            if (s.getDisponibiliteId() != null) {
+                try {
+                    Long dispoId = Long.parseLong(s.getDisponibiliteId());
+                    sessionCoachRepository.findById(dispoId).ifPresent(slot -> {
+                        if (slot.getDisponibilite() != null && slot.getDisponibilite().getThematique() != null) {
+                            s.setThematiqueName(slot.getDisponibilite().getThematique().getNom());
+                        }
+                    });
+                } catch (Exception ignored) {}
+            }
+            thematiqueNom = s.getThematiqueName();
 
-        seanceExceptionnelleRepository.findByCoachId(coachId).forEach(s -> events.add(
-                CoachCalendarEventDTO.builder()
-                        .id("seance-" + s.getId())
-                        .type("SEANCE_EXCEPTIONNELLE")
-                        .title(s.getTitre())
-                        .date(String.valueOf(s.getDateSeance()))
-                        .startTime(String.valueOf(s.getHeureDebut()))
-                        .endTime(String.valueOf(s.getHeureFin()))
-                        .source("coach")
-                        .build()
-        ));
+            events.add(CoachCalendarEventDTO.builder()
+                    .id("session-" + s.getId())
+                    .type("SESSION")
+                    .title(s.getTitre())
+                    .date(String.valueOf(s.getDate().toLocalDate()))
+                    .startTime(String.valueOf(s.getDate().toLocalTime()))
+                    .source("entrepreneur")
+                    .thematiqueNom(thematiqueNom)
+                    .build());
+        });
+
+        seanceExceptionnelleRepository.findByCoachId(coachId).forEach(s -> {
+            String thematiqueNom = null;
+            if (s.getThematique() != null) {
+                thematiqueNom = s.getThematique().getNom();
+            }
+            events.add(CoachCalendarEventDTO.builder()
+                    .id("seance-" + s.getId())
+                    .type("SEANCE_EXCEPTIONNELLE")
+                    .title(s.getTitre())
+                    .date(String.valueOf(s.getDateSeance()))
+                    .startTime(String.valueOf(s.getHeureDebut()))
+                    .endTime(String.valueOf(s.getHeureFin()))
+                    .source("coach")
+                    .thematiqueNom(thematiqueNom)
+                    .build());
+        });
 
         events.sort(Comparator.comparing(CoachCalendarEventDTO::getDate));
         return events;
@@ -380,7 +404,7 @@ public class CoachService {
     }
 
     @Transactional
-    public DisponibiliteDTO addDisponibilite(Long coachId, Long thematiqueId) {
+    public DisponibiliteDTO addDisponibilite(Long coachId, Long thematiqueId, String couleur) {
         User coach = userRepository.findById(coachId)
                 .orElseThrow(() -> new ValidationException("Coach non trouvé"));
         ThematiqueCoaching theme = thematiqueRepository.findById(thematiqueId)
@@ -391,6 +415,7 @@ public class CoachService {
                 .thematique(theme)
                 .dateDebut(theme.getDateDebut())
                 .dateFin(theme.getDateFin())
+                .couleur(couleur)
                 .build();
                 
         Disponibilite saved = disponibiliteRepository.save(dispo);
@@ -535,9 +560,15 @@ public class CoachService {
             throw new ValidationException("L'heure de début doit être avant l'heure de fin");
         }
 
+        ThematiqueCoaching thematique = null;
+        if (dto.getThematiqueId() != null) {
+            thematique = thematiqueRepository.findById(dto.getThematiqueId()).orElse(null);
+        }
+
         SeanceExceptionnelle seance = SeanceExceptionnelle.builder()
                 .coach(coach)
                 .entrepreneur(entrepreneur)
+                .thematique(thematique)
                 .titre(dto.getTitre())
                 .dateSeance(dto.getDateSeance())
                 .heureDebut(dto.getHeureDebut())
@@ -604,6 +635,7 @@ public class CoachService {
         dto.setThematiqueNom(d.getThematique().getNom());
         dto.setDateDebut(d.getDateDebut());
         dto.setDateFin(d.getDateFin());
+        dto.setCouleur(d.getCouleur());
         return dto;
     }
 
@@ -619,6 +651,9 @@ public class CoachService {
         dto.setSessionGroupId(s.getSessionGroupId());
         if (s.getDisponibilite() != null && s.getDisponibilite().getThematique() != null) {
             dto.setThematiqueNom(s.getDisponibilite().getThematique().getNom());
+            dto.setCouleur(s.getDisponibilite().getThematique().getCouleur() != null ? 
+                           s.getDisponibilite().getThematique().getCouleur() : 
+                           s.getDisponibilite().getCouleur());
         }
 
         List<team.project.redboost.entities.Session> bookings = sessionRepository.findAll().stream()
@@ -628,6 +663,9 @@ public class CoachService {
         dto.setIsBooked(!bookings.isEmpty());
         if (!bookings.isEmpty()) {
             dto.setMeetLink(bookings.get(0).getMeetLink());
+            dto.setIsExceptionnelle(bookings.get(0).getIsExceptionnelle());
+        } else {
+            dto.setIsExceptionnelle(false);
         }
 
         return dto;
@@ -638,6 +676,9 @@ public class CoachService {
         dto.setId(s.getId());
         dto.setCoachId(s.getCoach().getId());
         dto.setEntrepreneurId(s.getEntrepreneur().getId());
+        if (s.getThematique() != null) {
+            dto.setThematiqueId(s.getThematique().getId());
+        }
         dto.setEntrepreneurName(s.getEntrepreneur().getFirstName() + " " + s.getEntrepreneur().getLastName());
         dto.setTitre(s.getTitre());
         dto.setDateSeance(s.getDateSeance());
@@ -869,7 +910,7 @@ public class CoachService {
     }
 
     // --- Available sessions for entrepreneur (from a specific coach) ---
-    public List<SessionCoachDTO> getAvailableSessionsForEntrepreneur(Long coachId, Long entrepreneurUserId) {
+    public List<SessionCoachDTO> getAvailableSessionsForEntrepreneur(Long coachId, Long entrepreneurUserId, Long thematiqueId) {
         log.info(" Recherche sessions pour entrepreneurId={} et coachId={}", entrepreneurUserId, coachId);
         
         User entrepreneur = userRepository.findById(entrepreneurUserId)
@@ -904,11 +945,15 @@ public class CoachService {
             if (m.getCoachId().equals(coachId)) {
                 isMatchedWithThisCoach = true;
                 if (m.getThematiqueId() != null) {
-                    matchedThematiqueIds.add(m.getThematiqueId());
-                    log.info("[DIAG] Thématique matchée trouvée: {}", m.getThematiqueId());
+                    if (thematiqueId == null || m.getThematiqueId().equals(thematiqueId)) {
+                        matchedThematiqueIds.add(m.getThematiqueId());
+                        log.info("[DIAG] Thématique matchée trouvée: {}", m.getThematiqueId());
+                    }
                 } else {
-                    hasGlobalMatching = true;
-                    log.info(" Matching GLOBAL trouvé");
+                    if (thematiqueId == null) {
+                        hasGlobalMatching = true;
+                        log.info(" Matching GLOBAL trouvé");
+                    }
                 }
             }
         }
@@ -987,9 +1032,9 @@ public class CoachService {
      * Each group represents one logical "session" (e.g. Session 1 – Pitch Deck) with its créneaux.
      * The group carries a flag indicating whether the entrepreneur has already reserved a slot in it.
      */
-    public List<Map<String, Object>> getAvailableSessionsGrouped(Long coachId, Long entrepreneurUserId) {
+    public List<Map<String, Object>> getAvailableSessionsGrouped(Long coachId, Long entrepreneurUserId, Long thematiqueId) {
         // Reuse existing filtering logic
-        List<SessionCoachDTO> available = getAvailableSessionsForEntrepreneur(coachId, entrepreneurUserId);
+        List<SessionCoachDTO> available = getAvailableSessionsForEntrepreneur(coachId, entrepreneurUserId, thematiqueId);
 
         // Also fetch ALL slots for this coach (including booked ones) to determine per-session reservation status
         List<SessionCoach> allSlots = sessionCoachRepository.findByDisponibiliteCoachId(coachId);

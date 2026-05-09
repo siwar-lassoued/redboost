@@ -14,382 +14,318 @@ import { environment } from '../../../../environment';
   standalone: true,
   imports: [CommonModule, RouterModule, FormsModule],
   template: `
-    <div class="entrepreneur-detail-page">
-      <!-- Breadcrumb / Back Navigation -->
-      <a routerLink="/coach-dashboard" class="back-link">
-          <i class="pi pi-arrow-left"></i> Retour au dashboard
-      </a>
-
-      <div *ngIf="isLoading" class="loading-state">
-          <p>Chargement des détails de l'entrepreneur...</p>
+    <div class="p-6 md:p-8 min-h-screen" style="background: #fcfdfe; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+      <div *ngIf="isLoading" class="flex flex-col items-center justify-center h-64 text-gray-500">
+        <i class="pi pi-spin pi-spinner text-4xl mb-4" style="color: #ff3d91;"></i>
+        <p>Chargement du profil...</p>
       </div>
 
       <div *ngIf="!isLoading && entrepreneur">
-        <!-- Profile Header Card -->
-        <div class="profile-header-card">
-            <div class="avatar pink-avatar">
-                {{ entrepreneur.firstName.charAt(0) }}{{ entrepreneur.lastName.charAt(0) }}
-            </div>
-            <div class="profile-info">
-                <h1>{{ entrepreneur.firstName }} {{ entrepreneur.lastName }}</h1>
-                <div class="startup-sub">{{ entrepreneur.entreprise }} · {{ entrepreneur.secteur }}</div>
-                <div class="project-desc"><b>Description du projet :</b> {{ entrepreneur.startupDescription }}</div>
-            </div>
-            <div class="header-actions">
-                <button class="btn-coach-badge" *ngIf="coachProfile">{{ coachProfile.firstName }} {{ coachProfile.lastName }}</button>
-            </div>
-        </div>
+        <!-- Back + Header -->
+        <div class="mb-6">
+          <a
+            routerLink="/coach-entrepreneurs"
+            class="flex items-center gap-2 text-sm mb-4 transition-colors"
+            style="color: #8a8a8a; text-decoration: none;"
+          >
+            <i class="pi pi-arrow-left" style="font-size: 1rem;"></i>
+            <span class="hover:text-[#ff3d91]">Retour aux entrepreneurs</span>
+          </a>
 
-        <!-- Stats Bar -->
-        <div class="stats-bar">
-            <div class="stat-item"><span class="dot dot-pink"></span> Progression <b>{{ entrepreneur.completionRate }}%</b></div>
-            <div class="stat-item"><span class="dot dot-green"></span> Email <b>{{ entrepreneur.email }}</b></div>
-            <div class="stat-item"><span class="dot dot-green"></span> Téléphone <b>{{ entrepreneur.phoneNumber }}</b></div>
-        </div>
-
-        <!-- Navigation Tabs -->
-        <div class="custom-tabs">
-            <button class="tab" [class.active]="activeTab === 'taches'" (click)="activeTab = 'taches'">Tâches</button>
-            <button class="tab" [class.active]="activeTab === 'livrables'" (click)="activeTab = 'livrables'">
-                Livrables <span class="tab-badge" *ngIf="entrepreneur.livrables.length > 0">{{ entrepreneur.livrables.length }}</span>
-            </button>
-            <button class="tab" [class.active]="activeTab === 'reporting'" (click)="activeTab = 'reporting'">
-                Reporting Sessions <span class="tab-count">{{ entrepreneur.notes.length }}</span>
-            </button>
-        </div>
-
-        <!-- Tab Content Area -->
-        <div class="tab-content">
-            <!-- Tâches View -->
-            <div *ngIf="activeTab === 'taches'">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-xl font-bold text-[#2D3748]">Plan d'action ({{ entrepreneur.tasks.length || 0 }} tâches)</h2>
-                    <button class="btn-primary" (click)="openTaskModal()">
-                        <i class="pi pi-plus"></i> Ajouter une tâche
-                    </button>
-                </div>
-
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div *ngIf="!entrepreneur.tasks || entrepreneur.tasks.length === 0" class="p-8 text-center text-gray-500">
-                    Aucune tâche spécifique assignée pour le moment.
-                </div>
-
-                <div *ngFor="let task of entrepreneur.tasks" class="task-item border-b border-gray-100 p-4 hover:bg-gray-50 flex items-center gap-4">
-                    <div class="task-checkbox">
-                        <i *ngIf="task.status === 'TERMINEE'" class="pi pi-check-circle text-green-500 text-xl"></i>
-                        <div *ngIf="task.status !== 'TERMINEE'" class="w-5 h-5 rounded-full border-2 border-gray-300"></div>
-                    </div>
-                    <div class="task-content flex-1">
-                        <h4 class="font-semibold text-gray-800 m-0">{{ task.titre }}</h4>
-                        <p class="text-sm text-gray-500 mt-1 mb-2">{{ task.description }}</p>
-
-                        <div class="task-documents" *ngIf="task.documents && task.documents.length > 0">
-                            <div class="text-xs font-bold text-gray-500 mb-1">Documents attachés :</div>
-                            <div *ngFor="let doc of task.documents" class="flex items-center gap-2 text-xs bg-gray-50 p-2 rounded mb-1">
-                                <i class="pi pi-file text-blue-500"></i>
-                                <span class="flex-1 truncate">{{ doc.nom }}</span>
-                                <a [href]="doc.cheminFichier" target="_blank" class="text-blue-500 hover:underline">Voir</a>
-                                <button (click)="deleteTaskDocument(task, doc.id)" class="text-red-500 hover:text-red-700 ml-2" title="Supprimer">
-                                    <i class="pi pi-trash"></i>
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="mt-2">
-                           <input type="file" [id]="'file_' + task.id" class="hidden"
-                                  (change)="onTaskFileSelected($event, task)" multiple />
-                           <button class="text-xs font-bold text-[#FF4D85] bg-pink-50 px-3 py-1.5 rounded-full hover:bg-pink-100 transition-colors flex items-center gap-1"
-                                   (click)="triggerFileInput(task.id)">
-                               <i class="pi pi-paperclip"></i>
-                               {{ uploadingTaskId === task.id ? 'Téléchargement...' : 'Joindre un fichier' }}
-                           </button>
-                        </div>
-                    </div>
-                    <div class="task-meta">
-                        <span class="badge" [class.badge-success]="task.status === 'TERMINEE'"
-                                          [class.badge-warning]="task.status !== 'TERMINEE'">
-                            {{ task.status === 'TERMINEE' ? 'Terminé' : 'En cours' }}
-                        </span>
-                    </div>
-                </div>
-            </div>
-            </div>
-
-            <!-- Livrables View -->
-            <div *ngIf="activeTab === 'livrables'">
-                <div class="livrable-stats">
-                    <div class="livrable-stat"><i class="pi pi-check-circle text-green-500"></i> Livrables reçus <b>{{ entrepreneur.livrables.length }}</b></div>
-                </div>
-
-                <div *ngIf="entrepreneur.livrables.length === 0" class="bg-white rounded-xl p-8 text-center text-gray-500 border border-dashed border-gray-300">
-                    Aucun livrable n'a encore été déposé par cet entrepreneur.
-                </div>
-
-                <div *ngFor="let livrable of entrepreneur.livrables" class="livrable-card">
-                    <div class="livrable-header">
-                        <div class="flex items-center gap-2">
-                            <i class="pi pi-file text-gray-400"></i>
-                            <strong>{{ livrable.tacheTitre }}</strong>
-                        </div>
-                        <span class="tag tag-blue">{{ livrable.typeFichier }}</span>
-                    </div>
-                    <div class="text-sm text-gray-500 mb-3"><i class="pi pi-calendar"></i> {{ livrable.dateUpload | date:'shortDate' }}</div>
-                    <div class="livrable-file">
-                        <i class="pi pi-file text-gray-400"></i>
-                        <div>
-                            <div class="font-medium text-gray-800">{{ livrable.nom }}</div>
-                            <div class="text-xs text-gray-400">{{ (livrable.tailleFichier / 1024) | number:'1.0-0' }} KB</div>
-                        </div>
-                        <div class="ml-auto flex gap-2">
-                            <a [href]="livrable.url" target="_blank" class="link-voir"><i class="pi pi-eye"></i> Voir</a>
-                            <a [href]="livrable.url" download class="link-dl"><i class="pi pi-download"></i> DL</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Reporting Sessions View -->
-            <div *ngIf="activeTab === 'reporting'">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-xl font-bold text-[#2D3748]">Reporting Sessions</h2>
-                    <div style="display: flex; gap: 1rem;">
-                        <button class="btn-primary" (click)="goToCreateReport(entrepreneur.id)">
-                            <i class="pi pi-plus"></i> Ajouter
-                        </button>
-                        <button class="btn-secondary" (click)="downloadConsolidatedReports(entrepreneur.id)" *ngIf="entrepreneur.notes.length > 0" [disabled]="isDownloadingPdf">
-                            <i class="pi" [class.pi-spin]="isDownloadingPdf" [class.pi-spinner]="isDownloadingPdf" [class.pi-download]="!isDownloadingPdf"></i>
-                            {{ isDownloadingPdf ? 'Génération...' : 'Rapports consolidés' }}
-                        </button>
-                    </div>
-                </div>
-
-                <div *ngIf="entrepreneur.notes.length === 0" class="bg-white rounded-xl p-8 text-center text-gray-500 border border-dashed border-gray-300">
-                    Aucune note de synthèse n'a été rédigée pour le moment.
-                </div>
-
-                <div *ngFor="let note of entrepreneur.notes" class="session-report-card">
-                    <div class="session-report-header">
-                        <div class="flex items-center gap-3">
-                            <div class="avatar-sm-dark" *ngIf="coachProfile">{{ getCoachInitials() }}</div>
-                            <div>
-                                <div class="text-white font-bold">Rapport</div>
-                                <div class="text-gray-300 text-sm">{{ note.date | date:'mediumDate' }}</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="session-report-body">
-                        <p class="text-gray-700 font-semibold">Synthèse :</p>
-                        <p class="text-gray-700">{{ note.synthese }}</p>
-                        <div class="plan-action">
-                            <div class="plan-title">APPRÉCIATION</div>
-                            <p class="text-sm text-gray-600">{{ note.appreciation }}</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-      </div>
-
-      <!-- Error State -->
-      <div *ngIf="!isLoading && !entrepreneur" class="error-state text-center p-20">
-          <i class="pi pi-exclamation-circle text-5xl text-red-500 mb-4"></i>
-          <p class="text-xl font-bold text-gray-700">Entrepreneur introuvable</p>
-          <button routerLink="/coach-dashboard" class="mt-4 text-pink-500 hover:underline">Retour au dashboard</button>
-      </div>
-
-      <!-- ══════════════════════════════════════════
-           MODAL : Ajouter une Tâche
-           ══════════════════════════════════════════ -->
-      <div *ngIf="showTaskModal" class="modal-backdrop" (click)="showTaskModal = false">
-          <div class="modal-content" (click)="$event.stopPropagation()">
-              <div class="modal-header">
-                  <h2>Nouvelle tâche</h2>
-                  <button class="close-btn" (click)="showTaskModal = false"><i class="pi pi-times"></i></button>
+          <!-- Page header -->
+          <div class="flex items-start justify-between gap-4 mb-5">
+            <div class="flex items-center gap-4">
+              <div
+                class="w-14 h-14 rounded-2xl flex items-center justify-center text-white text-lg font-bold flex-shrink-0"
+                [style.background]="getAvatarGradient(entrepreneur)"
+              >
+                {{ getInitials(entrepreneur) }}
               </div>
-              <div class="modal-body">
-
-
-
-                  <div class="form-group mb-4">
-                      <label>Titre de la tâche <span class="required">*</span></label>
-                      <input type="text" class="premium-input" [(ngModel)]="newTask.titre" placeholder="Ex: Finaliser le deck" />
-                  </div>
-                  <div class="form-group mb-4">
-                      <label>Description détaillée</label>
-                      <textarea class="premium-input" [(ngModel)]="newTask.description" rows="3" placeholder="Description de ce qui est attendu..."></textarea>
-                  </div>
-                
-                  <div class="form-row mb-4">
-                      <div class="form-group">
-                          <label>Date de début</label>
-                          <input type="date" class="premium-input" [(ngModel)]="newTask.dateDebut" />
-                      </div>
-                      <div class="form-group">
-                          <label>Date d'échéance <span class="required">*</span></label>
-                          <input type="date" class="premium-input" [(ngModel)]="newTask.dateLimite" />
-                      </div>
-                  </div>
-                  <div class="form-group mb-6">
-                      <label>Pièce jointe (optionnel)</label>
-                      <input type="file" class="premium-input" (change)="onNewTaskFileSelected($event)" style="padding: 0.5rem;" />
-                  </div>
-
-                  <button class="btn-primary w-full justify-center"
-                          (click)="submitNewTask()"
-                          [disabled]="isCreatingTask || !newTask.titre || !newTask.dateLimite">
-                      <i class="pi" [ngClass]="isCreatingTask ? 'pi-spinner pi-spin' : 'pi-check'"></i>
-                      {{ isCreatingTask ? 'Création en cours...' : 'Créer la tâche' }}
-                  </button>
+              <div>
+                <h1 style="font-size: 22px; font-weight: 700; color: #000; margin: 0;">
+                  {{ entrepreneur.firstName }} {{ entrepreneur.lastName }}
+                </h1>
+                <p style="font-size: 13px; color: #8a8a8a; margin-top: 3px;">
+                  {{ entrepreneur.entreprise || 'Startup' }} · {{ entrepreneur.secteur || 'Non spécifié' }}
+                </p>
+                <p style="font-size: 13px; color: #374151; margin-top: 8px; line-height: 1.5; max-width: 600px;">
+                  <strong style="color: #000;">Description du projet : </strong>
+                  {{ entrepreneur.startupDescription || 'Aucune description fournie.' }}
+                </p>
               </div>
+            </div>
+
+            <div class="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
+              <div *ngIf="getTasksOverdueCount() > 0"
+                class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
+                style="background: #FEE2E2; color: #DC2626;"
+              >
+                <i class="pi pi-exclamation-triangle" style="font-size: 12px;"></i>
+                {{ getTasksOverdueCount() }} tâches en retard
+              </div>
+              <div
+                class="flex items-center gap-2 px-3 py-1.5 rounded-full"
+                style="background: #1A3A3A; color: #FFFFFF; font-size: 13px; font-weight: 600;"
+              >
+                <div style="width: 6px; height: 6px; border-radius: 50%; background: #3aafff; flex-shrink: 0;"></div>
+                Coach Assigné
+              </div>
+            </div>
           </div>
-      </div>
 
+          <!-- Mini KPI bar -->
+          <div
+            class="bg-white rounded-xl px-5 py-3 flex items-center gap-6 flex-wrap"
+            style="box-shadow: 0 1px 4px rgba(0,0,0,0.06);"
+          >
+            <div class="flex items-center gap-2">
+              <div class="w-2 h-2 rounded-full" style="background: #ff3d91;"></div>
+              <span style="font-size: 13px; color: #8a8a8a;">Progression</span>
+              <span style="font-size: 13px; font-weight: 700; color: #000;">{{ entrepreneur.completionRate || 0 }}%</span>
+            </div>
+            <div class="w-px h-5 bg-gray-200"></div>
+            <div class="flex items-center gap-2">
+              <div class="w-2 h-2 rounded-full" style="background: #3aafff;"></div>
+              <span style="font-size: 13px; color: #8a8a8a;">Livrables validés</span>
+              <span style="font-size: 13px; font-weight: 700; color: #000;">{{ getValidatedDeliverablesCount() }}</span>
+            </div>
+            <div class="w-px h-5 bg-gray-200"></div>
+            <div class="flex items-center gap-2">
+              <div class="w-2 h-2 rounded-full" [style.background]="getTasksOverdueCount() > 0 ? '#EF4444' : '#22C55E'"></div>
+              <span style="font-size: 13px; color: #8a8a8a;">Tâches en retard</span>
+              <span style="font-size: 13px; font-weight: 700;" [style.color]="getTasksOverdueCount() > 0 ? '#EF4444' : '#000'">{{ getTasksOverdueCount() }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="flex gap-0 border-b border-gray-200 mb-5 overflow-x-auto">
+          <button
+            (click)="activeTab = 'taches'"
+            class="py-3 px-5 text-sm font-semibold border-b-2 transition-all capitalize whitespace-nowrap"
+            [ngClass]="activeTab === 'taches' ? 'border-[#ff3d91] text-[#ff3d91]' : 'border-transparent text-gray-500 hover:text-gray-700'"
+          >
+            Tâches
+          </button>
+          <button
+            (click)="activeTab = 'livrables'"
+            class="py-3 px-5 text-sm font-semibold border-b-2 transition-all capitalize whitespace-nowrap"
+            [ngClass]="activeTab === 'livrables' ? 'border-[#ff3d91] text-[#ff3d91]' : 'border-transparent text-gray-500 hover:text-gray-700'"
+          >
+            Livrables
+            <span class="ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full" 
+                  [style.background]="getPendingReviewCount() > 0 ? '#fff0f5' : '#F3F4F6'"
+                  [style.color]="getPendingReviewCount() > 0 ? '#ff3d91' : '#6B7280'">
+              {{ getPendingReviewCount() > 0 ? getPendingReviewCount() + ' à valider' : (entrepreneur.livrables?.length || 0) }}
+            </span>
+          </button>
+          <button
+            (click)="activeTab = 'reporting'"
+            class="py-3 px-5 text-sm font-semibold border-b-2 transition-all capitalize whitespace-nowrap"
+            [ngClass]="activeTab === 'reporting' ? 'border-[#ff3d91] text-[#ff3d91]' : 'border-transparent text-gray-500 hover:text-gray-700'"
+          >
+            Reporting Sessions
+            <span class="ml-1.5 text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">{{ entrepreneur.notes?.length || 0 }}</span>
+          </button>
+          
+          <button
+            *ngIf="activeTab === 'taches' || activeTab === 'reporting'"
+            (click)="activeTab === 'taches' ? openTaskModal() : goToCreateReport(entrepreneur.id)"
+            class="ml-auto flex items-center gap-1.5 px-4 py-2 mb-1 rounded-xl text-sm font-semibold text-white flex-shrink-0 hover:opacity-90 transition-opacity"
+            style="background: #ff3d91;"
+          >
+            <i class="pi pi-plus" style="font-size: 14px;"></i>
+            {{ activeTab === 'taches' ? 'Ajouter une tâche' : 'Nouveau rapport' }}
+          </button>
+        </div>
+
+        <!-- Tâches Tab -->
+        <div *ngIf="activeTab === 'taches'" class="space-y-3">
+          <div *ngIf="!entrepreneur?.tasks?.length" class="text-center py-20">
+            <i class="pi pi-check-circle mx-auto mb-4 text-green-400" style="font-size: 48px;"></i>
+            <p class="text-gray-500 font-medium">Aucune tâche assignée</p>
+          </div>
+          
+          <div *ngFor="let tache of entrepreneur?.tasks" class="bg-white rounded-2xl p-4 flex items-center gap-4" style="box-shadow: 0 4px 20px rgba(0,0,0,0.06);">
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-0.5 flex-wrap">
+                <p class="font-medium text-[#1A1A2E] text-sm">{{ tache.titre }}</p>
+                <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold"
+                      [style.background]="tache.status === 'TERMINEE' ? '#D1FAE5' : (tache.status === 'EN_COURS' ? '#DBEAFE' : '#FEE2E2')"
+                      [style.color]="tache.status === 'TERMINEE' ? '#059669' : (tache.status === 'EN_COURS' ? '#2563EB' : '#DC2626')">
+                  {{ tache.status === 'TERMINEE' ? 'Terminé' : (tache.status === 'EN_COURS' ? 'En cours' : 'À faire') }}
+                </span>
+              </div>
+              <p class="text-xs text-gray-500 mt-1" *ngIf="tache.description">{{ tache.description }}</p>
+            </div>
+            <div class="text-right flex-shrink-0" *ngIf="tache.status === 'TERMINEE'">
+              <i class="pi pi-check-circle text-green-500" style="font-size: 24px;"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Livrables Tab -->
+        <div *ngIf="activeTab === 'livrables'">
+          <div class="flex items-center gap-4 mb-5 p-4 bg-white rounded-2xl" style="box-shadow: 0 4px 20px rgba(0,0,0,0.06);">
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-xl bg-green-100 flex items-center justify-center">
+                <i class="pi pi-check-circle text-green-600" style="font-size: 16px;"></i>
+              </div>
+              <div>
+                <p class="text-xs text-gray-400">Livrables reçus</p>
+                <p class="text-sm font-bold text-[#1A1A2E]">{{ entrepreneur.livrables?.length || 0 }}</p>
+              </div>
+            </div>
+            <div class="w-px h-8 bg-gray-200"></div>
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center">
+                <i class="pi pi-exclamation-triangle text-amber-600" style="font-size: 16px;"></i>
+              </div>
+              <div>
+                <p class="text-xs text-gray-400">En révision</p>
+                <p class="text-sm font-bold text-[#1A1A2E]">{{ getRevisionCount() }}</p>
+              </div>
+            </div>
+            <div class="w-px h-8 bg-gray-200" *ngIf="getPendingReviewCount() > 0"></div>
+            <div class="flex items-center gap-2" *ngIf="getPendingReviewCount() > 0">
+              <div class="w-8 h-8 rounded-xl bg-red-100 flex items-center justify-center">
+                <i class="pi pi-eye text-[#ff3d91]" style="font-size: 16px;"></i>
+              </div>
+              <div>
+                <p class="text-xs text-gray-400">À valider</p>
+                <p class="text-sm font-bold text-[#ff3d91]">{{ getPendingReviewCount() }}</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-3">
+            <div *ngIf="!entrepreneur?.livrables?.length" class="text-center py-20">
+              <div class="text-5xl mb-4">📦</div>
+              <p class="text-gray-500 font-medium">Aucun livrable soumis</p>
+            </div>
+
+            <div *ngFor="let del of entrepreneur?.livrables" 
+                 class="rounded-xl overflow-hidden bg-white"
+                 style="box-shadow: 0 2px 8px rgba(0,0,0,0.06);"
+                 [style.border-left]="del.statut === 'ACCEPTED' || del.statut === 'VALIDE' || del.statut === 'APPROUVE' ? '4px solid #22C55E' : (del.statut === 'REVISION' || del.statut === 'EN_REVISION' ? '4px solid #F97316' : '4px solid #F59E0B')">
+              <div class="p-4">
+                <div class="flex items-start justify-between gap-3 mb-3">
+                  <div class="flex items-start gap-2 flex-1 min-w-0">
+                    <span class="text-base mt-0.5 flex-shrink-0">
+                      <i *ngIf="del.statut === 'ACCEPTED' || del.statut === 'VALIDE' || del.statut === 'APPROUVE'" class="pi pi-check-circle text-green-500"></i>
+                      <i *ngIf="del.statut === 'REVISION' || del.statut === 'EN_REVISION'" class="pi pi-refresh text-orange-400"></i>
+                      <i *ngIf="!['ACCEPTED', 'VALIDE', 'APPROUVE', 'REVISION', 'EN_REVISION'].includes(del.statut)" class="pi pi-clock text-amber-400"></i>
+                    </span>
+                    <div class="min-w-0">
+                      <p class="text-sm font-semibold text-[#1A1A2E] leading-snug">{{ del.tacheTitre || 'Livrable' }}</p>
+                      <p class="text-xs text-gray-400 mt-0.5 flex items-center gap-1"><i class="pi pi-calendar"></i> {{ del.dateUpload | date:'d MMM yyyy' }}</p>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2 flex-shrink-0">
+                    <span class="text-xs px-2.5 py-1 rounded-full font-semibold"
+                          [style.background]="['ACCEPTED', 'VALIDE', 'APPROUVE'].includes(del.statut) ? '#D1FAE5' : (['REVISION', 'EN_REVISION'].includes(del.statut) ? '#FEF3C7' : '#FEF9C3')"
+                          [style.color]="['ACCEPTED', 'VALIDE', 'APPROUVE'].includes(del.statut) ? '#065F46' : (['REVISION', 'EN_REVISION'].includes(del.statut) ? '#B45309' : '#92400E')">
+                      {{ ['ACCEPTED', 'VALIDE', 'APPROUVE'].includes(del.statut) ? 'Accepté' : (['REVISION', 'EN_REVISION'].includes(del.statut) ? 'À réviser' : 'En attente') }}
+                    </span>
+                  </div>
+                </div>
+
+                <div class="space-y-3">
+                  <div class="flex items-center gap-2 p-2.5 rounded-lg bg-gray-50">
+                    <span class="text-lg"><i class="pi" [ngClass]="del.nom.endsWith('.pdf') ? 'pi-file-pdf text-red-500' : 'pi-file text-blue-500'"></i></span>
+                    <div class="flex-1 min-w-0">
+                      <p class="text-xs font-medium text-gray-800 truncate">{{ del.nom }}</p>
+                      <p class="text-[10px] text-gray-400 flex items-center gap-1">Document <i class="pi pi-calendar" style="font-size:9px"></i> {{ del.dateUpload | date:'d MMM yyyy' }}</p>
+                    </div>
+                    <div class="flex gap-1.5">
+                      <a [href]="del.url" target="_blank" class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors" style="text-decoration:none;">
+                        <i class="pi pi-eye" style="font-size: 12px;"></i> Voir
+                      </a>
+                      <a [href]="del.url" download class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-gray-200 text-gray-600 hover:bg-gray-300 transition-colors" style="text-decoration:none;">
+                        <i class="pi pi-download" style="font-size: 12px;"></i> DL
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Reporting Tab -->
+        <div *ngIf="activeTab === 'reporting'">
+          <div *ngIf="!entrepreneur?.notes?.length" class="text-center py-20">
+            <i class="pi pi-file mx-auto mb-4 text-gray-200" style="font-size: 48px;"></i>
+            <p class="text-gray-500 font-medium">Aucun rapport de missions pour l'instant</p>
+          </div>
+          
+          <div class="space-y-4">
+            <div *ngFor="let note of entrepreneur?.notes" class="bg-white rounded-2xl overflow-hidden" style="box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
+              <div class="px-5 py-4 flex items-center justify-between" style="background: linear-gradient(135deg, #1A2035, #2C3E50);">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-white font-bold text-sm">
+                    <i class="pi pi-user"></i>
+                  </div>
+                  <div>
+                    <p class="text-white font-semibold text-sm">Session Coach</p>
+                    <p class="text-white/60 text-xs">{{ note.date | date:'mediumDate' }}</p>
+                  </div>
+                </div>
+              </div>
+              <div class="p-5">
+                <p class="text-sm text-gray-600 mb-4 leading-relaxed">{{ note.synthese }}</p>
+                <div *ngIf="note.appreciation">
+                  <p class="text-xs font-semibold text-gray-400 mb-2">APPRÉCIATION</p>
+                  <div class="flex items-start gap-2">
+                    <i class="pi pi-check-circle text-green-500 mt-0.5 flex-shrink-0" style="font-size: 14px;"></i>
+                    <p class="text-sm text-gray-700">{{ note.appreciation }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Task Modal -->
+        <div *ngIf="showTaskModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(0,0,0,0.5);">
+          <div class="bg-white rounded-2xl w-full max-w-lg overflow-hidden" style="box-shadow: 0 20px 60px rgba(0,0,0,0.2);">
+            <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+              <div>
+                <h3 class="font-bold text-lg text-[#1A1A2E]">Ajouter une tâche</h3>
+                <p class="text-xs text-gray-400 mt-0.5">Créez une nouvelle tâche pour cet entrepreneur</p>
+              </div>
+              <button (click)="showTaskModal = false" class="p-2 rounded-xl text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+                <i class="pi pi-times" style="font-size: 18px;"></i>
+              </button>
+            </div>
+            <div class="p-6 space-y-4">
+              <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Titre de la tâche *</label>
+                <input type="text" [(ngModel)]="newTask.titre" placeholder="Ex: Préparer le Business Model Canvas" class="w-full border border-gray-200 rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:border-[#ff3d91] transition-colors" />
+              </div>
+              <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+                <textarea [(ngModel)]="newTask.description" rows="3" class="w-full border border-gray-200 rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:border-[#ff3d91] resize-none transition-colors"></textarea>
+              </div>
+              <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Date limite *</label>
+                <input type="date" [(ngModel)]="newTask.dateLimite" class="w-full border border-gray-200 rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:border-[#ff3d91] transition-colors" />
+              </div>
+            </div>
+            <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-end gap-3" style="background: #fafafa;">
+              <button (click)="showTaskModal = false" class="px-4 py-2 rounded-xl text-sm font-medium text-gray-600 border border-gray-200 hover:bg-gray-50 transition-colors">Annuler</button>
+              <button (click)="submitNewTask()" [disabled]="isCreatingTask || !newTask.titre || !newTask.dateLimite" class="px-6 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed" style="background: linear-gradient(135deg, #1A3A3A, #C0392B);">
+                <i *ngIf="isCreatingTask" class="pi pi-spin pi-spinner"></i>
+                {{ isCreatingTask ? 'Création...' : 'Créer la tâche' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   `,
   styles: [`
-    .entrepreneur-detail-page {
-        padding: 2rem;
-        background: #f8f9fa;
-        min-height: calc(100vh - 70px);
-        font-family: var(--font-family);
-        margin-top: -1rem;
-    }
-    .back-link {
-        display: inline-flex; align-items: center; gap: 0.5rem;
-        color: #718096; text-decoration: none; font-weight: 500;
-        margin-bottom: 2rem; transition: color 0.2s;
-    }
-    .back-link:hover { color: #FF4D85; }
-    .profile-header-card {
-        background: white; border-radius: 1.5rem; padding: 2rem;
-        display: flex; align-items: center; gap: 2rem;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.03); margin-bottom: 2rem;
-    }
-    .avatar {
-        width: 80px; height: 80px; border-radius: 50%;
-        display: flex; align-items: center; justify-content: center;
-        font-weight: 700; font-size: 1.8rem; color: white;
-    }
-    .pink-avatar { background: linear-gradient(135deg, #FF6B9E, #FF3366); }
-    .profile-info { flex: 1; }
-    .profile-info h1 { margin: 0 0 0.5rem 0; font-size: 2rem; color: #2D3748; }
-    .startup-sub { color: #718096; font-size: 0.95rem; }
-    .project-desc { color: #4A5568; font-size: 0.9rem; margin-top: 0.5rem; line-height: 1.5; }
-    .btn-coach-badge {
-        background: #1A202C; color: white; border: none;
-        padding: 0.5rem 1.2rem; border-radius: 20px; font-weight: 600; font-size: 0.85rem; cursor: default;
-    }
-    .stats-bar {
-        background: white; border-radius: 1rem; padding: 1rem 2rem;
-        display: flex; gap: 3rem; box-shadow: 0 2px 10px rgba(0,0,0,0.03);
-        margin-bottom: 2rem; border: 1px solid #EDF2F7;
-    }
-    .stat-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; color: #4A5568; }
-    .dot { width: 10px; height: 10px; border-radius: 50%; }
-    .dot-pink { background: #FF4D85; }
-    .dot-green { background: #48BB78; }
-    .custom-tabs {
-        display: flex; gap: 2rem; border-bottom: 2px solid #EDF2F7; margin-bottom: 2rem;
-    }
-    .tab {
-        background: none; border: none; padding: 1rem 0; font-size: 1.05rem;
-        font-weight: 600; color: #A0AEC0; cursor: pointer; position: relative; transition: color 0.2s;
-    }
-    .tab:hover { color: #4A5568; }
-    .tab.active { color: #FF4D85; }
-    .tab.active::after {
-        content: ''; position: absolute; bottom: -2px; left: 0; right: 0;
-        height: 3px; background: #FF4D85; border-radius: 3px 3px 0 0;
-    }
-    .tab-badge {
-        background: #FFF5F5; color: #E53E3E; font-size: 0.7rem;
-        padding: 0.2rem 0.5rem; border-radius: 8px; font-weight: 700; margin-left: 0.4rem;
-    }
-    .tab-count {
-        background: #EDF2F7; color: #4A5568; font-size: 0.7rem;
-        padding: 0.15rem 0.5rem; border-radius: 8px; font-weight: 700; margin-left: 0.4rem;
-    }
-    .badge { font-size: 0.75rem; padding: 0.3rem 0.8rem; border-radius: 12px; font-weight: 600; }
-    .badge-warning { background: #FFF5F5; color: #E53E3E; border: 1px solid #FED7D7; }
-    .badge-success { background: #F0FFF4; color: #38A169; border: 1px solid #C6F6D5; }
-    .livrable-stats {
-        display: flex; gap: 2rem; padding: 1rem 1.5rem; background: white;
-        border-radius: 1rem; border: 1px solid #EDF2F7; margin-bottom: 1.5rem;
-    }
-    .livrable-stat { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; color: #4A5568; }
-    .livrable-card {
-        background: white; border-radius: 1rem; padding: 1.5rem;
-        margin-bottom: 1rem; border: 1px solid #EDF2F7; box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-    }
-    .livrable-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
-    .tag { font-size: 0.7rem; padding: 0.2rem 0.6rem; border-radius: 6px; font-weight: 700; }
-    .tag-blue { background: #EBF4FF; color: #3182CE; }
-    .livrable-file { display: flex; align-items: center; gap: 0.8rem; padding: 0.8rem; background: #F8FAFC; border-radius: 10px; }
-    .link-voir, .link-dl { background: none; border: none; color: #3182CE; font-weight: 600; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 0.3rem; text-decoration: none; }
-    .link-dl { color: #718096; }
-    .session-report-card { border-radius: 1rem; overflow: hidden; margin-bottom: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.06); }
-    .session-report-header { background: linear-gradient(135deg, #2D3748, #1A202C); padding: 1.5rem; }
-    .avatar-sm-dark {
-        width: 40px; height: 40px; border-radius: 50%;
-        background: rgba(255,255,255,0.15); display: flex; align-items: center;
-        justify-content: center; color: white; font-weight: 700; font-size: 0.85rem;
-    }
-    .session-report-body { padding: 1.5rem; background: white; }
-    .session-report-body p { margin: 0 0 1rem 0; line-height: 1.6; }
-    .plan-action { margin-top: 1rem; }
-    .plan-title { font-size: 0.75rem; font-weight: 700; color: #A0AEC0; letter-spacing: 1px; margin-bottom: 0.6rem; }
-
-    /* ── Modal ───────────────────────────────────── */
-    .modal-backdrop {
-        position: fixed; inset: 0; background: rgba(0,0,0,0.45);
-        backdrop-filter: blur(4px); z-index: 1000;
-        display: flex; align-items: center; justify-content: center; padding: 2rem;
-    }
-    .modal-content {
-        background: white; border-radius: 1.5rem; width: 100%; max-width: 560px;
-        max-height: calc(100vh - 4rem); box-shadow: 0 20px 40px rgba(0,0,0,0.12);
-        animation: slide-up 0.25s ease-out; overflow: hidden; display: flex; flex-direction: column;
-    }
-    .modal-header {
-        display: flex; justify-content: space-between; align-items: center;
-        padding: 1.4rem 1.6rem 1rem; border-bottom: 1px solid #EDF2F7;
-    }
-    .modal-header h2 { font-size: 1.3rem; font-weight: 700; color: #2D3748; margin: 0; }
-    .close-btn { background: #F7FAFC; border: none; width: 32px; height: 32px; border-radius: 50%; color: #A0AEC0; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-    .close-btn:hover { background: #EDF2F7; color: #4A5568; }
-    .modal-body { overflow-y: auto; padding: 1.4rem 1.6rem 1.6rem; display: flex; flex-direction: column; gap: 0; }
-    .form-group { display: flex; flex-direction: column; }
-    .form-group label { font-size: 0.9rem; font-weight: 600; color: #4A5568; margin-bottom: 0.45rem; }
-    .required { color: #FF4D85; }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-    .premium-input {
-        width: 100%; padding: 0.75rem 1rem; border-radius: 10px; border: 1px solid #E2E8F0;
-        background: #F8FAFC; font-family: inherit; font-size: 0.95rem; color: #2D3748;
-        outline: none; transition: all 0.2s; box-sizing: border-box; resize: vertical;
-    }
-    .premium-input:focus { border-color: #FF4D85; box-shadow: 0 0 0 3px rgba(255,77,133,0.1); background: white; }
-    .premium-input:disabled { background: #EDF2F7; color: #A0AEC0; cursor: not-allowed; }
-    .loading-hint { display: flex; align-items: center; gap: 0.5rem; color: #718096; font-size: 0.9rem; padding: 0.75rem 1rem; background: #F8FAFC; border-radius: 10px; border: 1px solid #E2E8F0; }
-    .hint-text { font-size: 0.82rem; color: #E53E3E; margin-top: 0.4rem; display: flex; align-items: center; gap: 0.4rem; }
-    .btn-primary {
-        background: linear-gradient(135deg, #FF6B9E 0%, #E83E8C 100%); color: white; border: none;
-        padding: 0.85rem 1.5rem; border-radius: 12px; font-weight: 700; display: flex;
-        align-items: center; gap: 0.5rem; cursor: pointer; transition: all 0.2s;
-        font-family: inherit; font-size: 0.95rem;
-    }
-    .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(255,77,133,0.35); }
-    .btn-primary:disabled { background: #CBD5E0; background-image: none; cursor: not-allowed; transform: none; box-shadow: none; }
-    .btn-secondary {
-        background: white; border: 1px solid #E2E8F0; color: #4A5568;
-        padding: 0.85rem 1.5rem; border-radius: 12px; font-weight: 600;
-        cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 0.5rem;
-        font-family: inherit;
-    }
-    .btn-secondary:hover:not(:disabled) { background: #F8FAFC; border-color: #CBD5E0; }
-    .btn-secondary:disabled { opacity: 0.6; cursor: not-allowed; }
-    .w-full { width: 100%; }
-    .justify-center { justify-content: center; }
-    @keyframes slide-up { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    @keyframes spin { to { transform: rotate(360deg); } }
   `]
 })
 export class CoachEntrepreneurDetailComponent implements OnInit {
@@ -403,6 +339,45 @@ export class CoachEntrepreneurDetailComponent implements OnInit {
   uploadingTaskId: number | null = null;
   isDownloadingPdf: boolean = false;
   coachProfile: any = null;
+
+  getAvatarGradient(ent: any): string {
+    const colors = [
+        ['#FF4D85', '#FF758C'],
+        ['#7C3AED', '#A78BFA'],
+        ['#2563EB', '#60A5FA'],
+        ['#059669', '#34D399'],
+        ['#D97706', '#FBBF24']
+    ];
+    const index = (ent.id || 0) % colors.length;
+    return `linear-gradient(135deg, ${colors[index][0]} 0%, ${colors[index][1]} 100%)`;
+  }
+
+  getInitials(ent: any): string {
+    if (!ent.firstName && !ent.lastName) return 'E';
+    return ((ent.firstName?.[0] || '') + (ent.lastName?.[0] || '')).toUpperCase();
+  }
+
+  getStatusInfo(status: string) {
+    switch (status) {
+      case 'ACCEPTED':
+      case 'VALIDE':
+      case 'APPROVED':
+      case 'APPROUVE':
+        return { text: 'Accepté', class: 'status-accepted', icon: 'pi pi-check-circle' };
+      case 'REVISION':
+      case 'EN_REVISION':
+        return { text: 'À réviser', class: 'status-revision', icon: 'pi pi-refresh' };
+      case 'REJECTED':
+      case 'REJETE':
+        return { text: 'Rejeté', class: 'status-rejected', icon: 'pi pi-times-circle' };
+      case 'PENDING':
+      case 'PENDING_REVIEW':
+      case 'SOUMIS':
+      case 'SUBMITTED':
+      default:
+        return { text: 'En attente', class: 'status-pending', icon: 'pi pi-clock' };
+    }
+  }
 
   // ── Task creation ──────────────────────────────
   newTask: any = {
@@ -434,6 +409,28 @@ export class CoachEntrepreneurDetailComponent implements OnInit {
     this.router.navigate(['/rapport-sessions'], {
       queryParams: { entrepreneurId, action: 'new' }
     });
+  }
+
+  getTasksOverdueCount(): number {
+    if (!this.entrepreneur || !this.entrepreneur.tasks) return 0;
+    const now = new Date();
+    // Assuming tasks might have dateLimite, if not it just won't throw
+    return this.entrepreneur.tasks.filter(t => t.dateLimite && new Date(t.dateLimite) < now && t.status !== 'TERMINEE').length;
+  }
+
+  getPendingReviewCount(): number {
+    if (!this.entrepreneur || !this.entrepreneur.livrables) return 0;
+    return this.entrepreneur.livrables.filter(l => l.statut === 'PENDING' || l.statut === 'SOUMIS' || l.statut === 'PENDING_REVIEW').length;
+  }
+
+  getRevisionCount(): number {
+    if (!this.entrepreneur || !this.entrepreneur.livrables) return 0;
+    return this.entrepreneur.livrables.filter(l => l.statut === 'REVISION' || l.statut === 'EN_REVISION').length;
+  }
+
+  getValidatedDeliverablesCount(): number {
+    if (!this.entrepreneur || !this.entrepreneur.livrables) return 0;
+    return this.entrepreneur.livrables.filter(l => l.statut === 'ACCEPTED' || l.statut === 'VALIDE' || l.statut === 'APPROUVE').length;
   }
 
   ngOnInit(): void {

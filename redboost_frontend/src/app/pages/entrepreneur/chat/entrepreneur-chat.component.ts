@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, signal, computed, ViewChild, ElementRef, AfterViewChecked, OnInit, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, signal, computed, ViewChild, ElementRef, AfterViewChecked, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MessageService, Message } from '../../../core/services/message.service';
@@ -99,6 +99,9 @@ interface ChatMessageDisplay {
                       {{ conv.avatar }}
                     </div>
                     <div class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                    @if (unreadCounts()[conv.id]) {
+                      <div class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full shadow-sm">{{ unreadCounts()[conv.id] }}</div>
+                    }
                   </div>
                   <div class="flex-1 min-w-0">
                     <p class="text-sm font-semibold text-[#1A1A2E] truncate">{{ conv.name }}</p>
@@ -142,7 +145,7 @@ interface ChatMessageDisplay {
               <div class="flex-1 min-w-0">
                 <p class="font-semibold text-[#1A1A2E] text-sm truncate">{{ selected()?.name }}</p>
                 <p class="text-xs text-gray-400 truncate">
-                  Coach · <span style="color: #10B981;" class="font-medium">En ligne</span>
+                  Coach · <span [style.color]="isOnline() ? '#10B981' : '#9CA3AF'" class="font-medium">{{ isOnline() ? 'En ligne' : 'Hors ligne' }}</span>
                 </p>
               </div>
               <div class="flex items-center gap-1 flex-shrink-0">
@@ -176,7 +179,7 @@ interface ChatMessageDisplay {
                     }
                     <div
                       class="max-w-[85%] sm:max-w-xs lg:max-w-md px-4 py-3 text-sm leading-relaxed shadow-sm flex flex-col"
-                      [class]="msg.sender === 'entrepreneur' ? 'rounded-2xl rounded-tr-sm text-white' : 'rounded-2xl rounded-tl-sm bg-white text-gray-800'"
+                      [class]="msg.sender === 'entrepreneur' ? 'rounded-2xl rounded-tr-sm text-white' : 'rounded-2xl rounded-tl-sm bg-gray-200 text-gray-800'"
                       [style.background]="msg.sender === 'entrepreneur' ? 'linear-gradient(135deg, #3B82A6, #2563A0)' : ''"
                     >
                       @if (msg.type === 'FILE') {
@@ -203,6 +206,14 @@ interface ChatMessageDisplay {
                   </div>
                 }
               }
+
+              @if (isTyping()) {
+                <div class="flex justify-start">
+                  <div class="max-w-[85%] sm:max-w-xs lg:max-w-md px-4 py-3 text-sm leading-relaxed shadow-sm flex flex-col rounded-2xl rounded-tl-sm bg-gray-100 text-gray-500 italic">
+                    {{ selected()?.name }} est en train d'écrire...
+                  </div>
+                </div>
+              }
             </div>
 
             <!-- Input -->
@@ -217,6 +228,7 @@ interface ChatMessageDisplay {
               <input
                 [ngModel]="newMessage()"
                 (ngModelChange)="newMessage.set($event)"
+                (input)="onInput()"
                 (keydown.enter)="sendMessage()"
                 class="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none transition-colors"
                 style="focus:border-color: #3B82A6;"
@@ -254,7 +266,7 @@ interface ChatMessageDisplay {
     }
   `]
 })
-export class EntrepreneurChatComponent implements OnInit, AfterViewChecked {
+export class EntrepreneurChatComponent implements OnInit, AfterViewChecked, OnDestroy {
   @ViewChild('scrollContainer') private scrollContainer!: ElementRef;
 
   private messageService = inject(MessageService);
@@ -271,6 +283,11 @@ export class EntrepreneurChatComponent implements OnInit, AfterViewChecked {
   mobileView = signal<'list' | 'chat'>('list');
   isLoadingConversations = signal(false);
   isLoadingMessages = signal(false);
+  isOnline = signal(false);
+  isTyping = signal(false);
+  unreadCounts = signal<Record<string, number>>({});
+  private presenceInterval: any;
+  private typingTimeout: any;
 
   isMobileView = signal(window.innerWidth < 1024);
   public currentUserId: string | undefined;
@@ -307,6 +324,13 @@ export class EntrepreneurChatComponent implements OnInit, AfterViewChecked {
         }));
       }
     });
+
+    // Handle typing signals
+    this.socketService.typingReceived$.subscribe(payload => {
+      if (this.selected()?.id === payload.expediteurId) {
+        this.isTyping.set(payload.isTyping);
+      }
+    });
   }
 
   private loadCoach(): void {
@@ -337,6 +361,11 @@ export class EntrepreneurChatComponent implements OnInit, AfterViewChecked {
         if (convs.length > 0 && !this.route.snapshot.queryParamMap.has('with')) {
           this.selectConversation(convs[0]);
         }
+
+        // Load unread counts
+        this.messageService.getUnreadPerSender(this.currentUserId!).subscribe({
+          next: (counts) => this.unreadCounts.set(counts)
+        });
       },
       error: (err) => {
         console.error('Failed to load coach:', err);
@@ -380,7 +409,32 @@ export class EntrepreneurChatComponent implements OnInit, AfterViewChecked {
     if (this.isMobileView()) {
       this.mobileView.set('chat');
     }
+    
+    // Clear unread badge locally when selected
+    this.unreadCounts.update(counts => {
+      const newCounts = { ...counts };
+      delete newCounts[conv.id];
+      return newCounts;
+    });
+
     this.loadMessages(conv.id);
+    this.checkPresence(conv.id);
+
+    if (this.presenceInterval) {
+        clearInterval(this.presenceInterval);
+    }
+    this.presenceInterval = setInterval(() => {
+        if (this.selected()?.id === conv.id) {
+            this.checkPresence(conv.id);
+        }
+    }, 30000);
+  }
+
+  private checkPresence(userId: string): void {
+      this.messageService.getPresence(userId).subscribe({
+          next: (res) => this.isOnline.set(res.online),
+          error: () => this.isOnline.set(false)
+      });
   }
 
   private loadMessages(userId: string): void {
@@ -449,6 +503,23 @@ export class EntrepreneurChatComponent implements OnInit, AfterViewChecked {
     });
 
     this.newMessage.set('');
+    
+    // Stop typing
+    if (this.typingTimeout) clearTimeout(this.typingTimeout);
+    this.socketService.sendTypingSignal(this.currentUserId, this.selected()!.id, false);
+  }
+
+  onInput(): void {
+    if (!this.selected() || !this.currentUserId) return;
+
+    this.socketService.sendTypingSignal(this.currentUserId, this.selected()!.id, true);
+
+    if (this.typingTimeout) {
+      clearTimeout(this.typingTimeout);
+    }
+    this.typingTimeout = setTimeout(() => {
+      this.socketService.sendTypingSignal(this.currentUserId!, this.selected()!.id, false);
+    }, 1500);
   }
 
   private addMessageToList(msg: any, senderType: 'coach' | 'entrepreneur'): void {
@@ -493,5 +564,11 @@ export class EntrepreneurChatComponent implements OnInit, AfterViewChecked {
     if (coachId && this.currentUserId) {
       this.messageService.markAsRead(this.currentUserId, coachId).subscribe();
     }
+  }
+
+  ngOnDestroy(): void {
+      if (this.presenceInterval) {
+          clearInterval(this.presenceInterval);
+      }
   }
 }

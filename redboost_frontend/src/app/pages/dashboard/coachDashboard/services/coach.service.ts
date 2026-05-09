@@ -39,6 +39,7 @@ export interface SeanceExceptionnelleDTO {
   id?: number;
   coachId: number;
   entrepreneurId: number;
+  thematiqueId?: number;
   entrepreneurName?: string;
   titre: string;
   dateSeance: string;
@@ -100,6 +101,9 @@ export interface CoachEntrepreneurDTO {
   profilePictureUrl?: string;
   completionRate?: number;
   delayedTasksCount?: number;
+  completedTasksCount?: number;
+  stage?: string;
+  programName?: string;
 }
 
 export interface CoachCalendarEventDTO {
@@ -110,6 +114,8 @@ export interface CoachCalendarEventDTO {
   startTime?: string;
   endTime?: string;
   source?: 'coach' | 'entrepreneur';
+  thematiqueNom?: string;
+  programmeNom?: string;
 }
 export interface DashboardStatsDTO {
   nbRendezVous: number;
@@ -149,6 +155,7 @@ export interface CoachEntrepreneurDetailDTO {
     tailleFichier: number;
     url: string;
     tacheTitre: string;
+    statut: string;
   }>;
   notes: Array<{
     id: number;
@@ -170,8 +177,8 @@ export class CoachService {
   getDisponibilites(coachId: number): Observable<DisponibiliteDTO[]> {
     return this.http.get<DisponibiliteDTO[]>(`${this.apiUrl}/${coachId}/disponibilites`);
   }
-  addDisponibilite(coachId: number, thematiqueId: number): Observable<DisponibiliteDTO> {
-    return this.http.post<DisponibiliteDTO>(`${this.apiUrl}/${coachId}/disponibilites/${thematiqueId}`, {});
+  addDisponibilite(coachId: number, thematiqueId: number, couleur: string = '#FF4D85'): Observable<DisponibiliteDTO> {
+    return this.http.post<DisponibiliteDTO>(`${this.apiUrl}/${coachId}/disponibilites/${thematiqueId}?couleur=${encodeURIComponent(couleur)}`, {});
   }
   deleteDisponibilite(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/disponibilites/${id}`);
@@ -305,13 +312,21 @@ export class CoachService {
   getSessionBookings(sessionCoachId: number): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/sessions/${sessionCoachId}/bookings`);
   }
-  getAvailableSessionsForEntrepreneur(coachId: number, entrepreneurId: number): Observable<SessionCoachDTO[]> {
-    return this.http.get<SessionCoachDTO[]>(`${this.apiUrl}/${coachId}/available-sessions?entrepreneurId=${entrepreneurId}`);
+  getAvailableSessionsForEntrepreneur(coachId: number, entrepreneurId: number, thematiqueId?: number): Observable<SessionCoachDTO[]> {
+    let url = `${this.apiUrl}/${coachId}/available-sessions?entrepreneurId=${entrepreneurId}`;
+    if (thematiqueId) {
+      url += `&thematiqueId=${thematiqueId}`;
+    }
+    return this.http.get<SessionCoachDTO[]>(url);
   }
 
   /** Returns sessions grouped by sessionGroupId with a reservedByMe flag per group */
-  getAvailableSessionsGrouped(coachId: number, entrepreneurId: number): Observable<SessionGroupDTO[]> {
-    return this.http.get<SessionGroupDTO[]>(`${this.apiUrl}/${coachId}/available-sessions-grouped?entrepreneurId=${entrepreneurId}`);
+  getAvailableSessionsGrouped(coachId: number, entrepreneurId: number, thematiqueId?: number): Observable<SessionGroupDTO[]> {
+    let url = `${this.apiUrl}/${coachId}/available-sessions-grouped?entrepreneurId=${entrepreneurId}`;
+    if (thematiqueId) {
+      url += `&thematiqueId=${thematiqueId}`;
+    }
+    return this.http.get<SessionGroupDTO[]>(url);
   }
 
   // RAPPORT MISSION COACH

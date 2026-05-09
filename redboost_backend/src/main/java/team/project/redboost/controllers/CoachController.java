@@ -27,8 +27,9 @@ public class CoachController {
     @PostMapping("/{coachId}/disponibilites/{thematiqueId}")
     public ResponseEntity<DisponibiliteDTO> addDisponibilite(
             @PathVariable Long coachId, 
-            @PathVariable Long thematiqueId) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(coachService.addDisponibilite(coachId, thematiqueId));
+            @PathVariable Long thematiqueId,
+            @RequestParam(required = false) String couleur) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(coachService.addDisponibilite(coachId, thematiqueId, couleur));
     }
 
     @DeleteMapping("/disponibilites/{id}")
@@ -183,16 +184,18 @@ public class CoachController {
     @GetMapping("/{coachId}/available-sessions")
     public ResponseEntity<List<SessionCoachDTO>> getAvailableSessionsForEntrepreneur(
             @PathVariable Long coachId,
-            @RequestParam Long entrepreneurId) {
-        return ResponseEntity.ok(coachService.getAvailableSessionsForEntrepreneur(coachId, entrepreneurId));
+            @RequestParam Long entrepreneurId,
+            @RequestParam(required = false) Long thematiqueId) {
+        return ResponseEntity.ok(coachService.getAvailableSessionsForEntrepreneur(coachId, entrepreneurId, thematiqueId));
     }
 
    
     @GetMapping("/{coachId}/available-sessions-grouped")
     public ResponseEntity<List<java.util.Map<String, Object>>> getAvailableSessionsGrouped(
             @PathVariable Long coachId,
-            @RequestParam Long entrepreneurId) {
-        return ResponseEntity.ok(coachService.getAvailableSessionsGrouped(coachId, entrepreneurId));
+            @RequestParam Long entrepreneurId,
+            @RequestParam(required = false) Long thematiqueId) {
+        return ResponseEntity.ok(coachService.getAvailableSessionsGrouped(coachId, entrepreneurId, thematiqueId));
     }
 
     // --- PLANNING DÉTAILLÉ ---

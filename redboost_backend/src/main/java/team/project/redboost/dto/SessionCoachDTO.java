@@ -19,4 +19,6 @@ public class SessionCoachDTO {
     private Boolean isBookedByMe;
     private Boolean isGroupReservedByMe;
     private String meetLink;
+    private String couleur;
+    private Boolean isExceptionnelle;
 }

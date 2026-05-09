@@ -12,6 +12,8 @@ import team.project.redboost.repositories.UserRepository;
 import team.project.redboost.repositories.CoachRatingRepository;
 import team.project.redboost.repositories.SessionCoachRepository;
 import team.project.redboost.entities.SessionCoach;
+import team.project.redboost.entities.SeanceExceptionnelle;
+import team.project.redboost.repositories.SeanceExceptionnelleRepository;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -28,6 +30,7 @@ public class SessionService {
     private final CoachRatingRepository coachRatingRepository;
     private final GoogleCalendarService googleCalendarService;
     private final SessionCoachRepository sessionCoachRepository;
+    private final SeanceExceptionnelleRepository seanceExceptionnelleRepository;
 
     // ── Inner DTO returned by my-calendar endpoint ──────────────────────────
     @Data
@@ -44,10 +47,14 @@ public class SessionService {
         private String coachName;
         private String entrepreneurName;
         private boolean isOnline;
+        private String thematiqueNom;
+        private String programmeNom;
     }
 
     public List<Session> getAll() {
-        return sessionRepository.findAll();
+        List<Session> sessions = sessionRepository.findAll();
+        populateThematiqueNames(sessions);
+        return sessions;
     }
 
     public Session getById(String id) {
@@ -74,15 +81,51 @@ public class SessionService {
         }
     }
 
+    private void populateThematiqueNames(List<Session> sessions) {
+        for (Session session : sessions) {
+            if (session.getDisponibiliteId() != null) {
+                try {
+                    Long slotId = Long.parseLong(session.getDisponibiliteId());
+                    sessionCoachRepository.findById(slotId).ifPresent(slot -> {
+                        if (slot.getDisponibilite() != null && slot.getDisponibilite().getThematique() != null) {
+                            session.setThematiqueName(slot.getDisponibilite().getThematique().getNom());
+                        }
+                    });
+                } catch (NumberFormatException ignored) {}
+            }
+        }
+    }
+
     public List<Session> getByCoach(Long coachId) {
         List<Session> sessions = sessionRepository.findByCoachId(coachId);
         autoUpdatePastSessions(sessions);
+        populateThematiqueNames(sessions);
         return sessions;
     }
 
     public List<Session> getByEntrepreneur(Long entrepreneurId) {
-        List<Session> sessions = sessionRepository.findByEntrepreneurId(entrepreneurId);
+        List<Session> sessions = new ArrayList<>(sessionRepository.findByEntrepreneurId(entrepreneurId));
         autoUpdatePastSessions(sessions);
+        populateThematiqueNames(sessions);
+
+        List<SeanceExceptionnelle> seances = seanceExceptionnelleRepository.findByEntrepreneurId(entrepreneurId);
+        for (SeanceExceptionnelle s : seances) {
+            Session mapped = Session.builder()
+                .id("seance-" + s.getId())
+                .titre(s.getTitre())
+                .coach(s.getCoach())
+                .entrepreneur(s.getEntrepreneur())
+                .date(s.getDateSeance().atTime(s.getHeureDebut()))
+                .dureeMinutes((int) java.time.Duration.between(s.getHeureDebut(), s.getHeureFin()).toMinutes())
+                .statut(s.getDateSeance().atTime(s.getHeureDebut()).plusMinutes(
+                        (long) java.time.Duration.between(s.getHeureDebut(), s.getHeureFin()).toMinutes()
+                ).isBefore(LocalDateTime.now()) ? Session.Statut.TERMINE : Session.Statut.PLANIFIE)
+                .isExceptionnelle(true)
+                .thematiqueName(s.getThematique() != null ? s.getThematique().getNom() : null)
+                .build();
+            sessions.add(mapped);
+        }
+
         return sessions;
     }
 
@@ -116,6 +159,9 @@ public class SessionService {
                 ev.setType("SESSION_SLOT");
                 ev.setStatut("DISPONIBLE");
                 ev.setOnline(slot.getTypeSession() == SessionCoach.TypeSession.EN_LIGNE);
+                if (slot.getDisponibilite() != null && slot.getDisponibilite().getThematique() != null) {
+                    ev.setThematiqueNom(slot.getDisponibilite().getThematique().getNom());
+                }
                 events.add(ev);
             }
         } else {
@@ -154,6 +200,10 @@ public class SessionService {
         }
         if (s.getEntrepreneur() != null) {
             ev.setEntrepreneurName(s.getEntrepreneur().getFirstName() + " " + s.getEntrepreneur().getLastName());
+        }
+        ev.setThematiqueNom(s.getThematiqueName());
+        if (s.getProgramme() != null) {
+            ev.setProgrammeNom(s.getProgramme().getNom());
         }
         return ev;
     }
