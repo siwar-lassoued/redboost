@@ -2,7 +2,7 @@ import { Component, OnInit, signal, computed, inject, ChangeDetectionStrategy, C
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { environment } from '../../../../environments/environment';
+import { environment } from '../../../../environment';
 
 type ViewMode = 'coach' | 'entrepreneur';
 type DetailTab = 'sessions' | 'taches' | 'livrables';

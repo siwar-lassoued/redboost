@@ -418,7 +418,7 @@ export class EntrepreneurSessionsComponent implements OnInit {
     const sessionId = this.selected()!.id;
     const user = this.authSvc.currentUser$.value;
 
-    this.sessionSvc.requestReschedule(sessionId, this.newRescheduleDate(), user!.id).subscribe({
+    this.sessionSvc.requestReschedule(sessionId, this.newRescheduleDate(), Number(user!.id)).subscribe({
       next: () => {
         alert('Demande de reprogrammation envoyée au coach.');
         this.closeModal();

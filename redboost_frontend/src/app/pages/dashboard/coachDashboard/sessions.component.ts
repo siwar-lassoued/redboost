@@ -378,7 +378,7 @@ export class SessionsComponent implements OnInit {
     }).subscribe({
       next: ({ sessions, seances }) => {
         const mappedSeances: SessionCoachDTO[] = seances.map(se => ({
-          id: se.id + 1000000, // offset id
+          id: (se.id || 0) + 1000000, // offset id
           disponibiliteId: 0,
           titre: se.titre + ' (Session Exceptionnelle)',
           dateSession: se.dateSeance,
@@ -525,7 +525,12 @@ export class SessionsComponent implements OnInit {
       return;
     }
     this.loading = true;
-    this.coachService.addReclamation(this.coachId, this.reclamationTarget.entrepreneurId, this.reclamationData)
+    const finalReclamation: any = {
+      ...this.reclamationData,
+      coachId: this.coachId,
+      entrepreneurId: this.reclamationTarget.entrepreneurId
+    };
+    this.coachService.addReclamation(this.coachId, this.reclamationTarget.entrepreneurId, finalReclamation)
       .subscribe({
         next: () => {
           alert('Réclamation envoyée avec succès.');

@@ -11,4 +11,5 @@ public class DisponibiliteDTO {
     private String thematiqueNom;
     private LocalDate dateDebut;
     private LocalDate dateFin;
+    private String couleur;
 }

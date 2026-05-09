@@ -170,8 +170,8 @@ export class CoachService {
   getDisponibilites(coachId: number): Observable<DisponibiliteDTO[]> {
     return this.http.get<DisponibiliteDTO[]>(`${this.apiUrl}/${coachId}/disponibilites`);
   }
-  addDisponibilite(coachId: number, thematiqueId: number): Observable<DisponibiliteDTO> {
-    return this.http.post<DisponibiliteDTO>(`${this.apiUrl}/${coachId}/disponibilites/${thematiqueId}`, {});
+  addDisponibilite(coachId: number, thematiqueId: number, couleur: string = '#FF4D85'): Observable<DisponibiliteDTO> {
+    return this.http.post<DisponibiliteDTO>(`${this.apiUrl}/${coachId}/disponibilites/${thematiqueId}?couleur=${encodeURIComponent(couleur)}`, {});
   }
   deleteDisponibilite(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/disponibilites/${id}`);

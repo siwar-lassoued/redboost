@@ -27,8 +27,9 @@ public class CoachController {
     @PostMapping("/{coachId}/disponibilites/{thematiqueId}")
     public ResponseEntity<DisponibiliteDTO> addDisponibilite(
             @PathVariable Long coachId, 
-            @PathVariable Long thematiqueId) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(coachService.addDisponibilite(coachId, thematiqueId));
+            @PathVariable Long thematiqueId,
+            @RequestParam(required = false) String couleur) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(coachService.addDisponibilite(coachId, thematiqueId, couleur));
     }
 
     @DeleteMapping("/disponibilites/{id}")

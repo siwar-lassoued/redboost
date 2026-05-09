@@ -39,6 +39,9 @@ public class Disponibilite {
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate dateFin;
 
+    @Column(name = "couleur")
+    private String couleur;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

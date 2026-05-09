@@ -177,6 +177,15 @@ interface DateGroupView {
                     </select>
                 </div>
 
+                <!-- STEP 1C: Couleur de la thématique -->
+                <div class="form-group" *ngIf="selectedThematiqueId">
+                    <label>Couleur de la thématique (Calendrier) <span style="color:#E53E3E">*</span></label>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="color" [(ngModel)]="selectedThematiqueColor" style="height: 42px; width: 60px; border-radius: 8px; border: 1px solid #E2E8F0; cursor: pointer; padding: 2px;">
+                        <span class="text-sm text-gray-500">Cette couleur sera utilisée pour afficher toutes les sessions de cette thématique dans le calendrier.</span>
+                    </div>
+                </div>
+
                 <div *ngIf="selectedThematiqueObj" class="thematique-dates-banner">
                     <i class="pi pi-info-circle"></i>
                     <span>Disponibilités du <strong>{{ selectedThematiqueObj.dateDebut | date:'dd/MM/yyyy' }}</strong> au <strong>{{ selectedThematiqueObj.dateFin | date:'dd/MM/yyyy' }}</strong></span>
@@ -586,6 +595,7 @@ export class DisponibilitesComponent implements OnInit {
   
   dispoValidationError: string | null = null;
   editValidationError: string | null = null;
+  selectedThematiqueColor: string = '#FF4D85';
 // ===== EDIT DISPONIBILITE =====
 selectedEditThematiqueId: number | null = null;
 groupedEditDatesView: DateGroupView[] = [];
@@ -853,7 +863,7 @@ private mapCalendarEvents(events: CoachCalendarEventDTO[]): any[] {
     this.dispoValidationError = null;
     this.loading = true;
 
-    this.coachService.addDisponibilite(this.coachId, this.selectedThematiqueId!).subscribe({
+    this.coachService.addDisponibilite(this.coachId, this.selectedThematiqueId!, this.selectedThematiqueColor).subscribe({
       next: (dispoCreated) => {
         if (dispoCreated && dispoCreated.id) {
           const sessionPromises: Promise<any>[] = [];

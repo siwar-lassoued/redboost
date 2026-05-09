@@ -380,7 +380,7 @@ public class CoachService {
     }
 
     @Transactional
-    public DisponibiliteDTO addDisponibilite(Long coachId, Long thematiqueId) {
+    public DisponibiliteDTO addDisponibilite(Long coachId, Long thematiqueId, String couleur) {
         User coach = userRepository.findById(coachId)
                 .orElseThrow(() -> new ValidationException("Coach non trouvé"));
         ThematiqueCoaching theme = thematiqueRepository.findById(thematiqueId)
@@ -391,6 +391,7 @@ public class CoachService {
                 .thematique(theme)
                 .dateDebut(theme.getDateDebut())
                 .dateFin(theme.getDateFin())
+                .couleur(couleur)
                 .build();
                 
         Disponibilite saved = disponibiliteRepository.save(dispo);
@@ -604,6 +605,7 @@ public class CoachService {
         dto.setThematiqueNom(d.getThematique().getNom());
         dto.setDateDebut(d.getDateDebut());
         dto.setDateFin(d.getDateFin());
+        dto.setCouleur(d.getCouleur());
         return dto;
     }
 
@@ -619,6 +621,7 @@ public class CoachService {
         dto.setSessionGroupId(s.getSessionGroupId());
         if (s.getDisponibilite() != null && s.getDisponibilite().getThematique() != null) {
             dto.setThematiqueNom(s.getDisponibilite().getThematique().getNom());
+            dto.setCouleur(s.getDisponibilite().getCouleur());
         }
 
         List<team.project.redboost.entities.Session> bookings = sessionRepository.findAll().stream()
