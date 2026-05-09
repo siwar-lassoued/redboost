@@ -1,13 +1,20 @@
 package team.project.redboost.controllers;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import team.project.redboost.entities.Livrable;
+import team.project.redboost.entities.User;
 import team.project.redboost.services.LivrableService;
+import team.project.redboost.services.LocalFileStorageService;
+import team.project.redboost.repositories.UserRepository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/livrables")
@@ -16,10 +23,23 @@ import java.util.Map;
 public class LivrableController {
 
     private final LivrableService livrableService;
+    private final LocalFileStorageService localFileStorageService;
+    private final UserRepository userRepository;
 
     @GetMapping
-    public ResponseEntity<List<Livrable>> getAllLivrables() {
-        return ResponseEntity.ok(livrableService.getAllLivrables());
+    public ResponseEntity<List<Livrable>> getAllLivrables(
+            @RequestParam(required = false) Long entrepreneurId,
+            @RequestParam(required = false) Long coachId) {
+        List<Livrable> livrables = livrableService.getAllLivrables();
+        if (entrepreneurId != null) {
+            livrables = livrables.stream()
+                    .filter(l -> l.getEntrepreneur() != null && l.getEntrepreneur().getId().equals(entrepreneurId))
+                    .collect(Collectors.toList());
+        }
+        if (coachId != null) {
+            // Coach filtering can be done here if needed (e.g. by email or coach name)
+        }
+        return ResponseEntity.ok(livrables);
     }
 
     @GetMapping("/{id}")
@@ -31,6 +51,40 @@ public class LivrableController {
     @PostMapping
     public ResponseEntity<Livrable> createLivrable(@RequestBody Livrable livrable) {
         return ResponseEntity.ok(livrableService.createLivrable(livrable));
+    }
+
+    @PostMapping("/upload")
+    public ResponseEntity<List<Livrable>> uploadLivrable(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "programmeId", required = false) Long programmeId,
+            @RequestParam("entrepreneurIds") List<Long> entrepreneurIds,
+            @RequestParam("titre") String titre,
+            @RequestParam("type") String type) {
+        
+        try {
+            LocalFileStorageService.FileUploadResult uploadResult = localFileStorageService.uploadFileWithMimeType(file);
+            String fileUrl = "/uploads/" + uploadResult.getFileName();
+            
+            List<Livrable> created = entrepreneurIds.stream().map(entId -> {
+                User entrepreneur = userRepository.findById(entId).orElse(null);
+                if (entrepreneur == null) return null;
+                
+                Livrable livrable = new Livrable();
+                livrable.setTitre(titre);
+                livrable.setType(type);
+                livrable.setFichierUrl(fileUrl);
+                livrable.setFileSize(file.getSize() + " bytes");
+                livrable.setEntrepreneur(entrepreneur);
+                livrable.setStatut(Livrable.Statut.SUBMITTED);
+                livrable.setDateSoumission(LocalDateTime.now());
+                
+                return livrableService.createLivrable(livrable);
+            }).filter(java.util.Objects::nonNull).collect(Collectors.toList());
+            
+            return ResponseEntity.ok(created);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     @PatchMapping("/{id}/statut")

@@ -1,8 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { CoachService, SessionCoachDTO } from './services/coach.service';
+import { CoachService, SessionCoachDTO, SeanceExceptionnelleDTO } from './services/coach.service';
 import { AuthService } from '../../frontoffice/service/auth.service';
+import { forkJoin } from 'rxjs';
 import { firstValueFrom } from 'rxjs';
 
 export interface SessionGroup {
@@ -371,9 +372,24 @@ export class SessionsComponent implements OnInit {
 
   loadSessions() {
     this.loading = true;
-    this.coachService.getAllSessionsByCoach(this.coachId).subscribe({
-      next: (data) => {
-        this.sessions = data;
+    forkJoin({
+      sessions: this.coachService.getAllSessionsByCoach(this.coachId),
+      seances: this.coachService.getSeancesExceptionnelles(this.coachId)
+    }).subscribe({
+      next: ({ sessions, seances }) => {
+        const mappedSeances: SessionCoachDTO[] = seances.map(se => ({
+          id: se.id + 1000000, // offset id
+          disponibiliteId: 0,
+          titre: se.titre + ' (Session Exceptionnelle)',
+          dateSession: se.dateSeance,
+          heureDebut: se.heureDebut,
+          heureFin: se.heureFin,
+          typeSession: 'EN_LIGNE',
+          sessionGroupId: `seance-${se.id}`,
+          isBooked: true
+        } as SessionCoachDTO));
+
+        this.sessions = [...sessions, ...mappedSeances];
         this.filterSessions();
         this.loading = false;
       },

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CoachService, ProgrammeDTO, UserDTO } from './services/coach.service';
 import { AuthService } from '../../frontoffice/service/auth.service';
+import { LivrableService } from '../../../core/services/livrable.service';
 
 
 @Component({
@@ -42,21 +43,21 @@ import { AuthService } from '../../frontoffice/service/auth.service';
               </thead>
               <tbody>
                   <tr *ngFor="let livrable of filteredLivrables">
-                      <td class="font-semibold text-gray-800">{{livrable.entrepreneur}}</td>
-                      <td>{{livrable.programme}}</td>
-                      <td>{{livrable.tache}}</td>
+                      <td class="font-semibold text-gray-800">{{livrable.entrepreneur?.firstName}} {{livrable.entrepreneur?.lastName}}</td>
+                      <td>{{livrable.programme?.nom || 'N/A'}}</td>
+                      <td>{{livrable.titre}}</td>
                       <td>
                           <div class="doc-cell">
-                              <i class="pi pi-file" [style.color]="getFileIconColor(livrable.fileName)"></i>
+                              <i class="pi pi-file" [style.color]="getFileIconColor(livrable.fichierUrl || '')"></i>
                               <div>
-                                  <div class="doc-name">{{livrable.fileName}}</div>
-                                  <div class="doc-size">{{livrable.fileSize}}</div>
+                                  <div class="doc-name">{{livrable.titre}}</div>
+                                  <div class="doc-size">{{livrable.fileSize || 'N/A'}}</div>
                               </div>
                           </div>
                       </td>
-                      <td>{{livrable.dateDepot}}</td>
+                      <td>{{livrable.dateSoumission | date:'shortDate'}}</td>
                       <td>
-                          <button class="download-link"><i class="pi pi-download"></i> Télécharger</button>
+                          <button class="download-link" (click)="download(livrable)"><i class="pi pi-download"></i> Télécharger</button>
                       </td>
                   </tr>
                   <tr *ngIf="filteredLivrables.length === 0">
@@ -214,7 +215,8 @@ export class CoachLivrablesComponent implements OnInit {
 
   constructor(
     private coachService: CoachService,
-    private authService: AuthService
+    private authService: AuthService,
+    private livrableService: LivrableService
   ) {}
 
   ngOnInit(): void {
@@ -226,6 +228,24 @@ export class CoachLivrablesComponent implements OnInit {
 
     this.loadProgrammes(this.coachId);
     this.loadEntrepreneurs();
+    this.loadLivrables();
+  }
+
+  loadLivrables() {
+    this.loading = true;
+    this.livrableService.getAll({ coachId: this.coachId?.toString() }).subscribe({
+      next: (res) => {
+        const data = Array.isArray(res) ? res : (res as any).data || [];
+        this.livrables = data;
+        this.filteredLivrables = [...this.livrables];
+        this.loading = false;
+      },
+      error: () => {
+        this.livrables = [];
+        this.filteredLivrables = [];
+        this.loading = false;
+      }
+    });
   }
 
   loadProgrammes(coachId: number) {
@@ -263,11 +283,16 @@ export class CoachLivrablesComponent implements OnInit {
     }
     const term = this.searchTerm.toLowerCase();
     this.filteredLivrables = this.livrables.filter(l =>
-      l.entrepreneur.toLowerCase().includes(term) ||
-      l.programme.toLowerCase().includes(term) ||
-      l.tache.toLowerCase().includes(term) ||
-      l.fileName.toLowerCase().includes(term)
+      (l.entrepreneur?.firstName + ' ' + l.entrepreneur?.lastName).toLowerCase().includes(term) ||
+      (l.programme?.nom || '').toLowerCase().includes(term) ||
+      (l.titre || '').toLowerCase().includes(term)
     );
+  }
+
+  download(livrable: any) {
+    if (livrable.fichierUrl) {
+      window.open(livrable.fichierUrl, '_blank');
+    }
   }
 
   getFileIconColor(fileName: string): string {
@@ -305,26 +330,30 @@ export class CoachLivrablesComponent implements OnInit {
 
   deposerLivrable() {
     const selectedEnts = this.entrepreneurs.filter(e => e.selected);
-    if (!this.newLivrable.titre || !this.newLivrable.programme || !this.selectedFile || selectedEnts.length === 0) {
+    if (!this.newLivrable.titre || !this.selectedFile || selectedEnts.length === 0) {
       return;
     }
+    this.loading = true;
 
-    // Add to local list for each selected entrepreneur
-    for (const ent of selectedEnts) {
-      this.livrables.push({
-        entrepreneur: `${ent.firstName} ${ent.lastName}`,
-        programme: this.newLivrable.programme,
-        tache: this.newLivrable.titre,
-        fileName: this.selectedFile!.name,
-        fileSize: this.formatFileSize(this.selectedFile!.size),
-        dateDepot: new Date().toLocaleDateString('fr-FR')
-      });
-    }
-
-    this.filteredLivrables = [...this.livrables];
-    this.showDepotModal = false;
-    this.newLivrable = { titre: '', programme: '' };
-    this.selectedFile = null;
-    this.entrepreneurs.forEach(e => e.selected = false);
+    const entrepreneurIds = selectedEnts.map(e => e.id.toString());
+    this.livrableService.upload(
+      this.newLivrable.programme, 
+      entrepreneurIds, 
+      this.selectedFile, 
+      { titre: this.newLivrable.titre, type: 'Document' }
+    ).subscribe({
+      next: () => {
+        this.loadLivrables();
+        this.showDepotModal = false;
+        this.newLivrable = { titre: '', programme: '' };
+        this.selectedFile = null;
+        this.entrepreneurs.forEach(e => e.selected = false);
+        this.loading = false;
+      },
+      error: () => {
+        this.loading = false;
+        console.error("Failed to upload livrable");
+      }
+    });
   }
 }
