@@ -1780,3 +1780,190 @@
     }
   }
 }
+
+// ─────────────────────────────────────────────────────────────
+// Slot state styles (available / booked / booked-by-me)
+// ─────────────────────────────────────────────────────────────
+
+.slot-btn {
+  &.slot-available {
+    border-color: #d1fae5 !important;
+    background: #f0fdf4 !important;
+    .slot-status-icon { color: #10b981 !important; }
+    &:hover:not(:disabled) {
+      border-color: #10b981 !important;
+      background: #dcfce7 !important;
+    }
+  }
+
+  &.slot-booked {
+    border-color: #fecaca !important;
+    background: #fef2f2 !important;
+    .slot-status-icon { color: #ef4444 !important; }
+    .slot-date, .slot-time { color: #b91c1c !important; }
+  }
+
+  &.slot-booked-by-me {
+    border-color: #bfdbfe !important;
+    background: #eff6ff !important;
+    .slot-status-icon { color: #3b82f6 !important; }
+    .slot-date, .slot-time { color: #1d4ed8 !important; }
+  }
+
+  .slot-status-icon {
+    font-size: 12px;
+    width: 12px;
+    height: 12px;
+    line-height: 12px;
+    color: #94a3b8;
+  }
+}
+
+// Slot legend bar
+.slot-legend {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+  padding: 7px 10px;
+  background: #f8fafc;
+  border-radius: 10px;
+  border: 1px solid #f1f5f9;
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 10px;
+    font-weight: 600;
+    color: #64748b;
+
+    mat-icon { font-size: 12px; width: 12px; height: 12px; }
+
+    &.available { color: #059669; mat-icon { color: #059669; } }
+    &.booked    { color: #dc2626; mat-icon { color: #dc2626; } }
+    &.mine      { color: #2563eb; mat-icon { color: #2563eb; } }
+  }
+}
+
+// Group slot count badges
+.group-slot-counts {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+
+  .count-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 20px;
+
+    &.available-count { background: #d1fae5; color: #065f46; }
+    &.booked-count    { background: #fee2e2; color: #991b1b; }
+  }
+}
+
+// "You already reserved this session" banner
+.reserved-by-me-banner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #1d4ed8;
+
+  mat-icon { font-size: 14px; width: 14px; height: 14px; color: #3b82f6; }
+}
+
+// Thematique header name override (bolder)
+.thematique-name {
+  font-size: 11px;
+  font-weight: 800;
+  color: #1e3a5f;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+// Empty slot state with icon
+.empty-coach-slots {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+
+  mat-icon { font-size: 22px; width: 22px; height: 22px; color: #cbd5e1; }
+}
+
+// Thematique badge inside the booking confirmation modal
+.booking-thematique-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 4px;
+  padding: 2px 9px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #1d4ed8;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Date grouping inside session groups
+// ─────────────────────────────────────────────────────────────
+
+.date-groups-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.date-group-item {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.date-group-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  background: linear-gradient(90deg, #f0f9ff 0%, #f8fafc 100%);
+  border-bottom: 1px solid #e0f2fe;
+  font-size: 11px;
+  font-weight: 700;
+  color: #0369a1;
+
+  mat-icon {
+    font-size: 13px;
+    width: 13px;
+    height: 13px;
+    color: #38bdf8;
+  }
+
+  .date-slot-count {
+    margin-left: auto;
+    font-size: 10px;
+    font-weight: 600;
+    color: #64748b;
+    background: #e2e8f0;
+    padding: 1px 6px;
+    border-radius: 20px;
+  }
+}
+
+.date-group-item .slots-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding: 8px;
+}
+

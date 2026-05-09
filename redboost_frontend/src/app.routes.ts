@@ -74,7 +74,6 @@ import { CoachRatingComponent } from './app/pages/entrepreneur/coach-rating/coac
 import { EntrepreneurTachesComponent } from './app/pages/entrepreneur/mes-taches/entrepreneur-taches.component';
 import { EntrepreneurLivrablesComponent } from './app/pages/entrepreneur/mes-livrables/entrepreneur-livrables.component';
 import { EntrepreneurProgrammeComponent } from './app/pages/entrepreneur/mon-programme/entrepreneur-programme.component';
-import { EntrepreneurStatusComponent } from './app/pages/entrepreneur/status/entrepreneur-status.component';
 import { EntrepreneurChatComponent } from './app/pages/entrepreneur/chat/entrepreneur-chat.component';
 import { EntrepreneurParametresComponent } from './app/pages/entrepreneur/parametres/entrepreneur-parametres.component';
 
@@ -181,7 +180,6 @@ export const appRoutes: Routes = [
             { path: 'entrepreneur/mes-taches', component: EntrepreneurTachesComponent },
             { path: 'entrepreneur/mes-livrables', component: EntrepreneurLivrablesComponent },
             { path: 'entrepreneur/mon-programme', component: EntrepreneurProgrammeComponent },
-            { path: 'entrepreneur/status', component: EntrepreneurStatusComponent },
             { path: 'entrepreneur/chat', component: EntrepreneurChatComponent },
             { path: 'entrepreneur/parametres', component: EntrepreneurParametresComponent },
             { path: 'coach-rating/:sessionId', component: CoachRatingComponent },

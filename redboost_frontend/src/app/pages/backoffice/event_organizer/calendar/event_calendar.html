@@ -1,370 +1,332 @@
-<!-- event_calendar.html -->
-<div class="calendar-container">
+<div class="calendar-page">
   <!-- Loading Overlay -->
-  <div class="loading-overlay" *ngIf="isLoading">
-    <mat-spinner diameter="50"></mat-spinner>
+  <div class="global-loader-wrap" *ngIf="isLoading">
+    <div class="premium-spinner"></div>
   </div>
 
-  <div class="calendar-wrapper">
-    <div class="calendar-main-card">
-      <!-- Header -->
-      <div class="calendar-header">
-        <div class="header-left">
-          <div class="calendar-icon">
-            <mat-icon>calendar_today</mat-icon>
-            <span class="badge">{{ totalEventsCount }}</span>
-          </div>
-          <div class="header-info">
-            <h1>Calendrier Global</h1>
-            <p>Tous les événements et formations du programme</p>
+  <div class="page-header">
+    <div class="header-content">
+      <div class="page-title-row">
+        <div class="header-icon-wrap">
+          <i class="pi pi-calendar"></i>
+        </div>
+        <div class="header-text">
+          <h1 class="page-title">Calendrier Global</h1>
+          <p class="page-subtitle">Tous les événements et formations du programme</p>
+        </div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <div class="scheduled-badge">
+        <div class="pulse-dot"></div>
+        <span>{{ totalEventsCount }} événement{{ totalEventsCount !== 1 ? 's' : '' }} programmé{{ totalEventsCount !== 1 ? 's' : '' }}</span>
+      </div>
+      <button class="premium-btn-primary" *ngIf="!isEntrepreneur" (click)="openAddEventDialog()">
+        <i class="pi pi-plus"></i>
+        <span>Ajouter un événement</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="main-layout">
+    <!-- Calendar Main Section -->
+    <div class="calendar-card-container">
+      <div class="premium-card calendar-card">
+        <!-- Month Navigation -->
+        <div class="month-header">
+          <h2 class="current-month">{{ getMonthYear() }}</h2>
+          <div class="month-nav-btns">
+            <button class="nav-btn-circle" (click)="previousMonth()" [disabled]="isLoading">
+              <i class="pi pi-chevron-left"></i>
+            </button>
+            <button class="nav-btn-circle" (click)="nextMonth()" [disabled]="isLoading">
+              <i class="pi pi-chevron-right"></i>
+            </button>
           </div>
         </div>
-        <div class="header-right">
-         <button class="scheduled-events" mat-button>
-    <div class="pulse-dot"></div>
-    <span>{{ totalEventsCount }} événement{{ totalEventsCount !== 1 ? 's' : '' }} programmé{{ totalEventsCount !== 1 ? 's' : '' }}</span>
-</button>
-          <button class="add-event-btn" *ngIf="!isEntrepreneur" mat-raised-button (click)="openAddEventDialog()">
-            <mat-icon>add</mat-icon>
-            Ajouter un événement
-          </button>
+
+        <!-- Weekday Headers -->
+        <div class="day-headers">
+          <div class="day-header" *ngFor="let day of weekDays">{{ day }}</div>
+        </div>
+
+        <!-- Calendar Grid -->
+        <div class="calendar-grid">
+          <div class="calendar-cell" *ngFor="let day of calendarDays" 
+               [class.other-month]="!day.isCurrentMonth"
+               [class.has-events]="day.events.length > 0" 
+               [class.selected]="isSelectedDate(day.date)"
+               [class.today]="isToday(day.date)" 
+               (click)="onDayClick(day)">
+            <div class="cell-day-num" [class.today-circle]="isToday(day.date)">
+              {{ day.day }}
+            </div>
+            <div class="cell-events">
+              <div class="event-mini-chip" *ngFor="let event of day.events.slice(0, 3)"
+                   [style.background]="getEventGradient(event)" 
+                   [class.disabled]="event.isDisabled"
+                   [class.is-booked]="event.isBooked"
+                   [title]="event.title">
+                <span class="chip-title">
+                  <i *ngIf="event.isBooked" class="pi pi-lock" style="font-size: 8px; margin-right: 3px;"></i>
+                  {{ event.title }}
+                </span>
+              </div>
+              <div class="more-events-tag" *ngIf="day.events.length > 3">
+                +{{ day.events.length - 3 }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <!-- Event Details Section (Visible when a day is clicked) -->
+      <div class="sidebar-section event-details-sidebar" *ngIf="selectedDateEvents.length > 0">
+        <div class="sidebar-back-row">
+          <button class="btn-icon-back" (click)="clearSelection()"><i class="pi pi-arrow-left"></i></button>
+          <span>Retour au calendrier</span>
+        </div>
+        
+        <div class="sidebar-header-title">
+          <h3>Événements du {{ getSelectedDateFormatted() }}</h3>
+        </div>
+
+        <div class="event-details-list">
+          <div class="premium-event-card" *ngFor="let event of selectedDateEvents">
+            <div class="ev-card-header">
+              <div class="ev-icon-box" [style.background]="getEventGradient(event)">
+                <i class="pi" [class]="getEventTypeIconPrime(event.type)"></i>
+              </div>
+              <div class="ev-main-info">
+                <div class="ev-title-wrap">
+                  <h4>{{ event.title }}</h4>
+                  <span class="ev-prog-badge" *ngIf="event.program">
+                    <i class="pi pi-bookmark-fill"></i> {{ event.program }}
+                  </span>
+                </div>
+                <div class="ev-badges-row">
+                  <span class="ev-type-pill" [style.background-color]="getEventTypeColor(event.type) + '20'" [style.color]="getEventTypeColor(event.type)">
+                    {{ event.type }}
+                  </span>
+                  <span class="ev-extra-badge" *ngIf="event.isBooked" style="background: #D1FAE5; color: #065F46;">
+                    <i class="pi pi-lock"></i> Réservée
+                  </span>
+                  <span class="ev-extra-badge" *ngIf="event.isExceptionnelle">
+                    <i class="pi pi-star-fill"></i> Exceptionnelle
+                  </span>
+                </div>
+              </div>
+              <div class="ev-admin-actions" *ngIf="!isEntrepreneur">
+                <button class="btn-mini-action" (click)="openEditEventDialog(event)"><i class="pi pi-pencil"></i></button>
+                <button class="btn-mini-action delete" (click)="deleteEvent(event)"><i class="pi pi-trash"></i></button>
+              </div>
+            </div>
+
+            <div class="ev-card-body">
+              <p class="ev-desc" *ngIf="event.description">{{ event.description }}</p>
+              
+              <div class="ev-meta-grid">
+                <div class="meta-item" *ngIf="event.time">
+                  <i class="pi pi-clock"></i>
+                  <span>{{ event.time }}</span>
+                </div>
+                <div class="meta-item" *ngIf="event.location">
+                  <i class="pi" [class]="getModeIconPrime(event.mode)"></i>
+                  <span>{{ event.location }}</span>
+                </div>
+                <div class="meta-item">
+                  <i class="pi pi-users"></i>
+                  <span>{{ event.participants.length }} participant{{ event.participants.length !== 1 ? 's' : '' }}</span>
+                </div>
+              </div>
+
+              <div class="ev-external-actions">
+                <button class="btn-gcal" (click)="openGoogleCalendar(event)">
+                  <img src="https://ssl.gstatic.com/calendar/images/dynamiclogo_2020q4/calendar_31_2x.png" alt="GCal" />
+                  <span>{{ event.googleEventId ? 'Voir sur GCal' : 'Ajouter à GCal' }}</span>
+                </button>
+                <button class="btn-meet" *ngIf="event.meetLink" (click)="openMeetLink(event)">
+                  <i class="pi pi-video"></i>
+                  <span>Rejoindre le Meet</span>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div class="calendar-content">
-        <!-- Calendar Main Section -->
-        <div class="calendar-main">
-          <!-- Month Navigation -->
-          <div class="month-navigation">
-            <h2>{{ getMonthYear() }}</h2>
-            <div class="nav-buttons">
-              <button mat-icon-button (click)="previousMonth()" [disabled]="isLoading">
-                <mat-icon>chevron_left</mat-icon>
-              </button>
-              <button mat-icon-button (click)="nextMonth()" [disabled]="isLoading">
-                <mat-icon>chevron_right</mat-icon>
-              </button>
-            </div>
-          </div>
-
-          <!-- Calendar Grid -->
-          <div class="calendar-card">
-            <!-- Weekday Headers -->
-            <div class="calendar-grid">
-              <div class="weekday-header" *ngFor="let day of weekDays">
-                {{ day }}
-              </div>
+      <!-- Reservation / Upcoming Section (Default view) -->
+      <div class="sidebar-default-view" *ngIf="selectedDateEvents.length === 0">
+        <ng-container *ngIf="isEntrepreneur">
+          <div class="sidebar-section reservation-section">
+            <div class="sidebar-section-header">
+              <h3>Réserver une session</h3>
+              <i class="pi pi-question-circle" title="Centralisez vos réservations ici"></i>
             </div>
 
-            <!-- Calendar Days -->
-            <div class="calendar-grid">
-              <mat-card 
-                class="calendar-day" 
-                *ngFor="let day of calendarDays"
-                [class.other-month]="!day.isCurrentMonth"
-                [class.has-events]="day.events.length > 0"
-                [class.selected]="isSelectedDate(day.date)"
-                [class.today]="isToday(day.date)"
-                (click)="onDayClick(day)">
-                <div class="day-number" [class.is-today]="isToday(day.date)">
-                  {{ day.day }}
-                </div>
-                <div class="day-events">
-                  <div 
-                    class="event-chip" 
-                    *ngFor="let event of day.events.slice(0, 2)"
-                    [style.background]="getEventGradient(event.type)"
-                    [class.disabled]="event.isDisabled"
-                    [matTooltip]="event.title"
-                    matTooltipPosition="above">
-                    <span class="event-title">{{ event.title }}</span>
-                    <mat-icon *ngIf="event.meetLink" class="meet-icon">videocam</mat-icon>
-                  </div>
-                  <div class="more-events" *ngIf="day.events.length > 2">
-                    +{{ day.events.length - 2 }}
-                  </div>
-                </div>
-              </mat-card>
-            </div>
-          </div>
-
-          <!-- Event Details Section -->
-          <div class="event-details-section" *ngIf="selectedDateEvents.length > 0">
-            <div class="event-details-header">
-              <h3>Événements du {{ getSelectedDateFormatted() }}</h3>
-            </div>
-
-            <div class="event-cards">
-              <div class="event-detail-card" *ngFor="let event of selectedDateEvents">
-                <div class="event-card-header">
-                  <div class="event-icon" [style.background]="getEventGradient(event.type)">
-                    <mat-icon>{{ getEventTypeIcon(event.type) }}</mat-icon>
-                  </div>
-
-                  <div class="event-card-title">
-                    <!-- ✅ Title row: title + program badge side by side -->
-                    <div class="event-title-row">
-                      <h4>{{ event.title }}</h4>
-                      <span class="event-program-badge" *ngIf="event.program">
-                        <mat-icon>track_changes</mat-icon>
-                        {{ event.program }}
-                      </span>
-                    </div>
-                    <!-- Type badge on its own row below -->
-                    <div class="event-badges">
-                      <span class="event-type-badge" [style.background-color]="getEventTypeColor(event.type)">
-                        {{ event.type }}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div class="event-actions" *ngIf="!isEntrepreneur">
-                    <button mat-icon-button (click)="openEditEventDialog(event)">
-                      <mat-icon>edit</mat-icon>
-                    </button>
-                    <button mat-icon-button (click)="deleteEvent(event)">
-                      <mat-icon>delete</mat-icon>
-                    </button>
-                  </div>
+            <div class="thematique-list scrollable-sidebar">
+              <div *ngFor="let thematique of thematiquesList" class="thematique-group">
+                <div class="thematique-header">
+                  <i class="pi pi-tag"></i>
+                  <span>{{ thematique.name }}</span>
                 </div>
 
-                <div class="event-card-body">
-                  <p class="event-description" *ngIf="event.description">
-                    {{ event.description }}
-                  </p>
-
-                  <div class="event-info-grid">
-                    <div class="event-info-item" *ngIf="event.time">
-                      <mat-icon>schedule</mat-icon>
-                      <span>{{ event.time }}</span>
+                <div class="coach-cards-list">
+                  <div *ngFor="let coachEntry of thematique.coaches" class="premium-coach-booking-card" 
+                       [style.border-left-color]="getCoachColor(coachEntry.coach.id)">
+                    <div class="coach-booking-header">
+                      <div class="coach-avatar-circle" [style.background]="getCoachColor(coachEntry.coach.id)">
+                        {{ coachEntry.coach.nom ? coachEntry.coach.nom[0] : 'C' }}
+                      </div>
+                      <div class="coach-booking-info">
+                        <h5>{{ coachEntry.coach.nom }}</h5>
+                        <p>{{ coachEntry.coach.specialite || 'Coach Expert' }}</p>
+                      </div>
                     </div>
 
-                    <div class="event-info-item" *ngIf="event.location">
-                      <mat-icon>{{ getModeIcon(event.mode) }}</mat-icon>
-                      <span>{{ event.location }}</span>
-                    </div>
-
-                    <div class="event-info-item" *ngIf="event.meetLink">
-                      <mat-icon>videocam</mat-icon>
-                      <a [href]="event.meetLink" target="_blank" class="meet-link">Rejoindre la réunion</a>
-                    </div>
-
-                    <div class="event-info-item">
-                      <mat-icon>email</mat-icon>
-                      <span>{{ event.participants.length }} participant{{ event.participants.length !== 1 ? 's' : '' }}</span>
-                    </div>
-                  </div>
-
-                  <!-- Google Calendar & Meet action buttons -->
-                  <div class="calendar-action-buttons">
-                    <button class="gcal-btn" (click)="openGoogleCalendar(event)" matTooltip="Voir dans Google Agenda">
-                      <img src="https://ssl.gstatic.com/calendar/images/dynamiclogo_2020q4/calendar_31_2x.png" 
-                           alt="Google Calendar" class="gcal-icon"
-                           onerror="this.style.display='none'" />
-                      <mat-icon style="color:#4285F4" *ngIf="!event.googleEventId">event</mat-icon>
-                      <span>{{ event.googleEventId ? 'Voir dans Google Agenda' : 'Ajouter à Google Agenda' }}</span>
-                    </button>
-
-                    <button class="meet-btn" *ngIf="event.meetLink" (click)="openMeetLink(event)" matTooltip="Rejoindre le Google Meet">
-                      <mat-icon style="color:#00832D">videocam</mat-icon>
-                      <span>Rejoindre le Meet</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Sidebar -->
-        <div class="sidebar">
-          
-          <ng-container *ngIf="isEntrepreneur">
-            <!-- Center of Reservation -->
-            <div class="reservation-center">
-              <div class="sidebar-header">
-                <h3>Réserver une session</h3>
-                <mat-icon matTooltip="Centralisez vos réservations ici">help_outline</mat-icon>
-              </div>
-
-              <!-- List of coaches with their availabilities -->
-               <div class="coach-booking-list">
-                 <div *ngFor="let coach of matchedCoaches" class="coach-booking-section" [style.border-left-color]="getCoachColor(coach.id)">
-                   <div class="coach-header">
-                     <div class="coach-avatar" [style.background]="getCoachColor(coach.id)">
-                       {{ coach.nom ? coach.nom[0] : 'C' }}
-                     </div>
-                     <div class="coach-info">
-                       <h4>{{ coach.nom }}</h4>
-                       <p>{{ coach.specialite || 'Coach Expert' }}</p>
-                     </div>
-                   </div>
-
-                   <div class="coach-thematiques-list scrollable-sidebar-content">
-                      <div *ngFor="let them of coachThematiquesMap[coach.id]" class="thematique-section">
-                        <div class="thematique-header">
-                          <mat-icon>label</mat-icon>
-                          <span>{{ them.name }}</span>
-                        </div>
-
-                        <div class="session-groups-list">
-                          <div *ngFor="let group of them.sessionGroups" class="session-group-item" [class.reserved]="group.reservedByMe">
-                            <div class="group-title">
-                              <div class="title-left">
-                                <mat-icon>bookmark</mat-icon>
-                                <span>{{ group.sessionTitle }}</span>
-                              </div>
-                              <span class="session-count">{{ group.slots.length }} créneau{{ group.slots.length > 1 ? 'x' : '' }}</span>
-                            </div>
-                            
-                            <div class="slots-container scrollable-slots">
-                              <div class="slots-grid">
-                                <button *ngFor="let slot of group.slots" class="slot-btn" 
-                                  [class.selected]="selectedSlot?.id === slot.id"
-                                  [disabled]="slot.isBooked || group.reservedByMe"
-                                  (click)="selectSlot(slot, group.sessionTitle, coach)">
-                                  <span class="slot-date">{{ formatSlotDay(slot.dateSession) }} {{ formatSlotMonth(slot.dateSession) }}</span>
-                                  <span class="slot-time">{{ formatSlotTime(slot.heureDebut) }} → {{ formatSlotTime(slot.heureFin) }}</span>
-                                </button>
-                              </div>
-                            </div>
+                    <div class="session-groups-box">
+                      <div *ngFor="let group of coachEntry.sessionGroups" class="session-group-pill-card" [class.is-reserved]="group.reservedByMe">
+                        <div class="group-header-row">
+                          <div class="group-title-label">
+                            <i class="pi pi-bookmark-fill"></i>
+                            <span>{{ group.sessionTitle }}</span>
                           </div>
+                          <span class="slots-count">{{ group.slots.length }} créneau{{ group.slots.length > 1 ? 'x' : '' }}</span>
+                        </div>
+
+                        <div class="slots-mini-grid">
+                          <button *ngFor="let slot of group.slots" class="btn-slot-premium"
+                                  [class.active]="selectedSlot?.id === slot.id"
+                                  [disabled]="slot.isBooked || group.reservedByMe"
+                                  (click)="selectSlot(slot, group.sessionTitle, coachEntry.coach)">
+                            <div class="slot-d">{{ slot.dateSession | date:'dd MMM' }}</div>
+                            <div class="slot-t">{{ formatSlotTime(slot.heureDebut) }}</div>
+                          </button>
                         </div>
                       </div>
-                      <div *ngIf="!coachThematiquesMap[coach.id] || coachThematiquesMap[coach.id].length === 0" class="empty-coach-slots">
-                        Pas de créneaux disponibles
-                      </div>
-                   </div>
-                 </div>
-               </div>
-            </div>
-          </ng-container>
-
-          <ng-container *ngIf="!isEntrepreneur">
-            <div class="upcoming-section">
-              <h3>Événements à venir</h3>
-              <span class="badge-count">{{ getUpcomingEventsCount() }}</span>
-            </div>
-
-            <div class="upcoming-events">
-              <mat-card 
-                class="upcoming-event-card" 
-                *ngFor="let event of getUpcomingEvents(); let i = index"
-                (click)="selectEventDate(event.date)">
-                <div class="event-header">
-                  <div class="event-icon" [style.background]="getEventGradient(event.type)">
-                    <mat-icon>{{ getEventTypeIcon(event.type) }}</mat-icon>
-                  </div>
-
-                  <div class="event-info">
-                    <div class="event-title-row">
-                      <h5>{{ event.title }}</h5>
-                      <span class="event-program-badge" *ngIf="event.program">
-                        <mat-icon>track_changes</mat-icon>
-                        {{ event.program }}
-                      </span>
                     </div>
-                    <div class="event-badges">
-                      <span class="event-type-badge" [style.background-color]="getEventTypeColor(event.type)">
+                  </div>
+                </div>
+              </div>
+
+              <div *ngIf="thematiquesList.length === 0" class="empty-sidebar-msg">
+                <i class="pi pi-calendar-times"></i>
+                <p>Aucun créneau disponible pour le moment.</p>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+
+        <ng-container *ngIf="!isEntrepreneur">
+          <div class="sidebar-section upcoming-section">
+            <div class="sidebar-section-header">
+              <h3>Événements à venir</h3>
+              <span class="count-pill">{{ getUpcomingEventsCount() }}</span>
+            </div>
+
+            <div class="upcoming-list scrollable-sidebar">
+              <div class="upcoming-card-premium" *ngFor="let event of getUpcomingEvents(); let i = index"
+                   (click)="selectEventDate(event.date)">
+                <div class="up-header">
+                  <div class="up-icon" [style.background]="getEventGradient(event)">
+                    <i class="pi" [class]="getEventTypeIconPrime(event.type)"></i>
+                  </div>
+                  <div class="up-info">
+                    <div class="up-title-row">
+                      <h6>{{ event.title }}</h6>
+                    </div>
+                    <div class="up-program-row" *ngIf="event.program" style="font-size: 11px; color: #6B7280; margin-bottom: 6px; display: flex; align-items: center; line-height: 1.2;">
+                      <i class="pi pi-bookmark-fill" style="font-size: 10px; margin-right: 4px; color: #DC2626;"></i>
+                      <span>{{ event.program }}</span>
+                    </div>
+                    <div class="up-badges">
+                      <span class="up-type-tag" [style.background-color]="getEventTypeColor(event.type) + '20'" [style.color]="getEventTypeColor(event.type)">
                         {{ event.type }}
                       </span>
+                      <span class="up-exc-badge" *ngIf="event.isExceptionnelle">
+                        <i class="pi pi-star-fill"></i>
+                      </span>
                     </div>
                   </div>
                 </div>
 
-                <div class="event-meta">
-                  <mat-icon>calendar_today</mat-icon>
-                  <span>{{ formatEventDate(event.date) }}</span>
-                  <span *ngIf="event.time">•</span>
-                  <mat-icon *ngIf="event.time">schedule</mat-icon>
-                  <span *ngIf="event.time">{{ event.time }}</span>
+                <div class="up-meta">
+                  <div class="up-meta-item">
+                    <i class="pi pi-calendar"></i>
+                    <span>{{ formatEventDate(event.date) }}</span>
+                  </div>
+                  <div class="up-meta-item" *ngIf="event.time">
+                    <i class="pi pi-clock"></i>
+                    <span>{{ event.time.split(' - ')[0] }}</span>
+                  </div>
                 </div>
 
-                <div class="event-location" *ngIf="event.location">
-                  <mat-icon>place</mat-icon>
-                  <span>{{ event.location }}</span>
-                </div>
-
-                <div class="next-event-indicator" *ngIf="i === 0">
+                <div class="up-indicator" *ngIf="i === 0">
                   <div class="pulse-dot"></div>
-                  <span>Prochain événement</span>
+                  <span>Prochainement</span>
                 </div>
-              </mat-card>
+              </div>
             </div>
-          </ng-container>
-
-        </div>
+          </div>
+        </ng-container>
       </div>
     </div>
   </div>
 </div>
 
 <!-- Booking Confirmation Modal -->
-<div class="booking-overlay" *ngIf="selectedSlot" (click)="selectedSlot = null">
-  <div class="booking-modal-card" (click)="$event.stopPropagation()">
-    <div class="booking-modal-header">
-      <div class="header-icon-wrap">
-        <mat-icon>event_available</mat-icon>
+<div class="premium-modal-overlay" *ngIf="selectedSlot" (click)="selectedSlot = null">
+  <div class="premium-modal-card" (click)="$event.stopPropagation()">
+    <div class="p-modal-header">
+      <div class="p-modal-icon-wrap">
+        <i class="pi pi-calendar-check"></i>
       </div>
-      <div class="header-text">
+      <div class="p-modal-text">
         <h3>Confirmer la réservation</h3>
-        <p>{{ selectedGroupTitle }}<span *ngIf="selectedCoachForBooking"> — {{ selectedCoachForBooking.nom }}</span></p>
+        <p>{{ selectedGroupTitle }} <span *ngIf="selectedCoachForBooking"> &bull; {{ selectedCoachForBooking.nom }}</span></p>
       </div>
-      <button class="close-modal-btn" (click)="selectedSlot = null">
-        <mat-icon>close</mat-icon>
-      </button>
+      <button class="p-modal-close" (click)="selectedSlot = null"><i class="pi pi-times"></i></button>
     </div>
-    <div class="booking-modal-body">
-      <div class="session-info-grid">
-        <div class="info-chip">
-          <div class="chip-icon date-icon">
-            <mat-icon>calendar_today</mat-icon>
-          </div>
-          <div class="chip-content">
-            <span class="chip-label">Date</span>
-            <span class="chip-value">{{ selectedSlot.dateSession | date:'dd MMMM yyyy' }}</span>
-          </div>
-        </div>
-        <div class="info-chip">
-          <div class="chip-icon time-icon">
-            <mat-icon>schedule</mat-icon>
-          </div>
-          <div class="chip-content">
-            <span class="chip-label">Horaire</span>
-            <span class="chip-value">{{ formatSlotTime(selectedSlot.heureDebut) }} → {{ formatSlotTime(selectedSlot.heureFin) }}</span>
+
+    <div class="p-modal-body">
+      <div class="booking-summary-grid">
+        <div class="summary-item">
+          <div class="s-icon date"><i class="pi pi-calendar"></i></div>
+          <div class="s-text">
+            <span class="s-label">Date</span>
+            <span class="s-val">{{ selectedSlot.dateSession | date:'dd MMMM yyyy' }}</span>
           </div>
         </div>
-        <div class="info-chip" *ngIf="selectedSlot.typeSession">
-          <div class="chip-icon mode-icon">
-            <mat-icon>{{ selectedSlot.typeSession === 'EN_LIGNE' ? 'videocam' : 'location_on' }}</mat-icon>
+        <div class="summary-item">
+          <div class="s-icon time"><i class="pi pi-clock"></i></div>
+          <div class="s-text">
+            <span class="s-label">Horaire</span>
+            <span class="s-val">{{ formatSlotTime(selectedSlot.heureDebut) }} → {{ formatSlotTime(selectedSlot.heureFin) }}</span>
           </div>
-          <div class="chip-content">
-            <span class="chip-label">Mode</span>
-            <span class="chip-value">{{ selectedSlot.typeSession === 'EN_LIGNE' ? 'En ligne' : 'Présentiel' }}</span>
+        </div>
+        <div class="summary-item" *ngIf="selectedSlot.typeSession">
+          <div class="s-icon mode"><i class="pi" [class]="selectedSlot.typeSession === 'EN_LIGNE' ? 'pi-video' : 'pi-map-marker'"></i></div>
+          <div class="s-text">
+            <span class="s-label">Mode</span>
+            <span class="s-val">{{ selectedSlot.typeSession === 'EN_LIGNE' ? 'En ligne' : 'Présentiel' }}</span>
           </div>
         </div>
       </div>
-      <div class="notes-section">
-        <label class="notes-label">
-          <mat-icon>edit_note</mat-icon>
-          Notes pour le coach <span class="optional-tag">optionnel</span>
-        </label>
-        <textarea
-          class="notes-textarea"
-          [(ngModel)]="bookingNotes"
-          placeholder="Précisez vos besoins, objectifs ou questions pour cette session..."
-          rows="3">
-        </textarea>
+
+      <div class="notes-field-wrap">
+        <label class="p-modal-label"><i class="pi pi-pencil"></i> Notes pour le coach (optionnel)</label>
+        <textarea class="p-modal-textarea" [(ngModel)]="bookingNotes" placeholder="Précisez vos besoins ou questions..."></textarea>
       </div>
-      <div class="booking-modal-actions">
-        <button class="btn-cancel-modal" (click)="selectedSlot = null">
-          <mat-icon>close</mat-icon>
-          Annuler
-        </button>
-        <button class="btn-confirm-modal" (click)="confirmBooking()" [disabled]="isBooking">
-          <span *ngIf="isBooking" class="loading-spinner"></span>
-          <mat-icon *ngIf="!isBooking">check_circle</mat-icon>
-          {{ isBooking ? 'Réservation en cours...' : 'Confirmer la réservation' }}
+
+      <div class="p-modal-footer">
+        <button class="p-btn-cancel" (click)="selectedSlot = null">Annuler</button>
+        <button class="p-btn-confirm" (click)="confirmBooking()" [disabled]="isBooking">
+          <i class="pi pi-spin pi-spinner" *ngIf="isBooking"></i>
+          <i class="pi pi-check-circle" *ngIf="!isBooking"></i>
+          <span>{{ isBooking ? 'Réservation...' : 'Confirmer la réservation' }}</span>
         </button>
       </div>
     </div>

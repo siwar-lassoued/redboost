@@ -76,7 +76,7 @@ type Tab = 'PLANIFIEE' | 'REALISEE' | 'ANNULEE';
                     </td>
                     <td>
                       <div class="coach-cell" *ngIf="s.coach">
-                        <span class="name-text">{{ s.coach.prenom }} {{ s.coach.nom }}</span>
+                        <span class="name-text">{{ s.coach.firstName || s.coach.prenom }} {{ s.coach.lastName || s.coach.nom }}</span>
                       </div>
                     </td>
                     <td class="date-cell">
@@ -132,7 +132,7 @@ type Tab = 'PLANIFIEE' | 'REALISEE' | 'ANNULEE';
                 </div>
                 <p class="modal-meta">
                   <span><i class="pi pi-calendar"></i> Le {{ selected()!.date | date:'fullDate' }} à {{ selected()!.date | date:'HH:mm' }}</span>
-                  <span *ngIf="selected()!.coach"> · <i class="pi pi-user"></i> {{ selected()!.coach?.prenom }} {{ selected()!.coach?.nom }}</span>
+                  <span *ngIf="selected()!.coach"> · <i class="pi pi-user"></i> {{ selected()!.coach?.firstName || selected()!.coach?.prenom }} {{ selected()!.coach?.lastName || selected()!.coach?.nom }}</span>
                 </p>
               </div>
             </div>

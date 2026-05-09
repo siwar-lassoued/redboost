@@ -57,12 +57,26 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                             } else {
                                 // Fallback: use email as principal
                                 String email = jwtUtils.extractEmail(token);
-                                accessor.setUser(() -> email);
+                                if (email != null && !email.isBlank()) {
+                                    accessor.setUser(() -> email);
+                                } else {
+                                    throw new org.springframework.messaging.MessageDeliveryException(
+                                        message, "STOMP CONNECT rejected: token contains no valid user identity");
+                                }
                             }
+                        } else {
+                            // Token present but invalid/expired — reject cleanly
+                            throw new org.springframework.messaging.MessageDeliveryException(
+                                message, "STOMP CONNECT rejected: invalid or expired JWT token");
                         }
+                    } else {
+                        // No Authorization header — reject the CONNECT
+                        throw new org.springframework.messaging.MessageDeliveryException(
+                            message, "STOMP CONNECT rejected: missing Authorization header");
                     }
                 }
                 return message;
+
             }
         });
     }

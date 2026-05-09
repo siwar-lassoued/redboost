@@ -260,8 +260,33 @@ export class CalendarComponent implements OnInit {
     });
   }
 
-  getCoachGroups(coachId: string): any[] {
-    return this.coachGroupsMap[coachId] || [];
+  getCoachThematiques(coachId: string): any[] {
+    return this.coachThematiquesMap[coachId] || [];
+  }
+
+  getAvailableCount(slots: any[]): number {
+    return slots.filter(s => !s.isBooked).length;
+  }
+
+  getBookedCount(slots: any[]): number {
+    return slots.filter(s => s.isBooked).length;
+  }
+
+  /** Groups slots by date string for display (Coach → Thématique → Session → Date) */
+  groupSlotsByDate(slots: any[]): { dateLabel: string; dateKey: string; slots: any[] }[] {
+    const map = new Map<string, any[]>();
+    for (const slot of slots) {
+      const key = slot.dateSession || '';
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(slot);
+    }
+    return Array.from(map.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([key, daySlots]) => ({
+        dateKey: key,
+        dateLabel: key ? new Date(key).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) : 'Date inconnue',
+        slots: daySlots
+      }));
   }
 
   getCoachColor(coachId: string): string {
