@@ -520,7 +520,7 @@ interface NoteDeSynthese {
                 border-radius: 3px;
             }
             .fill-pink {
-                background: var(--gradient-purple); /* Using purple/pink mix */
+                background: linear-gradient(to right, #DC2626, #111827);
             }
             .entrepreneur-item > i {
                 color: #A0AEC0;

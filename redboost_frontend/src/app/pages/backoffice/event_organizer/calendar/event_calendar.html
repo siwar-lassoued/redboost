@@ -238,6 +238,10 @@
                     <div class="up-title-row">
                       <h6>{{ event.title }}</h6>
                     </div>
+                    <div class="up-program-row" *ngIf="event.program" style="font-size: 11px; color: #6B7280; margin-bottom: 6px; display: flex; align-items: center; line-height: 1.2;">
+                      <i class="pi pi-bookmark-fill" style="font-size: 10px; margin-right: 4px; color: #DC2626;"></i>
+                      <span>{{ event.program }}</span>
+                    </div>
                     <div class="up-badges">
                       <span class="up-type-tag" [style.background-color]="getEventTypeColor(event.type) + '20'" [style.color]="getEventTypeColor(event.type)">
                         {{ event.type }}

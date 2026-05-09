@@ -417,7 +417,7 @@ export class CalendarComponent implements OnInit {
         type: s.statut === 'DISPONIBLE' ? 'creneau' : 'Coaching (Confirmé)',
         location: s.isOnline ? 'En ligne' : 'À définir',
         mode: (s.isOnline ? 'virtuel' : 'en-personne') as 'en-personne' | 'virtuel' | 'hybrid',
-        program: '',
+        program: s.programmeNom ? `${s.programmeNom} - ${s.thematiqueNom}` : (s.thematiqueNom || ''),
         description: s.description || '',
         participants: [],
         meetLink: s.meetLink,

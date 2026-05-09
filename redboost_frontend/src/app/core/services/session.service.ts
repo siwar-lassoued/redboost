@@ -29,6 +29,8 @@ export interface MyCalendarEvent {
     coachName?: string;
     entrepreneurName?: string;
     isOnline: boolean;
+    thematiqueNom?: string;
+    programmeNom?: string;
 }
 
 @Injectable({ providedIn: 'root' })

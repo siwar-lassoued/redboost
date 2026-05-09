@@ -47,6 +47,8 @@ public class SessionService {
         private String coachName;
         private String entrepreneurName;
         private boolean isOnline;
+        private String thematiqueNom;
+        private String programmeNom;
     }
 
     public List<Session> getAll() {
@@ -157,6 +159,12 @@ public class SessionService {
                 ev.setType("SESSION_SLOT");
                 ev.setStatut("DISPONIBLE");
                 ev.setOnline(slot.getTypeSession() == SessionCoach.TypeSession.EN_LIGNE);
+                if (slot.getDisponibilite() != null && slot.getDisponibilite().getThematique() != null) {
+                    ev.setThematiqueNom(slot.getDisponibilite().getThematique().getNom());
+                    if (slot.getDisponibilite().getThematique().getProgramme() != null) {
+                        ev.setProgrammeNom(slot.getDisponibilite().getThematique().getProgramme().getNom());
+                    }
+                }
                 events.add(ev);
             }
         } else {
@@ -195,6 +203,10 @@ public class SessionService {
         }
         if (s.getEntrepreneur() != null) {
             ev.setEntrepreneurName(s.getEntrepreneur().getFirstName() + " " + s.getEntrepreneur().getLastName());
+        }
+        ev.setThematiqueNom(s.getThematiqueName());
+        if (s.getProgramme() != null) {
+            ev.setProgrammeNom(s.getProgramme().getNom());
         }
         return ev;
     }
