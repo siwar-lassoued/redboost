@@ -16,102 +16,109 @@ type Tab = 'PLANIFIEE' | 'REALISEE' | 'ANNULEE';
     <div class="cand-page">
       <!-- PAGE HEADER -->
       <div class="cand-header">
-        <div>
+        <div class="header-content">
           <h1 class="cand-title">Mes Sessions</h1>
-          <p class="cand-subtitle">Suivez votre parcours d'accompagnement</p>
+          <p class="cand-subtitle">Gérez et suivez vos sessions d'accompagnement</p>
         </div>
-        <div class="cand-header-actions">
-           <span class="cand-count-badge">{{ allSessions().length }} sessions au total</span>
+        <div class="header-stats">
+           <div class="stat-item">
+             <span class="stat-value">{{ allSessions().length }}</span>
+             <span class="stat-label">Total</span>
+           </div>
+           <div class="stat-divider"></div>
+           <div class="stat-item">
+             <span class="stat-value">{{ getCount('PLANIFIEE') }}</span>
+             <span class="stat-label">À venir</span>
+           </div>
         </div>
       </div>
 
       <!-- TABS -->
       <div class="cand-tabs">
         <button (click)="activeTab.set('PLANIFIEE')" class="cand-tab" [class.active]="activeTab() === 'PLANIFIEE'">
-          Sessions Planifiées ({{ getCount('PLANIFIEE') }})
+          Planifiées
         </button>
         <button (click)="activeTab.set('REALISEE')" class="cand-tab" [class.active]="activeTab() === 'REALISEE'">
-          Sessions Terminées ({{ getCount('REALISEE') }})
+          Terminées
         </button>
         <button (click)="activeTab.set('ANNULEE')" class="cand-tab" [class.active]="activeTab() === 'ANNULEE'">
-          Sessions Annulées ({{ getCount('ANNULEE') }})
+          Annulées
         </button>
       </div>
 
       <!-- FILTERS -->
       <div class="cand-filters">
-        <div class="search-wrap">
+        <div class="search-wrap shadow-premium">
           <i class="pi pi-search search-icon"></i>
           <input type="text" 
             [ngModel]="searchText()"
             (ngModelChange)="searchText.set($event)"
-            placeholder="Rechercher par titre ou coach..." 
+            placeholder="Rechercher par coach, titre ou programme..." 
             class="search-input">
         </div>
       </div>
 
-      <!-- SESSIONS TABLE -->
-      @if (filteredSessions().length > 0) {
-        <div class="table-card">
-          <div class="table-scroll">
-            <table class="cand-table">
-              <thead>
-                <tr>
-                  <th>Session</th>
-                  <th>Coach</th>
-                  <th>Date & Heure</th>
-                  <th>Type</th>
-                  <th>Statut</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (s of filteredSessions(); track s.id) {
-                  <tr class="table-row" (click)="onViewDetail(s)">
-                    <td>
-                      <div class="name-cell">
-                        <span class="name-text">{{ s.titre || 'Session de coaching' }}</span>
-                        <span class="email-text">ID: #{{ s.id?.substring(0,8) }}</span>
-                      </div>
-                    </td>
-                    <td>
-                      <div class="coach-cell" *ngIf="s.coach">
-                        <span class="name-text">{{ s.coach.firstName || s.coach.prenom }} {{ s.coach.lastName || s.coach.nom }}</span>
-                      </div>
-                    </td>
-                    <td class="date-cell">
-                      <div class="flex flex-col">
-                        <span>{{ s.date | date:'dd/MM/yyyy' }}</span>
-                        <span class="text-[10px] text-gray-400">{{ s.date | date:'HH:mm' }}</span>
-                      </div>
-                    </td>
-                    <td>
-                      <span class="type-badge" [class.presentiel]="s.lieu" [class.online]="!s.lieu">
-                        {{ s.lieu ? 'Présentiel' : 'À distance' }}
-                      </span>
-                    </td>
-                    <td>
-                      <div class="status-badge" [style.background]="getBadge(s.statut).bg" [style.color]="getBadge(s.statut).color">
-                        <i class="pi" [class.pi-calendar-clock]="s.statut === 'PLANIFIEE' || s.statut === 'PLANIFIE'" [class.pi-check-circle]="s.statut === 'REALISEE' || s.statut === 'TERMINE'" [class.pi-times-circle]="s.statut === 'ANNULEE'" style="font-size: 10px;"></i>
-                        {{ getBadge(s.statut).label }}
-                      </div>
-                    </td>
-                    <td>
-                      <button (click)="$event.stopPropagation(); onViewDetail(s)" class="btn-detail">Voir détails</button>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
+      <!-- SESSIONS GRID -->
+      <div class="sessions-grid" *ngIf="filteredSessions().length > 0">
+        <div class="premium-session-card" *ngFor="let s of filteredSessions(); track s.id" (click)="onViewDetail(s)">
+          <div class="card-top">
+            <div class="session-type-pill" [class.presentiel]="s.lieu" [class.online]="!s.lieu">
+              <i class="pi" [class.pi-map-marker]="s.lieu" [class.pi-video]="!s.lieu"></i>
+              {{ s.lieu ? 'Présentiel' : 'En ligne' }}
+            </div>
+            <div class="exceptionnelle-badge" *ngIf="s.isExceptionnelle">
+              <i class="pi pi-star-fill"></i>
+              Session Exceptionnelle
+            </div>
+            <div class="status-dot-wrap">
+               <div class="status-dot" [style.background]="getBadge(s.statut).color"></div>
+               <span class="status-text">{{ getBadge(s.statut).label }}</span>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <h3 class="session-title">{{ s.titre || 'Session de coaching' }}</h3>
+            <p class="session-theme" *ngIf="s.thematiqueName || s.programme?.nom">{{ s.thematiqueName || s.programme?.nom }}</p>
+            
+            <div class="session-meta">
+              <div class="meta-item">
+                <i class="pi pi-calendar"></i>
+                <span>{{ s.date | date:'EEEE d MMMM yyyy' : '' : 'fr-FR' }}</span>
+              </div>
+              <div class="meta-item">
+                <i class="pi pi-clock"></i>
+                <span>{{ s.date | date:'HH:mm' }} <small class="text-gray-400">({{ s.duree || 60 }} min)</small></span>
+              </div>
+            </div>
+
+            <div class="coach-info-mini">
+              <div class="coach-avatar-mini" [style.background]="getCoachAvatarColor(s.coach)">
+                {{ (s.coach?.prenom || s.coach?.firstName || 'C')[0] }}
+              </div>
+              <div class="coach-details-mini">
+                <span class="coach-label">Votre coach</span>
+                <span class="coach-name">{{ s.coach?.prenom || s.coach?.firstName }} {{ s.coach?.nom || s.coach?.lastName }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-footer">
+             <button class="btn-card-action">Voir les détails</button>
+             <button *ngIf="s.meetLink && !isPast(s.date)" (click)="$event.stopPropagation(); openMeet(s.meetLink)" class="btn-meet">
+               <i class="pi pi-video"></i>
+             </button>
           </div>
         </div>
-      } @else {
-        <div class="empty-state">
-          <i class="pi pi-calendar-times" style="font-size: 3rem; color: #D1D5DB; margin-bottom: 1rem; display: block;"></i>
-          <p class="empty-text">Aucune session trouvée</p>
-          <p class="empty-sub">Il n'y a pas de sessions dans cette catégorie.</p>
+      </div>
+
+      <div class="empty-state-v2" *ngIf="filteredSessions().length === 0">
+        <div class="empty-icon-wrap">
+          <i class="pi pi-calendar-plus"></i>
         </div>
-      }
+        <h3>Aucune session {{ activeTab().toLowerCase() }}</h3>
+        <p>Vos sessions apparaîtront ici une fois planifiées.</p>
+      </div>
+    </div>
     </div>
 
     <!-- DETAIL MODAL (Admin Style) -->
@@ -234,58 +241,107 @@ type Tab = 'PLANIFIEE' | 'REALISEE' | 'ANNULEE';
   `,
   styles: [`
     :host { display: block; }
-    .cand-page { padding: 24px; background: #F5F6FA; min-height: 100vh; }
-    .cand-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 24px; }
-    .cand-title { font-size: 28px; font-weight: 800; color: #1A1A2E; margin: 0; }
-    .cand-subtitle { color: #8a8a8a; font-size: 14px; margin-top: 4px; }
-    .cand-count-badge { background: #E2E8F0; color: #4A5568; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+    .cand-page { padding: 2.5rem; background: #f8fafc; min-height: 100vh; font-family: var(--font-family); }
     
-    .cand-tabs { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 4px; }
+    .cand-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2.5rem; }
+    .cand-title { font-size: 2.25rem; font-weight: 800; color: #1e293b; margin: 0; letter-spacing: -0.025em; }
+    .cand-subtitle { color: #64748b; font-size: 1.1rem; margin-top: 0.5rem; }
+    
+    .header-stats { display: flex; align-items: center; gap: 2rem; background: white; padding: 1rem 2rem; border-radius: 20px; box-shadow: var(--premium-shadow-sm); border: 1px solid #f1f5f9; }
+    .stat-item { display: flex; flex-direction: column; align-items: center; }
+    .stat-value { font-size: 1.5rem; font-weight: 800; color: #1e293b; }
+    .stat-label { font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; }
+    .stat-divider { width: 1px; height: 30px; background: #f1f5f9; }
+
+    .cand-tabs { display: flex; gap: 0.5rem; margin-bottom: 2rem; }
     .cand-tab {
-      padding: 10px 20px; border-radius: 12px; font-size: 14px; font-weight: 600;
-      border: none; cursor: pointer; transition: all .2s; background: #F3F4F6; color: #6B7280; white-space: nowrap;
+      padding: 0.75rem 1.5rem; border-radius: 14px; font-size: 0.95rem; font-weight: 700;
+      border: none; cursor: pointer; transition: all .3s cubic-bezier(0.4, 0, 0.2, 1); background: white; color: #64748b; border: 1px solid #f1f5f9;
     }
-    .cand-tab.active { background: #ea5073; color: #fff; }
+    .cand-tab.active { background: #1e293b; color: #fff; box-shadow: 0 4px 12px rgba(30, 41, 59, 0.2); border-color: #1e293b; }
+    .cand-tab:hover:not(.active) { background: #f1f5f9; transform: translateY(-1px); }
 
-    .cand-filters { display: flex; align-items: stretch; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
-    .search-wrap { position: relative; flex: 1; min-width: 200px; }
-    .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #9CA3AF; }
+    .cand-filters { margin-bottom: 2.5rem; }
+    .search-wrap { position: relative; max-width: 500px; }
+    .search-icon { position: absolute; left: 1.25rem; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 1.1rem; }
     .search-input {
-      width: 100%; padding: 12px 16px 12px 40px; border: 1px solid #E5E7EB;
-      border-radius: 12px; font-size: 14px; outline: none; color: #333; transition: all .2s; background: #fff; box-sizing: border-box;
+      width: 100%; padding: 1rem 1rem 1rem 3.25rem; border: 1px solid #f1f5f9;
+      border-radius: 18px; font-size: 1rem; outline: none; color: #1e293b; transition: all .3s; background: white;
     }
-    .search-input:focus { border-color: #3B82A6; box-shadow: 0 0 0 3px rgba(59, 130, 166, 0.1); }
+    .search-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.08); }
+    .shadow-premium { box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03); }
 
-    .table-card { background: #fff; border-radius: 20px; overflow: hidden; box-shadow: 0 2px 16px rgba(0,0,0,0.07); border: 1px solid #F1F5F9; }
-    .table-scroll { overflow-x: auto; min-width: 100%; }
-    .cand-table { width: 100%; border-collapse: collapse; text-align: left; }
-    .cand-table th {
-      padding: 12px 16px; font-size: 11px; font-weight: 700; color: #6B7280;
-      text-transform: uppercase; letter-spacing: 0.05em; background: #F9FAFB; border-bottom: 1px solid #F3F4F6;
+    /* Sessions Grid */
+    .sessions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 2rem; }
+    .premium-session-card {
+      background: white; border-radius: 24px; padding: 1.5rem; border: 1px solid #f1f5f9;
+      box-shadow: var(--premium-shadow-sm); transition: all .4s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer; position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 1.25rem;
     }
-    .cand-table td { padding: 14px 16px; border-bottom: 1px solid #F3F4F6; }
-    .table-row { transition: background .15s; cursor: pointer; }
-    .table-row:hover { background: #FFF5F8; }
-
-    .name-cell { display: flex; flex-direction: column; }
-    .name-text { font-weight: 700; font-size: 14px; color: #1A1A2E; }
-    .email-text { font-size: 11px; color: #9CA3AF; margin-top: 2px; }
+    .premium-session-card:hover { transform: translateY(-8px); box-shadow: var(--premium-shadow-lg); border-color: #e2e8f0; }
     
-    .type-badge { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; }
-    .type-badge.online { background: #E0F2FE; color: #0369A1; }
-    .type-badge.presentiel { background: #FEF3C7; color: #92400E; }
-    
-    .date-cell { font-size: 13px; color: #1A1A2E; font-weight: 500; }
-    .status-badge {
-      padding: 5px 12px; border-radius: 20px; font-size: 10px; font-weight: 800;
-      display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; text-transform: uppercase;
+    .card-top { display: flex; justify-content: space-between; align-items: center; }
+    .session-type-pill {
+      padding: 0.5rem 1rem; border-radius: 100px; font-size: 0.75rem; font-weight: 700;
+      display: flex; align-items: center; gap: 0.5rem; text-transform: uppercase; letter-spacing: 0.02em;
     }
-    .btn-detail { padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; color: #3B82A6; background: none; border: none; cursor: pointer; transition: all .2s; }
-    .btn-detail:hover { background: #EBF5FF; }
+    .session-type-pill.online { background: #eff6ff; color: #2563eb; }
+    .session-type-pill.presentiel { background: #fff7ed; color: #c2410c; }
+    
+    .exceptionnelle-badge {
+      position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+      background: #fdf2f8; color: #db2777; font-size: 0.7rem; font-weight: 800;
+      padding: 0.4rem 1rem; border-radius: 0 0 12px 12px; display: flex; align-items: center; gap: 0.4rem;
+      text-transform: uppercase; letter-spacing: 0.05em; border: 1px solid #fbcfe8; border-top: none;
+    }
 
-    .empty-state { text-align: center; padding: 60px 20px; background: #fff; border-radius: 20px; border: 2px dashed #E5E7EB; }
-    .empty-text { color: #6B7280; font-weight: 700; font-size: 16px; margin-top: 8px; }
-    .empty-sub { color: #9CA3AF; font-size: 13px; margin-top: 4px; }
+    .status-dot-wrap { display: flex; align-items: center; gap: 0.5rem; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .status-text { font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; }
+
+    .session-title { font-size: 1.25rem; font-weight: 800; color: #1e293b; margin: 0; line-height: 1.3; }
+    .session-theme { font-size: 0.9rem; font-weight: 600; color: #64748b; margin: 0.25rem 0 0; }
+    
+    .session-meta { display: flex; flex-direction: column; gap: 0.5rem; margin: 0.5rem 0; }
+    .meta-item { display: flex; align-items: center; gap: 0.75rem; color: #475569; font-size: 0.95rem; font-weight: 500; }
+    .meta-item i { color: #94a3b8; font-size: 1rem; }
+
+    .coach-info-mini {
+      display: flex; align-items: center; gap: 1rem; padding: 1rem; background: #f8fafc;
+      border-radius: 16px; border: 1px solid #f1f5f9;
+    }
+    .coach-avatar-mini {
+      width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center;
+      justify-content: center; color: white; font-weight: 800; font-size: 1.1rem;
+    }
+    .coach-details-mini { display: flex; flex-direction: column; }
+    .coach-label { font-size: 0.65rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; }
+    .coach-name { font-size: 0.95rem; font-weight: 700; color: #1e293b; }
+
+    .card-footer { display: flex; gap: 0.75rem; margin-top: auto; }
+    .btn-card-action {
+      flex: 1; padding: 0.75rem; border-radius: 12px; background: white; border: 1px solid #e2e8f0;
+      color: #1e293b; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: all .2s;
+    }
+    .btn-card-action:hover { background: #f8fafc; border-color: #cbd5e1; }
+    .btn-meet {
+      width: 44px; height: 44px; border-radius: 12px; background: #10b981; border: none;
+      color: white; display: flex; align-items: center; justify-content: center; cursor: pointer;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); transition: all .2s;
+    }
+    .btn-meet:hover { transform: scale(1.05); background: #059669; }
+
+    .empty-state-v2 {
+      text-align: center; padding: 5rem 2rem; background: white; border-radius: 32px;
+      border: 2px dashed #e2e8f0; max-width: 600px; margin: 3rem auto;
+    }
+    .empty-icon-wrap {
+      width: 80px; height: 80px; background: #f8fafc; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;
+    }
+    .empty-icon-wrap i { font-size: 2.5rem; color: #cbd5e1; }
+    .empty-state-v2 h3 { font-size: 1.5rem; font-weight: 800; color: #1e293b; margin-bottom: 0.5rem; }
+    .empty-state-v2 p { color: #64748b; font-size: 1.1rem; }
 
     /* Modal Style (Admin) */
     .modal-overlay { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(8px); }
@@ -430,17 +486,27 @@ export class EntrepreneurSessionsComponent implements OnInit {
       }
     });
   }
-
-  getBadge(statut: string) {
-    const config: Record<string, { label: string; bg: string; color: string }> = {
-      PLANIFIE:  { label: 'Planifiée', bg: '#EBF5FF', color: '#3B82A6' },
-      PLANIFIEE: { label: 'Planifiée', bg: '#EBF5FF', color: '#3B82A6' },
-      DEMANDE:   { label: 'À confirmer', bg: '#EDE9FE', color: '#6D28D9' },
-      REALISEE:  { label: 'Terminée', bg: '#ECFDF5', color: '#10B981' },
-      TERMINE:   { label: 'Terminée', bg: '#ECFDF5', color: '#10B981' },
-      ANNULEE:   { label: 'Annulée',  bg: '#FEF2F2', color: '#EF4444' },
-      ANNULE:    { label: 'Annulée',  bg: '#FEF2F2', color: '#EF4444' },
+  getBadge(statut: string): { label: string; bg: string; color: string } {
+    const config: any = {
+      PLANIFIEE: { label: 'Planifiée', bg: '#EFF6FF', color: '#3B82F6' },
+      REALISEE: { label: 'Réalisée', bg: '#F0FDF4', color: '#22C55E' },
+      ANNULEE: { label: 'Annulée', bg: '#FEF2F2', color: '#EF4444' }
     };
     return config[statut] || { label: statut, bg: '#F1F5F9', color: '#475569' };
+  }
+
+  getCoachAvatarColor(coach: any): string {
+    if (!coach) return '#cbd5e1';
+    const name = coach.prenom || coach.firstName || 'C';
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+    return colors[Math.abs(hash) % colors.length];
+  }
+
+  openMeet(link: string) {
+    if (link) window.open(link, '_blank');
   }
 }

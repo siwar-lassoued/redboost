@@ -25,6 +25,7 @@ public class LivrableController {
     private final LivrableService livrableService;
     private final LocalFileStorageService localFileStorageService;
     private final UserRepository userRepository;
+    private final team.project.redboost.repositories.ProgrammeRepository programmeRepository;
 
     @GetMapping
     public ResponseEntity<List<Livrable>> getAllLivrables(
@@ -65,6 +66,12 @@ public class LivrableController {
             LocalFileStorageService.FileUploadResult uploadResult = localFileStorageService.uploadFileWithMimeType(file);
             String fileUrl = "/uploads/" + uploadResult.getFileName();
             
+            team.project.redboost.entities.Programme programme = null;
+            if (programmeId != null) {
+                programme = programmeRepository.findById(programmeId).orElse(null);
+            }
+
+            team.project.redboost.entities.Programme finalProgramme = programme;
             List<Livrable> created = entrepreneurIds.stream().map(entId -> {
                 User entrepreneur = userRepository.findById(entId).orElse(null);
                 if (entrepreneur == null) return null;
@@ -73,8 +80,14 @@ public class LivrableController {
                 livrable.setTitre(titre);
                 livrable.setType(type);
                 livrable.setFichierUrl(fileUrl);
-                livrable.setFileSize(file.getSize() + " bytes");
+                
+                // Format file size
+                long size = file.getSize();
+                String sizeStr = size < 1024 ? size + " B" : (size < 1024 * 1024 ? (size / 1024) + " KB" : (size / (1024 * 1024)) + " MB");
+                livrable.setFileSize(sizeStr);
+                
                 livrable.setEntrepreneur(entrepreneur);
+                livrable.setProgramme(finalProgramme);
                 livrable.setStatut(Livrable.Statut.SUBMITTED);
                 livrable.setDateSoumission(LocalDateTime.now());
                 

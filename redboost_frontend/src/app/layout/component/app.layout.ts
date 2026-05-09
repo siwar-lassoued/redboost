@@ -38,7 +38,7 @@ import { inject } from '@angular/core';
 
             .layout-main-container {
                 margin-top: 80px;
-                margin-left: 300px;
+                margin-left: 280px;
                 flex: 1;
                 display: flex;
                 flex-direction: column;
@@ -48,7 +48,7 @@ import { inject } from '@angular/core';
 
             .layout-main {
                 flex: 1;
-                padding: 2rem;
+                padding: 1.5rem;
                 background-color: #f8f9fa;
             }
 
@@ -74,12 +74,6 @@ import { inject } from '@angular/core';
             }
 
             @media (max-width: 768px) {
-                .layout-main {
-                    padding: 1.5rem !important;
-                }
-            }
-
-            @media (max-width: 480px) {
                 .layout-main {
                     padding: 1rem !important;
                 }

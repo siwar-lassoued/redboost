@@ -40,6 +40,9 @@ public class ThematiqueCoaching {
     @Column(name = "nb_sessions_max")
     private Integer nbSessionsMax;
 
+    @Column(name = "couleur")
+    private String couleur;
+
     @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

@@ -15,16 +15,15 @@ import { AppMenu } from './app.menu';
         `
             .layout-sidebar {
                 position: fixed;
-                left: 1rem;
-                top: 5rem;
-                width: 260px;
-                height: calc(100vh - 6rem);
-                background: rgba(255, 255, 255, 0.9);
+                left: 0;
+                top: 80px;
+                width: 280px;
+                height: calc(100vh - 80px);
+                background: rgba(255, 255, 255, 0.95);
                 backdrop-filter: blur(10px);
                 -webkit-backdrop-filter: blur(10px);
-                border: 1px solid rgba(255, 255, 255, 0.3);
-                border-radius: 24px;
-                box-shadow: var(--premium-shadow-lg);
+                border-right: 1px solid rgba(0, 0, 0, 0.05);
+                box-shadow: var(--premium-shadow-sm);
                 overflow-y: auto;
                 overflow-x: hidden;
                 z-index: 999;

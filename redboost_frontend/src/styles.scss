@@ -35,8 +35,8 @@ html {
     background-color: #f8f9fa;
 
     .layout-main-container {
-        margin-top: 2rem !important; // ✅ Matches the actual topbar height: 4rem
-        margin-left: 100px; // Width of sidebar
+        margin-top: 80px !important; 
+        margin-left: 280px; 
         flex: 1;
         display: flex;
         flex-direction: column;
@@ -44,42 +44,8 @@ html {
 
         .layout-main {
             flex: 1;
-            padding: 0.5rem;
+            padding: 1.5rem;
             background-color: #f8f9fa;
-        }
-    }
-
-    .layout-mask {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.4);
-        z-index: 998;
-    }
-
-    // When sidebar is hidden (mobile)
-    &.layout-sidebar-inactive {
-        .layout-sidebar {
-            transform: translateX(-280px);
-        }
-
-        .layout-main-container {
-            margin-left: 0;
-        }
-    }
-
-    // Mobile active state
-    &.layout-mobile-active {
-        .layout-sidebar {
-            transform: translateX(0);
-        }
-
-        .layout-mask {
-            display: block;
-            animation: fadeIn 0.2s;
         }
     }
 }

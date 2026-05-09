@@ -2,7 +2,7 @@
 
 .layout-topbar {
     position: fixed;
-    height: 4rem;
+    height: 80px;
     z-index: 997;
     left: 0;
     top: 0;
@@ -12,7 +12,8 @@
     transition: left var(--layout-section-transition-duration);
     display: flex;
     align-items: center;
-    border-radius: 0 0 12px 12px;
+    border-radius: 0;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
 
     .layout-topbar-logo-container {
         width: 20rem;

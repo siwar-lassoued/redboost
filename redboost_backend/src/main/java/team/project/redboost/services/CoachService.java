@@ -621,7 +621,9 @@ public class CoachService {
         dto.setSessionGroupId(s.getSessionGroupId());
         if (s.getDisponibilite() != null && s.getDisponibilite().getThematique() != null) {
             dto.setThematiqueNom(s.getDisponibilite().getThematique().getNom());
-            dto.setCouleur(s.getDisponibilite().getCouleur());
+            dto.setCouleur(s.getDisponibilite().getThematique().getCouleur() != null ? 
+                           s.getDisponibilite().getThematique().getCouleur() : 
+                           s.getDisponibilite().getCouleur());
         }
 
         List<team.project.redboost.entities.Session> bookings = sessionRepository.findAll().stream()
@@ -631,6 +633,9 @@ public class CoachService {
         dto.setIsBooked(!bookings.isEmpty());
         if (!bookings.isEmpty()) {
             dto.setMeetLink(bookings.get(0).getMeetLink());
+            dto.setIsExceptionnelle(bookings.get(0).getIsExceptionnelle());
+        } else {
+            dto.setIsExceptionnelle(false);
         }
 
         return dto;

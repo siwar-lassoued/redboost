@@ -98,6 +98,10 @@ public class Session {
     @Column(name = "reminder_2h_sent")
     private Boolean reminder2hSent = false;
 
+    @Builder.Default
+    @Column(name = "is_exceptionnelle")
+    private Boolean isExceptionnelle = false;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

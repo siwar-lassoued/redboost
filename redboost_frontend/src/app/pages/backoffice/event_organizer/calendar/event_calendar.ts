@@ -34,6 +34,8 @@ interface CalendarEvent {
   meetLink?: string;
   googleEventId?: string;   // Google Calendar event ID for deep-link
   isDisabled?: boolean;
+  couleur?: string;
+  isExceptionnelle?: boolean;
 }
 
 interface EventTypeWithColor {
@@ -93,11 +95,11 @@ export class CalendarComponent implements OnInit {
   eventTypes: EventTypeWithColor[] = [];
   private colorPalette = [
     '#3B82A6', // Blue
+    '#FF4D85', // Pink
     '#10B981', // Green
+    '#8B5CF6', // Violet
     '#F59E0B', // Amber
     '#EF4444', // Red
-    '#8B5CF6', // Violet
-    '#EC4899', // Pink
     '#14B8A6', // Teal
     '#F43F5E', // Rose
     '#7C3339', // Burgundy
@@ -105,6 +107,8 @@ export class CalendarComponent implements OnInit {
     '#A855F7', // Purple
     '#F97316', // Orange
   ];
+
+  private thematicColors: { [name: string]: string } = {};
 
   // ... (rest of colors)
   private iconMapping: { [key: string]: string } = {
@@ -384,7 +388,8 @@ export class CalendarComponent implements OnInit {
       participants: [],
       meetLink: s.meetLink,
       googleEventId: s.googleEventId,
-      isDisabled: true
+      isDisabled: true,
+      isExceptionnelle: s.isExceptionnelle
     }));
   }
 
@@ -417,19 +422,22 @@ export class CalendarComponent implements OnInit {
     return slots.map(s => {
       // Create date with time to avoid timezone shifts to previous day
       const dateStr = s.dateSession.includes('T') ? s.dateSession : `${s.dateSession}T${s.heureDebut || '00:00:00'}`;
+      const themName = s.thematiqueNom || 'Thématique Générale';
       
       return {
         id: 'slot-' + s.id,
-        title: 'Dispo: ' + (s.titre || 'Créneau'),
+        title: (s.titre || 'Créneau'),
         date: new Date(dateStr),
         time: s.heureDebut.substring(0, 5) + ' - ' + s.heureFin.substring(0, 5),
-        type: 'creneau', // Removed accent for safer matching
+        type: 'creneau', 
         location: s.typeSession === 'EN_LIGNE' ? 'En ligne' : (s.adresse || 'En personne'),
         mode: s.typeSession === 'EN_LIGNE' ? 'virtuel' : 'en-personne',
-        program: '',
+        program: themName, // Use program field for thematique name in slots
         description: 'Réservez via le panneau de droite',
         participants: [],
-        isDisabled: s.isBooked || s.isGroupReservedByMe || false
+        isDisabled: s.isBooked || s.isGroupReservedByMe || false,
+        couleur: s.couleur,
+        isExceptionnelle: s.isExceptionnelle
       };
     });
   }
@@ -594,17 +602,30 @@ export class CalendarComponent implements OnInit {
     });
   }
 
-  getEventTypeIcon(typeName: string): string {
-    const eventType = this.eventTypes.find(t => t.name === typeName);
-    return eventType ? eventType.icon : 'event';
+  getEventTypeIconPrime(typeName: string): string {
+    const icon = this.getIconForType(typeName);
+    const materialToPrime: { [key: string]: string } = {
+      'campaign': 'pi-megaphone',
+      'groups': 'pi-users',
+      'school': 'pi-book',
+      'construction': 'pi-cog',
+      'celebration': 'pi-gift',
+      'present_to_all': 'pi-desktop',
+      'person': 'pi-user',
+      'handyman': 'pi-wrench',
+      'group': 'pi-users',
+      'event_available': 'pi-calendar-check',
+      'event': 'pi-calendar'
+    };
+    return materialToPrime[icon] || 'pi-calendar';
   }
 
-  getModeIcon(mode: string): string {
+  getModeIconPrime(mode: string): string {
     switch (mode) {
-      case 'en-personne': return 'group';
-      case 'virtuel': return 'videocam';
-      case 'hybrid': return 'people_outline';
-      default: return 'event';
+      case 'en-personne': return 'pi-map-marker';
+      case 'virtuel': return 'pi-video';
+      case 'hybrid': return 'pi-briefcase';
+      default: return 'pi-calendar';
     }
   }
 openEditEventDialog(event: CalendarEvent): void {
@@ -762,7 +783,20 @@ isSelectedDate(date: Date): boolean {
 }
 
 
-  getEventGradient(typeName: string): string {
+  getEventGradient(event: CalendarEvent): string {
+    const typeName = event.type;
+    const themName = event.program || '';
+
+    if (event.couleur) {
+      return `linear-gradient(135deg, ${event.couleur} 0%, ${this.darkenColor(event.couleur, 20)} 100%)`;
+    }
+
+    // If it's a thematic session (creneau or coaching), use thematic color
+    if (themName && (typeName.toLowerCase().includes('creneau') || typeName.toLowerCase().includes('coaching'))) {
+      const color = this.getThematicColor(themName);
+      return `linear-gradient(135deg, ${color} 0%, ${this.darkenColor(color, 20)} 100%)`;
+    }
+
     const gradients: { [key: string]: string } = {
       'pitch deck': 'linear-gradient(135deg, #ea5073 0%, #d4476a 100%)',
       'pitch': 'linear-gradient(135deg, #ea5073 0%, #d4476a 100%)',
@@ -773,28 +807,37 @@ isSelectedDate(date: Date): boolean {
       'celebration': 'linear-gradient(135deg, #a855f7 0%, #9333ea 100%)',
       'présentation': 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
       'presentation': 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
-      'coaching': 'linear-gradient(135deg, #3B82A6 0%, #2a6b8e 100%)',
-      'creneau': 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
-      'créneau': 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
-      'dispo': 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
       'workshop': 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
     };
 
-  const lowerType = typeName.toLowerCase();
-  for (const [key, gradient] of Object.entries(gradients)) {
-    if (lowerType.includes(key)) {
-      return gradient;
+    const lowerType = typeName.toLowerCase();
+    for (const [key, gradient] of Object.entries(gradients)) {
+      if (lowerType.includes(key)) {
+        return gradient;
+      }
     }
+
+    const eventType = this.eventTypes.find(t => t.name === typeName);
+    if (eventType) {
+      return `linear-gradient(135deg, ${eventType.color} 0%, ${this.darkenColor(eventType.color, 20)} 100%)`;
+    }
+
+    return 'linear-gradient(135deg, #FF4D85 0%, #FF4D85 100%)';
   }
 
+  getThematicColor(themName: string): string {
+    if (this.thematicColors[themName]) return this.thematicColors[themName];
 
-  const eventType = this.eventTypes.find(t => t.name === typeName);
-  if (eventType) {
-    return `linear-gradient(135deg, ${eventType.color} 0%, ${this.darkenColor(eventType.color, 20)} 100%)`;
+    // Generate a consistent color based on thematic name
+    let hash = 0;
+    for (let i = 0; i < themName.length; i++) {
+      hash = themName.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const colorIndex = Math.abs(hash) % this.colorPalette.length;
+    const color = this.colorPalette[colorIndex];
+    this.thematicColors[themName] = color;
+    return color;
   }
-
-  return 'linear-gradient(135deg, #F43F5E 0%, #F43F5E 100%)';
-}
 
 
 private darkenColor(color: string, percent: number): string {
