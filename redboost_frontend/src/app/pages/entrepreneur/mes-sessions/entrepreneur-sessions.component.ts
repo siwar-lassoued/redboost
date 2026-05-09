@@ -50,87 +50,60 @@ type Tab = 'PLANIFIEE' | 'REALISEE' | 'ANNULEE';
         </div>
       </div>
 
-      <!-- SESSIONS CARDS -->
-      @if (groupedSessions().length > 0) {
-        <div class="thematique-booking-list">
-          @for (theme of groupedSessions(); track theme.name) {
-            <div class="thematique-booking-section">
-              <div class="global-thematique-header">
-                <i class="pi pi-bookmark"></i>
-                <h3>{{ theme.name }}</h3>
-              </div>
-
-              <div class="coach-list-in-thematique">
-                @for (coachObj of theme.coaches; track coachObj.coach?.id) {
-                  <div class="coach-booking-section" [style.border-left-color]="getCoachColor(coachObj.coach?.id)">
-                    <div class="coach-header">
-                      <div class="coach-avatar" [style.background]="getCoachColor(coachObj.coach?.id)">
-                        {{ coachObj.coach?.prenom ? coachObj.coach?.prenom[0] : 'C' }}
+      <!-- SESSIONS TABLE -->
+      @if (filteredSessions().length > 0) {
+        <div class="table-card">
+          <div class="table-scroll">
+            <table class="cand-table">
+              <thead>
+                <tr>
+                  <th>Session</th>
+                  <th>Coach</th>
+                  <th>Date & Heure</th>
+                  <th>Type</th>
+                  <th>Statut</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (s of filteredSessions(); track s.id) {
+                  <tr class="table-row" (click)="onViewDetail(s)">
+                    <td>
+                      <div class="name-cell">
+                        <span class="name-text">{{ s.titre || 'Session de coaching' }}</span>
+                        <span class="email-text">ID: #{{ s.id?.substring(0,8) }}</span>
                       </div>
-                      <div class="coach-info">
-                        <h4>{{ coachObj.coach?.prenom }} {{ coachObj.coach?.nom }}</h4>
-                        <p>Coach Expert</p>
+                    </td>
+                    <td>
+                      <div class="coach-cell" *ngIf="s.coach">
+                        <span class="name-text">{{ s.coach.firstName || s.coach.prenom }} {{ s.coach.lastName || s.coach.nom }}</span>
                       </div>
-                    </div>
-
-                    <div class="coach-thematiques-list">
-                      <div class="session-groups-list">
-                        <div class="session-group-item">
-                          <div class="slots-container">
-                            <div class="slots-grid">
-                              @for (s of coachObj.sessions; track s.id) {
-                                <div class="event-detail-card" (click)="onViewDetail(s)">
-                                  <div class="event-card-header">
-                                    <div class="event-icon" [style.background]="'linear-gradient(135deg, #3B82A6, #2C5282)'">
-                                      <i class="pi pi-calendar"></i>
-                                    </div>
-                                    <div class="event-card-title">
-                                      <div class="event-title-row">
-                                        <h4>{{ s.titre || 'Session' }}</h4>
-                                      </div>
-                                      <div class="event-badges">
-                                        <span class="status-badge" [style.background]="getBadge(s.statut).bg" [style.color]="getBadge(s.statut).color">
-                                          {{ getBadge(s.statut).label }}
-                                        </span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                  <div class="event-card-body">
-                                    <div class="event-info-grid">
-                                      <div class="event-info-item">
-                                        <i class="pi pi-clock"></i>
-                                        <span>{{ s.date | date:'dd/MM/yyyy à HH:mm' }}</span>
-                                      </div>
-                                      <div class="event-info-item">
-                                        <i class="pi pi-map-marker"></i>
-                                        <span>{{ s.lieu ? 'Présentiel' : 'En ligne' }}</span>
-                                      </div>
-                                    </div>
-                                    <div class="calendar-action-buttons">
-                                      <button class="gcal-btn" (click)="$event.stopPropagation(); onViewDetail(s)">
-                                        <i class="pi pi-info-circle" style="color: #4285F4"></i>
-                                        <span>Détails</span>
-                                      </button>
-                                      <button *ngIf="s.meetLink && (s.statut === 'PLANIFIEE' || s.statut === 'PLANIFIE')" 
-                                              class="meet-btn" 
-                                              (click)="$event.stopPropagation(); openMeetLink(s.meetLink)">
-                                        <i class="pi pi-video" style="color: #00832D"></i>
-                                        <span>Rejoindre</span>
-                                      </button>
-                                    </div>
-                                  </div>
-                                </div>
-                              }
-                            </div>
-                          </div>
-                        </div>
+                    </td>
+                    <td class="date-cell">
+                      <div class="flex flex-col">
+                        <span>{{ s.date | date:'dd/MM/yyyy' }}</span>
+                        <span class="text-[10px] text-gray-400">{{ s.date | date:'HH:mm' }}</span>
                       </div>
-                    </div>
-                  </div>
+                    </td>
+                    <td>
+                      <span class="type-badge" [class.presentiel]="s.lieu" [class.online]="!s.lieu">
+                        {{ s.lieu ? 'Présentiel' : 'À distance' }}
+                      </span>
+                    </td>
+                    <td>
+                      <div class="status-badge" [style.background]="getBadge(s.statut).bg" [style.color]="getBadge(s.statut).color">
+                        <i class="pi" [class.pi-calendar-clock]="s.statut === 'PLANIFIEE' || s.statut === 'PLANIFIE'" [class.pi-check-circle]="s.statut === 'REALISEE' || s.statut === 'TERMINE'" [class.pi-times-circle]="s.statut === 'ANNULEE'" style="font-size: 10px;"></i>
+                        {{ getBadge(s.statut).label }}
+                      </div>
+                    </td>
+                    <td>
+                      <button (click)="$event.stopPropagation(); onViewDetail(s)" class="btn-detail">Voir détails</button>
+                    </td>
+                  </tr>
                 }
-              </div>
-            </div>
-          }
+              </tbody>
+            </table>
+          </div>
         </div>
       } @else {
         <div class="empty-state">
@@ -143,7 +116,7 @@ type Tab = 'PLANIFIEE' | 'REALISEE' | 'ANNULEE';
 
     <!-- DETAIL MODAL (Admin Style) -->
     @if (showDetail() && selected()) {
-      <div class="modal-overlay" (click)="showDetail.set(false)">
+      <div class="modal-overlay" (click)="closeModal()">
         <div class="modal-box" (click)="$event.stopPropagation()">
           <div class="modal-header">
             <div class="modal-header-left">
@@ -163,7 +136,7 @@ type Tab = 'PLANIFIEE' | 'REALISEE' | 'ANNULEE';
                 </p>
               </div>
             </div>
-            <button (click)="showDetail.set(false)" class="modal-close">
+            <button (click)="closeModal()" class="modal-close">
               <i class="pi pi-times"></i>
             </button>
           </div>
@@ -222,22 +195,38 @@ type Tab = 'PLANIFIEE' | 'REALISEE' | 'ANNULEE';
                     <p>{{ selected()!.annulationMotif }}</p>
                   </div>
                 }
+
+                @if (rescheduleMode()) {
+                  <div class="note-box" style="background: #FFFBEB; border-color: #FDE68A; color: #92400E; margin-top: 16px;">
+                    <p class="note-label">Choisir une nouvelle date</p>
+                    <input type="datetime-local" [ngModel]="newRescheduleDate()" (ngModelChange)="newRescheduleDate.set($event)" class="reschedule-input" />
+                    <div class="reschedule-actions">
+                      <button class="btn-action btn-blue" (click)="confirmReschedule()">Confirmer</button>
+                      <button class="btn-action btn-cancel" (click)="rescheduleMode.set(false)">Annuler</button>
+                    </div>
+                  </div>
+                }
               </div>
             }
           </div>
 
           <div class="modal-footer">
-            @if (selected()!.statut === 'PLANIFIEE' && selected()!.meetLink) {
+            @if ((selected()!.statut === 'PLANIFIEE' || selected()!.statut === 'PLANIFIE') && selected()!.meetLink && !isPast(selected()!.date)) {
               <a [href]="selected()!.meetLink" target="_blank" class="btn-action btn-blue">
                 <i class="pi pi-video"></i> Rejoindre la session
               </a>
             }
+            @if ((selected()!.statut === 'PLANIFIEE' || selected()!.statut === 'PLANIFIE') && !isPast(selected()!.date) && !rescheduleMode()) {
+              <button (click)="rescheduleMode.set(true)" class="btn-action btn-indigo">
+                <i class="pi pi-calendar-plus"></i> Reprogrammer
+              </button>
+            }
             @if (selected()!.statut === 'REALISEE' || selected()!.statut === 'TERMINE') {
-              <button [routerLink]="['/coach-rating', selected()!.id]" (click)="showDetail.set(false)" class="btn-action btn-amber">
+              <button [routerLink]="['/coach-rating', selected()!.id]" (click)="closeModal()" class="btn-action btn-amber">
                 <i class="pi pi-star"></i> Laisser une évaluation
               </button>
             }
-            <button (click)="showDetail.set(false)" class="btn-close-modal">Fermer</button>
+            <button (click)="closeModal()" class="btn-close-modal">Fermer</button>
           </div>
         </div>
       </div>
@@ -267,46 +256,32 @@ type Tab = 'PLANIFIEE' | 'REALISEE' | 'ANNULEE';
     }
     .search-input:focus { border-color: #3B82A6; box-shadow: 0 0 0 3px rgba(59, 130, 166, 0.1); }
 
+    .table-card { background: #fff; border-radius: 20px; overflow: hidden; box-shadow: 0 2px 16px rgba(0,0,0,0.07); border: 1px solid #F1F5F9; }
+    .table-scroll { overflow-x: auto; min-width: 100%; }
+    .cand-table { width: 100%; border-collapse: collapse; text-align: left; }
+    .cand-table th {
+      padding: 12px 16px; font-size: 11px; font-weight: 700; color: #6B7280;
+      text-transform: uppercase; letter-spacing: 0.05em; background: #F9FAFB; border-bottom: 1px solid #F3F4F6;
+    }
+    .cand-table td { padding: 14px 16px; border-bottom: 1px solid #F3F4F6; }
+    .table-row { transition: background .15s; cursor: pointer; }
+    .table-row:hover { background: #FFF5F8; }
+
+    .name-cell { display: flex; flex-direction: column; }
+    .name-text { font-weight: 700; font-size: 14px; color: #1A1A2E; }
+    .email-text { font-size: 11px; color: #9CA3AF; margin-top: 2px; }
+    
+    .type-badge { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; }
+    .type-badge.online { background: #E0F2FE; color: #0369A1; }
+    .type-badge.presentiel { background: #FEF3C7; color: #92400E; }
+    
     .date-cell { font-size: 13px; color: #1A1A2E; font-weight: 500; }
     .status-badge {
       padding: 5px 12px; border-radius: 20px; font-size: 10px; font-weight: 800;
       display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; text-transform: uppercase;
     }
-
-    /* CARD STYLES */
-    .thematique-booking-list { display: flex; flex-direction: column; gap: 32px; margin-top: 16px; }
-    .thematique-booking-section { background: #fff; border-radius: 24px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
-    .global-thematique-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid #F1F5F9; }
-    .global-thematique-header i { font-size: 24px; color: #ea5073; }
-    .global-thematique-header h3 { margin: 0; font-size: 20px; font-weight: 800; color: #1E293B; }
-    
-    .coach-list-in-thematique { display: flex; flex-direction: column; gap: 20px; }
-    .coach-booking-section { border-left: 4px solid #ea5073; padding-left: 20px; }
-    .coach-header { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
-    .coach-avatar { width: 48px; height: 48px; border-radius: 16px; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; }
-    .coach-info h4 { margin: 0 0 4px; font-size: 16px; font-weight: 800; color: #1E293B; }
-    .coach-info p { margin: 0; font-size: 13px; color: #64748B; font-weight: 500; }
-    
-    .slots-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
-    
-    .event-detail-card { background: #fff; border-radius: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #E2E8F0; display: flex; flex-direction: column; gap: 16px; transition: transform 0.2s, box-shadow 0.2s; cursor: pointer; }
-    .event-detail-card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.08); }
-    .event-card-header { display: flex; gap: 16px; align-items: flex-start; }
-    .event-icon { width: 48px; height: 48px; border-radius: 14px; color: white; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
-    .event-card-title { flex: 1; }
-    .event-title-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-    .event-title-row h4 { margin: 0; font-size: 16px; font-weight: 800; color: #1E293B; }
-    
-    .event-info-grid { display: flex; flex-direction: column; gap: 8px; background: #F8FAFC; border-radius: 12px; padding: 12px; margin-bottom: 16px; }
-    .event-info-item { display: flex; align-items: center; gap: 10px; font-size: 13px; color: #475569; font-weight: 600; }
-    .event-info-item i { color: #94A3B8; }
-    
-    .calendar-action-buttons { display: flex; gap: 8px; margin-top: auto; }
-    .calendar-action-buttons button { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px; border-radius: 12px; font-size: 13px; font-weight: 700; border: none; cursor: pointer; transition: all 0.2s; }
-    .gcal-btn { background: #F1F5F9; color: #475569; }
-    .gcal-btn:hover { background: #E2E8F0; color: #1E293B; }
-    .meet-btn { background: #ECFDF5; color: #00832D; }
-    .meet-btn:hover { background: #D1FAE5; }
+    .btn-detail { padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; color: #3B82A6; background: none; border: none; cursor: pointer; transition: all .2s; }
+    .btn-detail:hover { background: #EBF5FF; }
 
     .empty-state { text-align: center; padding: 60px 20px; background: #fff; border-radius: 20px; border: 2px dashed #E5E7EB; }
     .empty-text { color: #6B7280; font-weight: 700; font-size: 16px; margin-top: 8px; }
@@ -342,17 +317,22 @@ type Tab = 'PLANIFIEE' | 'REALISEE' | 'ANNULEE';
     .answer-q-text { font-weight: 800; font-size: 12px; color: #64748B; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
     .answer-text { font-size: 15px; color: #1E293B; font-weight: 600; line-height: 1.5; margin: 0; }
 
-    .note-box { margin-top: 20px; padding: 16px; border-radius: 16px; border: 1px solid; }
+    .note-box { padding: 16px; border-radius: 16px; border: 1px solid; }
     .note-danger { background: #FFF5F5; border-color: #FED7D7; color: #C53030; }
     .note-label { font-size: 11px; font-weight: 800; text-transform: uppercase; margin-bottom: 4px; }
 
-    .modal-footer { padding: 24px 32px; border-top: 1px solid #F1F5F9; display: flex; align-items: center; gap: 16px; }
+    .reschedule-input { width: 100%; padding: 10px 12px; border: 1px solid #FDE68A; border-radius: 10px; font-size: 14px; margin-top: 8px; outline: none; background: #fff; box-sizing: border-box; }
+    .reschedule-actions { display: flex; gap: 8px; margin-top: 12px; }
+
+    .modal-footer { padding: 24px 32px; border-top: 1px solid #F1F5F9; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
     .btn-action {
       display: flex; align-items: center; gap: 10px; padding: 12px 24px;
       border-radius: 16px; font-size: 14px; font-weight: 800; border: none; cursor: pointer; color: #fff; transition: all .2s;
     }
     .btn-blue { background: #3B82A6; box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3); }
     .btn-amber { background: #F59E0B; box-shadow: 0 10px 15px -3px rgba(245, 158, 11, 0.3); }
+    .btn-indigo { background: #6366F1; box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3); }
+    .btn-cancel { background: #E5E7EB; color: #374151; }
     .btn-close-modal { margin-left: auto; font-size: 14px; font-weight: 700; color: #64748B; background: none; border: none; cursor: pointer; }
   `]
 })
@@ -368,6 +348,9 @@ export class EntrepreneurSessionsComponent implements OnInit {
   selected = signal<any | null>(null);
   modalTab = signal<'detail'>('detail');
 
+  rescheduleMode = signal<boolean>(false);
+  newRescheduleDate = signal<string>('');
+
   filteredSessions = computed(() => {
     const tab = this.activeTab();
     const search = this.searchText().toLowerCase().trim();
@@ -379,41 +362,9 @@ export class EntrepreneurSessionsComponent implements OnInit {
       
       if (!search) return true;
       const title = (s.titre || '').toLowerCase();
-      const coachName = s.coach ? `${s.coach.prenom} ${s.coach.nom}`.toLowerCase() : '';
+      const coachName = s.coach ? `${s.coach.prenom || ''} ${s.coach.nom || ''} ${s.coach.firstName || ''} ${s.coach.lastName || ''}`.toLowerCase() : '';
       return title.includes(search) || coachName.includes(search);
     }).sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  });
-
-  groupedSessions = computed<any[]>(() => {
-    const sessions = this.filteredSessions();
-    const map = new Map<string, any>(); // key: thematiqueName
-    
-    sessions.forEach(s => {
-      const themeName = s.thematiqueName || 'Thématique Générale';
-      if (!map.has(themeName)) {
-        map.set(themeName, { name: themeName, coaches: new Map<number, any>() });
-      }
-      
-      const themeObj = map.get(themeName);
-      const coachId = s.coach?.id || 0;
-      
-      if (!themeObj.coaches.has(coachId)) {
-        themeObj.coaches.set(coachId, {
-          coach: s.coach,
-          sessions: []
-        });
-      }
-      
-      themeObj.coaches.get(coachId).sessions.push(s);
-    });
-    
-    // Convert Map to Arrays for the template
-    const result: any[] = Array.from(map.values()).map(t => ({
-      name: t.name,
-      coaches: Array.from(t.coaches.values())
-    }));
-    
-    return result;
   });
 
   ngOnInit(): void {
@@ -445,32 +396,51 @@ export class EntrepreneurSessionsComponent implements OnInit {
 
   onViewDetail(s: any) {
     this.selected.set(s);
+    this.rescheduleMode.set(false);
+    this.newRescheduleDate.set('');
     this.showDetail.set(true);
+  }
+
+  closeModal() {
+    this.showDetail.set(false);
+    this.rescheduleMode.set(false);
+  }
+
+  isPast(date: string): boolean {
+    return new Date(date) < new Date();
+  }
+
+  confirmReschedule() {
+    if (!this.newRescheduleDate()) {
+      alert('Veuillez choisir une date.');
+      return;
+    }
+    const sessionId = this.selected()!.id;
+    const user = this.authSvc.currentUser$.value;
+
+    this.sessionSvc.requestReschedule(sessionId, this.newRescheduleDate(), user!.id).subscribe({
+      next: () => {
+        alert('Demande de reprogrammation envoyée au coach.');
+        this.closeModal();
+        this.loadSessions();
+      },
+      error: (err: any) => {
+        alert(err.error?.error || err.error?.message || 'Erreur lors de la reprogrammation.');
+        console.error(err);
+      }
+    });
   }
 
   getBadge(statut: string) {
     const config: Record<string, { label: string; bg: string; color: string }> = {
       PLANIFIE:  { label: 'Planifiée', bg: '#EBF5FF', color: '#3B82A6' },
       PLANIFIEE: { label: 'Planifiée', bg: '#EBF5FF', color: '#3B82A6' },
+      DEMANDE:   { label: 'À confirmer', bg: '#EDE9FE', color: '#6D28D9' },
       REALISEE:  { label: 'Terminée', bg: '#ECFDF5', color: '#10B981' },
       TERMINE:   { label: 'Terminée', bg: '#ECFDF5', color: '#10B981' },
       ANNULEE:   { label: 'Annulée',  bg: '#FEF2F2', color: '#EF4444' },
       ANNULE:    { label: 'Annulée',  bg: '#FEF2F2', color: '#EF4444' },
     };
     return config[statut] || { label: statut, bg: '#F1F5F9', color: '#475569' };
-  }
-
-  getCoachColor(coachId: number | undefined): string {
-    if (!coachId) return '#3B82A6';
-    const colors = [
-      '#ea5073', '#3B82A6', '#F59E0B', '#10B981', '#8B5CF6', '#EC4899', '#14B8A6'
-    ];
-    return colors[coachId % colors.length];
-  }
-
-  openMeetLink(link: string) {
-    if (link) {
-      window.open(link, '_blank');
-    }
   }
 }

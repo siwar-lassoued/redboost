@@ -76,9 +76,16 @@ public class SessionController {
     @PostMapping("/{id}/reschedule")
     public ResponseEntity<Void> requestReschedule(@PathVariable String id, @RequestBody Map<String, String> payload) {
         String note = payload.get("note");
-        // Update the session's entrepreneur notes and change status to DEMANDE
+        String newDateStr = payload.get("newDate"); // Expected ISO format like '2026-05-10T10:00:00'
+        
         Session s = sessionService.getById(id);
-        s.setNotesEntrepreneur(note);
+        if (note != null) {
+            s.setNotesEntrepreneur(note);
+        }
+        if (newDateStr != null && !newDateStr.isEmpty()) {
+            s.setDate(java.time.LocalDateTime.parse(newDateStr));
+        }
+        
         s.setStatut(Session.Statut.DEMANDE);
         sessionService.update(id, s);
         return ResponseEntity.ok().build();

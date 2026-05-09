@@ -165,7 +165,24 @@ export class MesCoachsComponent implements OnInit {
   ngOnInit(): void {
     const user = this.authSvc.currentUser$.value;
     if (user?.id) {
-      this.matchSvc.getEntrepreneurCoaches(user.id).subscribe(data => this.matchings.set(data));
+      this.matchSvc.getEntrepreneurCoaches(user.id).subscribe(data => {
+        const sanitize = (v: any) => (v === 'Non spécifié' || v === 'non spécifié' || v === 'null' || v === null) ? '' : v;
+        const uniqueCoaches = new Map<string, MatchingView>();
+        
+        (data || []).forEach(c => {
+          if (!uniqueCoaches.has(c.id)) {
+            uniqueCoaches.set(c.id, {
+              ...c,
+              nom: sanitize(c.nom),
+              specialite: sanitize(c.specialite),
+              thematiqueName: sanitize(c.thematiqueName),
+              pointsForts: sanitize(c.pointsForts)
+            });
+          }
+        });
+        
+        this.matchings.set(Array.from(uniqueCoaches.values()));
+      });
       this.loadSessions(user.id);
     }
   }

@@ -203,6 +203,11 @@ export class AppMenu implements OnInit {
                         routerLink: ['/admin_planning'],
                     },
                     {
+                        label: 'Vue 360° Supervision',
+                        icon: 'pi pi-fw pi-eye',
+                        routerLink: ['/admin-supervision'],
+                    },
+                    {
                         label: 'Évaluations Coach',
                         icon: 'pi pi-fw pi-star-fill',
                         routerLink: ['/admin-evaluations'],
@@ -216,6 +221,11 @@ export class AppMenu implements OnInit {
                         label: 'Livrables Coach',
                         icon: 'pi pi-fw pi-file',
                         routerLink: ['/admin-livrables'],
+                    },
+                    {
+                        label: 'Réclamations',
+                        icon: 'pi pi-fw pi-exclamation-triangle',
+                        routerLink: ['/admin-reclamations'],
                     },
                 ],
             },
