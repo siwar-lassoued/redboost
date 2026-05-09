@@ -2,7 +2,7 @@ import { Component, signal, computed, inject, ChangeDetectionStrategy, OnInit } 
 import { CommonModule } from '@angular/common';
 import { LivrableService } from '../../../core/services/livrable.service';
 import { AuthService } from '../../../core/services/auth.service';
-import { environment } from '../../../../../environment';
+import { environment } from '../../../../environment';
 
 type LivTab = 'ALL' | 'EN_ATTENTE' | 'VALIDE' | 'REJETE';
 

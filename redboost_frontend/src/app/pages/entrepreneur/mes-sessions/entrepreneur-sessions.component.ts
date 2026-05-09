@@ -11,7 +11,7 @@ type Tab = 'PLANIFIEE' | 'REALISEE' | 'ANNULEE';
   selector: 'rb-entrepreneur-sessions',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, RouterLink, FormsModule],
   template: `
     <div class="cand-page">
       <!-- PAGE HEADER -->
