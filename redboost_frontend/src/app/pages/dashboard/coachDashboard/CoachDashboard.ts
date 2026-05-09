@@ -218,7 +218,7 @@ interface NoteDeSynthese {
                             <div class="ent-main">
                                 <div class="ent-top">
                                     <span class="ent-name">{{ ent.firstName }} {{ ent.lastName }}</span>
-                                    <span *ngIf="ent.delayedTasksCount > 0" class="retard-badge">
+                                    <span *ngIf="(ent.delayedTasksCount || 0) > 0" class="retard-badge">
                                         {{ ent.delayedTasksCount }} en retard
                                     </span>
                                 </div>
