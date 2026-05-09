@@ -701,6 +701,9 @@ public class CoachService {
         if (!bookings.isEmpty()) {
             dto.setMeetLink(bookings.get(0).getMeetLink());
             dto.setIsExceptionnelle(bookings.get(0).getIsExceptionnelle());
+            if (bookings.get(0).getStatut() != null) {
+                dto.setBookingStatus(bookings.get(0).getStatut().name());
+            }
         } else {
             dto.setIsExceptionnelle(false);
         }

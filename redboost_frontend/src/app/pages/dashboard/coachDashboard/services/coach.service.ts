@@ -28,6 +28,8 @@ export interface SessionCoachDTO {
   isGroupReservedByMe?: boolean;
   meetLink?: string;
   couleur?: string;
+  isExceptionnelle?: boolean;
+  bookingStatus?: string;
 }
 
 export interface SessionGroupDTO {

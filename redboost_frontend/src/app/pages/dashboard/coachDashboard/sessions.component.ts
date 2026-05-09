@@ -35,19 +35,30 @@ export interface SessionGroup {
           </div>
       </div>
 
-      <!-- SEARCH & FILTERS -->
-      <div class="cand-filters">
+      <!-- TABS & FILTERS -->
+      <div class="sessions-nav-header">
+        <div class="status-tabs">
+          <button (click)="setFilter('en_cours')" [class.active]="activeFilter === 'en_cours'" class="tab-btn">
+            <i class="pi pi-calendar"></i> En cours
+          </button>
+          <button (click)="setFilter('termine')" [class.active]="activeFilter === 'termine'" class="tab-btn">
+            <i class="pi pi-check-circle"></i> Terminées
+          </button>
+          <button (click)="setFilter('annule')" [class.active]="activeFilter === 'annule'" class="tab-btn">
+            <i class="pi pi-times-circle"></i> Annulées
+          </button>
+        </div>
+
+        <div class="filters-secondary">
           <div class="search-wrap">
               <i class="pi pi-search search-icon"></i>
-              <input type="text" placeholder="Rechercher par titre de session..." [(ngModel)]="searchTerm" (ngModelChange)="filterSessions()" class="search-input" />
+              <input type="text" placeholder="Rechercher une session..." [(ngModel)]="searchTerm" (ngModelChange)="filterSessions()" class="search-input" />
           </div>
-          <div class="filter-selects">
-            <select [(ngModel)]="activeFilter" (ngModelChange)="filterSessions()" class="filter-select">
-                <option value="all">Tous les créneaux</option>
-                <option value="upcoming">À venir</option>
-                <option value="past">Passés</option>
-            </select>
-          </div>
+          <label class="toggle-exceptionnelle">
+            <input type="checkbox" [(ngModel)]="showExceptionnelle" (change)="filterSessions()">
+            <span class="toggle-label">Sessions exceptionnelles</span>
+          </label>
+        </div>
       </div>
 
       <!-- SESSIONS TABLE -->
@@ -70,8 +81,11 @@ export interface SessionGroup {
                   <tr class="table-row">
                     <td>
                       <div class="name-cell">
-                        <span class="name-text">{{ g.titre }}</span>
-                        <span class="email-text">Groupe: {{ g.sessionGroupId.substring(0,8) }}</span>
+                        <div class="flex items-center gap-2">
+                          <span class="name-text">{{ g.titre }}</span>
+                          <span *ngIf="g.sessions[0]?.isExceptionnelle" class="exception-badge">Exceptionnelle</span>
+                        </div>
+                        <span class="email-text">ID Groupe: {{ g.sessionGroupId.substring(0,8) }}</span>
                       </div>
                     </td>
                     <td>
@@ -106,9 +120,15 @@ export interface SessionGroup {
                       </div>
                     </td>
                     <td>
-                      <div class="status-badge" [class.upcoming]="g.isUpcoming" [class.past]="!g.isUpcoming">
-                        <i class="pi" [class.pi-calendar-clock]="g.isUpcoming" [class.pi-check-circle]="!g.isUpcoming"></i>
-                        {{ g.isUpcoming ? 'À venir' : 'Terminée' }}
+                      <div class="status-badge" 
+                        [class.upcoming]="g.isUpcoming && !hasCancelled(g)" 
+                        [class.past]="!g.isUpcoming && !hasCancelled(g)"
+                        [class.cancelled]="hasCancelled(g)">
+                        <i class="pi" 
+                          [class.pi-calendar-clock]="g.isUpcoming && !hasCancelled(g)" 
+                          [class.pi-check-circle]="!g.isUpcoming && !hasCancelled(g)"
+                          [class.pi-times-circle]="hasCancelled(g)"></i>
+                        {{ hasCancelled(g) ? 'Annulée' : (g.isUpcoming ? 'À venir' : 'Terminée') }}
                       </div>
                     </td>
                     <td>
@@ -275,6 +295,23 @@ export interface SessionGroup {
     }
     .filter-select { padding: 10px 14px; border: 1px solid #E5E7EB; border-radius: 12px; font-size: 13px; outline: none; color: #333; cursor: pointer; background: #fff; }
 
+    /* NEW TABS & TOGGLE */
+    .sessions-nav-header { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 24px; flex-wrap: wrap; }
+    .status-tabs { display: flex; background: #fff; padding: 6px; border-radius: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+    .tab-btn {
+      padding: 10px 20px; border: none; background: transparent; border-radius: 12px;
+      font-size: 14px; font-weight: 700; color: #64748B; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px;
+    }
+    .tab-btn:hover { background: #F8FAFC; color: #334155; }
+    .tab-btn.active { background: #ea5073; color: white; box-shadow: 0 4px 12px rgba(234, 80, 115, 0.3); }
+    
+    .filters-secondary { display: flex; align-items: center; gap: 20px; flex: 1; justify-content: flex-end; }
+    .toggle-exceptionnelle { display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
+    .toggle-exceptionnelle input { width: 18px; height: 18px; cursor: pointer; accent-color: #ea5073; }
+    .toggle-label { font-size: 14px; font-weight: 600; color: #475569; }
+    
+    .exception-badge { background: #FDECF2; color: #ea5073; padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+
     .table-card { background: #fff; border-radius: 20px; overflow: hidden; box-shadow: 0 2px 16px rgba(0,0,0,0.07); }
     .cand-table { width: 100%; border-collapse: collapse; text-align: left; }
     .cand-table th { padding: 12px 16px; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; background: #F9FAFB; border-bottom: 1px solid #F3F4F6; }
@@ -299,6 +336,7 @@ export interface SessionGroup {
     .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; }
     .status-badge.upcoming { background: #D1FAE5; color: #065F46; }
     .status-badge.past { background: #F3F4F6; color: #9CA3AF; }
+    .status-badge.cancelled { background: #FEE2E2; color: #B91C1C; }
     
     .action-buttons { display: flex; align-items: center; gap: 8px; }
     .btn-detail { padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; color: #ea5073; border: 1px solid #ea5073; background: transparent; cursor: pointer; transition: all .2s; }
@@ -339,7 +377,9 @@ export class SessionsComponent implements OnInit {
   coachId!: number;
   loading: boolean = false;
   searchTerm: string = '';
-  activeFilter: string = 'all';
+  activeFilter: string = 'en_cours';
+  showExceptionnelle: boolean = true;
+  showOnlyReserved: boolean = true;
   sessions: SessionCoachDTO[] = [];
   filteredGroups: SessionGroup[] = [];
   selectedGroup: SessionGroup | null = null;
@@ -386,7 +426,9 @@ export class SessionsComponent implements OnInit {
           heureFin: se.heureFin,
           typeSession: 'EN_LIGNE',
           sessionGroupId: `seance-${se.id}`,
-          isBooked: true
+          isBooked: true,
+          isExceptionnelle: true,
+          bookingStatus: 'CONFIRME'
         } as SessionCoachDTO));
 
         this.sessions = [...sessions, ...mappedSeances];
@@ -443,17 +485,31 @@ export class SessionsComponent implements OnInit {
   filterSessions() {
     let rawResult = [...this.sessions];
     
+    // Search
     if (this.searchTerm.trim()) {
       const term = this.searchTerm.toLowerCase();
       rawResult = rawResult.filter(s => s.titre.toLowerCase().includes(term));
     }
 
+    // Exceptional Sessions Filter
+    if (!this.showExceptionnelle) {
+      rawResult = rawResult.filter(s => !s.isExceptionnelle);
+    }
+
     let grouped = this.groupSessions(rawResult);
 
-    if (this.activeFilter === 'upcoming') {
-      grouped = grouped.filter(g => g.isUpcoming);
-    } else if (this.activeFilter === 'past') {
-      grouped = grouped.filter(g => !g.isUpcoming);
+    // Reserved Only Filter
+    if (this.showOnlyReserved) {
+      grouped = grouped.filter(g => g.bookedSlots > 0);
+    }
+
+    // Status Filter (Tabs)
+    if (this.activeFilter === 'en_cours') {
+      grouped = grouped.filter(g => g.isUpcoming && !this.hasCancelled(g));
+    } else if (this.activeFilter === 'termine') {
+      grouped = grouped.filter(g => !g.isUpcoming && !this.hasCancelled(g));
+    } else if (this.activeFilter === 'annule') {
+      grouped = grouped.filter(g => this.hasCancelled(g));
     }
 
     this.filteredGroups = grouped.sort((a,b) => {
@@ -461,6 +517,10 @@ export class SessionsComponent implements OnInit {
         const dateB = new Date(b.sessions[0].dateSession).getTime();
         return dateB - dateA;
     });
+  }
+
+  hasCancelled(g: SessionGroup): boolean {
+    return g.sessions.some(s => s.bookingStatus === 'ANNULE');
   }
 
   viewGroupDetails(g: SessionGroup) {
