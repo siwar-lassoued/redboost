@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { CoachService, SeanceExceptionnelleDTO, CoachEntrepreneurDTO } from './services/coach.service';
+import { CoachService, SeanceExceptionnelleDTO, CoachEntrepreneurDTO, SessionCoachDTO } from './services/coach.service';
 import { AuthService } from '../../frontoffice/service/auth.service';
 import { ToastrService } from 'ngx-toastr';
 

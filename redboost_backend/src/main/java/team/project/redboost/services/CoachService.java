@@ -210,11 +210,28 @@ public class CoachService {
     public List<CoachCalendarEventDTO> getCalendarEvents(Long coachId) {
         List<CoachCalendarEventDTO> events = new ArrayList<>();
 
+        // Get all booked sessions for this coach to check if slots are booked
+        List<team.project.redboost.entities.Session> allBookedSessions = sessionRepository.findByCoachId(coachId);
+        Set<String> bookedSlotIds = allBookedSessions.stream()
+                .filter(s -> s.getDisponibiliteId() != null)
+                .map(team.project.redboost.entities.Session::getDisponibiliteId)
+                .collect(Collectors.toSet());
+
+        // 1. Session Slots (Defined by coach)
         sessionCoachRepository.findByDisponibiliteCoachId(coachId).forEach(s -> {
             String thematiqueNom = null;
-            if (s.getDisponibilite() != null && s.getDisponibilite().getThematique() != null) {
-                thematiqueNom = s.getDisponibilite().getThematique().getNom();
+            String color = "#4299E1"; // Default
+            if (s.getDisponibilite() != null) {
+                if (s.getDisponibilite().getThematique() != null) {
+                    thematiqueNom = s.getDisponibilite().getThematique().getNom();
+                }
+                if (s.getDisponibilite().getCouleur() != null) {
+                    color = s.getDisponibilite().getCouleur();
+                }
             }
+            
+            boolean isBooked = bookedSlotIds.contains(String.valueOf(s.getId()));
+
             events.add(CoachCalendarEventDTO.builder()
                     .id("slot-" + s.getId())
                     .type("SESSION_SLOT")
@@ -224,38 +241,56 @@ public class CoachService {
                     .endTime(String.valueOf(s.getHeureFin()))
                     .source("coach")
                     .thematiqueNom(thematiqueNom)
+                    .color(color)
+                    .booked(isBooked)
                     .build());
         });
 
-        sessionRepository.findByCoachId(coachId).forEach(s -> {
-            String thematiqueNom = null;
+        // 2. Booked Sessions (Detailed session info with entrepreneur)
+        allBookedSessions.forEach(s -> {
+            String thematiqueNom = s.getThematiqueName();
+            String color = "#38B2AC"; // Default
+            
             if (s.getDisponibiliteId() != null) {
                 try {
-                    Long dispoId = Long.parseLong(s.getDisponibiliteId());
-                    sessionCoachRepository.findById(dispoId).ifPresent(slot -> {
-                        if (slot.getDisponibilite() != null && slot.getDisponibilite().getThematique() != null) {
-                            s.setThematiqueName(slot.getDisponibilite().getThematique().getNom());
+                    Long slotId = Long.parseLong(s.getDisponibiliteId());
+                    SessionCoach slot = sessionCoachRepository.findById(slotId).orElse(null);
+                    if (slot != null && slot.getDisponibilite() != null) {
+                        if (slot.getDisponibilite().getThematique() != null) {
+                            thematiqueNom = slot.getDisponibilite().getThematique().getNom();
                         }
-                    });
+                        if (slot.getDisponibilite().getCouleur() != null) {
+                            color = slot.getDisponibilite().getCouleur();
+                        }
+                    }
                 } catch (Exception ignored) {}
             }
-            thematiqueNom = s.getThematiqueName();
 
             events.add(CoachCalendarEventDTO.builder()
                     .id("session-" + s.getId())
                     .type("SESSION")
-                    .title(s.getTitre())
+                    .title(s.getTitre() + (s.getEntrepreneur() != null ? " - " + s.getEntrepreneur().getFirstName() : ""))
                     .date(String.valueOf(s.getDate().toLocalDate()))
                     .startTime(String.valueOf(s.getDate().toLocalTime()))
                     .source("entrepreneur")
                     .thematiqueNom(thematiqueNom)
+                    .color(color)
+                    .booked(true)
                     .build());
         });
 
+        // 3. Exceptional Sessions
         seanceExceptionnelleRepository.findByCoachId(coachId).forEach(s -> {
             String thematiqueNom = null;
+            String color = "#ED8936";
             if (s.getThematique() != null) {
                 thematiqueNom = s.getThematique().getNom();
+                // Find if there's a disponibilite for this theme to get the color
+                Disponibilite dispo = disponibiliteRepository.findByCoachIdAndThematiqueId(coachId, s.getThematique().getId())
+                        .stream().findFirst().orElse(null);
+                if (dispo != null && dispo.getCouleur() != null) {
+                    color = dispo.getCouleur();
+                }
             }
             events.add(CoachCalendarEventDTO.builder()
                     .id("seance-" + s.getId())
@@ -266,6 +301,8 @@ public class CoachService {
                     .endTime(String.valueOf(s.getHeureFin()))
                     .source("coach")
                     .thematiqueNom(thematiqueNom)
+                    .color(color)
+                    .booked(true)
                     .build());
         });
 
