@@ -133,6 +133,9 @@ public class MatchingIaService {
 
             m.put("nb_entrepreneurs_actifs", activeCount);
             m.put("note_moyenne_coaching_rating", Math.round(ratingMoyen * 10.0) / 10.0);
+            return m;
+        }).collect(Collectors.toList());
+
         // ── 5. Construire le profil enrichi de chaque entrepreneur ───
         List<Map<String, Object>> entrepreneursData = entrepreneursAMatcher.stream().map(u -> {
             Map<String, Object> m = new LinkedHashMap<>();
