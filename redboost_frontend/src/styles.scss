@@ -261,3 +261,68 @@ body.blocked-scroll {
     }
 }
 
+/* ══ Global Badge System (cohérent avec profile.component.scss) ══ */
+
+/* Badge de messages non lus dans le menu sidebar */
+.coach-msg-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    background: linear-gradient(135deg, #DC2626, #111827);
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 800;
+    border-radius: 20px;
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.4);
+    margin-left: auto;
+}
+
+/* Badge de rôle générique (utilisé dans les cartes entrepreneur, détail, dashboard) */
+.app-role-badge {
+    display: inline-block;
+    background: linear-gradient(to right, #DC2626, #111827);
+    color: white;
+    padding: 0.25rem 1rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+/* Badge de statut de session (confirmé / en attente) */
+.session-badge-confirmed {
+    background: #ecfdf5;
+    color: #059669;
+    padding: 0.25rem 0.75rem;
+    border-radius: 100px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.session-badge-pending {
+    background: #fffbeb;
+    color: #d97706;
+    padding: 0.25rem 0.75rem;
+    border-radius: 100px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+/* Badge alerte retard */
+.retard-badge-global {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #fef2f2;
+    color: #dc2626;
+    padding: 0.2rem 0.6rem;
+    border-radius: 100px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}

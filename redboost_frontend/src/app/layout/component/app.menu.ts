@@ -130,7 +130,7 @@ export class AppMenu implements OnInit {
             group.items?.forEach(item => {
                 if (item.label === 'Messagerie' || item.label === 'Chat') {
                     item.badge = badgeStr;
-                    item.badgeStyleClass = 'bg-red-500 text-white font-bold rounded-full px-2 py-0.5 text-xs ml-auto';
+                    item.badgeStyleClass = 'coach-msg-badge';
                 }
             });
         });
