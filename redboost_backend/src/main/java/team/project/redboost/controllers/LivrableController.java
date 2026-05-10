@@ -48,7 +48,6 @@ public class LivrableController {
                             && l.getEntrepreneur().getId().equals(entrepreneurId))
                     .collect(Collectors.toList());
         }
-
         if (coachId != null) {
             User coach = userRepository.findById(coachId).orElse(null);
             if (coach != null && coach.getEmail() != null) {
@@ -57,6 +56,10 @@ public class LivrableController {
                         .filter(l -> coachEmail.equals(l.getCoachEmail()))
                         .collect(Collectors.toList());
             }
+        }
+
+        if (entrepreneurId != null && !livrables.isEmpty()) {
+            livrables = livrableService.enrichLivrablesForEntrepreneur(livrables, entrepreneurId);
         }
 
         return ResponseEntity.ok(livrables);
@@ -83,10 +86,7 @@ public class LivrableController {
         return ResponseEntity.ok(livrableService.createLivrable(livrable));
     }
 
-    /**
-     * Upload a file and create one Livrable record per entrepreneur.
-     * The uploading coach's identity is extracted from the JWT and stored on each record.
-     */
+  
     @PostMapping(value = "/upload", produces = "application/json")
     public ResponseEntity<List<Livrable>> uploadLivrable(
             @RequestParam("file") MultipartFile file,

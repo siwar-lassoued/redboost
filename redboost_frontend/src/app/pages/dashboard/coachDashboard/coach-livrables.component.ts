@@ -193,12 +193,18 @@ import { environment } from '../../../../environment';
 
                   <div class="form-group" style="margin-bottom: 16px; display: flex; gap: 1rem;">
                       <div style="flex: 1;">
-                          <label class="form-label">Thématique (Optionnel)</label>
-                          <input type="text" class="search-input-alt" [(ngModel)]="newLivrable.thematiqueName" placeholder="Ex: Finance" />
+                          <label class="form-label">Thématique *</label>
+                          <select class="search-input-alt" [(ngModel)]="newLivrable.thematiqueName" (change)="onThematiqueChange()">
+                              <option [ngValue]="''">Sélectionner une thématique...</option>
+                              <option *ngFor="let t of formThematiques" [value]="t.nom">{{t.nom}}</option>
+                          </select>
                       </div>
                       <div style="flex: 1;">
-                          <label class="form-label">Session (Optionnel)</label>
-                          <input type="text" class="search-input-alt" [(ngModel)]="newLivrable.sessionName" placeholder="Ex: Session 1" />
+                          <label class="form-label">Session *</label>
+                          <select class="search-input-alt" [(ngModel)]="newLivrable.sessionName" [disabled]="!newLivrable.thematiqueName">
+                              <option [ngValue]="''">Sélectionner une session...</option>
+                              <option *ngFor="let s of filteredFormSessions" [value]="s.titre">{{s.titre}}</option>
+                          </select>
                       </div>
                   </div>
 
@@ -263,7 +269,7 @@ import { environment } from '../../../../environment';
 
               <div class="modal-footer">
                   <button class="btn-close-modal" (click)="showDepotModal = false" style="margin-right: 12px;">Annuler</button>
-                  <button class="btn-detail" (click)="deposerLivrable()" [disabled]="loading || !selectedFile || !newLivrable.titre" style="background: #ea5073; color: white;">
+                  <button class="btn-detail" (click)="deposerLivrable()" [disabled]="loading || !selectedFile || !newLivrable.titre || !newLivrable.thematiqueName || !newLivrable.sessionName" style="background: #ea5073; color: white;">
                       <i class="pi" [class.pi-check]="!loading" [class.pi-spin]="loading" [class.pi-spinner]="loading" style="margin-right: 6px;"></i>
                       {{ loading ? 'Dépôt en cours...' : 'Confirmer le dépôt' }}
                   </button>
@@ -321,7 +327,7 @@ import { environment } from '../../../../environment';
     .livrable-item:hover { transform: translateX(5px); border-color: #e2e8f0; box-shadow: 0 10px 30px rgba(0,0,0,.05); }
 
     .livrable-main { display: flex; justify-content: space-between; align-items: center; gap: 2rem; flex-wrap: wrap; }
-    .livrable-info-grid { display: grid; grid-template-columns: 1.5fr 2fr 2fr 2fr 1fr; gap: 1.5rem; flex: 1; align-items: start; }
+    .livrable-info-grid { display: grid; grid-template-columns: 1.5fr 1.5fr 1.5fr 1.5fr 1.5fr 1fr; gap: 1rem; flex: 1; align-items: start; }
     
     .info-cell { display: flex; flex-direction: column; gap: 0.75rem; }
     .cell-label { font-size: 0.75rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -344,11 +350,14 @@ import { environment } from '../../../../environment';
     .doc-link-wrap i { font-size: 1.25rem; }
     .doc-title { font-weight: 600; color: #1e293b; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; }
 
-    .status-badge { padding: 0.4rem 0.8rem; border-radius: 8px; font-size: 0.75rem; font-weight: 800; text-align: center; }
-    .status-badge.submitted, .status-badge.pending_review { background: #fef3c7; color: #d97706; }
-    .status-badge.accepted, .status-badge.valide, .status-badge.approved { background: #dcfce7; color: #15803d; }
-    .status-badge.rejected, .status-badge.rejete { background: #fee2e2; color: #b91c1c; }
-    .status-badge.revision { background: #eff6ff; color: #1d4ed8; }
+    .doc-link-wrap.clickable { cursor: pointer; transition: background 0.2s; }
+    .doc-link-wrap.clickable:hover { background: #e2e8f0; }
+
+    .status-badge { padding: 0.4rem 0.8rem; border-radius: 8px; font-size: 0.75rem; font-weight: 800; text-align: center; width: fit-content; }
+    .status-badge.travail_demande { background: #eff6ff; color: #1d4ed8; }
+    .status-badge.soumis, .status-badge.submitted, .status-badge.pending_review { background: #fef3c7; color: #d97706; }
+    .status-badge.accepte, .status-badge.accepted, .status-badge.valide, .status-badge.approved { background: #dcfce7; color: #15803d; }
+    .status-badge.en_revision, .status-badge.revision, .status-badge.rejected, .status-badge.rejete { background: #fee2e2; color: #b91c1c; }
 
     .livrable-actions { display: flex; flex-direction: column; gap: 0.5rem; }
     .action-btn { border: none; padding: 0.6rem 1rem; border-radius: 10px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: all 0.2s; font-size: 0.85rem; }
@@ -470,6 +479,8 @@ export class CoachLivrablesComponent implements OnInit {
 
   programmes: ProgrammeDTO[] = [];
   entrepreneurs: (UserDTO & { selected?: boolean })[] = [];
+  formThematiques: any[] = [];
+  formSessions: any[] = [];
   thematiques: string[] = [];
   
   allLivrables: any[] = [];
@@ -496,6 +507,28 @@ export class CoachLivrablesComponent implements OnInit {
     this.loadProgrammes(this.coachId);
     this.loadEntrepreneurs();
     this.loadLivrables();
+    this.loadFormData(this.coachId);
+  }
+
+  loadFormData(coachId: number) {
+    this.coachService.getThematiquesAssignedToCoach(coachId).subscribe({
+      next: (data) => this.formThematiques = data || [],
+      error: () => { this.formThematiques = []; }
+    });
+
+    this.coachService.getAllSessionsByCoach(coachId).subscribe({
+      next: (data) => this.formSessions = data || [],
+      error: () => { this.formSessions = []; }
+    });
+  }
+
+  onThematiqueChange() {
+    this.newLivrable.sessionName = '';
+  }
+
+  get filteredFormSessions() {
+    if (!this.newLivrable.thematiqueName) return [];
+    return this.formSessions.filter(s => s.thematiqueNom === this.newLivrable.thematiqueName);
   }
 
   loadLivrables() {
@@ -704,7 +737,7 @@ export class CoachLivrablesComponent implements OnInit {
 
   deposerLivrable() {
     const selectedEnts = this.entrepreneurs.filter(e => e.selected);
-    if (!this.newLivrable.titre || !this.selectedFile || selectedEnts.length === 0) {
+    if (!this.newLivrable.titre || !this.selectedFile || selectedEnts.length === 0 || !this.newLivrable.thematiqueName || !this.newLivrable.sessionName) {
       return;
     }
     this.loading = true;

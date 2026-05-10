@@ -136,10 +136,45 @@ public class LivrableService {
                 l.setTacheDate(l.getTache().getDateLimite());
             }
 
-            if (l.getEntrepreneur() != null) {
+            if (l.getEntrepreneur() != null && (l.getSessionName() == null || l.getSessionName().isEmpty())) {
                 List<team.project.redboost.entities.Session> sessions = sessionRepository.findByCoachIdAndEntrepreneurId(coachId, l.getEntrepreneur().getId());
                 if (!sessions.isEmpty()) {
                     l.setSessionName(sessions.get(0).getTitre());
+                }
+            }
+        }
+        return livrables;
+    }
+
+    public List<Livrable> enrichLivrablesForEntrepreneur(List<Livrable> livrables, Long entrepreneurId) {
+        if (livrables == null || livrables.isEmpty()) return livrables;
+        List<team.project.redboost.entities.Matching> matchings = matchingRepository.findByEntrepreneurIdAndStatut(entrepreneurId, team.project.redboost.entities.Matching.StatutMatching.VALIDE);
+        
+        for (Livrable l : livrables) {
+            if (l.getCoachEmail() != null && (l.getCoachName() == null || l.getCoachName().isEmpty())) {
+                team.project.redboost.entities.User coach = userRepository.findByEmail(l.getCoachEmail());
+                if (coach != null) l.setCoachName(coach.getFirstName() + " " + coach.getLastName());
+            }
+            
+            if (l.getCoachEmail() != null) {
+                team.project.redboost.entities.User coach = userRepository.findByEmail(l.getCoachEmail());
+                if (coach != null) {
+                    team.project.redboost.entities.Matching m = matchings.stream()
+                        .filter(match -> match.getCoachId().equals(coach.getId()))
+                        .findFirst().orElse(null);
+                        
+                    if (m != null) {
+                        if (m.getThematiqueId() != null && (l.getThematiqueName() == null || l.getThematiqueName().isEmpty())) {
+                            thematiqueRepository.findById(m.getThematiqueId()).ifPresent(t -> l.setThematiqueName(t.getNom()));
+                        }
+                    }
+                    
+                    if (l.getSessionName() == null || l.getSessionName().isEmpty()) {
+                        List<team.project.redboost.entities.Session> sessions = sessionRepository.findByCoachIdAndEntrepreneurId(coach.getId(), entrepreneurId);
+                        if (!sessions.isEmpty()) {
+                            l.setSessionName(sessions.get(0).getTitre());
+                        }
+                    }
                 }
             }
         }
