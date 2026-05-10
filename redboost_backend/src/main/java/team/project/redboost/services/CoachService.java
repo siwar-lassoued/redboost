@@ -983,8 +983,8 @@ public class CoachService {
         
         List<Matching.StatutMatching> statuses = List.of(
             Matching.StatutMatching.VALIDE, 
-            Matching.StatutMatching.ARCHIVE, 
-            Matching.StatutMatching.TERMINE
+            Matching.StatutMatching.TERMINE,
+            Matching.StatutMatching.LIBERE
         );
         
         List<Matching> allMatchings = new ArrayList<>();
