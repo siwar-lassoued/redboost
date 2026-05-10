@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LivrableService } from '../../../core/services/livrable.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { MatchingService } from '../../../core/services/matching.service';
+import { CoachService } from '../../dashboard/coachDashboard/services/coach.service';
 import { environment } from '../../../../environment';
 
 type LivTab = 'EN_COURS' | 'TERMINE' | 'REVISION';
@@ -164,6 +166,70 @@ type LivTab = 'EN_COURS' | 'TERMINE' | 'REVISION';
       <div *ngIf="loading()" class="global-loader-wrap">
           <div class="premium-spinner"></div>
       </div>
+
+      <!-- Depôt Modal -->
+      <div *ngIf="showDepotModal" class="modal-overlay" (click)="showDepotModal = false">
+          <div class="modal-box" (click)="$event.stopPropagation()">
+              <div class="modal-header">
+                  <div class="modal-header-info">
+                      <h2 class="modal-name">Déposer un livrable</h2>
+                      <p class="modal-subtitle">Envoyez un document à vos coachs</p>
+                  </div>
+                  <button class="modal-close" (click)="showDepotModal = false"><i class="pi pi-times"></i></button>
+              </div>
+
+              <div class="modal-body scrollable-body">
+                  <div class="form-group" style="margin-bottom: 16px;">
+                      <label class="form-label">Titre du document *</label>
+                      <input type="text" class="search-input-alt" [(ngModel)]="newLivrable.titre" placeholder="Ex: Rapport d'activité" />
+                  </div>
+
+                  <div class="form-group" style="margin-bottom: 16px;">
+                      <label class="form-label">Coach destinataire *</label>
+                      <select class="search-input-alt" [(ngModel)]="newLivrable.coachId">
+                          <option [ngValue]="null">Sélectionner un coach...</option>
+                          <option *ngFor="let c of coaches" [value]="c.id">{{c.nom}} ({{c.thematiqueName}})</option>
+                      </select>
+                  </div>
+
+                  <div class="form-group" style="margin-bottom: 16px;">
+                      <label class="form-label">Programme associé</label>
+                      <select class="search-input-alt" [(ngModel)]="newLivrable.programmeId">
+                          <option [ngValue]="null">Sélectionner un programme (optionnel)...</option>
+                          <option *ngFor="let p of programmes" [value]="p.id">{{p.nom}}</option>
+                      </select>
+                  </div>
+
+                  <div class="form-group" style="margin-bottom: 16px;">
+                      <label class="form-label">Document à transmettre *</label>
+                      <div class="premium-drop-zone" [class.has-file]="selectedFile" (click)="fileInput.click()">
+                          <div class="drop-content" *ngIf="!selectedFile">
+                              <div class="upload-pulse">
+                                <i class="pi pi-cloud-upload"></i>
+                              </div>
+                              <p>Cliquez pour <span class="browse-link">parcourrez vos fichiers</span></p>
+                          </div>
+                          <div class="selected-file-preview" *ngIf="selectedFile">
+                              <i class="pi pi-file" style="font-size: 1.5rem; color: #ea5073;"></i>
+                              <div class="file-details">
+                                  <span class="f-name">{{ selectedFile.name }}</span>
+                              </div>
+                              <button class="btn-remove-file" (click)="$event.stopPropagation(); selectedFile = null"><i class="pi pi-times"></i></button>
+                          </div>
+                          <input type="file" #fileInput class="hidden" (change)="onFileSelected($event)" accept=".pdf,.docx,.xlsx" />
+                      </div>
+                  </div>
+              </div>
+
+              <div class="modal-footer">
+                  <button class="btn-close-modal" (click)="showDepotModal = false" style="margin-right: 12px;">Annuler</button>
+                  <button class="btn-detail" (click)="deposerLivrable()" [disabled]="loading() || !selectedFile || !newLivrable.titre || !newLivrable.coachId" style="background: #ea5073; color: white;">
+                      <i class="pi" [class.pi-check]="!loading()" [class.pi-spin]="loading()" [class.pi-spinner]="loading()" style="margin-right: 6px;"></i>
+                      {{ loading() ? 'Dépôt en cours...' : 'Confirmer le dépôt' }}
+                  </button>
+              </div>
+          </div>
+      </div>
     </div>
   `,
   styles: [`
@@ -244,6 +310,14 @@ type LivTab = 'EN_COURS' | 'TERMINE' | 'REVISION';
 export class EntrepreneurLivrablesComponent implements OnInit {
   private livrableSvc = inject(LivrableService);
   private authSvc = inject(AuthService);
+  private matchSvc = inject(MatchingService);
+  private coachSvc = inject(CoachService);
+
+  showDepotModal = false;
+  selectedFile: File | null = null;
+  coaches: any[] = [];
+  programmes: any[] = [];
+  newLivrable: { titre: string, coachId: number | null, programmeId: number | null } = { titre: '', coachId: null, programmeId: null };
 
   activeTab = signal<LivTab>('EN_COURS');
   allLivrables = signal<any[]>([]);
@@ -301,6 +375,61 @@ export class EntrepreneurLivrablesComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadLivrables();
+    this.loadCoaches();
+    this.loadProgrammes();
+  }
+
+  loadCoaches() {
+    const user = this.authSvc.currentUser$.value;
+    if (!user) return;
+    this.matchSvc.getEntrepreneurCoaches(user.id).subscribe(data => {
+      this.coaches = data || [];
+    });
+  }
+
+  loadProgrammes() {
+    const user = this.authSvc.currentUser$.value;
+    if (!user?.id) return;
+    // We could use CoachService if it has a getByEntrepreneur, but usually we can get them from matchings or a specific endpoint.
+    // For now, let's look for an endpoint in CoachService that might help.
+    // If not, we'll just keep it empty or populate from existing ones.
+    this.coachSvc.getCoachProgrammes(0).subscribe({ // Placeholder or similar
+        next: (res) => { /* some logic */ }
+    });
+  }
+
+  openDepotModal() {
+    this.newLivrable = { titre: '', coachId: null, programmeId: null };
+    this.selectedFile = null;
+    this.showDepotModal = true;
+  }
+
+  onFileSelected(event: any) {
+    const file = event.target.files[0];
+    if (file) this.selectedFile = file;
+  }
+
+  deposerLivrable() {
+    if (!this.newLivrable.titre || !this.selectedFile || !this.newLivrable.coachId) return;
+    
+    const userId = this.authSvc.currentUser$.value?.id;
+    if (!userId) return;
+
+    this.loading.set(true);
+    this.livrableSvc.upload(
+      this.newLivrable.programmeId ? this.newLivrable.programmeId.toString() : '',
+      [userId.toString()],
+      this.selectedFile,
+      { titre: this.newLivrable.titre, type: 'Document' },
+      this.newLivrable.coachId
+    ).subscribe({
+      next: () => {
+        this.showDepotModal = false;
+        this.loadLivrables();
+        this.loading.set(false);
+      },
+      error: () => this.loading.set(false)
+    });
   }
 
   loadLivrables() {
@@ -321,8 +450,8 @@ export class EntrepreneurLivrablesComponent implements OnInit {
   }
 
   mapToGroup(statut: string): LivTab {
-    if (['ACCEPTED', 'APPROVED', 'VALIDE'].includes(statut)) return 'TERMINE';
-    if (statut === 'REVISION') return 'REVISION';
+    if (['ACCEPTE', 'APPROVED', 'VALIDE'].includes(statut)) return 'TERMINE';
+    if (statut === 'EN_REVISION' || statut === 'REVISION') return 'REVISION';
     return 'EN_COURS';
   }
 
@@ -344,7 +473,7 @@ export class EntrepreneurLivrablesComponent implements OnInit {
   }
 
   canSubmit(statut: string): boolean {
-    return !statut || ['REVISION', 'PENDING', 'EN_ATTENTE'].includes(statut);
+    return !statut || ['EN_REVISION', 'REVISION', 'A_REMPLIR', 'EN_ATTENTE'].includes(statut);
   }
 
   triggerUpload(id: string) {

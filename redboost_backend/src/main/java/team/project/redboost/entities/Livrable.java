@@ -33,6 +33,8 @@ public class Livrable {
     @Column(name = "date_soumission")
     private LocalDateTime dateSoumission;
 
+    private LocalDateTime deadline;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "entrepreneur_id", nullable = false)
     private User entrepreneur;
@@ -82,7 +84,7 @@ public class Livrable {
     }
 
     public enum Statut {
-        SUBMITTED, PENDING, PENDING_REVIEW, ACCEPTED, REVISION, RESUBMITTED, APPROVED, REJECTED, EN_ATTENTE, SOUMIS, VALIDE, REJETE, APPROUVE, EN_REVISION
+        A_REMPLIR, SOUMIS, EN_REVISION, RESOUMIS, ACCEPTE, REJETE
     }
 
     public Livrable() {}
@@ -122,6 +124,9 @@ public class Livrable {
     public void setCoachName(String coachName) { this.coachName = coachName; }
     public String getCoachEmail() { return coachEmail; }
     public void setCoachEmail(String coachEmail) { this.coachEmail = coachEmail; }
+
+    public LocalDateTime getDeadline() { return deadline; }
+    public void setDeadline(LocalDateTime deadline) { this.deadline = deadline; }
 
     public String getProgrammeName() { return programmeName; }
     public void setProgrammeName(String programmeName) { this.programmeName = programmeName; }

@@ -94,6 +94,7 @@ public class LivrableController {
             @RequestParam("entrepreneurIds") List<Long> entrepreneurIds,
             @RequestParam("titre") String titre,
             @RequestParam("type") String type,
+            @RequestParam(value = "deadline", required = false) String deadlineStr,
             @RequestParam(value = "coachId", required = false) Long coachId,
             HttpServletRequest request) {
 
@@ -136,6 +137,15 @@ public class LivrableController {
 
             final User finalCoach = coach;
             final team.project.redboost.entities.Programme finalProgramme = programme;
+            
+            LocalDateTime deadline = null;
+            if (deadlineStr != null && !deadlineStr.isEmpty()) {
+                try {
+                    deadline = LocalDateTime.parse(deadlineStr.contains("Z") ? deadlineStr.replace("Z", "") : deadlineStr);
+                } catch (Exception e) {
+                    System.err.println("Error parsing deadline: " + deadlineStr);
+                }
+            }
 
             // 5. Create one Livrable per entrepreneur
             // 5. Create one Livrable per entrepreneur
@@ -150,12 +160,13 @@ public class LivrableController {
                 Livrable livrable = new Livrable();
                 livrable.setTitre(titre);
                 livrable.setType(type);
-                livrable.setFichierUrl(fileUrl);
+                livrable.setFichierUrl(fileUrl); // Ici c'est le fichier "structure"
                 livrable.setFileSize(sizeStr);
                 livrable.setEntrepreneur(entrepreneur);
                 livrable.setProgramme(finalProgramme);
-                livrable.setStatut(Livrable.Statut.SUBMITTED);
-                livrable.setDateSoumission(LocalDateTime.now());
+                livrable.setStatut(Livrable.Statut.A_REMPLIR);
+                livrable.setDeadline(deadline);
+                // On n'enregistre pas de date de soumission car c'est juste une demande
 
                 if (finalCoach != null) {
                     livrable.setCoachEmail(finalCoach.getEmail());
@@ -177,6 +188,27 @@ public class LivrableController {
         } catch (Exception e) {
             System.err.println("CRITICAL ERROR in uploadLivrable: " + e.getMessage());
             e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @PostMapping("/{id}/submit")
+    public ResponseEntity<Livrable> submitLivrable(
+            @PathVariable Long id,
+            @RequestParam("file") MultipartFile file) {
+        try {
+            LocalFileStorageService.FileUploadResult uploadResult =
+                    localFileStorageService.uploadFileWithMimeType(file);
+            String fileUrl = "/uploads/" + uploadResult.getFileName();
+
+            long size = file.getSize();
+            String sizeStr = size < 1024 ? size + " B"
+                    : size < 1_048_576 ? (size / 1024) + " KB"
+                    : (size / 1_048_576) + " MB";
+
+            Livrable updated = livrableService.submitLivrable(id, fileUrl, sizeStr);
+            return updated != null ? ResponseEntity.ok(updated) : ResponseEntity.notFound().build();
+        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
