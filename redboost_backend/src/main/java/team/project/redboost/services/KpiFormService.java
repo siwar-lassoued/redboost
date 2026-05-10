@@ -18,6 +18,9 @@ public class KpiFormService {
     private final KpiFormResponseRepository kpiFormResponseRepository;
     private final UserRepository userRepository;
     private final ProgrammeKpiService programmeKpiService;
+    private final ThematiqueRepository thematiqueRepository;
+    private final MatchingRepository matchingRepository;
+    private final DisponibiliteRepository disponibiliteRepository;
 
     public List<KpiForm> getAllForms() {
         return kpiFormRepository.findAll();
@@ -25,6 +28,71 @@ public class KpiFormService {
 
     public List<KpiForm> getFormsByProgramme(Long programmeId) {
         return kpiFormRepository.findByProgrammeId(programmeId);
+    }
+
+    public List<KpiForm> getFormsByType(KpiForm.FormType formType) {
+        return kpiFormRepository.findAll().stream()
+                .filter(form -> form.getFormType() == formType)
+                .collect(Collectors.toList());
+    }
+
+    public List<KpiForm> getKpiForms() {
+        return getFormsByType(KpiForm.FormType.KPI);
+    }
+
+    public List<KpiForm> getEvaluationForms() {
+        return getFormsByType(KpiForm.FormType.EVALUATION);
+    }
+
+    public List<KpiForm> getEvaluationFormsByThematique(Long thematiqueId) {
+        return kpiFormRepository.findAll().stream()
+                .filter(form -> form.getFormType() == KpiForm.FormType.EVALUATION
+                        && thematiqueId.equals(form.getThematiqueId()))
+                .collect(Collectors.toList());
+    }
+
+    public List<KpiForm> getEvaluationFormsByCoach(Long coachId) {
+        return kpiFormRepository.findAll().stream()
+                .filter(form -> form.getFormType() == KpiForm.FormType.EVALUATION
+                        && coachId.equals(form.getCoachId()))
+                .collect(Collectors.toList());
+    }
+
+    // Get thématiques for a programme
+    public List<ThematiqueCoaching> getThematiquesByProgramme(Long programmeId) {
+        return thematiqueRepository.findByProgrammeId(programmeId);
+    }
+
+    // Get unique coaches for a programme's thématiques
+    public List<User> getCoachesByProgramme(Long programmeId) {
+        List<ThematiqueCoaching> thematiques = thematiqueRepository.findByProgrammeId(programmeId);
+        return thematiques.stream()
+                .flatMap(thematique -> disponibiliteRepository.findByThematiqueId(thematique.getId()).stream())
+                .map(Disponibilite::getCoach)
+                .distinct()
+                .collect(Collectors.toList());
+    }
+
+    // Get entrepreneurs matching programme + thématique criteria
+    public List<User> getEntrepreneursForEvaluation(Long programmeId, Long thematiqueId) {
+        List<Matching> matchings = matchingRepository.findByProgrammeAndThematique(programmeId, thematiqueId);
+        return matchings.stream()
+                .map(m -> m.getEntrepreneurId())
+                .distinct()
+                .map(entId -> userRepository.findById(entId).orElse(null))
+                .filter(ent -> ent != null)
+                .collect(Collectors.toList());
+    }
+
+    // Get all entrepreneurs for a programme
+    public List<User> getEntrepreneursForProgramme(Long programmeId) {
+        List<Matching> matchings = matchingRepository.findActiveByProgramme(programmeId);
+        return matchings.stream()
+                .map(m -> m.getEntrepreneurId())
+                .distinct()
+                .map(entId -> userRepository.findById(entId).orElse(null))
+                .filter(ent -> ent != null)
+                .collect(Collectors.toList());
     }
 
     public KpiForm getFormById(Long id) {
@@ -40,7 +108,22 @@ public class KpiFormService {
                 q.setOrderIndex(i);
             }
         }
-        return kpiFormRepository.save(form);
+
+        KpiForm savedForm = kpiFormRepository.save(form);
+
+        // Auto-send evaluation forms to relevant entrepreneurs
+        if (form.getFormType() == KpiForm.FormType.EVALUATION && form.getProgrammeId() != null && form.getThematiqueId() != null) {
+            List<User> entrepreneurs = getEntrepreneursForEvaluation(form.getProgrammeId(), form.getThematiqueId());
+            List<Long> entrepreneurIds = entrepreneurs.stream()
+                    .map(User::getId)
+                    .collect(Collectors.toList());
+
+            if (!entrepreneurIds.isEmpty()) {
+                sendFormToEntrepreneurs(savedForm.getId(), entrepreneurIds);
+            }
+        }
+
+        return savedForm;
     }
 
     @Transactional
@@ -49,6 +132,9 @@ public class KpiFormService {
         existing.setTitle(updatedForm.getTitle());
         existing.setDescription(updatedForm.getDescription());
         existing.setProgrammeId(updatedForm.getProgrammeId());
+        existing.setThematiqueId(updatedForm.getThematiqueId());
+        existing.setCoachId(updatedForm.getCoachId());
+        existing.setFormType(updatedForm.getFormType());
         existing.setDeadline(updatedForm.getDeadline());
 
         existing.getQuestions().clear();
@@ -72,25 +158,25 @@ public class KpiFormService {
     @Transactional
     public void sendFormToEntrepreneurs(Long formId, List<Long> entrepreneurIds) {
         KpiForm form = getFormById(formId);
-        
+
         List<User> entrepreneurs = userRepository.findAllById(entrepreneurIds);
 
         for (User entrepreneur : entrepreneurs) {
             // Check if already sent
             boolean alreadySent = form.getResponses().stream()
-                .anyMatch(r -> r.getEntrepreneurId().equals(entrepreneur.getId()));
-                
+                    .anyMatch(r -> r.getEntrepreneurId().equals(entrepreneur.getId()));
+
             if (!alreadySent) {
                 KpiFormResponse response = new KpiFormResponse();
                 response.setForm(form);
                 response.setEntrepreneurId(entrepreneur.getId());
                 response.setEntrepreneurName(entrepreneur.getFirstName() + " " + entrepreneur.getLastName());
                 response.setStatus(KpiFormResponse.ResponseStatus.PENDING);
-                
+
                 kpiFormResponseRepository.save(response);
             }
         }
-        
+
         form.setStatus(KpiForm.KpiFormStatus.SENT);
         kpiFormRepository.save(form);
     }
@@ -108,39 +194,56 @@ public class KpiFormService {
     @Transactional
     public KpiFormResponse submitResponse(Long responseId, List<KpiFormAnswer> answers) {
         KpiFormResponse response = kpiFormResponseRepository.findById(responseId)
-            .orElseThrow(() -> new IllegalArgumentException("Response not found"));
-            
+                .orElseThrow(() -> new IllegalArgumentException("Response not found"));
+
         KpiForm form = response.getForm();
-        
-        for (KpiFormAnswer answer : answers) {
-            answer.setResponse(response);
-            
-            // Auto Update KPI if the question is linked to one
-            if (answer.getKpiId() != null && form.getProgrammeId() != null) {
-                // Here we inject logic to update the BackofficeKpi via ProgrammeKpiService
-                try {
-                    // Update the entrepreneur value! The previous, actuelle, cible can be parsed depending on the KPI type.
-                    // For simplicity, we send the answer as "valeurActuelle" and "valeurCible" empty
-                    // In a progression kpi, they would only provide the delta or the new "valeurActuelle".
-                    programmeKpiService.updateEntrepreneurValue(
-                        form.getProgrammeId(), 
-                        answer.getKpiId(), 
-                        response.getEntrepreneurId(), 
-                        null, 
-                        answer.getAnswerValue(), 
-                        null
-                    );
-                } catch (Exception e) {
-                    System.err.println("Could not update KPI " + answer.getKpiId() + ": " + e.getMessage());
+
+        // Validate form type
+        if (form.getFormType() == null) {
+            form.setFormType(KpiForm.FormType.KPI);
+        }
+
+        // Process answers based on form type
+        if (form.getFormType() == KpiForm.FormType.KPI) {
+            // KPI Form: Update KPI values and create history
+            for (KpiFormAnswer answer : answers) {
+                answer.setResponse(response);
+
+                // Auto Update KPI if the question is linked to one
+                if (answer.getKpiId() != null && form.getProgrammeId() != null) {
+                    try {
+                        // Update the entrepreneur value and create history entry
+                        programmeKpiService.updateEntrepreneurValue(
+                                form.getProgrammeId(),
+                                answer.getKpiId(),
+                                response.getEntrepreneurId(),
+                                null,
+                                answer.getAnswerValue(),
+                                null
+                        );
+                    } catch (Exception e) {
+                        System.err.println("Could not update KPI " + answer.getKpiId() + ": " + e.getMessage());
+                    }
+                }
+            }
+        } else if (form.getFormType() == KpiForm.FormType.EVALUATION) {
+            // Evaluation Form: Just store answers, no KPI update
+            // Validate that evaluation forms don't have KPI associations
+            for (KpiFormAnswer answer : answers) {
+                answer.setResponse(response);
+
+                // Log warning if a KPI question is somehow in an evaluation form
+                if (answer.getKpiId() != null) {
+                    System.out.println("Warning: KPI association found in EVALUATION form (Form: " + form.getId() + ", Question: " + answer.getQuestionId() + ")");
                 }
             }
         }
-        
+
         response.getAnswers().clear();
         response.getAnswers().addAll(answers);
         response.setStatus(KpiFormResponse.ResponseStatus.SUBMITTED);
         response.setSubmittedAt(LocalDateTime.now());
-        
+
         return kpiFormResponseRepository.save(response);
     }
 }
