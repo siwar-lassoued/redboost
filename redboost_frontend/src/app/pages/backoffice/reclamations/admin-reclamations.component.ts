@@ -1,7 +1,23 @@
 import { Component, OnInit, signal, computed, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+// Triggering rebuild after interface update
 import { FormsModule } from '@angular/forms';
-import { AdminReclamationService, AdminReclamation } from './admin-reclamation.service';
+import { AdminReclamationService } from './admin-reclamation.service';
+
+export interface AdminReclamation {
+  id: number;
+  coach: any;
+  entrepreneur: any;
+  sujet: string;
+  typeReclamation: string;
+  description: string;
+  statut: string;
+  dateReclamation: string;
+  roleEmetteur?: string;
+  programmeName?: string;
+  thematiqueName?: string;
+  sessionDetails?: string;
+}
 
 @Component({
   selector: 'rb-admin-reclamations',

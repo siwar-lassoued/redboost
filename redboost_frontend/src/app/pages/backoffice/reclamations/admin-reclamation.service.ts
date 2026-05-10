@@ -13,6 +13,9 @@ export interface AdminReclamation {
   statut: string;
   dateReclamation: string;
   roleEmetteur?: string;
+  programmeName?: string;
+  thematiqueName?: string;
+  sessionDetails?: string;
 }
 
 @Injectable({
