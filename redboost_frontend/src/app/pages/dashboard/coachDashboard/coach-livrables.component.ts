@@ -25,19 +25,7 @@ import { environment } from '../../../../environment';
           </div>
       </div>
 
-      <!-- Tabs -->
-      <div class="tabs-container premium-card mb-6">
-          <div class="tab-item" [class.active]="activeTab === 'received'" (click)="setTab('received')">
-              <i class="pi pi-download"></i>
-              <span>Livrables Reçus</span>
-              <span class="count-badge" *ngIf="receivedLivrables.length > 0">{{ receivedLivrables.length }}</span>
-          </div>
-          <div class="tab-item" [class.active]="activeTab === 'sent'" (click)="setTab('sent')">
-              <i class="pi pi-upload"></i>
-              <span>Livrables Déposés</span>
-              <span class="count-badge" *ngIf="sentLivrables.length > 0">{{ sentLivrables.length }}</span>
-          </div>
-      </div>
+      <!-- Tabs supprimés selon la demande -->
 
       <!-- Advanced Filters -->
       <div class="filters-container premium-card mb-8">
@@ -89,8 +77,8 @@ import { environment } from '../../../../environment';
                       <div class="info-cell details">
                           <span class="cell-label">Contexte</span>
                           <div class="context-info">
-                              <span class="programme-badge" *ngIf="liv.programmeName">
-                                  <i class="pi pi-bookmark"></i> {{ liv.programmeName }}
+                              <span class="programme-badge" *ngIf="liv.programmeName || liv.programme?.nom">
+                                  <i class="pi pi-bookmark"></i> {{ liv.programmeName || liv.programme?.nom }}
                               </span>
                               <span class="thematique-badge" *ngIf="liv.thematiqueName">
                                   <i class="pi pi-tag"></i> {{ liv.thematiqueName }}
@@ -101,21 +89,38 @@ import { environment } from '../../../../environment';
                           </div>
                       </div>
 
-                      <div class="info-cell task">
-                          <span class="cell-label">Tâche associée</span>
-                          <div class="task-info">
-                              <span class="task-name">{{ liv.tacheName || 'Sans tâche' }}</span>
-                              <span class="task-date" *ngIf="liv.tacheDate">
-                                  <i class="pi pi-clock"></i> Échéance : {{ liv.tacheDate | date:'d MMM yyyy' }}
-                              </span>
+                      <div class="info-cell document">
+                          <span class="cell-label">Document Coach</span>
+                          <div class="doc-link-wrap clickable" *ngIf="liv.fichierUrl" (click)="download(liv.fichierUrl)">
+                              <i class="pi" [class]="getFileIconConfig(liv.fichierUrl).icon" [style.color]="getFileIconConfig(liv.fichierUrl).color"></i>
+                              <span class="doc-title">{{ liv.titre }}</span>
                           </div>
                       </div>
 
                       <div class="info-cell document">
-                          <span class="cell-label">Document</span>
-                          <div class="doc-link-wrap">
-                              <i class="pi" [class]="getFileIconConfig(liv.fichierUrl).icon" [style.color]="getFileIconConfig(liv.fichierUrl).color"></i>
-                              <span class="doc-title">{{ liv.titre }}</span>
+                          <span class="cell-label">Retour Entrepreneur</span>
+                          <div class="doc-link-wrap clickable" *ngIf="liv.fichierRetourUrl" (click)="download(liv.fichierRetourUrl)">
+                              <i class="pi" [class]="getFileIconConfig(liv.fichierRetourUrl).icon" [style.color]="getFileIconConfig(liv.fichierRetourUrl).color"></i>
+                              <span class="doc-title">Retour de {{ liv.entrepreneurName }}</span>
+                          </div>
+                          <span class="empty-doc" *ngIf="!liv.fichierRetourUrl">—</span>
+                      </div>
+
+                      <div class="info-cell comments-cell">
+                          <span class="cell-label">Commentaires</span>
+                          <div class="comments-stack">
+                              <div class="comment-block demande" *ngIf="liv.commentaire">
+                                  <span class="c-title">Demande:</span> {{ liv.commentaire }}
+                              </div>
+                              <div class="comment-block revision" *ngIf="liv.commentaireRevision">
+                                  <span class="c-title">Révision:</span> {{ liv.commentaireRevision }}
+                              </div>
+                              <div class="comment-block acceptation" *ngIf="liv.commentaireAcceptation">
+                                  <span class="c-title">Acceptation:</span> {{ liv.commentaireAcceptation }}
+                              </div>
+                              <div class="comment-block legacy" *ngIf="liv.coachComment && !liv.commentaireRevision && !liv.commentaireAcceptation">
+                                  <span class="c-title">Note:</span> {{ liv.coachComment }}
+                              </div>
                           </div>
                       </div>
 
@@ -124,25 +129,23 @@ import { environment } from '../../../../environment';
                           <div class="status-badge" [class]="liv.statut.toLowerCase()">
                               {{ getStatusLabel(liv.statut) }}
                           </div>
+                          <div class="deadline-text" *ngIf="liv.deadline">
+                              <i class="pi pi-clock"></i> {{ liv.deadline | date:'d MMM yyyy' }}
+                          </div>
                       </div>
                   </div>
 
                   <div class="livrable-actions">
-                      <button class="action-btn download" (click)="download(liv)" title="Télécharger">
-                          <i class="pi pi-download"></i>
-                          <span>Consulter</span>
-                      </button>
-                      
-                      <div class="validation-actions" *ngIf="activeTab === 'received' && (liv.statut === 'SUBMITTED' || liv.statut === 'PENDING_REVIEW' || liv.statut === 'REVISION')">
-                          <button class="action-btn validate" (click)="updateLivrableStatus(liv, 'ACCEPTED')" title="Accepter">
+                      <div class="validation-actions" *ngIf="liv.statut === 'SUBMITTED' || liv.statut === 'SOUMIS' || liv.statut === 'RESOUMIS'">
+                          <button class="action-btn validate" (click)="promptStatusUpdate(liv, 'ACCEPTE')" title="Accepter">
                               <i class="pi pi-check"></i>
                           </button>
-                          <button class="action-btn revision" (click)="promptStatusUpdate(liv, 'REVISION')" title="Demander Révision">
+                          <button class="action-btn revision" (click)="promptStatusUpdate(liv, 'EN_REVISION')" title="Demander Révision">
                               <i class="pi pi-sync"></i>
                           </button>
                       </div>
                       
-                      <button class="action-btn delete" *ngIf="activeTab === 'sent'" (click)="deleteLivrable(liv.id)" title="Supprimer">
+                      <button class="action-btn delete" *ngIf="liv.statut !== 'ACCEPTE'" (click)="deleteLivrable(liv.id)" title="Supprimer">
                           <i class="pi pi-trash"></i>
                       </button>
                   </div>
@@ -155,8 +158,8 @@ import { environment } from '../../../../environment';
           <div class="empty-illustration">
               <i class="pi pi-folder-open"></i>
           </div>
-          <h2>Aucun livrable {{ activeTab === 'received' ? 'reçu' : 'déposé' }}</h2>
-          <p>{{ activeTab === 'received' ? 'Les documents soumis par vos entrepreneurs apparaîtront ici.' : 'Vous n’avez pas encore déposé de documents pour vos entrepreneurs.' }}</p>
+          <h2>Aucun livrable</h2>
+          <p>Vous n'avez pas encore déposé ou reçu de documents pour vos entrepreneurs.</p>
       </div>
 
       <div *ngIf="loading && !showDepotModal" class="global-loader-wrap">
@@ -186,6 +189,27 @@ import { environment } from '../../../../environment';
                           <option [ngValue]="null">Sélectionner un programme...</option>
                           <option *ngFor="let p of programmes" [value]="p.id">{{p.nom}}</option>
                       </select>
+                  </div>
+
+                  <div class="form-group" style="margin-bottom: 16px; display: flex; gap: 1rem;">
+                      <div style="flex: 1;">
+                          <label class="form-label">Thématique (Optionnel)</label>
+                          <input type="text" class="search-input-alt" [(ngModel)]="newLivrable.thematiqueName" placeholder="Ex: Finance" />
+                      </div>
+                      <div style="flex: 1;">
+                          <label class="form-label">Session (Optionnel)</label>
+                          <input type="text" class="search-input-alt" [(ngModel)]="newLivrable.sessionName" placeholder="Ex: Session 1" />
+                      </div>
+                  </div>
+
+                  <div class="form-group" style="margin-bottom: 16px;">
+                      <label class="form-label">Commentaire de demande</label>
+                      <textarea class="search-input-alt" [(ngModel)]="newLivrable.commentaire" rows="2" placeholder="Consignes pour l'entrepreneur..."></textarea>
+                  </div>
+
+                  <div class="form-group" style="margin-bottom: 16px;">
+                      <label class="form-label">Deadline</label>
+                      <input type="date" class="search-input-alt" [(ngModel)]="newLivrable.deadline" />
                   </div>
 
                   <div class="form-group" style="margin-bottom: 16px;">
@@ -259,15 +283,15 @@ import { environment } from '../../../../environment';
               </div>
               <div class="modal-body">
                   <div class="form-group">
-                      <label class="form-label">Votre commentaire *</label>
-                      <textarea class="search-input-alt" [(ngModel)]="statusComment" rows="4" placeholder="Expliquez ce qui doit être corrigé..." style="height: auto;"></textarea>
+                      <label class="form-label">Votre commentaire <span *ngIf="pendingStatus === 'EN_REVISION'">*</span><span *ngIf="pendingStatus !== 'EN_REVISION'">(Optionnel)</span></label>
+                      <textarea class="search-input-alt" [(ngModel)]="statusComment" rows="4" placeholder="Expliquez ce qui doit être corrigé ou félicitez l'entrepreneur..." style="height: auto;"></textarea>
                   </div>
               </div>
               <div class="modal-footer">
                   <button class="btn-close-modal" (click)="showDecisionModal = false" style="margin-right: 12px;">Annuler</button>
-                  <button class="btn-detail" (click)="confirmStatusUpdate()" [disabled]="loading || !statusComment.trim()" 
-                          [style.background]="pendingStatus === 'REVISION' ? '#3b82f6' : '#ef4444'" style="color: white; border: none;">
-                      <i class="pi pi-send" style="margin-right: 8px;"></i> Envoyer la décision
+                  <button class="btn-detail" (click)="confirmStatusUpdate()" [disabled]="loading || (pendingStatus === 'EN_REVISION' && !statusComment.trim())" 
+                          [style.background]="pendingStatus === 'EN_REVISION' ? '#3b82f6' : '#10b981'" style="color: white; border: none;">
+                      <i class="pi" [class.pi-send]="pendingStatus === 'EN_REVISION'" [class.pi-check]="pendingStatus !== 'EN_REVISION'" style="margin-right: 8px;"></i> Envoyer la décision
                   </button>
               </div>
           </div>
@@ -434,7 +458,7 @@ export class CoachLivrablesComponent implements OnInit {
   selectedFile: File | null = null;
   entrepreneurSearch: string = '';
   
-  activeTab: 'received' | 'sent' = 'received';
+  activeTab: 'all' = 'all';
 
   selectedEntrepreneurId: number | null = null;
   selectedProgrammeId: number | null = null;
@@ -442,14 +466,13 @@ export class CoachLivrablesComponent implements OnInit {
 
   coachId: number | null = null;
 
-  newLivrable = { titre: '', programmeId: null as number | null };
+  newLivrable = { titre: '', programmeId: null as number | null, thematiqueName: '', sessionName: '', commentaire: '', deadline: '' };
 
   programmes: ProgrammeDTO[] = [];
   entrepreneurs: (UserDTO & { selected?: boolean })[] = [];
   thematiques: string[] = [];
   
-  receivedLivrables: any[] = [];
-  sentLivrables: any[] = [];
+  allLivrables: any[] = [];
   filteredLivrables: any[] = [];
 
   showDecisionModal = false;
@@ -479,32 +502,40 @@ export class CoachLivrablesComponent implements OnInit {
     if (!this.coachId) return;
     this.loading = true;
     
-    // Fetch both Received and Sent
+    // Fetch both Received and Sent and merge
     const received$ = this.livrableService.getReceived(this.coachId);
     const sent$ = this.livrableService.getSent(this.coachId);
 
-    // Using forkJoin or just separate calls. Let's do separate for simplicity in error handling
+    // Simplest way without forkJoin: handle both statefully
+    let recvDone = false;
+    let sentDone = false;
+    let tempRecv: any[] = [];
+    let tempSent: any[] = [];
+
+    const checkDone = () => {
+        if (recvDone && sentDone) {
+            const map = new Map<number, any>();
+            tempRecv.forEach(l => map.set(l.id, l));
+            tempSent.forEach(l => map.set(l.id, l));
+            this.allLivrables = Array.from(map.values()).sort((a, b) => new Date(b.dateSoumission).getTime() - new Date(a.dateSoumission).getTime());
+            this.updateView();
+            this.loading = false;
+        }
+    };
+
     received$.subscribe({
-      next: (res: any[]) => {
-        this.receivedLivrables = res;
-        this.updateView();
-        this.loading = false;
-      },
-      error: () => { this.receivedLivrables = []; this.loading = false; }
+      next: (res: any[]) => { tempRecv = res; recvDone = true; checkDone(); },
+      error: () => { recvDone = true; checkDone(); }
     });
 
     sent$.subscribe({
-      next: (res: any[]) => {
-        this.sentLivrables = res;
-        this.updateView();
-      },
-      error: () => { this.sentLivrables = []; }
+      next: (res: any[]) => { tempSent = res; sentDone = true; checkDone(); },
+      error: () => { sentDone = true; checkDone(); }
     });
   }
 
-  setTab(tab: 'received' | 'sent') {
-    this.activeTab = tab;
-    this.updateView();
+  setTab(tab: any) {
+    // legacy, not used anymore
   }
 
   updateView() {
@@ -513,7 +544,7 @@ export class CoachLivrablesComponent implements OnInit {
   }
 
   extractFilterOptions() {
-    const currentList = this.activeTab === 'received' ? this.receivedLivrables : this.sentLivrables;
+    const currentList = this.allLivrables;
     const themes = new Set<string>();
     currentList.forEach(l => {
       if (l.thematiqueName) themes.add(l.thematiqueName);
@@ -542,7 +573,7 @@ export class CoachLivrablesComponent implements OnInit {
   }
 
   openDepotModal() {
-    this.newLivrable = { titre: '', programmeId: null };
+    this.newLivrable = { titre: '', programmeId: null, thematiqueName: '', sessionName: '', commentaire: '', deadline: '' };
     this.selectedFile = null;
     this.entrepreneurSearch = '';
     this.entrepreneurs.forEach(e => e.selected = false);
@@ -550,8 +581,7 @@ export class CoachLivrablesComponent implements OnInit {
   }
 
   filterLivrables() {
-    const currentList = this.activeTab === 'received' ? this.receivedLivrables : this.sentLivrables;
-    let result = [...currentList];
+    let result = [...this.allLivrables];
 
     if (this.selectedEntrepreneurId) {
       result = result.filter(l => (l.entrepreneur?.id === Number(this.selectedEntrepreneurId)) || (l.entrepreneurId === Number(this.selectedEntrepreneurId)));
@@ -586,14 +616,20 @@ export class CoachLivrablesComponent implements OnInit {
 
   getStatusLabel(statut: string) {
     const config: any = {
+      TRAVAIL_DEMANDE: 'Travail demandé',
       SUBMITTED: 'Soumis',
-      PENDING_REVIEW: 'À valider',
-      ACCEPTED: 'Validé',
+      SOUMIS: 'Soumis',
+      RESOUMIS: 'Soumis',
+      PENDING_REVIEW: 'Soumis',
+      ACCEPTED: 'Accepté',
+      ACCEPTE: 'Accepté',
+      APPROVED: 'Accepté',
+      VALIDE: 'Accepté',
       REJECTED: 'Rejeté',
-      REVISION: 'Révision demandée',
-      VALIDE: 'Validé',
+      REVISION: 'En révision',
+      EN_REVISION: 'En révision',
       REJETE: 'Rejeté',
-      APPROVED: 'Approuvé'
+      A_REMPLIR: 'Travail demandé'
     };
     return config[statut] || statut;
   }
@@ -678,13 +714,13 @@ export class CoachLivrablesComponent implements OnInit {
       this.newLivrable.programmeId?.toString() || '',
       entrepreneurIds,
       this.selectedFile,
-      { titre: this.newLivrable.titre, type: 'Document' },
+      { titre: this.newLivrable.titre, type: 'Document', thematiqueName: this.newLivrable.thematiqueName, sessionName: this.newLivrable.sessionName, commentaire: this.newLivrable.commentaire, deadline: this.newLivrable.deadline },
       this.coachId ?? undefined
     ).subscribe({
       next: () => {
         this.loadLivrables();
         this.showDepotModal = false;
-        this.newLivrable = { titre: '', programmeId: null };
+        this.newLivrable = { titre: '', programmeId: null, thematiqueName: '', sessionName: '', commentaire: '', deadline: '' };
         this.selectedFile = null;
         this.entrepreneurs.forEach(e => e.selected = false);
         this.loading = false;

@@ -96,6 +96,9 @@ public class LivrableController {
             @RequestParam("type") String type,
             @RequestParam(value = "deadline", required = false) String deadlineStr,
             @RequestParam(value = "coachId", required = false) Long coachId,
+            @RequestParam(value = "thematiqueName", required = false) String thematiqueName,
+            @RequestParam(value = "sessionName", required = false) String sessionName,
+            @RequestParam(value = "commentaire", required = false) String commentaire,
             HttpServletRequest request) {
 
         try {
@@ -164,8 +167,11 @@ public class LivrableController {
                 livrable.setFileSize(sizeStr);
                 livrable.setEntrepreneur(entrepreneur);
                 livrable.setProgramme(finalProgramme);
-                livrable.setStatut(Livrable.Statut.A_REMPLIR);
+                livrable.setStatut(Livrable.Statut.TRAVAIL_DEMANDE);
                 livrable.setDeadline(deadline);
+                livrable.setThematiqueName(thematiqueName);
+                livrable.setSessionName(sessionName);
+                livrable.setCommentaire(commentaire);
                 // On n'enregistre pas de date de soumission car c'est juste une demande
 
                 if (finalCoach != null) {

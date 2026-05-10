@@ -59,6 +59,10 @@ export class LivrableService {
         entrepreneurIds.forEach(id => form.append('entrepreneurIds', id));
         form.append('titre', meta.titre ?? file.name);
         form.append('type', meta.type ?? 'Document');
+        if (meta.thematiqueName) form.append('thematiqueName', meta.thematiqueName);
+        if (meta.sessionName) form.append('sessionName', meta.sessionName);
+        if (meta.commentaire) form.append('commentaire', meta.commentaire);
+        if (meta.deadline) form.append('deadline', meta.deadline.toString());
         if (coachId) form.append('coachId', coachId.toString());
         return this.http.post<any>(`${this.baseUrl}/upload`, form);
     }
