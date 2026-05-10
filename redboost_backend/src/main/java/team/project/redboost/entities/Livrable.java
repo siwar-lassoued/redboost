@@ -84,7 +84,7 @@ public class Livrable {
     }
 
     public enum Statut {
-        A_REMPLIR, SOUMIS, EN_REVISION, RESOUMIS, ACCEPTE, REJETE
+        A_REMPLIR, SOUMIS, SUBMITTED, EN_REVISION, REVISION, RESOUMIS, ACCEPTE, REJETE
     }
 
     public Livrable() {}

@@ -45,7 +45,7 @@ public class LivrableService {
                 livrable.setCoachComment(coachComment);
             }
             // Si le coach accepte ou met en révision, on peut enregistrer la date
-            if (statut == Livrable.Statut.ACCEPTE || statut == Livrable.Statut.EN_REVISION) {
+            if (statut == Livrable.Statut.ACCEPTE || statut == Livrable.Statut.EN_REVISION || statut == Livrable.Statut.REVISION) {
                 livrable.setValidatedAt(LocalDateTime.now());
             }
             return livrableRepository.save(livrable);
@@ -58,10 +58,10 @@ public class LivrableService {
         Livrable livrable = getLivrableById(id);
         if (livrable != null) {
             // Si c'était en révision, le nouveau statut est RESOUMIS, sinon c'est SOUMIS
-            if (livrable.getStatut() == Livrable.Statut.EN_REVISION) {
+            if (livrable.getStatut() == Livrable.Statut.EN_REVISION || livrable.getStatut() == Livrable.Statut.REVISION) {
                 livrable.setStatut(Livrable.Statut.RESOUMIS);
             } else {
-                livrable.setStatut(Livrable.Statut.SOUMIS);
+                livrable.setStatut(Livrable.Statut.SUBMITTED);
             }
             
             livrable.setFichierUrl(fileUrl);
