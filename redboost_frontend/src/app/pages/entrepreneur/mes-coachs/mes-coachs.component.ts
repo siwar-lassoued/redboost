@@ -117,10 +117,10 @@ interface ExtendedMatching extends MatchingView {
                   
                   <!-- Legend -->
                   <div class="flex flex-wrap gap-3">
-                    <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-green-500"></span><span class="text-[9px] font-bold text-gray-400">Passé (Moi)</span></div>
-                    <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-orange-400"></span><span class="text-[9px] font-bold text-gray-400">À venir (Moi)</span></div>
-                    <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-blue-500"></span><span class="text-[9px] font-bold text-gray-400">Disponible</span></div>
-                    <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-gray-300"></span><span class="text-[9px] font-bold text-gray-400">Indisponible</span></div>
+                    <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full" style="background: #16a34a"></span><span class="text-[9px] font-bold text-gray-400">Passé (Moi)</span></div>
+                    <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full" style="background: #ea580c"></span><span class="text-[9px] font-bold text-gray-400">À venir (Moi)</span></div>
+                    <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full" style="background: #2563eb"></span><span class="text-[9px] font-bold text-gray-400">Disponible</span></div>
+                    <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full" style="background: #cbd5e1"></span><span class="text-[9px] font-bold text-gray-400">Indisponible</span></div>
                   </div>
                 </div>
 
@@ -167,8 +167,8 @@ interface ExtendedMatching extends MatchingView {
                                   <div class="space-y-2 mt-auto">
                                     @for (slot of session.slots; track slot.id) {
                                       <div class="slot-pill"
-                                        [class.past-me]="isSlotPast(slot) && slot.isBookedByMe"
-                                        [class.future-me]="!isSlotPast(slot) && slot.isBookedByMe"
+                                        [class.past-me]="slot.isBookedByMe && (slot.bookingStatus === 'TERMINE' || slot.bookingStatus === 'REALISEE' || slot.bookingStatus === 'TERMINEE')"
+                                        [class.future-me]="slot.isBookedByMe && slot.bookingStatus !== 'TERMINE' && slot.bookingStatus !== 'REALISEE' && slot.bookingStatus !== 'TERMINEE'"
                                         [class.available-blue]="!isSlotPast(slot) && !slot.isBooked && !session.reservedByMe"
                                         [class.disabled-gray]="(isSlotPast(slot) && !slot.isBookedByMe) || (!isSlotPast(slot) && slot.isBooked && !slot.isBookedByMe) || (!isSlotPast(slot) && session.reservedByMe && !slot.isBookedByMe)"
                                         [matTooltip]="getSlotTooltip(slot, session.reservedByMe)">
@@ -334,13 +334,20 @@ loadAllData(userId: any) {
             const slotGroups = results[i].groups as SessionGroupDTO[];
             
             // Get actual sessions from "Mes Sessions" for this coach
-            const coachBookedSessions = allMySessions.filter(s => 
-              String(s.coachId) === String(coachId) || String(s.coach?.id) === String(coachId)
-            );
+            const coachBookedSessions = allMySessions.filter(s => {
+              const sessionCoachId = s.coachId ? String(s.coachId) : (s.coach?.id ? String(s.coach.id) : '');
+              return sessionCoachId === String(coachId);
+            });
 
-            // Create a set of slot IDs already covered by slotGroups
+            // Create a set of slot IDs already covered by slotGroups (to avoid duplicates)
             const coveredSlotIds = new Set<string>();
-            slotGroups.forEach(g => g.slots.forEach(s => coveredSlotIds.add(String(s.id))));
+            slotGroups.forEach(g => {
+              if (g.slots) {
+                g.slots.forEach(s => {
+                  if (s.id) coveredSlotIds.add(String(s.id));
+                });
+              }
+            });
 
             // Convert missing booked sessions to Group format
             const supplementaryGroups: SessionGroupDTO[] = coachBookedSessions

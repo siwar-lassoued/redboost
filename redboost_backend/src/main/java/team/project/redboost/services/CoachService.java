@@ -1227,4 +1227,30 @@ public class CoachService {
                 .stats(stats)
                 .build();
     }
+
+    @Transactional
+    public void cancelBooking(Long sessionCoachId, Long entrepreneurId) {
+        log.info("Annulation réservation pour entrepreneurId={} et slotId={}", entrepreneurId, sessionCoachId);
+        
+        List<Session> bookings = sessionRepository.findAll().stream()
+                .filter(s -> String.valueOf(sessionCoachId).equals(s.getDisponibiliteId()))
+                .filter(s -> s.getEntrepreneur() != null && s.getEntrepreneur().getId().equals(entrepreneurId))
+                .collect(Collectors.toList());
+
+        if (bookings.isEmpty()) {
+            throw new ValidationException("Aucune réservation trouvée pour ce créneau.");
+        }
+
+        for (Session session : bookings) {
+            // Cancel Google Calendar event
+            if (session.getGoogleEventId() != null) {
+                try {
+                    googleCalendarService.cancelCalendarEvent(session.getGoogleEventId());
+                } catch (Exception e) {
+                    log.warn("Échec annulation GCal pour session {}: {}", session.getId(), e.getMessage());
+                }
+            }
+            sessionRepository.delete(session);
+        }
+    }
 }

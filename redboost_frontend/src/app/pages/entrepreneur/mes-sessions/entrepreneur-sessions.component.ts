@@ -69,7 +69,7 @@ type Tab = 'PLANIFIEE' | 'REALISEE' | 'ANNULEE';
               </thead>
               <tbody>
                 @for (s of filteredSessions(); track s.id) {
-                  <tr class="table-row" (click)="onViewDetail(s)">
+                  <tr class="table-row">
                     <td>
                       <div class="name-cell">
                         <span class="name-text">{{ s.titre || 'Session de coaching' }}</span>
@@ -99,7 +99,7 @@ type Tab = 'PLANIFIEE' | 'REALISEE' | 'ANNULEE';
                       </div>
                     </td>
                     <td>
-                      <button (click)="$event.stopPropagation(); onViewDetail(s)" class="btn-detail">Voir détails</button>
+                      <button (click)="onViewDetail(s)" class="btn-detail">Voir détails</button>
                     </td>
                   </tr>
                 }
@@ -207,9 +207,12 @@ type Tab = 'PLANIFIEE' | 'REALISEE' | 'ANNULEE';
                 <i class="pi pi-video"></i> Rejoindre la session
               </a>
             }
-            @if (selected()!.statut === 'PLANIFIEE') {
+            @if (selected()!.statut === 'PLANIFIEE' || selected()!.statut === 'CONFIRME') {
               <button (click)="onModifierSession(selected()!)" class="btn-action btn-blue">
                 <i class="pi pi-pencil"></i> Modifier la date
+              </button>
+              <button (click)="openGoogleCalendar(selected()!)" class="btn-action btn-gray">
+                <i class="pi pi-calendar-plus"></i> Ajouter à mon agenda
               </button>
             }
             @if (selected()!.statut === 'REALISEE' || selected()!.statut === 'TERMINE') {
@@ -255,8 +258,9 @@ type Tab = 'PLANIFIEE' | 'REALISEE' | 'ANNULEE';
       text-transform: uppercase; letter-spacing: 0.05em; background: #F9FAFB; border-bottom: 1px solid #F3F4F6;
     }
     .cand-table td { padding: 14px 16px; border-bottom: 1px solid #F3F4F6; }
-    .table-row { transition: background .15s; cursor: pointer; }
-    .table-row:hover { background: #FFF5F8; }
+    .table-row { transition: background 0.2s; }
+    .table-row:hover { background: transparent; }
+    .table-row td:not(:last-child) { pointer-events: none; }
 
     .name-cell { display: flex; flex-direction: column; }
     .name-text { font-weight: 700; font-size: 14px; color: #1A1A2E; }
@@ -319,6 +323,7 @@ type Tab = 'PLANIFIEE' | 'REALISEE' | 'ANNULEE';
     }
     .btn-blue { background: #3B82A6; box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3); }
     .btn-amber { background: #F59E0B; box-shadow: 0 10px 15px -3px rgba(245, 158, 11, 0.3); }
+    .btn-gray { background: #6B7280; box-shadow: 0 10px 15px -3px rgba(107, 114, 128, 0.3); }
     .btn-close-modal { margin-left: auto; font-size: 14px; font-weight: 700; color: #64748B; background: none; border: none; cursor: pointer; }
   `]
 })
@@ -389,6 +394,27 @@ export class EntrepreneurSessionsComponent implements OnInit {
     this.showDetail.set(false);
     this.toastr.info('Pour modifier votre session, veuillez choisir un nouveau créneau disponible sur le profil de votre coach.', 'Modification de session');
     this.router.navigate(['/entrepreneur/mes-coachs']);
+  }
+
+  openGoogleCalendar(session: any): void {
+    let url: string;
+    if (session.googleEventId) {
+      url = `https://calendar.google.com/calendar/r/eventedit/${session.googleEventId}`;
+    } else {
+      const d = new Date(session.date);
+      const start = d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+      
+      const endDate = new Date(d);
+      endDate.setMinutes(endDate.getMinutes() + (session.duree || 60));
+      const end = endDate.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+      
+      const title = encodeURIComponent(`[RedBoost] ${session.titre || 'Coaching Session'}`);
+      const details = encodeURIComponent(session.notesCoach || 'Session de coaching RedBoost');
+      const location = encodeURIComponent(session.meetLink || session.lieu || '');
+      
+      url = `https://calendar.google.com/calendar/r/eventedit?text=${title}&dates=${start}/${end}&details=${details}&location=${location}`;
+    }
+    window.open(url, '_blank');
   }
 
   getBadge(statut: string) {

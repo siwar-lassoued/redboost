@@ -151,6 +151,14 @@ public class CoachController {
 
     // --- BOOKING (Entrepreneur) ---
 
+    @DeleteMapping("/sessions/{sessionCoachId}/book")
+    public ResponseEntity<Void> cancelBooking(
+            @PathVariable Long sessionCoachId,
+            @RequestParam Long entrepreneurId) {
+        coachService.cancelBooking(sessionCoachId, entrepreneurId);
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/sessions/{sessionCoachId}/book")
     public ResponseEntity<?> bookSession(
             @PathVariable Long sessionCoachId,
