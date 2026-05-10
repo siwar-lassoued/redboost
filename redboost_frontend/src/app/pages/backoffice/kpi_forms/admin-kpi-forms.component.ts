@@ -300,13 +300,13 @@ import { ProgrammeService } from '../programmes/programme.service';
                
                <div>
                  <label style="display: block; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;">IDs des Entrepreneurs (séparés par virgule)</label>
-                 <input type="text" [(ngModel)]="entrepreneurIdsString" placeholder="Ex: 5, 8, 12" class="search-input" style="padding: 12px 16px; margin-bottom: 16px;">
+                 <input type="text" [(ngModel)]="entrepreneurIdsString" (input)="onEntrepreneurIdsChange()" placeholder="Ex: 5, 8, 12" class="search-input" style="padding: 12px 16px; margin-bottom: 16px;">
                  
-                 @if (entrepreneurIdsString.trim()) {
+                 @if (parsedEntrepreneurIds().length > 0) {
                    <div style="background: white; border: 1px solid #E5E7EB; border-radius: 12px; padding: 12px; margin-top: 16px;">
                      <p style="font-size: 12px; font-weight: 600; color: #6B7280; margin: 0 0 12px 0;">Entrepreneurs sélectionnés :</p>
                      <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-                       @for (id of entrepreneurIdsString.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n)); track id) {
+                       @for (id of parsedEntrepreneurIds(); track id) {
                          <span style="background: #F3F4F6; border: 1px solid #E5E7EB; border-radius: 8px; padding: 6px 12px; font-size: 12px; color: #333;">
                            ID: {{ id }}
                          </span>
@@ -318,7 +318,7 @@ import { ProgrammeService } from '../programmes/programme.service';
             </div>
             <div class="modal-footer">
                <button (click)="closeModals()" class="btn-close-modal">Annuler</button>
-               <button (click)="submitSendForm()" [disabled]="!entrepreneurIdsString.trim()" class="btn-gradient" [style.opacity]="!entrepreneurIdsString.trim() ? '0.5' : '1'">
+               <button (click)="submitSendForm()" [disabled]="isSubmitDisabled()" class="btn-gradient" [style.opacity]="getSubmitOpacity()">
                  <i class="pi pi-send"></i> Envoyer
                </button>
             </div>
@@ -426,6 +426,7 @@ export class AdminKpiFormsComponent implements OnInit {
   thematiques = signal<ThematiqueCoaching[]>([]);
   coaches = signal<User[]>([]);
   entrepreneurs = signal<User[]>([]);
+  parsedEntrepreneurIds = signal<number[]>([]);
 
   ngOnInit() {
     this.loadForms();
@@ -487,6 +488,30 @@ export class AdminKpiFormsComponent implements OnInit {
     const programmeId = this.editingForm.programmeId;
     const thematiqueId = this.editingForm.thematiqueId;
     this.loadEntrepreneursForEvaluation(programmeId, thematiqueId);
+  }
+
+  parseEntrepreneurIds() {
+    if (!this.entrepreneurIdsString.trim()) {
+      this.parsedEntrepreneurIds.set([]);
+      return;
+    }
+    const ids = this.entrepreneurIdsString
+      .split(',')
+      .map(s => parseInt(s.trim()))
+      .filter(n => !isNaN(n));
+    this.parsedEntrepreneurIds.set(ids);
+  }
+
+  onEntrepreneurIdsChange() {
+    this.parseEntrepreneurIds();
+  }
+
+  isSubmitDisabled(): boolean {
+    return !this.entrepreneurIdsString.trim();
+  }
+
+  getSubmitOpacity(): string {
+    return this.isSubmitDisabled() ? '0.5' : '1';
   }
 
   stats = computed(() => {
