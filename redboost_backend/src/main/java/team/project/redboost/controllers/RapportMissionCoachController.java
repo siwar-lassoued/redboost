@@ -11,6 +11,7 @@ import team.project.redboost.repositories.ProgrammeRepository;
 import team.project.redboost.repositories.UserRepository;
 import team.project.redboost.entities.ThematiqueCoaching;
 import team.project.redboost.repositories.ThematiqueRepository;
+import team.project.redboost.services.ReportPdfService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -27,6 +28,7 @@ public class RapportMissionCoachController {
     private final ProgrammeRepository programmeRepository;
     private final UserRepository userRepository;
     private final ThematiqueRepository thematiqueRepository;
+    private final ReportPdfService pdfService;
 
     @GetMapping("/coach/{coachId}/programme/{programmeId}")
     public ResponseEntity<List<RapportMissionCoach>> getHistory(
@@ -92,7 +94,18 @@ public class RapportMissionCoachController {
             rapport.setDateCreation(LocalDateTime.now());
         }
 
-        return ResponseEntity.ok(repository.save(rapport));
+        RapportMissionCoach saved = repository.save(rapport);
+
+        // Generate and save PDF automatically
+        try {
+            String path = pdfService.generateAndSaveMissionReport(saved);
+            saved.setPdfPath(path);
+            repository.save(saved);
+        } catch (Exception e) {
+            System.err.println("Failed to generate PDF for mission: " + e.getMessage());
+        }
+
+        return ResponseEntity.ok(saved);
     }
 
     @DeleteMapping("/{id}")

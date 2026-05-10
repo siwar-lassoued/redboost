@@ -398,6 +398,17 @@ export class CalendarComponent implements OnInit {
     });
   }
 
+  isSlotPast(slot: any): boolean {
+    if (!slot.dateSession) return false;
+    const now = new Date();
+    const slotDate = new Date(slot.dateSession);
+    if (slot.heureDebut) {
+      const [h, m] = slot.heureDebut.split(':');
+      slotDate.setHours(Number(h), Number(m));
+    }
+    return slotDate < now;
+  }
+
   cancelAndRebook(session: any): void {
     const currentUser = this.authService.currentUser$.value;
     if (!currentUser || !session.myBookedSlot) return;

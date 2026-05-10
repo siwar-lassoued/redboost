@@ -45,7 +45,7 @@ import { SessionService } from '../../../core/services/session.service';
 
               <div class="form-group">
                 <label>Thématique de coaching <span class="required">*</span></label>
-                <select [(ngModel)]="selectedThematiqueId" class="premium-input">
+                <select [(ngModel)]="selectedThematiqueId" (change)="onEntrepreneurSelect()" class="premium-input">
                   <option [ngValue]="0" disabled>Choisir une thématique...</option>
                   <option *ngFor="let t of thematiques" [value]="t.id">{{ t.nom }}</option>
                 </select>
@@ -70,12 +70,16 @@ import { SessionService } from '../../../core/services/session.service';
 
         <!-- History -->
         <div class="section-card" style="margin-top: 1.5rem;">
-           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1.5rem;">
-               <h2 class="section-title" style="margin:0;"><i class="pi pi-history"></i> Historique des Rapports ({{ history.length }})</h2>
-               <button class="btn-primary" (click)="downloadConsolidatedPdf()" *ngIf="selectedEntrepreneurId > 0" style="background:#E11D48;">
-                  <i class="pi pi-file-pdf"></i> Télécharger Rapport Consolidé
-               </button>
-           </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1.5rem; gap: 15px;">
+                <h2 class="section-title" style="margin:0;"><i class="pi pi-history"></i> Historique des Rapports ({{ history.length }})</h2>
+                <div style="display:flex; gap:10px; align-items:center;">
+                   <label style="font-size:12px; font-weight:700; color:#64748b;">Filtrer par date :</label>
+                   <input type="date" [(ngModel)]="selectedDateFilter" class="premium-input" style="width:160px; padding:6px 12px; font-size:13px;">
+                   <button class="btn-primary" (click)="downloadConsolidatedPdf()" *ngIf="selectedEntrepreneurId > 0" style="background:#E11D48;">
+                      <i class="pi pi-file-pdf"></i> Télécharger Rapport Consolidé
+                   </button>
+                </div>
+            </div>
            
            <div *ngIf="history.length === 0" class="empty-state">
              <p>Aucun rapport de session n'a été créé.</p>
@@ -177,9 +181,18 @@ import { SessionService } from '../../../core/services/session.service';
                  </select>
                </div>
                <div class="form-group">
-                 <label>Numéro de session</label>
-                 <input type="text" class="premium-input" [(ngModel)]="currentReport.numeroSession">
-               </div>
+                  <label>Session associée (Numéro)</label>
+                  <select class="premium-input" [(ngModel)]="currentReport.numeroSession">
+                     <option *ngFor="let s of realizedSessions" [value]="s.titre || s.id">
+                        {{ s.titre || 'Session' }} ({{ s.date | date:'shortDate' }})
+                     </option>
+                     <option value="1">Session 1</option>
+                     <option value="2">Session 2</option>
+                     <option value="3">Session 3</option>
+                     <option value="4">Session 4</option>
+                     <option value="5">Session 5</option>
+                  </select>
+                </div>
                <div class="form-group">
                  <label>Date de la session</label>
                  <input type="date" class="premium-input" [(ngModel)]="currentReport.dateSession">
@@ -383,6 +396,8 @@ export class CoachRapportSessionComponent implements OnInit {
   coachProfile: UserDTO | null = null;
   thematiques: any[] = [];
   selectedThematiqueId: number = 0;
+  selectedSessionId: number = 0;
+  selectedDateFilter: string = '';
 
   editingReport = false;
   isSaving = false;
@@ -395,7 +410,6 @@ export class CoachRapportSessionComponent implements OnInit {
   
   allCoachSessions: any[] = [];
   realizedSessions: any[] = [];
-  selectedSessionId: number = 0;
 
   constructor(
     private route: ActivatedRoute,
@@ -477,7 +491,8 @@ export class CoachRapportSessionComponent implements OnInit {
       if (!this.allCoachSessions) return;
       this.realizedSessions = this.allCoachSessions.filter(s => 
           (s.statut === 'REALISEE' || s.statut === 'TERMINE') &&
-          (this.selectedEntrepreneurId === 0 || (s.entrepreneur && s.entrepreneur.id == this.selectedEntrepreneurId))
+          (this.selectedEntrepreneurId === 0 || (s.entrepreneur && s.entrepreneur.id == this.selectedEntrepreneurId)) &&
+          (this.selectedThematiqueId === 0 || (s.thematique && s.thematique.id == this.selectedThematiqueId))
       );
   }
 
@@ -506,7 +521,7 @@ export class CoachRapportSessionComponent implements OnInit {
         beneficiaireNom: ent ? ent.firstName + ' ' + ent.lastName : '',
         coachNom: this.coachProfile ? this.coachProfile.firstName + ' ' + this.coachProfile.lastName : '',
         typeSession: session && session.meetLink ? 'En ligne' : 'Terrain',
-        numeroSession: '1',
+        numeroSession: session ? (session.titre || '1') : '1',
         dateSession: session ? new Date(session.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
         
         objectifSession: session ? (session.titre || '') : '',
@@ -639,7 +654,7 @@ export class CoachRapportSessionComponent implements OnInit {
     if (this.selectedEntrepreneurId === 0) return;
     
     this.toastr.info("Génération du rapport consolidé...");
-    this.coachService.getConsolidatedPdf(this.selectedEntrepreneurId, this.coachId).subscribe({
+    this.coachService.getConsolidatedPdf(this.selectedEntrepreneurId, this.coachId, this.selectedThematiqueId, this.selectedDateFilter).subscribe({
       next: (blob) => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');

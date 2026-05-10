@@ -18,6 +18,7 @@ import team.project.redboost.repositories.RapportSessionCoachRepository;
 import team.project.redboost.repositories.UserRepository;
 import team.project.redboost.entities.ThematiqueCoaching;
 import team.project.redboost.repositories.ThematiqueRepository;
+import team.project.redboost.services.ReportPdfService;
 
 import java.awt.*;
 import java.io.ByteArrayOutputStream;
@@ -36,6 +37,7 @@ public class RapportSessionCoachController {
     private final RapportSessionCoachRepository repository;
     private final UserRepository userRepository;
     private final ThematiqueRepository thematiqueRepository;
+    private final ReportPdfService pdfService;
 
     @GetMapping("/coach/{coachId}")
     public ResponseEntity<List<RapportSessionCoach>> getHistory(@PathVariable Long coachId) {
@@ -112,7 +114,18 @@ public class RapportSessionCoachController {
             rapport.setDateCreation(LocalDateTime.now());
         }
 
-        return ResponseEntity.ok(repository.save(rapport));
+        RapportSessionCoach saved = repository.save(rapport);
+        
+        // Generate and save PDF automatically
+        try {
+            String path = pdfService.generateAndSaveSessionReport(saved);
+            saved.setPdfPath(path);
+            repository.save(saved);
+        } catch (Exception e) {
+            System.err.println("Failed to generate PDF: " + e.getMessage());
+        }
+
+        return ResponseEntity.ok(saved);
     }
 
     @DeleteMapping("/{id}")
@@ -125,26 +138,48 @@ public class RapportSessionCoachController {
     public void generateConsolidatedPdf(
             @PathVariable Long entrepreneurId,
             @PathVariable Long coachId,
+            @RequestParam(required = false) Long thematiqueId,
+            @RequestParam(required = false) String dateSession,
             HttpServletResponse response) throws Exception {
 
-        List<RapportSessionCoach> rapports = repository.findAll().stream()
-                .filter(r -> r.getEntrepreneur() != null && r.getEntrepreneur().getId().equals(entrepreneurId))
-                .filter(r -> r.getCoach() != null && r.getCoach().getId().equals(coachId))
-                .sorted((r1, r2) -> {
-                    try {
-                        int n1 = Integer.parseInt(r1.getNumeroSession());
-                        int n2 = Integer.parseInt(r2.getNumeroSession());
-                        return Integer.compare(n1, n2);
-                    } catch (Exception e) {
-                        return r1.getDateSession().compareTo(r2.getDateSession());
-                    }
-                })
-                .collect(Collectors.toList());
+        System.out.println("Generating consolidated PDF for entrepreneur " + entrepreneurId + " and coach " + coachId + 
+            (thematiqueId != null ? " and thematique " + thematiqueId : "") +
+            (dateSession != null ? " and date " + dateSession : ""));
+        
+        List<RapportSessionCoach> rapports;
+        if (thematiqueId != null) {
+            rapports = repository.findByEntrepreneurIdAndCoachIdAndThematiqueId(entrepreneurId, coachId, thematiqueId);
+        } else {
+            rapports = repository.findByEntrepreneurIdAndCoachId(entrepreneurId, coachId);
+        }
+
+        // Apply date filter if provided
+        if (dateSession != null && !dateSession.isEmpty()) {
+            rapports = rapports.stream()
+                    .filter(r -> dateSession.equals(r.getDateSession()))
+                    .collect(Collectors.toList());
+        }
+        
+        System.out.println("Found " + rapports.size() + " reports.");
 
         if (rapports.isEmpty()) {
             response.sendError(HttpStatus.NOT_FOUND.value(), "Aucun rapport trouvé pour cet entrepreneur.");
             return;
         }
+
+        rapports = rapports.stream().sorted((r1, r2) -> {
+            try {
+                // Try to sort by numerical session number if possible
+                String n1Str = r1.getNumeroSession() != null ? r1.getNumeroSession().replaceAll("[^0-9]", "") : "";
+                String n2Str = r2.getNumeroSession() != null ? r2.getNumeroSession().replaceAll("[^0-9]", "") : "";
+                if (!n1Str.isEmpty() && !n2Str.isEmpty()) {
+                    return Integer.compare(Integer.parseInt(n1Str), Integer.parseInt(n2Str));
+                }
+                return (r1.getNumeroSession() != null ? r1.getNumeroSession() : "").compareTo(r2.getNumeroSession() != null ? r2.getNumeroSession() : "");
+            } catch (Exception e) {
+                return (r1.getDateSession() != null ? r1.getDateSession() : "").compareTo(r2.getDateSession() != null ? r2.getDateSession() : "");
+            }
+        }).collect(Collectors.toList());
 
         User entrepreneur = userRepository.findById(entrepreneurId).orElseThrow();
         User coach = userRepository.findById(coachId).orElseThrow();

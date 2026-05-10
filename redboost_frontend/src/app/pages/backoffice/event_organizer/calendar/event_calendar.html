@@ -232,15 +232,16 @@
                         </button>
                       </div>
 
-                      <!-- If not reserved: show available slot buttons -->
                       <div *ngIf="!session.reservedByMe" class="slots-mini-grid">
                         <button *ngFor="let slot of session.slots" class="btn-slot-premium"
                                 [class.active]="selectedSlot?.id === slot.id"
-                                [disabled]="slot.isBooked"
+                                [class.past-slot]="isSlotPast(slot)"
+                                [disabled]="slot.isBooked || isSlotPast(slot)"
                                 (click)="selectSlot(slot, session.sessionTitle, session.coachRef); selectedSession = session">
                           <div class="slot-d">{{ slot.dateSession | date:'dd MMM' }}</div>
                           <div class="slot-t">{{ formatSlotTime(slot.heureDebut) }}</div>
                           <div class="slot-booked-label" *ngIf="slot.isBooked">Pris</div>
+                          <div class="slot-booked-label" *ngIf="isSlotPast(slot) && !slot.isBooked">Passé</div>
                         </button>
                       </div>
                     </div>

@@ -101,6 +101,9 @@ public class RapportSessionCoach {
     @Column(name = "date_creation")
     private LocalDateTime dateCreation;
 
+    @Column(name = "pdf_path")
+    private String pdfPath;
+
     @PrePersist
     protected void onCreate() {
         dateCreation = LocalDateTime.now();

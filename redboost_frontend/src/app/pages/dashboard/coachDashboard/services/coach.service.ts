@@ -383,8 +383,17 @@ export class CoachService {
     return this.http.delete<void>(`${environment.apiUrl}/rapports-session-coach/${id}`);
   }
 
-  getConsolidatedPdf(entrepreneurId: number, coachId: number): Observable<Blob> {
-    return this.http.get(`${environment.apiUrl}/rapports-session-coach/entrepreneur/${entrepreneurId}/coach/${coachId}/consolidated-pdf`, {
+  getConsolidatedPdf(entrepreneurId: number, coachId: number, thematiqueId?: number, dateSession?: string): Observable<Blob> {
+    let url = `${environment.apiUrl}/rapports-session-coach/entrepreneur/${entrepreneurId}/coach/${coachId}/consolidated-pdf`;
+    const params: string[] = [];
+    if (thematiqueId) params.push(`thematiqueId=${thematiqueId}`);
+    if (dateSession) params.push(`dateSession=${dateSession}`);
+    
+    if (params.length > 0) {
+      url += `?${params.join('&')}`;
+    }
+    
+    return this.http.get(url, {
       responseType: 'blob'
     });
   }
