@@ -689,6 +689,8 @@ public class CoachService {
         if (s.getDisponibilite() != null && s.getDisponibilite().getThematique() != null) {
             ThematiqueCoaching them = s.getDisponibilite().getThematique();
             dto.setThematiqueNom(them.getNom());
+            if (them.getDateDebut() != null) dto.setThematiqueDateDebut(them.getDateDebut().toString());
+            if (them.getDateFin() != null) dto.setThematiqueDateFin(them.getDateFin().toString());
             
             if (them.getProgrammeId() != null) {
                 programmeRepository.findById(them.getProgrammeId()).ifPresent(p -> {
@@ -979,14 +981,19 @@ public class CoachService {
         List<CandidatureRedstarter> candidatures = candidatureRepository.findByEmail(email);
         log.info(" Nombre de candidatures trouvées pour email {}: {}", email, candidatures.size());
         
+        List<Matching.StatutMatching> statuses = List.of(
+            Matching.StatutMatching.VALIDE, 
+            Matching.StatutMatching.ARCHIVE, 
+            Matching.StatutMatching.TERMINE
+        );
+        
         List<Matching> allMatchings = new ArrayList<>();
         for (CandidatureRedstarter cand : candidatures) {
-            allMatchings.addAll(matchingRepository.findByEntrepreneurIdAndStatut(cand.getId(), Matching.StatutMatching.VALIDE));
+            allMatchings.addAll(matchingRepository.findByEntrepreneurIdAndStatutIn(cand.getId(), statuses));
         }
-        // Also check by direct User ID
-        allMatchings.addAll(matchingRepository.findByEntrepreneurIdAndStatut(entrepreneurUserId, Matching.StatutMatching.VALIDE));
+        allMatchings.addAll(matchingRepository.findByEntrepreneurIdAndStatutIn(entrepreneurUserId, statuses));
         
-        log.info(" Nombre total de matchings VALIDE trouvés: {}", allMatchings.size());
+        log.info(" Nombre total de matchings (VALIDE/ARCHIVE/TERMINE) trouvés: {}", allMatchings.size());
 
         boolean hasGlobalMatching = false;
         for (Matching m : allMatchings) {
@@ -1050,19 +1057,13 @@ public class CoachService {
         LocalDate today = LocalDate.now();
 
         return coachSessions.stream()
-                .filter(s -> !s.getDateSession().isBefore(today))
                 .filter(s -> {
-                    if (finalHasGlobal) return true;
+                    if (thematiqueId == null || finalHasGlobal) return true;
                     if (s.getDisponibilite() != null && s.getDisponibilite().getThematique() != null) {
                         Long stid = s.getDisponibilite().getThematique().getId();
-                        boolean match = matchedThematiqueIds.contains(stid);
-                        if (!match) {
-                            log.info(" Session {} (Thématique {}) filtrée car ne correspond pas aux thématiques de l'entrepreneur ({})", 
-                                    s.getId(), stid, matchedThematiqueIds);
-                        }
-                        return match;
+                        return matchedThematiqueIds.contains(stid);
                     }
-                    return false;
+                    return thematiqueId == null;
                 })
                 .map(s -> {
                     SessionCoachDTO dto = mapToDTO(s);
@@ -1075,11 +1076,7 @@ public class CoachService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Returns available sessions GROUPED by sessionGroupId for the entrepreneur booking flow.
-     * Each group represents one logical "session" (e.g. Session 1 – Pitch Deck) with its créneaux.
-     * The group carries a flag indicating whether the entrepreneur has already reserved a slot in it.
-     */
+ 
     public List<Map<String, Object>> getAvailableSessionsGrouped(Long coachId, Long entrepreneurUserId, Long thematiqueId) {
         // Reuse existing filtering logic
         List<SessionCoachDTO> available = getAvailableSessionsForEntrepreneur(coachId, entrepreneurUserId, thematiqueId);

@@ -15,7 +15,11 @@ export interface Session {
     programmeId: string;
     coachId: string;
     coach?: User;
-    participants: User[];
+    participants?: User[];
     notes?: string;
-    createdAt: Date;
+    createdAt?: Date;
+    disponibiliteId?: string;
+    thematiqueName?: string;
+    isExceptionnelle?: boolean;
+    programme?: { id: number; nom: string };
 }

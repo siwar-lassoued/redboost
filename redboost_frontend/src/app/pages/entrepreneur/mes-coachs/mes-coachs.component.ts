@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { MatchingService, MatchingView } from '../../../core/services/matching.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { CoachService, SessionGroupDTO, SessionCoachDTO, DashboardStatsDTO } from '../../dashboard/coachDashboard/services/coach.service';
+import { SessionService } from '../../../core/services/session.service';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -15,6 +16,8 @@ interface ProgramGroup {
 
 interface ThematiqueGroup {
   name: string;
+  dateDebut?: string;
+  dateFin?: string;
   sessions: SessionGroupDTO[];
 }
 
@@ -125,19 +128,27 @@ interface ExtendedMatching extends MatchingView {
                 <div class="flex-1 overflow-y-auto pr-2 custom-scrollbar">
                   <div class="space-y-10">
                     @for (prog of coach.groupedByProgram; track prog.name) {
-                      <div class="program-section">
-                        <div class="flex items-center gap-3 mb-4">
-                          <div class="h-px flex-1 bg-gray-100"></div>
-                          <span class="text-xs font-black text-gray-300 uppercase tracking-[0.2em]">{{ prog.name }}</span>
-                          <div class="h-px flex-1 bg-gray-100"></div>
+                      <div class="program-section mb-10">
+                        <!-- Program Subtle Header -->
+                        <div class="flex items-center gap-3 mb-6">
+                          <span class="text-[10px] font-black text-blue-400 uppercase tracking-[0.3em] px-3 py-1 bg-blue-50 rounded-full">{{ prog.name }}</span>
+                          <div class="h-px flex-1 bg-gradient-to-r from-blue-100 to-transparent"></div>
                         </div>
 
                         @for (them of prog.thematiques; track them.name) {
-                          <div class="thematique-section mb-8">
-                            <h4 class="text-sm font-bold text-[#3B82F6] mb-4 flex items-center gap-2">
-                              <i class="pi pi-tag text-xs"></i>
-                              {{ them.name }}
-                            </h4>
+                          <div class="thematique-section mb-8 pl-4 border-l-2 border-gray-50">
+                            <div class="flex items-center justify-between mb-4">
+                              <h4 class="text-sm font-bold text-[#1A1A2E] flex items-center gap-2">
+                                <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                                {{ them.name }}
+                              </h4>
+                              @if (them.dateDebut && them.dateFin) {
+                                <span class="text-[10px] font-medium text-gray-400 bg-gray-50 px-2 py-0.5 rounded-md border border-gray-100">
+                                  <i class="pi pi-calendar-minus mr-1 text-[8px]"></i>
+                                  {{ formatDatePeriod(them.dateDebut, them.dateFin) }}
+                                </span>
+                              }
+                            </div>
 
                             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                               @for (session of them.sessions; track session.sessionGroupId) {
@@ -267,9 +278,10 @@ interface ExtendedMatching extends MatchingView {
   `]
 })
 export class MesCoachsComponent implements OnInit {
-  private matchSvc = inject(MatchingService);
-  private authSvc = inject(AuthService);
-  private coachSvc = inject(CoachService);
+  private readonly matchSvc = inject(MatchingService);
+  private readonly authSvc = inject(AuthService);
+  private readonly coachSvc = inject(CoachService);
+  private readonly sessionSvc = inject(SessionService);
 
   extendedMatchings = signal<ExtendedMatching[]>([]);
 
@@ -280,67 +292,126 @@ export class MesCoachsComponent implements OnInit {
     }
   }
 
-  loadAllData(userId: any) {
-    this.matchSvc.getEntrepreneurCoaches(userId).subscribe(matchings => {
-      if (!matchings || matchings.length === 0) {
-        this.extendedMatchings.set([]);
-        return;
-      }
+loadAllData(userId: any) {
+    this.authSvc.currentUser$.subscribe(user => {
+      if (!user) return;
+      const userId = String(user.id);
 
-      const requests = matchings.map(m => {
-        const coachId = Number(m.id);
-        const entrepreneurId = Number(userId);
-
-        return forkJoin({
-          profile: this.coachSvc.getUserById(coachId).pipe(catchError(() => of(null))),
-          groups: this.coachSvc.getAvailableSessionsGrouped(coachId, entrepreneurId).pipe(catchError(() => of([]))),
-          stats: this.coachSvc.getDashboardStats(coachId).pipe(catchError(() => of(null)))
-        }).pipe(
-          catchError(() => of({ profile: null, groups: [], stats: null }))
-        );
-      });
-
-      forkJoin(requests).subscribe(results => {
-        const extended = matchings.map((m, i) => {
-          const allGroups = results[i].groups as SessionGroupDTO[];
-          
-          const programGroups: ProgramGroup[] = [];
-          
-          allGroups.forEach(group => {
-            // Keep ALL slots as requested
-            const firstSlot = group.slots[0];
-            const progName = firstSlot?.programmeNom || 'Autres Programmes';
-            const themName = firstSlot?.thematiqueNom || 'Autres Thématiques';
-            
-            let progGroup = programGroups.find(p => p.name === progName);
-            if (!progGroup) {
-              progGroup = { name: progName, thematiques: [] };
-              programGroups.push(progGroup);
+      forkJoin({
+        matchings: this.matchSvc.getEntrepreneurCoaches(userId).pipe(catchError(() => of([]))),
+        allMySessions: this.sessionSvc.getByEntrepreneur(userId).pipe(catchError(() => of([])))
+      }).subscribe(({ matchings, allMySessions }) => {
+        // Deduplicate by coach ID
+        const uniqueMatchingsMap = new Map<string, MatchingView>();
+        matchings.forEach(m => {
+          if (!uniqueMatchingsMap.has(m.id)) {
+            uniqueMatchingsMap.set(m.id, { ...m });
+          } else {
+            const existing = uniqueMatchingsMap.get(m.id)!;
+            if (m.thematiqueName && !existing.thematiqueName?.includes(m.thematiqueName)) {
+               existing.thematiqueName += ", " + m.thematiqueName;
             }
-            
-            let themGroup = progGroup.thematiques.find(t => t.name === themName);
-            if (!themGroup) {
-              themGroup = { name: themName, sessions: [] };
-              progGroup.thematiques.push(themGroup);
-            }
-            
-            themGroup.sessions.push(group);
-          });
-
-          programGroups.sort((a, b) => a.name.localeCompare(b.name));
-          programGroups.forEach(p => {
-            p.thematiques.sort((a, b) => a.name.localeCompare(b.name));
-          });
-
-          return {
-            ...m,
-            coachDetails: results[i].profile,
-            groupedByProgram: programGroups,
-            stats: results[i].stats
-          };
+          }
         });
-        
-        this.extendedMatchings.set(extended);
+
+        const uniqueMatchings = Array.from(uniqueMatchingsMap.values());
+        const requests = uniqueMatchings.map(m => {
+          const coachId = Number(m.id);
+          const entId = Number(userId);
+
+          return forkJoin({
+            profile: this.coachSvc.getUserById(coachId).pipe(catchError(() => of(null))),
+            groups: this.coachSvc.getAvailableSessionsGrouped(coachId, entId).pipe(catchError(() => of([]))),
+            stats: this.coachSvc.getDashboardStats(coachId).pipe(catchError(() => of(null)))
+          }).pipe(
+            catchError(() => of({ profile: null, groups: [], stats: null }))
+          );
+        });
+
+        forkJoin(requests).subscribe(results => {
+          const extended = uniqueMatchings.map((m, i) => {
+            const coachId = m.id;
+            const slotGroups = results[i].groups as SessionGroupDTO[];
+            
+            // Get actual sessions from "Mes Sessions" for this coach
+            const coachBookedSessions = allMySessions.filter(s => 
+              String(s.coachId) === String(coachId) || String(s.coach?.id) === String(coachId)
+            );
+
+            // Create a set of slot IDs already covered by slotGroups
+            const coveredSlotIds = new Set<string>();
+            slotGroups.forEach(g => g.slots.forEach(s => coveredSlotIds.add(String(s.id))));
+
+            // Convert missing booked sessions to Group format
+            const supplementaryGroups: SessionGroupDTO[] = coachBookedSessions
+              .filter(s => !s.disponibiliteId || !coveredSlotIds.has(String(s.disponibiliteId)))
+              .map(s => {
+                const date = new Date(s.date);
+                const slot: SessionCoachDTO = {
+                  id: s.disponibiliteId ? Number(s.disponibiliteId) : undefined,
+                  disponibiliteId: 0, // dummy
+                  titre: s.titre,
+                  dateSession: date.toISOString().split('T')[0],
+                  heureDebut: date.toTimeString().split(' ')[0].substring(0, 5),
+                  heureFin: '', // unknown
+                  thematiqueNom: s.thematiqueName || 'Session Spéciale',
+                  programmeNom: s.programme?.nom || 'Autres Programmes',
+                  isBooked: true,
+                  isBookedByMe: true,
+                  bookingStatus: s.statut
+                };
+                return {
+                  sessionGroupId: s.id,
+                  sessionTitle: s.titre,
+                  reservedByMe: true,
+                  slots: [slot]
+                };
+              });
+
+            const allGroups = [...slotGroups, ...supplementaryGroups];
+            const programGroups: ProgramGroup[] = [];
+            
+            allGroups.forEach(group => {
+              const firstSlot = group.slots[0];
+              const progName = firstSlot?.programmeNom || 'Autres Programmes';
+              const themName = firstSlot?.thematiqueNom || 'Autres Thématiques';
+              
+              let progGroup = programGroups.find(p => p.name === progName);
+              if (!progGroup) {
+                progGroup = { name: progName, thematiques: [] };
+                programGroups.push(progGroup);
+              }
+              
+              let themGroup = progGroup.thematiques.find(t => t.name === themName);
+              if (!themGroup) {
+                themGroup = { 
+                  name: themName, 
+                  dateDebut: firstSlot?.thematiqueDateDebut,
+                  dateFin: firstSlot?.thematiqueDateFin,
+                  sessions: [] 
+                };
+                progGroup.thematiques.push(themGroup);
+              }
+              
+              // Deduplicate groups by ID if necessary (though supplementary should be unique)
+              if (!themGroup.sessions.find(s => s.sessionGroupId === group.sessionGroupId)) {
+                themGroup.sessions.push(group);
+              }
+            });
+
+            programGroups.sort((a, b) => a.name.localeCompare(b.name));
+            programGroups.forEach(p => p.thematiques.sort((a, b) => a.name.localeCompare(b.name)));
+
+            return {
+              ...m,
+              coachDetails: results[i].profile,
+              groupedByProgram: programGroups,
+              stats: results[i].stats
+            };
+          });
+          
+          this.extendedMatchings.set(extended);
+        });
       });
     });
   }
@@ -372,6 +443,14 @@ export class MesCoachsComponent implements OnInit {
     if (!date) return '';
     const d = new Date(date);
     return d.toLocaleDateString('fr-FR', { weekday: 'short' });
+  }
+
+  formatDatePeriod(start: string, end: string): string {
+    if (!start || !end) return '';
+    const d1 = new Date(start);
+    const d2 = new Date(end);
+    const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' };
+    return `${d1.toLocaleDateString('fr-FR', options)} - ${d2.toLocaleDateString('fr-FR', options)}`;
   }
 
   getSlotTooltip(slot: SessionCoachDTO, groupReserved: boolean): string {

@@ -23,6 +23,8 @@ export interface SessionCoachDTO {
   typeSession?: string; 
   sessionGroupId?: string; 
   thematiqueNom?: string;
+  thematiqueDateDebut?: string;
+  thematiqueDateFin?: string;
   programmeNom?: string;
   isBooked?: boolean;
   isBookedByMe?: boolean;
@@ -120,6 +122,8 @@ export interface CoachCalendarEventDTO {
   endTime?: string;
   source?: 'coach' | 'entrepreneur';
   thematiqueNom?: string;
+  thematiqueDateDebut?: string;
+  thematiqueDateFin?: string;
   programmeNom?: string;
   color?: string;
   booked?: boolean;
