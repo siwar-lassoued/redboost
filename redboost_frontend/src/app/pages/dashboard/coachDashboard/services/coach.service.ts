@@ -60,7 +60,9 @@ export interface ReclamationDTO {
   entrepreneurId: number;
   entrepreneurName?: string;
   sujet: string;
+  typeReclamation?: string;
   description: string;
+  pieceJointeUrl?: string;
   statut?: string;
   dateReclamation?: string;
 }
@@ -227,8 +229,13 @@ export class CoachService {
   getReclamations(coachId: number): Observable<ReclamationDTO[]> {
     return this.http.get<ReclamationDTO[]>(`${this.apiUrl}/${coachId}/reclamations`);
   }
-  addReclamation(coachId: number, entrepreneurId: number, reclamation: ReclamationDTO): Observable<ReclamationDTO> {
-    return this.http.post<ReclamationDTO>(`${this.apiUrl}/${coachId}/reclamations/${entrepreneurId}`, reclamation);
+  addReclamation(coachId: number, entrepreneurId: number, reclamation: ReclamationDTO, file?: File): Observable<ReclamationDTO> {
+    const formData = new FormData();
+    formData.append('reclamation', new Blob([JSON.stringify(reclamation)], { type: 'application/json' }));
+    if (file) {
+      formData.append('file', file);
+    }
+    return this.http.post<ReclamationDTO>(`${this.apiUrl}/${coachId}/reclamations/${entrepreneurId}`, formData);
   }
 
   // PROGRAMMES

@@ -10,7 +10,9 @@ public class ReclamationDTO {
     private Long entrepreneurId;
     private String entrepreneurName;
     private String sujet;
+    private String typeReclamation;
     private String description;
+    private String pieceJointeUrl;
     private String statut;
     private LocalDateTime dateReclamation;
 }

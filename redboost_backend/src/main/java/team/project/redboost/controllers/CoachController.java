@@ -8,6 +8,7 @@ import team.project.redboost.dto.*;
 import team.project.redboost.services.CoachService;
 
 import java.util.List;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/coach")
@@ -98,12 +99,13 @@ public class CoachController {
         return ResponseEntity.ok(coachService.getReclamationsByCoach(coachId));
     }
 
-    @PostMapping("/{coachId}/reclamations/{entrepreneurId}")
+    @PostMapping(value = "/{coachId}/reclamations/{entrepreneurId}", consumes = {"multipart/form-data"})
     public ResponseEntity<ReclamationDTO> addReclamation(
             @PathVariable Long coachId, 
             @PathVariable Long entrepreneurId, 
-            @RequestBody ReclamationDTO dto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(coachService.addReclamation(coachId, entrepreneurId, dto));
+            @RequestPart("reclamation") ReclamationDTO dto,
+            @RequestPart(value = "file", required = false) MultipartFile file) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(coachService.addReclamation(coachId, entrepreneurId, dto, file));
     }
 
     // --- DASHBOARD OVERVIEW ---

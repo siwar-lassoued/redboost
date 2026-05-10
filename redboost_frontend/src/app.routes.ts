@@ -161,6 +161,7 @@ export const appRoutes: Routes = [
             { path: 'coach-livrables', component: CoachLivrablesComponent },
             { path: 'note-de-synthese-create/:id', component: NoteDeSyntheseCreateComponent },
             { path: 'messagerie-reclamation', component: ReclamationsComponent },
+            { path: 'coach-reclamations', component: ReclamationsComponent },
             { path: 'seance-exceptionnelle', component: SeanceExceptionnelleComponent },
 
             // New KPI and Form features

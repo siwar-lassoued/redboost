@@ -52,6 +52,9 @@ public class Reclamation {
     @Column(name = "date_reclamation")
     private LocalDateTime dateReclamation;
 
+    @Column(name = "piece_jointe_url")
+    private String pieceJointeUrl;
+
     @PrePersist
     protected void onCreate() {
         dateReclamation = LocalDateTime.now();
@@ -59,6 +62,6 @@ public class Reclamation {
     }
     
     public enum StatutReclamation {
-        EN_ATTENTE, TRAITEE, REJETEE
+        EN_ATTENTE, TRAITEE, REJETEE, ANNULEE
     }
 }
