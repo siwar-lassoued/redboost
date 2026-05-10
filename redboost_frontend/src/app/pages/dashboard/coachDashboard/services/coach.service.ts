@@ -23,6 +23,7 @@ export interface SessionCoachDTO {
   typeSession?: string; 
   sessionGroupId?: string; 
   thematiqueNom?: string;
+  programmeNom?: string;
   isBooked?: boolean;
   isBookedByMe?: boolean;
   isGroupReservedByMe?: boolean;

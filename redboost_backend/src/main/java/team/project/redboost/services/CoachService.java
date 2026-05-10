@@ -687,10 +687,18 @@ public class CoachService {
         dto.setTypeSession(s.getTypeSession() != null ? s.getTypeSession().name() : "EN_LIGNE");
         dto.setSessionGroupId(s.getSessionGroupId());
         if (s.getDisponibilite() != null && s.getDisponibilite().getThematique() != null) {
-            dto.setThematiqueNom(s.getDisponibilite().getThematique().getNom());
+            ThematiqueCoaching them = s.getDisponibilite().getThematique();
+            dto.setThematiqueNom(them.getNom());
+            
+            if (them.getProgrammeId() != null) {
+                programmeRepository.findById(them.getProgrammeId()).ifPresent(p -> {
+                    dto.setProgrammeNom(p.getNom());
+                });
+            }
+
             dto.setCouleur(s.getDisponibilite().getCouleur() != null ? 
                            s.getDisponibilite().getCouleur() : 
-                           (s.getDisponibilite().getThematique() != null ? s.getDisponibilite().getThematique().getCouleur() : "#4299E1"));
+                           (them != null ? them.getCouleur() : "#4299E1"));
         }
 
         List<team.project.redboost.entities.Session> bookings = sessionRepository.findAll().stream()

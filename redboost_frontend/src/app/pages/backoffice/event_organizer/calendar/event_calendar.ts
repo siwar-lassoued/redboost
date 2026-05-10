@@ -487,7 +487,7 @@ export class CalendarComponent implements OnInit {
         type: 'creneau', 
         location: s.typeSession === 'EN_LIGNE' ? 'En ligne' : (s.adresse || 'En personne'),
         mode: s.typeSession === 'EN_LIGNE' ? 'virtuel' : 'en-personne',
-        program: themName, // Use program field for thematique name in slots
+        program: themName, 
         description: 'Réservez via le panneau de droite',
         participants: [],
         isDisabled: s.isBooked || s.isGroupReservedByMe || false,

@@ -1,146 +1,204 @@
-import { Component, signal, computed, inject, ChangeDetectionStrategy, OnInit } from '@angular/core';
+import { Component, signal, inject, ChangeDetectionStrategy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatchingService, MatchingView } from '../../../core/services/matching.service';
 import { AuthService } from '../../../core/services/auth.service';
-import { SessionService } from '../../../core/services/session.service';
+import { CoachService, SessionGroupDTO, SessionCoachDTO, DashboardStatsDTO } from '../../dashboard/coachDashboard/services/coach.service';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
-const STATUT_BADGE: Record<string, { label: string; bg: string; color: string }> = {
-  PLANIFIEE: { label: 'Planifiée', bg: '#EFF6FF', color: '#2563EB' },
-  REALISEE: { label: 'Terminée', bg: '#F0FDF4', color: '#16A34A' },
-  ANNULEE: { label: 'Annulée', bg: '#FEF2F2', color: '#DC2626' },
-  TERMINE: { label: 'Terminée', bg: '#F0FDF4', color: '#16A34A' },
-};
+interface ProgramGroup {
+  name: string;
+  thematiques: ThematiqueGroup[];
+}
+
+interface ThematiqueGroup {
+  name: string;
+  sessions: SessionGroupDTO[];
+}
+
+interface ExtendedMatching extends MatchingView {
+  coachDetails?: any | null;
+  groupedByProgram?: ProgramGroup[];
+  stats?: DashboardStatsDTO | null;
+}
 
 @Component({
   selector: 'rb-mes-coachs',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, RouterLink, FormsModule],
+  imports: [CommonModule, FormsModule, MatTooltipModule],
   template: `
-    <div class="p-6 bg-[#F8FAFC] min-h-screen">
+    <div class="p-8 bg-[#F8FAFC] min-h-screen font-sans">
       
       <div class="mb-8">
-        <h1 class="text-3xl font-black text-[#1A1A2E] tracking-tight">Mes Coachs</h1>
-        <p class="text-gray-500 mt-1 font-medium">Profils et accompagnements personnalisés</p>
+        <h1 class="text-[28px] font-extrabold text-[#1A1A2E] leading-tight">Mon Coach</h1>
+        <p class="text-[#8a8a8a] text-sm mt-1">Profil et historique avec votre coach</p>
       </div>
 
-      @if (matchings().length > 0) {
-        @for (coach of matchings(); track coach.id) {
-          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
+      @if (extendedMatchings().length > 0) {
+        @for (coach of extendedMatchings(); track coach.id) {
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
             
             <!-- Left: Coach Profile -->
             <div class="lg:col-span-1">
-              <div class="bg-white rounded-3xl p-6 shadow-xl shadow-gray-200/50 border border-gray-100 sticky top-6">
-                <div class="text-center mb-6">
-                  <div class="flex justify-center mb-3">
-                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border"
-                          [style.background]="getThematiqueColor(coach.thematiqueName).bg" 
-                          [style.color]="getThematiqueColor(coach.thematiqueName).text"
-                          [style.border-color]="getThematiqueColor(coach.thematiqueName).border">
-                      <i class="pi pi-tag" style="font-size:9px"></i>
-                      {{ coach.thematiqueName || 'Thématique Non Spécifiée' }}
-                    </span>
+              <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 h-[400px] flex flex-col">
+                <div class="overflow-y-auto pr-2 custom-scrollbar flex-1">
+                  <div class="text-center mb-6">
+                    <h2 class="text-xl font-bold text-[#1A1A2E]">{{ coach.nom }}</h2>
+                    <p class="text-sm text-gray-500 mt-1 font-medium">{{ coach.sector || coach.specialite || 'Coach Expert' }}</p>
                   </div>
-                  <div class="flex items-center justify-center gap-2 mb-1">
-                    <h2 class="text-xl font-black text-[#1A1A2E]">{{ coach.nom }}</h2>
-                    <i class="pi pi-check-circle text-blue-500 text-lg"></i>
-                  </div>
-                  <p class="text-sm text-gray-500 font-medium">{{ coach.specialite || 'Coach Expert' }}</p>
-                </div>
 
-                <div class="mb-6 p-4 bg-amber-50 rounded-2xl border border-amber-100">
-                  <div class="flex items-center gap-2 mb-2">
-                    <i class="pi pi-sparkles text-amber-600"></i>
-                    <span class="text-[10px] font-bold text-amber-700 uppercase tracking-widest">Pourquoi ce matching ?</span>
+                  <!-- Stats -->
+                  <div class="grid grid-cols-3 gap-2 mb-6">
+                    <div class="text-center p-3 bg-gray-50 rounded-xl border border-transparent hover:border-[#3aafff]/20 transition-all">
+                      <i class="pi pi-users text-[#3aafff] text-sm mb-1"></i>
+                      <div class="text-sm font-bold text-[#1A1A2E]">{{ coach.stats?.nbProjet || coach.coachDetails?.nbEntreCoaches || 0 }}</div>
+                      <div class="text-[10px] text-gray-400">Entrepreneurs</div>
+                    </div>
+                    <div class="text-center p-3 bg-gray-50 rounded-xl border border-transparent hover:border-[#3aafff]/20 transition-all">
+                      <i class="pi pi-calendar text-[#3aafff] text-sm mb-1"></i>
+                      <div class="text-sm font-bold text-[#1A1A2E]">{{ coach.stats?.nbRendezVous || 0 }}</div>
+                      <div class="text-[10px] text-gray-400">Sessions</div>
+                    </div>
+                    <div class="text-center p-3 bg-gray-50 rounded-xl border border-transparent hover:border-[#3aafff]/20 transition-all">
+                      <i class="pi pi-chart-line text-[#3aafff] text-sm mb-1"></i>
+                      <div class="text-sm font-bold text-[#1A1A2E]">{{ (coach.stats?.completionRate || 0) | number:'1.0-0' }}%</div>
+                      <div class="text-[10px] text-gray-400">Complétion</div>
+                    </div>
                   </div>
-                  <p class="text-xs text-amber-900 leading-relaxed italic">"{{ coach.justificationMatching }}"</p>
-                </div>
 
-                <div class="space-y-3">
-                  <button [routerLink]="['/gestion_comm']" [queryParams]="{with: coach.id}"
-                    class="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-black text-white transition-all hover:opacity-90 shadow-md"
-                    style="background-color: #ef4444">
-                    <i class="pi pi-comments pb-1 px-1"></i>
-                    Discuter avec ce coach
-                  </button>
+                  <!-- Bio -->
+                  <div class="mb-6">
+                    <h4 class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Biographie</h4>
+                    <p class="text-sm text-gray-600 leading-relaxed italic">
+                      {{ coach.coachDetails?.bio || 'Aucune biographie disponible pour le moment.' }}
+                    </p>
+                  </div>
+
+                  <!-- Expertise -->
+                  <div class="mb-6">
+                    <h4 class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Expertises</h4>
+                    <div class="flex flex-wrap gap-2">
+                      @for (exp of getExpertises(coach); track exp) {
+                        <span class="text-[11px] px-3 py-1 rounded-full bg-[#E8F5E9] text-[#059669] font-semibold">
+                          {{ exp }}
+                        </span>
+                      } @empty {
+                        <span class="text-xs text-gray-400 italic">Accompagnement, Stratégie</span>
+                      }
+                    </div>
+                  </div>
+
+                  <!-- Matching Justification -->
+                  <div class="p-4 bg-amber-50 rounded-2xl border border-amber-100">
+                    <div class="flex items-center gap-2 mb-2">
+                      <i class="pi pi-sparkles text-amber-600 text-xs"></i>
+                      <span class="text-[10px] font-bold text-amber-700 uppercase tracking-widest">Pourquoi ce matching ?</span>
+                    </div>
+                    <p class="text-xs text-amber-900 leading-relaxed italic text-justify">"{{ coach.justificationMatching }}"</p>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <!-- Right: History & Planning -->
-            <div class="lg:col-span-2 space-y-6">
-              <div class="bg-white rounded-3xl p-6 shadow-xl shadow-gray-200/50 border border-gray-100 min-h-[400px]">
-                <div class="flex items-center justify-between mb-6 border-b border-gray-50 pb-4">
-                  <h3 class="text-lg font-black text-[#1A1A2E] flex items-center gap-2">
-                    <i class="pi pi-history text-[#3B82A6]"></i>
-                    Historique & Planning
+            <!-- Right: Disponibilités & Historique -->
+            <div class="lg:col-span-2 space-y-8">
+              <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col h-[400px]">
+                <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-100">
+                  <h3 class="text-lg font-bold text-[#1A1A2E] flex items-center gap-2">
+                    <i class="pi pi-calendar-clock text-[#3aafff]"></i>
+                    Disponibilités & Historique
                   </h3>
-                  <span class="text-xs font-bold text-gray-400">{{ getCoachSessions(coach.id, coach.thematiqueId).length }} sessions</span>
+                  
+                  <!-- Legend -->
+                  <div class="flex flex-wrap gap-3">
+                    <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-green-500"></span><span class="text-[9px] font-bold text-gray-400">Passé (Moi)</span></div>
+                    <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-orange-400"></span><span class="text-[9px] font-bold text-gray-400">À venir (Moi)</span></div>
+                    <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-blue-500"></span><span class="text-[9px] font-bold text-gray-400">Disponible</span></div>
+                    <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-gray-300"></span><span class="text-[9px] font-bold text-gray-400">Indisponible</span></div>
+                  </div>
                 </div>
 
-                @if (getCoachSessions(coach.id, coach.thematiqueId).length > 0) {
-                  <div class="space-y-4">
-                    @for (s of getCoachSessions(coach.id, coach.thematiqueId); track s.id) {
-                      <div class="p-5 rounded-3xl border-2 transition-all flex items-center gap-5"
-                        [class]="isPast(s.date) ? 'border-gray-50 bg-gray-50/30 opacity-60' : (isNextSession(s, coach.id, coach.thematiqueId) ? 'border-[#EC4899] bg-[#FFF1F2]' : 'border-gray-100 bg-white shadow-sm')">
-                        
-                        <!-- Date Badge -->
-                        <div class="w-14 h-14 rounded-2xl flex flex-col items-center justify-center flex-shrink-0 shadow-sm"
-                          [class]="isPast(s.date) ? 'bg-gray-200 text-gray-500' : (isNextSession(s, coach.id, coach.thematiqueId) ? 'bg-[#EC4899] text-white' : 'bg-[#3B82A6] text-white')">
-                          <span class="text-[10px] font-black uppercase leading-none">{{ formatMonth(s.date) }}</span>
-                          <span class="text-xl font-black leading-tight">{{ formatDay(s.date) }}</span>
+                <!-- Scrollable Content -->
+                <div class="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                  <div class="space-y-10">
+                    @for (prog of coach.groupedByProgram; track prog.name) {
+                      <div class="program-section">
+                        <div class="flex items-center gap-3 mb-4">
+                          <div class="h-px flex-1 bg-gray-100"></div>
+                          <span class="text-xs font-black text-gray-300 uppercase tracking-[0.2em]">{{ prog.name }}</span>
+                          <div class="h-px flex-1 bg-gray-100"></div>
                         </div>
 
-                        <!-- Info -->
-                        <div class="flex-1 min-w-0">
-                          <div class="flex items-center gap-3 mb-1">
-                            <h4 class="text-base font-black truncate" [class]="isNextSession(s, coach.id, coach.thematiqueId) ? 'text-[#9D174D]' : 'text-[#1A1A2E]'">
-                              {{ s.titre || 'Session de Coaching' }}
+                        @for (them of prog.thematiques; track them.name) {
+                          <div class="thematique-section mb-8">
+                            <h4 class="text-sm font-bold text-[#3B82F6] mb-4 flex items-center gap-2">
+                              <i class="pi pi-tag text-xs"></i>
+                              {{ them.name }}
                             </h4>
-                            @if (isNextSession(s, coach.id, coach.thematiqueId)) {
-                              <span class="px-2.5 py-1 bg-[#EC4899] text-white text-[9px] font-black rounded-lg uppercase tracking-wider">Prochaine</span>
-                            }
-                          </div>
-                          
-                          <div class="flex items-center gap-4 text-xs font-medium text-gray-400">
-                            <span class="flex items-center gap-1.5"><i class="pi pi-clock"></i> {{ getSessionTimeRange(s) }}</span>
-                            <span class="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest"
-                              [style.background]="getBadge(s.statut).bg" [style.color]="getBadge(s.statut).color">
-                              {{ getBadge(s.statut).label }}
-                            </span>
-                          </div>
-                        </div>
 
-                        <!-- Action for Planified -->
-                        @if (!isPast(s.date) && s.meetLink) {
-                          <a [href]="s.meetLink" target="_blank" 
-                             class="w-10 h-10 rounded-full flex items-center justify-center text-white transition-all hover:scale-110 shadow-lg"
-                             [style.background-color]="isNextSession(s, coach.id, coach.thematiqueId) ? '#EC4899' : '#3B82A6'">
-                             <i class="pi pi-video"></i>
-                          </a>
+                            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                              @for (session of them.sessions; track session.sessionGroupId) {
+                                <div class="p-4 bg-gray-50 rounded-xl border border-gray-100 flex flex-col h-full hover:bg-white transition-colors duration-300">
+                                  <div class="flex items-center justify-between mb-3 pb-2 border-b border-gray-200/50">
+                                    <p class="text-[11px] font-bold text-[#1A1A2E] truncate pr-2" [matTooltip]="session.sessionTitle">
+                                      {{ session.sessionTitle }}
+                                    </p>
+                                    @if (session.reservedByMe) {
+                                      <span class="flex-shrink-0 w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
+                                        <i class="pi pi-check text-[10px]"></i>
+                                      </span>
+                                    }
+                                  </div>
+                                  
+                                  <div class="space-y-2 mt-auto">
+                                    @for (slot of session.slots; track slot.id) {
+                                      <div class="slot-pill"
+                                        [class.past-me]="isSlotPast(slot) && slot.isBookedByMe"
+                                        [class.future-me]="!isSlotPast(slot) && slot.isBookedByMe"
+                                        [class.available-blue]="!isSlotPast(slot) && !slot.isBooked && !session.reservedByMe"
+                                        [class.disabled-gray]="(isSlotPast(slot) && !slot.isBookedByMe) || (!isSlotPast(slot) && slot.isBooked && !slot.isBookedByMe) || (!isSlotPast(slot) && session.reservedByMe && !slot.isBookedByMe)"
+                                        [matTooltip]="getSlotTooltip(slot, session.reservedByMe)">
+                                        <div class="flex items-center justify-between px-3 py-2">
+                                          <div class="flex flex-col">
+                                            <span class="text-[9px] font-bold uppercase opacity-60">{{ formatSlotDayName(slot.dateSession) }}</span>
+                                            <span class="text-[11px] font-bold">{{ formatSlotDate(slot.dateSession) }}</span>
+                                          </div>
+                                          <div class="text-xs font-black">{{ slot.heureDebut }}</div>
+                                        </div>
+                                      </div>
+                                    }
+                                  </div>
+                                </div>
+                              }
+                            </div>
+                          </div>
                         }
+                      </div>
+                    } @empty {
+                      <div class="text-center py-20 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                        <i class="pi pi-calendar-times text-5xl text-gray-200 mb-4"></i>
+                        <p class="text-sm text-gray-400 font-bold uppercase tracking-widest">Aucune session enregistrée</p>
                       </div>
                     }
                   </div>
-                } @else {
-                  <div class="flex flex-col items-center justify-center py-20 border-2 border-dashed border-gray-100 rounded-[2.5rem]">
-                    <i class="pi pi-calendar-minus text-5xl text-gray-200 mb-4"></i>
-                    <p class="text-sm font-black text-gray-400 uppercase tracking-widest">Aucune session enregistrée</p>
-                  </div>
-                }
+                </div>
               </div>
 
               @if (coach.recommandationSession1) {
-                <div class="bg-[#475569] rounded-3xl p-6 text-white shadow-xl shadow-slate-200/50">
-                  <div class="flex items-start gap-4">
-                     <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
-                       <i class="pi pi-lightbulb text-xl"></i>
+                <div class="bg-[#1A3A3A] rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
+                  <div class="absolute top-0 right-0 p-4 opacity-10">
+                    <i class="pi pi-quote-right text-6xl"></i>
+                  </div>
+                  <div class="flex items-start gap-4 relative z-10">
+                     <div class="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center flex-shrink-0 border border-white/10 shadow-inner">
+                       <i class="pi pi-lightbulb text-2xl text-amber-300"></i>
                      </div>
                      <div>
-                       <h4 class="font-black text-sm uppercase tracking-widest mb-1 opacity-80">Recommandation Session 1</h4>
-                       <p class="text-sm font-medium leading-relaxed italic">"{{ coach.recommandationSession1 }}"</p>
+                       <h4 class="font-bold text-[10px] uppercase tracking-widest mb-1 text-amber-200">Recommandation Session 1</h4>
+                       <p class="text-sm font-medium leading-relaxed italic text-gray-100">"{{ coach.recommandationSession1 }}"</p>
                      </div>
                   </div>
                 </div>
@@ -149,121 +207,178 @@ const STATUT_BADGE: Record<string, { label: string; bg: string; color: string }>
           </div>
         }
       } @else {
-        <div class="flex flex-col items-center justify-center py-32 bg-white rounded-[3rem] shadow-xl shadow-gray-100 border border-gray-50">
-           <div class="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-6">
-             <i class="pi pi-search text-5xl text-gray-200"></i>
+        <div class="flex flex-col items-center justify-center py-40 bg-white rounded-2xl shadow-sm border border-gray-100">
+           <div class="relative mb-6">
+             <div class="w-16 h-16 rounded-full border-4 border-[#3aafff]/20 border-t-[#3aafff] animate-spin"></div>
+             <i class="pi pi-users absolute inset-0 flex items-center justify-center text-[#3aafff] text-xl"></i>
            </div>
-           <h3 class="text-xl font-black text-gray-500">Matching en cours...</h3>
-           <p class="text-sm text-gray-400 mt-2 font-medium">Nous finalisons l'attribution de vos coachs experts.</p>
+           <h3 class="text-lg font-bold text-[#1A1A2E]">Chargement de vos accompagnements...</h3>
+           <p class="text-sm text-gray-400 mt-2">Nous préparons les profils de vos coachs.</p>
         </div>
       }
     </div>
   `,
-  styles: [`:host { display: block; }`]
+  styles: [`
+    :host { display: block; }
+    .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+    .slot-pill {
+      border-radius: 10px;
+      border: 1.5px solid #e2e8f0;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: default;
+      background: white;
+      color: #64748b;
+    }
+    .slot-pill.available-blue {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+      color: #2563eb;
+    }
+    .slot-pill.available-blue:hover {
+      background: #dbeafe;
+      transform: translateY(-1px);
+    }
+    .slot-pill.past-me {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+      color: #16a34a;
+      box-shadow: 0 4px 6px -1px rgba(22, 163, 74, 0.1);
+    }
+    .slot-pill.future-me {
+      background: #fff7ed;
+      border-color: #ffedd5;
+      color: #ea580c;
+      box-shadow: 0 4px 6px -1px rgba(234, 88, 12, 0.1);
+    }
+    .slot-pill.disabled-gray {
+      background: #f8fafc;
+      border-color: #f1f5f9;
+      color: #cbd5e1;
+      opacity: 0.8;
+      filter: grayscale(1);
+    }
+    .program-section:not(:last-child) {
+      margin-bottom: 3rem;
+    }
+  `]
 })
 export class MesCoachsComponent implements OnInit {
   private matchSvc = inject(MatchingService);
   private authSvc = inject(AuthService);
-  private sessionSvc = inject(SessionService);
+  private coachSvc = inject(CoachService);
 
-  matchings = signal<MatchingView[]>([]);
-  allSessions = signal<any[]>([]);
+  extendedMatchings = signal<ExtendedMatching[]>([]);
 
   ngOnInit(): void {
     const user = this.authSvc.currentUser$.value;
     if (user?.id) {
-      this.matchSvc.getEntrepreneurCoaches(user.id).subscribe(data => {
-        const sanitize = (v: any) => (v === 'Non spécifié' || v === 'non spécifié' || v === 'null' || v === null) ? '' : v;
-        const uniqueCoaches = new Map<string, MatchingView>();
-        
-        (data || []).forEach(c => {
-          const uniqueId = c.id + '_' + (c.thematiqueId || 'none');
-          if (!uniqueCoaches.has(uniqueId)) {
-            uniqueCoaches.set(uniqueId, {
-              ...c,
-              nom: sanitize(c.nom),
-              specialite: sanitize(c.specialite),
-              thematiqueName: sanitize(c.thematiqueName),
-              pointsForts: sanitize(c.pointsForts)
-            });
-          }
-        });
-        
-        this.matchings.set(Array.from(uniqueCoaches.values()));
-      });
-      this.loadSessions(user.id);
+      this.loadAllData(user.id);
     }
   }
 
-  loadSessions(userId: string) {
-    this.sessionSvc.getByEntrepreneur(userId).subscribe(sessions => {
-      this.allSessions.set(Array.isArray(sessions) ? sessions : []);
+  loadAllData(userId: any) {
+    this.matchSvc.getEntrepreneurCoaches(userId).subscribe(matchings => {
+      if (!matchings || matchings.length === 0) {
+        this.extendedMatchings.set([]);
+        return;
+      }
+
+      const requests = matchings.map(m => {
+        const coachId = Number(m.id);
+        const entrepreneurId = Number(userId);
+
+        return forkJoin({
+          profile: this.coachSvc.getUserById(coachId).pipe(catchError(() => of(null))),
+          groups: this.coachSvc.getAvailableSessionsGrouped(coachId, entrepreneurId).pipe(catchError(() => of([]))),
+          stats: this.coachSvc.getDashboardStats(coachId).pipe(catchError(() => of(null)))
+        }).pipe(
+          catchError(() => of({ profile: null, groups: [], stats: null }))
+        );
+      });
+
+      forkJoin(requests).subscribe(results => {
+        const extended = matchings.map((m, i) => {
+          const allGroups = results[i].groups as SessionGroupDTO[];
+          
+          const programGroups: ProgramGroup[] = [];
+          
+          allGroups.forEach(group => {
+            // Keep ALL slots as requested
+            const firstSlot = group.slots[0];
+            const progName = firstSlot?.programmeNom || 'Autres Programmes';
+            const themName = firstSlot?.thematiqueNom || 'Autres Thématiques';
+            
+            let progGroup = programGroups.find(p => p.name === progName);
+            if (!progGroup) {
+              progGroup = { name: progName, thematiques: [] };
+              programGroups.push(progGroup);
+            }
+            
+            let themGroup = progGroup.thematiques.find(t => t.name === themName);
+            if (!themGroup) {
+              themGroup = { name: themName, sessions: [] };
+              progGroup.thematiques.push(themGroup);
+            }
+            
+            themGroup.sessions.push(group);
+          });
+
+          programGroups.sort((a, b) => a.name.localeCompare(b.name));
+          programGroups.forEach(p => {
+            p.thematiques.sort((a, b) => a.name.localeCompare(b.name));
+          });
+
+          return {
+            ...m,
+            coachDetails: results[i].profile,
+            groupedByProgram: programGroups,
+            stats: results[i].stats
+          };
+        });
+        
+        this.extendedMatchings.set(extended);
+      });
     });
   }
 
-  getCoachSessions(coachId: any, thematiqueId?: any): any[] {
-    return this.allSessions()
-      .filter(s => s.coach && String(s.coach.id) === String(coachId) && 
-                   (!thematiqueId || (s.thematique && String(s.thematique.id) === String(thematiqueId))))
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  getExpertises(coach: ExtendedMatching): string[] {
+    const expertiseStr = coach.coachDetails?.expertise || coach.coachDetails?.skills || '';
+    if (!expertiseStr) return [];
+    return expertiseStr.split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0);
   }
 
-  isPast(date: string): boolean {
-    return new Date(date) < new Date();
-  }
-
-  isNextSession(session: any, coachId: any, thematiqueId?: any): boolean {
-    const coachSessions = this.getCoachSessions(coachId, thematiqueId);
+  isSlotPast(slot: SessionCoachDTO): boolean {
+    if (!slot.dateSession) return false;
     const now = new Date();
-    const futureSessions = coachSessions.filter(s => new Date(s.date) >= now);
-    return futureSessions.length > 0 && futureSessions[0].id === session.id;
-  }
-
-  getPointsForts(coach: MatchingView): string[] {
-    try { return JSON.parse(coach.pointsForts || '[]'); }
-    catch (e) { return ['Expertise', 'Accompagnement']; }
-  }
-
-  getBadge(statut: string) {
-    return STATUT_BADGE[statut] || { label: statut, bg: '#F3F4F6', color: '#374151' };
-  }
-
-  formatMonth(date: string): string {
-    if (!date) return '';
-    return new Date(date).toLocaleDateString('fr-FR', { month: 'short' }).toUpperCase();
-  }
-
-  formatDay(date: string): string {
-    if (!date) return '';
-    return new Date(date).getDate().toString();
-  }
-
-  formatTime(date: string): string {
-    if (!date) return '';
-    return new Date(date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-  }
-
-  getSessionTimeRange(s: any): string {
-    if (s.heureDebut && s.heureFin) {
-      return `${s.heureDebut.substring(0, 5)} - ${s.heureFin.substring(0, 5)}`;
+    const slotDate = new Date(slot.dateSession);
+    if (slot.heureDebut) {
+      const [h, m] = slot.heureDebut.split(':');
+      slotDate.setHours(Number(h), Number(m));
     }
-    return this.formatTime(s.date);
+    return slotDate < now;
   }
 
-  readonly colorPalette = [
-    { bg: '#E0F2FE', text: '#0284C7', border: '#BAE6FD' }, // Sky
-    { bg: '#FCE7F3', text: '#DB2777', border: '#FBCFE8' }, // Pink
-    { bg: '#DCFCE7', text: '#16A34A', border: '#BBF7D0' }, // Green
-    { bg: '#F3E8FF', text: '#9333EA', border: '#E9D5FF' }, // Purple
-    { bg: '#FEF3C7', text: '#D97706', border: '#FDE68A' }, // Amber
-    { bg: '#FEE2E2', text: '#DC2626', border: '#FECACA' }, // Red
-  ];
+  formatSlotDate(date: string): string {
+    if (!date) return '';
+    const d = new Date(date);
+    return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+  }
 
-  getThematiqueColor(name: string | undefined) {
-    if (!name) return this.colorPalette[0];
-    let hash = 0;
-    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-    const index = Math.abs(hash) % this.colorPalette.length;
-    return this.colorPalette[index];
+  formatSlotDayName(date: string): string {
+    if (!date) return '';
+    const d = new Date(date);
+    return d.toLocaleDateString('fr-FR', { weekday: 'short' });
+  }
+
+  getSlotTooltip(slot: SessionCoachDTO, groupReserved: boolean): string {
+    if (slot.isBookedByMe) return this.isSlotPast(slot) ? 'Votre séance passée' : 'Votre réservation à venir';
+    if (slot.isBooked) return 'Créneau déjà réservé par un autre entrepreneur';
+    if (this.isSlotPast(slot)) return 'Ce créneau est passé';
+    if (groupReserved) return 'Vous avez déjà réservé un autre créneau pour cette session';
+    return 'Disponible pour réservation';
   }
 }
