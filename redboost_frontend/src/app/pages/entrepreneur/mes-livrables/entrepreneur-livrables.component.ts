@@ -106,6 +106,9 @@ type LivTab = 'EN_COURS' | 'TERMINE' | 'REVISION';
                               <span class="thematique-badge" *ngIf="liv.thematiqueName">
                                   <i class="pi pi-tag"></i> {{ liv.thematiqueName }}
                               </span>
+                              <span class="deadline-badge" *ngIf="liv.deadline" [class.overdue]="isOverdue(liv.deadline)">
+                                  <i class="pi pi-clock"></i> {{ isOverdue(liv.deadline) ? 'En retard' : 'Avant le' }} {{ liv.deadline | date:'dd/MM/yyyy' }}
+                              </span>
                           </div>
                       </div>
 
@@ -135,10 +138,13 @@ type LivTab = 'EN_COURS' | 'TERMINE' | 'REVISION';
                           </button>
                           
                           <button class="action-btn submit-btn" 
-                                  *ngIf="canSubmit(liv.statut)" 
+                                  *ngIf="isSubmissionStatus(liv.statut)" 
                                   (click)="triggerUpload(liv.id)" 
-                                  [disabled]="loading()"
-                                  style="background: #ea5073; color: white; min-width: 140px; padding: 10px 12px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer;">
+                                  [disabled]="loading() || isOverdue(liv.deadline)"
+                                  [title]="isOverdue(liv.deadline) ? 'Le délai est dépassé' : ''"
+                                  [style.opacity]="isOverdue(liv.deadline) ? '0.5' : '1'"
+                                  [style.cursor]="isOverdue(liv.deadline) ? 'not-allowed' : 'pointer'"
+                                  style="background: #ea5073; color: white; min-width: 140px; padding: 10px 12px; border-radius: 10px; border: none; font-weight: bold;">
                               <i class="pi pi-reply"></i>
                               <span>{{ (liv.statut === 'EN_REVISION' || liv.statut === 'REVISION') ? 'Renvoyer' : 'Faire un retour' }}</span>
                           </button>
@@ -283,6 +289,8 @@ type LivTab = 'EN_COURS' | 'TERMINE' | 'REVISION';
     .programme-badge, .thematique-badge { font-size: 0.8rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.25rem 0.75rem; border-radius: 99px; }
     .programme-badge { background: #eff6ff; color: #3b82f6; }
     .thematique-badge { background: #f0fdf4; color: #10b981; }
+    .deadline-badge { background: #fef3c7; color: #d97706; }
+    .deadline-badge.overdue { background: #fee2e2; color: #dc2626; }
 
     .task-info { display: flex; flex-direction: column; gap: 0.25rem; }
     .task-name { font-weight: 700; color: #1e293b; font-size: 0.95rem; }
@@ -470,18 +478,28 @@ export class EntrepreneurLivrablesComponent implements OnInit {
   getStatusLabel(statut: string) {
     const config: any = {
       SUBMITTED: 'Soumis',
+      SOUMIS: 'Soumis',
+      RESOUMIS: 'Resoumis',
       PENDING_REVIEW: 'En revue',
       ACCEPTED: 'Validé',
+      ACCEPTE: 'Validé',
       APPROVED: 'Approuvé',
       REJECTED: 'Rejeté',
       REVISION: 'Révision',
-      VALIDE: 'Approuvé'
+      EN_REVISION: 'Révision',
+      VALIDE: 'Approuvé',
+      A_REMPLIR: 'À Remplir'
     };
     return config[statut] || statut;
   }
 
-  canSubmit(statut: string): boolean {
+  isSubmissionStatus(statut: string): boolean {
     return !statut || ['EN_REVISION', 'REVISION', 'A_REMPLIR', 'EN_ATTENTE'].includes(statut);
+  }
+
+  isOverdue(deadline: string | null): boolean {
+    if (!deadline) return false;
+    return new Date() > new Date(deadline);
   }
 
   triggerUpload(id: string) {
@@ -493,22 +511,10 @@ export class EntrepreneurLivrablesComponent implements OnInit {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (!file) return;
 
-    const userId = this.authSvc.currentUser$.value?.id;
-    if (!userId) return;
-
     this.loading.set(true);
-    this.livrableSvc.upload(
-      liv.programme?.id?.toString() || '',
-      [userId.toString()],
-      file,
-      { titre: liv.titre, type: liv.type || 'Document', id: liv.id },
-      liv.coachId
-    ).subscribe({
+    this.livrableSvc.submitLivrable(liv.id, file).subscribe({
       next: () => {
-        // Update status to SUBMITTED
-        this.livrableSvc.updateStatus(liv.id, 'SUBMITTED' as any).subscribe(() => {
-          this.loadLivrables();
-        });
+        this.loadLivrables();
       },
       error: () => this.loading.set(false)
     });

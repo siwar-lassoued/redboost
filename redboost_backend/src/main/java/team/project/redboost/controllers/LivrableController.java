@@ -188,7 +188,9 @@ public class LivrableController {
         } catch (Exception e) {
             System.err.println("CRITICAL ERROR in uploadLivrable: " + e.getMessage());
             e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .header("X-Error-Reason", e.getMessage() != null ? e.getMessage().replaceAll("[\\r\\n]", " ") : "Unknown error")
+                    .build();
         }
     }
 

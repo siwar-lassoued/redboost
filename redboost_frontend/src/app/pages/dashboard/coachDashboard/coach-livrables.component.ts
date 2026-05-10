@@ -689,9 +689,10 @@ export class CoachLivrablesComponent implements OnInit {
         this.entrepreneurs.forEach(e => e.selected = false);
         this.loading = false;
       },
-      error: () => {
+      error: (err) => {
         this.loading = false;
-        console.error("Failed to upload livrable");
+        const serverReason = err.headers?.get('X-Error-Reason');
+        console.error("Failed to upload livrable:", serverReason ? serverReason : err.message);
       }
     });
   }

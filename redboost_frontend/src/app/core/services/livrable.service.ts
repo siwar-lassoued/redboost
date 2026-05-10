@@ -70,4 +70,10 @@ export class LivrableService {
     delete(id: string): Observable<void> {
         return this.http.delete<void>(`${this.baseUrl}/${id}`);
     }
+
+    submitLivrable(id: string | number, file: File): Observable<any> {
+        const form = new FormData();
+        form.append('file', file);
+        return this.http.post<any>(`${this.baseUrl}/${id}/submit`, form);
+    }
 }
