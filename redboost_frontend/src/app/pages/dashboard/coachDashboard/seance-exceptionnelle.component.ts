@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { CoachService, SeanceExceptionnelleDTO, CoachEntrepreneurDTO } from './services/coach.service';
+import { CoachService, SeanceExceptionnelleDTO, CoachEntrepreneurDTO, SessionCoachDTO } from './services/coach.service';
 import { AuthService } from '../../frontoffice/service/auth.service';
 import { ToastrService } from 'ngx-toastr';
 
@@ -101,20 +101,23 @@ import { ToastrService } from 'ngx-toastr';
               <div class="modal-body">
                   <div class="form-group" style="margin-bottom: 12px;">
                       <label style="font-size: 13px; font-weight: 600; margin-bottom: 6px; display: block;">Thématique *</label>
-                      <select class="search-input" [(ngModel)]="newSeance.thematiqueId" style="padding: 10px 16px;">
+                      <select class="search-input" [(ngModel)]="newSeance.thematiqueId" (ngModelChange)="onThematiqueChange()" style="padding: 10px 16px;">
                           <option [ngValue]="undefined">Sélectionnez une thématique...</option>
                           <option *ngFor="let t of thematiques" [ngValue]="t.id">{{ t.nom }}</option>
                       </select>
                   </div>
                   <div class="form-group" style="margin-bottom: 12px;">
-                      <label style="font-size: 13px; font-weight: 600; margin-bottom: 6px; display: block;">Titre de la séance *</label>
-                      <input type="text" class="search-input" [(ngModel)]="newSeance.titre" placeholder="Ex: Point stratégique exceptionnel" style="padding: 10px 16px;">
+                      <label style="font-size: 13px; font-weight: 600; margin-bottom: 6px; display: block;">Titre de la séance (modèle) *</label>
+                      <select class="search-input" [(ngModel)]="newSeance.titre" [disabled]="!newSeance.thematiqueId" style="padding: 10px 16px;">
+                          <option value="">Sélectionnez une session...</option>
+                          <option *ngFor="let title of availableTitles" [ngValue]="title">{{ title }}</option>
+                      </select>
                   </div>
                   <div class="form-group" style="margin-bottom: 12px;">
                       <label style="font-size: 13px; font-weight: 600; margin-bottom: 6px; display: block;">Entrepreneur *</label>
-                      <select class="search-input" [(ngModel)]="newSeance.entrepreneurId" style="padding: 10px 16px;">
+                      <select class="search-input" [(ngModel)]="newSeance.entrepreneurId" [disabled]="!newSeance.thematiqueId" style="padding: 10px 16px;">
                           <option [ngValue]="0">Sélectionnez un entrepreneur...</option>
-                          <option *ngFor="let e of entrepreneurs" [ngValue]="e.id">{{ e.firstName }} {{ e.lastName }} — {{ e.entreprise || 'N/A' }}</option>
+                          <option *ngFor="let e of filteredEntrepreneurs" [ngValue]="e.id">{{ e.firstName }} {{ e.lastName }} — {{ e.entreprise || 'N/A' }}</option>
                       </select>
                   </div>
                   <div class="form-row" style="display: flex; gap: 12px; margin-bottom: 12px;">
@@ -203,9 +206,15 @@ import { ToastrService } from 'ngx-toastr';
 export class SeanceExceptionnelleComponent implements OnInit {
   coachId!: number;
   entrepreneurs: CoachEntrepreneurDTO[] = [];
+  filteredEntrepreneurs: CoachEntrepreneurDTO[] = [];
   thematiques: any[] = [];
   seances: SeanceExceptionnelleDTO[] = [];
   filteredSeances: SeanceExceptionnelleDTO[] = [];
+  
+  allSessions: SessionCoachDTO[] = [];
+  availableTitles: string[] = [];
+  groupedMatchings: any[] = [];
+
   loading = false;
   saving = false;
   showModal = false;
@@ -238,6 +247,50 @@ export class SeanceExceptionnelleComponent implements OnInit {
     this.loadEntrepreneurs();
     this.loadThematiques();
     this.loadSeances();
+    this.loadAllSessions();
+    this.loadMatchedEntrepreneurs();
+  }
+
+  loadAllSessions() {
+    this.coachService.getAllSessionsByCoach(this.coachId).subscribe({
+      next: (data) => this.allSessions = data,
+      error: () => {}
+    });
+  }
+
+  loadMatchedEntrepreneurs() {
+    // We use the grouped matching endpoint to easily filter by thematic
+    this.coachService.getMatchedEntrepreneursGrouped(this.coachId).subscribe({
+      next: (data) => this.groupedMatchings = data,
+      error: () => {}
+    });
+  }
+
+  onThematiqueChange() {
+    this.availableTitles = [];
+    this.filteredEntrepreneurs = [];
+    this.newSeance.titre = '';
+    this.newSeance.entrepreneurId = 0;
+
+    if (!this.newSeance.thematiqueId) return;
+
+    const theme = this.thematiques.find(t => t.id === this.newSeance.thematiqueId);
+    if (theme) {
+      // 1. Filter unique session titles for this thematic
+      const titlesSet = new Set<string>();
+      this.allSessions.forEach(s => {
+        if (s.thematiqueNom === theme.nom) {
+          titlesSet.add(s.titre);
+        }
+      });
+      this.availableTitles = Array.from(titlesSet).sort();
+
+      // 2. Filter entrepreneurs for this thematic
+      const matchingGroup = this.groupedMatchings.find(g => g.thematiqueId === this.newSeance.thematiqueId);
+      if (matchingGroup) {
+        this.filteredEntrepreneurs = matchingGroup.entrepreneurs;
+      }
+    }
   }
 
   loadThematiques() {
@@ -309,6 +362,8 @@ export class SeanceExceptionnelleComponent implements OnInit {
               this.seances.push(data);
               this.setFilter(this.activeFilter);
               this.newSeance = { coachId: this.coachId, entrepreneurId: 0, thematiqueId: undefined, titre: '', dateSeance: '', heureDebut: '', heureFin: '' };
+              this.availableTitles = [];
+              this.filteredEntrepreneurs = [];
               this.showModal = false;
               this.saving = false;
           },

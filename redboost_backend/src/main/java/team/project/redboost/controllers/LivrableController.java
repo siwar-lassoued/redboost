@@ -62,6 +62,16 @@ public class LivrableController {
         return ResponseEntity.ok(livrables);
     }
 
+    @GetMapping("/received")
+    public ResponseEntity<List<Livrable>> getReceivedLivrables(@RequestParam Long coachId) {
+        return ResponseEntity.ok(livrableService.getReceivedLivrablesByCoach(coachId));
+    }
+
+    @GetMapping("/sent")
+    public ResponseEntity<List<Livrable>> getSentLivrables(@RequestParam Long coachId) {
+        return ResponseEntity.ok(livrableService.getSentLivrablesByCoach(coachId));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<Livrable> getLivrableById(@PathVariable Long id) {
         Livrable livrable = livrableService.getLivrableById(id);
@@ -77,13 +87,14 @@ public class LivrableController {
      * Upload a file and create one Livrable record per entrepreneur.
      * The uploading coach's identity is extracted from the JWT and stored on each record.
      */
-    @PostMapping("/upload")
+    @PostMapping(value = "/upload", produces = "application/json")
     public ResponseEntity<List<Livrable>> uploadLivrable(
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "programmeId", required = false) Long programmeId,
             @RequestParam("entrepreneurIds") List<Long> entrepreneurIds,
             @RequestParam("titre") String titre,
             @RequestParam("type") String type,
+            @RequestParam(value = "deadline", required = false) String deadlineStr,
             @RequestParam(value = "coachId", required = false) Long coachId,
             HttpServletRequest request) {
 
@@ -126,39 +137,78 @@ public class LivrableController {
 
             final User finalCoach = coach;
             final team.project.redboost.entities.Programme finalProgramme = programme;
+            
+            LocalDateTime deadline = null;
+            if (deadlineStr != null && !deadlineStr.isEmpty()) {
+                try {
+                    deadline = LocalDateTime.parse(deadlineStr.contains("Z") ? deadlineStr.replace("Z", "") : deadlineStr);
+                } catch (Exception e) {
+                    System.err.println("Error parsing deadline: " + deadlineStr);
+                }
+            }
 
             // 5. Create one Livrable per entrepreneur
-            List<Livrable> created = entrepreneurIds.stream().map(entId -> {
+            // 5. Create one Livrable per entrepreneur
+            java.util.List<Livrable> created = new java.util.ArrayList<>();
+            for (Long entId : entrepreneurIds) {
                 User entrepreneur = userRepository.findById(entId).orElse(null);
-                if (entrepreneur == null) return null;
+                if (entrepreneur == null) {
+                    System.err.println("WARNING: Entrepreneur with ID " + entId + " not found.");
+                    continue;
+                }
 
                 Livrable livrable = new Livrable();
                 livrable.setTitre(titre);
                 livrable.setType(type);
-                livrable.setFichierUrl(fileUrl);
+                livrable.setFichierUrl(fileUrl); // Ici c'est le fichier "structure"
                 livrable.setFileSize(sizeStr);
                 livrable.setEntrepreneur(entrepreneur);
                 livrable.setProgramme(finalProgramme);
-                livrable.setStatut(Livrable.Statut.SUBMITTED);
-                livrable.setDateSoumission(LocalDateTime.now());
+                livrable.setStatut(Livrable.Statut.A_REMPLIR);
+                livrable.setDeadline(deadline);
+                // On n'enregistre pas de date de soumission car c'est juste une demande
 
-                // Persist coach identity so we can filter later
                 if (finalCoach != null) {
                     livrable.setCoachEmail(finalCoach.getEmail());
-                    livrable.setCoachName(
-                            (finalCoach.getFirstName() != null ? finalCoach.getFirstName() : "") +
-                            " " +
-                            (finalCoach.getLastName() != null ? finalCoach.getLastName() : ""));
+                    String coachFullName = (finalCoach.getFirstName() != null ? finalCoach.getFirstName() : "") +
+                                           " " +
+                                           (finalCoach.getLastName() != null ? finalCoach.getLastName() : "");
+                    livrable.setCoachName(coachFullName.trim());
                 }
 
-                return livrableService.createLivrable(livrable);
-            }).filter(java.util.Objects::nonNull).collect(Collectors.toList());
+                Livrable saved = livrableService.createLivrable(livrable);
+                if (saved != null) {
+                    created.add(saved);
+                }
+            }
 
+            System.out.println("SUCCESS: Uploaded livrable for " + created.size() + " entrepreneurs.");
             return ResponseEntity.ok(created);
 
         } catch (Exception e) {
-            System.err.println("CRITICAL ERROR: Failed to upload livrable: " + e.getMessage());
+            System.err.println("CRITICAL ERROR in uploadLivrable: " + e.getMessage());
             e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @PostMapping("/{id}/submit")
+    public ResponseEntity<Livrable> submitLivrable(
+            @PathVariable Long id,
+            @RequestParam("file") MultipartFile file) {
+        try {
+            LocalFileStorageService.FileUploadResult uploadResult =
+                    localFileStorageService.uploadFileWithMimeType(file);
+            String fileUrl = "/uploads/" + uploadResult.getFileName();
+
+            long size = file.getSize();
+            String sizeStr = size < 1024 ? size + " B"
+                    : size < 1_048_576 ? (size / 1024) + " KB"
+                    : (size / 1_048_576) + " MB";
+
+            Livrable updated = livrableService.submitLivrable(id, fileUrl, sizeStr);
+            return updated != null ? ResponseEntity.ok(updated) : ResponseEntity.notFound().build();
+        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }

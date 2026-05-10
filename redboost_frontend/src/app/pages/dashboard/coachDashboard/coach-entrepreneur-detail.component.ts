@@ -116,7 +116,7 @@ import { environment } from '../../../../environment';
             <span class="ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full" 
                   [style.background]="getPendingReviewCount() > 0 ? '#fff0f5' : '#F3F4F6'"
                   [style.color]="getPendingReviewCount() > 0 ? '#ff3d91' : '#6B7280'">
-              {{ getPendingReviewCount() > 0 ? getPendingReviewCount() + ' à valider' : (entrepreneur.livrables?.length || 0) }}
+              {{ getPendingReviewCount() > 0 ? getPendingReviewCount() + ' à valider' : (entrepreneur.livrables.length || 0) }}
             </span>
           </button>
           <button
@@ -125,7 +125,7 @@ import { environment } from '../../../../environment';
             [ngClass]="activeTab === 'reporting' ? 'border-[#ff3d91] text-[#ff3d91]' : 'border-transparent text-gray-500 hover:text-gray-700'"
           >
             Reporting Sessions
-            <span class="ml-1.5 text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">{{ entrepreneur.notes?.length || 0 }}</span>
+            <span class="ml-1.5 text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">{{ entrepreneur.notes.length || 0 }}</span>
           </button>
           
           <button
@@ -173,7 +173,7 @@ import { environment } from '../../../../environment';
               </div>
               <div>
                 <p class="text-xs text-gray-400">Livrables reçus</p>
-                <p class="text-sm font-bold text-[#1A1A2E]">{{ entrepreneur.livrables?.length || 0 }}</p>
+                <p class="text-sm font-bold text-[#1A1A2E]">{{ entrepreneur.livrables.length || 0 }}</p>
               </div>
             </div>
             <div class="w-px h-8 bg-gray-200"></div>

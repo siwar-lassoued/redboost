@@ -33,6 +33,8 @@ public class Livrable {
     @Column(name = "date_soumission")
     private LocalDateTime dateSoumission;
 
+    private LocalDateTime deadline;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "entrepreneur_id", nullable = false)
     private User entrepreneur;
@@ -63,13 +65,26 @@ public class Livrable {
     @Column(name = "coach_email")
     private String coachEmail;
 
+    @Transient
+    private String programmeName;
+    @Transient
+    private String thematiqueName;
+    @Transient
+    private String sessionName;
+    @Transient
+    private String tacheName;
+    @Transient
+    private java.time.LocalDate tacheDate;
+    @Transient
+    private String entrepreneurName;
+
     @PrePersist
     protected void onCreate() {
         dateSoumission = LocalDateTime.now();
     }
 
     public enum Statut {
-        SUBMITTED, PENDING, PENDING_REVIEW, ACCEPTED, REVISION, RESUBMITTED, APPROVED, REJECTED, EN_ATTENTE, SOUMIS, VALIDE, REJETE, APPROUVE, EN_REVISION
+        A_REMPLIR, SOUMIS, SUBMITTED, EN_REVISION, REVISION, RESOUMIS, ACCEPTE, REJETE
     }
 
     public Livrable() {}
@@ -109,4 +124,20 @@ public class Livrable {
     public void setCoachName(String coachName) { this.coachName = coachName; }
     public String getCoachEmail() { return coachEmail; }
     public void setCoachEmail(String coachEmail) { this.coachEmail = coachEmail; }
+
+    public LocalDateTime getDeadline() { return deadline; }
+    public void setDeadline(LocalDateTime deadline) { this.deadline = deadline; }
+
+    public String getProgrammeName() { return programmeName; }
+    public void setProgrammeName(String programmeName) { this.programmeName = programmeName; }
+    public String getThematiqueName() { return thematiqueName; }
+    public void setThematiqueName(String thematiqueName) { this.thematiqueName = thematiqueName; }
+    public String getSessionName() { return sessionName; }
+    public void setSessionName(String sessionName) { this.sessionName = sessionName; }
+    public String getTacheName() { return tacheName; }
+    public void setTacheName(String tacheName) { this.tacheName = tacheName; }
+    public java.time.LocalDate getTacheDate() { return tacheDate; }
+    public void setTacheDate(java.time.LocalDate tacheDate) { this.tacheDate = tacheDate; }
+    public String getEntrepreneurName() { return entrepreneurName; }
+    public void setEntrepreneurName(String entrepreneurName) { this.entrepreneurName = entrepreneurName; }
 }

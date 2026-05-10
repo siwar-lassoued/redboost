@@ -1,349 +1,524 @@
-import { Component, signal, computed, inject, ChangeDetectionStrategy, OnInit } from '@angular/core';
+import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { LivrableService } from '../../../core/services/livrable.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { MatchingService } from '../../../core/services/matching.service';
+import { CoachService } from '../../dashboard/coachDashboard/services/coach.service';
 import { environment } from '../../../../environment';
 
-type LivTab = 'ALL' | 'EN_ATTENTE' | 'VALIDE' | 'REJETE';
-
-const TAB_CFG: { id: LivTab; label: string; icon: string }[] = [
-  { id: 'ALL',        label: 'Tous',       icon: 'pi-copy'       },
-  { id: 'EN_ATTENTE', label: 'En attente', icon: 'pi-clock'      },
-  { id: 'VALIDE',     label: 'Approuvés',  icon: 'pi-check-circle'},
-  { id: 'REJETE',     label: 'Rejetés',    icon: 'pi-times-circle'},
-];
-
-const STATUS_MAP: Record<string, { label: string; bg: string; color: string; dot: string }> = {
-  EN_ATTENTE:     { label: 'En attente',  bg: '#FEF9C3', color: '#92400E', dot: '#f59e0b' },
-  SOUMIS:         { label: 'Soumis',      bg: '#EFF6FF', color: '#2563EB', dot: '#3b82f6' },
-  PENDING:        { label: 'En attente',  bg: '#FEF9C3', color: '#92400E', dot: '#f59e0b' },
-  PENDING_REVIEW: { label: 'En revue',    bg: '#FEF3C7', color: '#D97706', dot: '#f59e0b' },
-  SUBMITTED:      { label: 'Soumis',      bg: '#EFF6FF', color: '#2563EB', dot: '#3b82f6' },
-  VALIDE:         { label: 'Approuvé',    bg: '#D1FAE5', color: '#065F46', dot: '#22c55e' },
-  APPROVED:       { label: 'Approuvé',    bg: '#D1FAE5', color: '#065F46', dot: '#22c55e' },
-  ACCEPTED:       { label: 'Accepté',     bg: '#D1FAE5', color: '#065F46', dot: '#22c55e' },
-  REJETE:         { label: 'Rejeté',      bg: '#FEE2E2', color: '#991B1B', dot: '#ef4444' },
-  REJECTED:       { label: 'Rejeté',      bg: '#FEE2E2', color: '#991B1B', dot: '#ef4444' },
-  REVISION:       { label: 'Révision',    bg: '#FEF3C7', color: '#B45309', dot: '#f59e0b' },
-  RESUBMITTED:    { label: 'Resoumis',    bg: '#EFF6FF', color: '#1D4ED8', dot: '#6366f1' },
-};
+type LivTab = 'EN_COURS' | 'TERMINE' | 'REVISION';
 
 @Component({
   selector: 'rb-entrepreneur-livrables',
   standalone: true,
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   template: `
-    <div class="cand-page">
-      <!-- PAGE HEADER -->
-      <div class="cand-header">
-        <div class="header-content">
-          <h1 class="cand-title">Mes Livrables</h1>
-          <p class="cand-subtitle">Documents et livrables partagés par vos coachs</p>
-        </div>
-        <div class="header-stats">
-          <div class="stat-item">
-            <span class="stat-value">{{ allLivrables().length }}</span>
-            <span class="stat-label">Total</span>
+    <div class="livrables-page">
+      <div class="page-header">
+          <div class="header-content">
+              <h1 class="page-title">Mes Livrables</h1>
+              <p class="page-subtitle">Gérez vos documents et soumettez vos travaux à vos coachs</p>
           </div>
-          <div class="stat-divider"></div>
-          <div class="stat-item">
-            <span class="stat-value">{{ getTabCount('EN_ATTENTE') }}</span>
-            <span class="stat-label">En attente</span>
-          </div>
-          <div class="stat-divider"></div>
-          <div class="stat-item">
-            <span class="stat-value">{{ getTabCount('VALIDE') }}</span>
-            <span class="stat-label">Approuvés</span>
-          </div>
-        </div>
       </div>
 
-      <!-- TABS -->
-      <div class="cand-tabs">
-        @for (tab of tabs; track tab.id) {
-          <button
-            (click)="activeTab.set(tab.id)"
-            class="cand-tab"
-            [class.active]="activeTab() === tab.id">
-            <i class="pi {{ tab.icon }}"></i>
-            {{ tab.label }}
-            <span class="tab-count">{{ getTabCount(tab.id) }}</span>
-          </button>
-        }
+      <!-- Tabs -->
+      <div class="tabs-container premium-card mb-6">
+          <div class="tab-item" [class.active]="activeTab() === 'EN_COURS'" (click)="activeTab.set('EN_COURS')">
+              <i class="pi pi-clock"></i>
+              <span>En cours</span>
+              <span class="count-badge">{{ getTabCount('EN_COURS') }}</span>
+          </div>
+          <div class="tab-item" [class.active]="activeTab() === 'TERMINE'" (click)="activeTab.set('TERMINE')">
+              <i class="pi pi-check-circle"></i>
+              <span>Terminé</span>
+              <span class="count-badge">{{ getTabCount('TERMINE') }}</span>
+          </div>
+          <div class="tab-item" [class.active]="activeTab() === 'REVISION'" (click)="activeTab.set('REVISION')">
+              <i class="pi pi-sync"></i>
+              <span>En révision</span>
+              <span class="count-badge">{{ getTabCount('REVISION') }}</span>
+          </div>
       </div>
 
-      <!-- LOADING -->
-      @if (loading()) {
-        <div class="loading-wrap">
-          <div class="spinner"></div>
-        </div>
-      } @else {
-
-        <!-- LIVRABLES GRID -->
-        <div class="sessions-grid" *ngIf="filtered().length > 0">
-          @for (liv of filtered(); track liv.id) {
-            <div class="premium-session-card" [class.card-rejected]="isRejected(liv.statut || liv.status)">
-
-              <!-- Card Top -->
-              <div class="card-top">
-                <div class="file-type-pill" [style.background]="getFileIcon(liv.titre || liv.fileName || '').bg">
-                  <i class="pi" [class]="getFileIcon(liv.titre || liv.fileName || '').icon"
-                     [style.color]="getFileIcon(liv.titre || liv.fileName || '').color"></i>
-                  {{ getFileIcon(liv.titre || liv.fileName || '').label }}
-                </div>
-                <div class="status-dot-wrap">
-                  <div class="status-dot" [style.background]="getStatus(liv.statut || liv.status).dot"></div>
-                  <span class="status-text">{{ getStatus(liv.statut || liv.status).label }}</span>
-                </div>
+      <!-- Filters -->
+      <div class="filters-container premium-card mb-8">
+          <div class="filter-row">
+              <div class="filter-item">
+                  <div class="search-input-wrap">
+                      <i class="pi pi-search"></i>
+                      <input type="text" placeholder="Recherche rapide..." [(ngModel)]="searchTerm" />
+                  </div>
+              </div>
+              
+              <div class="filter-item">
+                  <select class="filter-select" [(ngModel)]="selectedProgramme">
+                      <option value="">Tous les Programmes</option>
+                      <option *ngFor="let p of uniqueProgrammes()" [value]="p">{{ p }}</option>
+                  </select>
               </div>
 
-              <!-- Card Body -->
-              <div class="card-body">
-                <h3 class="session-title">{{ liv.titre }}</h3>
-                <p class="session-theme" *ngIf="liv.programme?.nom">
-                  <i class="pi pi-bookmark-fill"></i>
-                  {{ liv.programme?.nom }}
-                </p>
-
-                <div class="session-meta">
-                  <div class="meta-item">
-                    <i class="pi pi-calendar"></i>
-                    <span>{{ formatDate(liv.dateSoumission || liv.createdAt) }}</span>
-                  </div>
-                  <div class="meta-item" *ngIf="liv.fileSize">
-                    <i class="pi pi-database"></i>
-                    <span>{{ liv.fileSize }}</span>
-                  </div>
-                </div>
-
-                <!-- Coach Info -->
-                <div class="coach-info-mini" *ngIf="liv.coachName || liv.coachEmail">
-                  <div class="coach-avatar-mini" [style.background]="getCoachColor(liv.coachName || liv.coachEmail)">
-                    {{ (liv.coachName || liv.coachEmail || 'C')[0].toUpperCase() }}
-                  </div>
-                  <div class="coach-details-mini">
-                    <span class="coach-label">Déposé par</span>
-                    <span class="coach-name">{{ liv.coachName || liv.coachEmail }}</span>
-                  </div>
-                </div>
-
-                <!-- Coach feedback -->
-                @if (liv.commentaire || liv.coachComment) {
-                  <div class="feedback-box">
-                    <i class="pi pi-comment"></i>
-                    <span>{{ liv.commentaire || liv.coachComment }}</span>
-                  </div>
-                }
+              <div class="filter-item">
+                  <select class="filter-select" [(ngModel)]="selectedCoach">
+                      <option value="">Tous les Coachs</option>
+                      <option *ngFor="let c of uniqueCoaches()" [value]="c">{{ c }}</option>
+                  </select>
               </div>
 
-              <!-- Card Footer -->
-              <div class="card-footer">
-                <button
-                  *ngIf="liv.fichierUrl"
-                  (click)="download(liv.fichierUrl)"
-                  class="btn-card-action btn-download">
-                  <i class="pi pi-download"></i>
-                  Télécharger
-                </button>
-                @if (isRejected(liv.statut || liv.status)) {
-                  <button class="btn-card-action btn-reupload" (click)="triggerUpload(liv.id)">
-                    <i class="pi pi-refresh"></i>
-                    Renvoyer
+              <div class="filter-item">
+                  <select class="filter-select" [(ngModel)]="selectedSession">
+                      <option value="">Toutes les Sessions</option>
+                      <option *ngFor="let s of uniqueSessions()" [value]="s">{{ s }}</option>
+                  </select>
+              </div>
+
+              <div class="filter-item">
+                  <select class="filter-select" [(ngModel)]="selectedThematique">
+                      <option value="">Toutes les Thématiques</option>
+                      <option *ngFor="let t of uniqueThematiques()" [value]="t">{{ t }}</option>
+                  </select>
+              </div>
+          </div>
+      </div>
+
+      <!-- Livrables List -->
+      <div class="livrables-list-wrap" *ngIf="filtered().length > 0">
+          <div class="livrable-item premium-card" *ngFor="let liv of filtered()">
+              <div class="livrable-main">
+                  <div class="livrable-info-grid">
+                      <div class="info-cell coach">
+                          <span class="cell-label">Coach Référent</span>
+                          <div class="user-info">
+                              <div class="user-avatar" [style.background]="getCoachColor(liv.coachName)">{{ (liv.coachName || 'C')[0] }}</div>
+                              <span class="user-name">{{ liv.coachName || 'Votre Coach' }}</span>
+                          </div>
+                      </div>
+                      
+                      <div class="info-cell details">
+                          <span class="cell-label">Contexte</span>
+                          <div class="context-info">
+                              <span class="programme-badge" *ngIf="liv.programmeName || liv.programme?.nom">
+                                  <i class="pi pi-bookmark"></i> {{ liv.programmeName || liv.programme?.nom }}
+                              </span>
+                              <span class="session-badge" *ngIf="liv.sessionName" style="background: #fdf2f8; color: #db2777; font-size: 0.8rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.25rem 0.75rem; border-radius: 99px;">
+                                  <i class="pi pi-calendar"></i> {{ liv.sessionName }}
+                              </span>
+                              <span class="thematique-badge" *ngIf="liv.thematiqueName">
+                                  <i class="pi pi-tag"></i> {{ liv.thematiqueName }}
+                              </span>
+                          </div>
+                      </div>
+
+                      <div class="info-cell document">
+                          <span class="cell-label">Titre / Document</span>
+                          <div class="task-info">
+                              <span class="task-name">{{ liv.titre }}</span>
+                              <div class="doc-link-wrap" *ngIf="liv.fichierUrl" (click)="download(liv.fichierUrl)" style="cursor: pointer; margin-top: 5px;">
+                                  <i class="pi" [class]="getFileIcon(liv.titre || '').icon" [style.color]="getFileIcon(liv.titre || '').color"></i>
+                                  <span class="doc-title">{{ liv.fileSize || 'Consulter' }}</span>
+                              </div>
+                          </div>
+                      </div>
+
+                      <div class="info-cell status">
+                          <span class="cell-label">Statut</span>
+                          <div class="status-badge" [class]="liv.statut?.toLowerCase()">
+                              {{ getStatusLabel(liv.statut) }}
+                          </div>
+                      </div>
+
+                      <div class="livrable-actions" style="display: flex; flex-direction: column; gap: 8px;">
+                          <button class="action-btn download" *ngIf="liv.fichierUrl && (liv.statut === 'A_REMPLIR' || liv.statut === 'EN_REVISION')" (click)="download(liv.fichierUrl)" 
+                                  style="background: #f8fafc; border: 1px solid #e2e8f0; color: #1e293b; padding: 8px 12px; border-radius: 10px;" title="Télécharger le document du coach">
+                              <i class="pi pi-file-import"></i>
+                              <span>Doc Coach</span>
+                          </button>
+                          
+                          <button class="action-btn submit-btn" 
+                                  *ngIf="canSubmit(liv.statut)" 
+                                  (click)="triggerUpload(liv.id)" 
+                                  [disabled]="loading()"
+                                  style="background: #ea5073; color: white; min-width: 140px; padding: 10px 12px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer;">
+                              <i class="pi pi-reply"></i>
+                              <span>{{ (liv.statut === 'EN_REVISION' || liv.statut === 'REVISION') ? 'Renvoyer' : 'Faire un retour' }}</span>
+                          </button>
+                          
+                          <button class="action-btn download" *ngIf="liv.fichierUrl && liv.statut !== 'A_REMPLIR'" (click)="download(liv.fichierUrl)" 
+                                  style="background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 8px 12px; border-radius: 10px;" title="Voir mon envoi">
+                              <i class="pi pi-eye"></i>
+                              <span>Mon Retour</span>
+                          </button>
+                          
+                          <input type="file" [id]="'fu-' + liv.id" class="hidden" (change)="onFile($event, liv)">
+                      </div>
+                  </div>
+              </div>
+
+              <!-- Coach Feedback -->
+              <div class="feedback-box" *ngIf="liv.coachComment">
+                  <div class="feedback-header">
+                      <i class="pi pi-info-circle"></i>
+                      <span>Consignes / Feedback du coach</span>
+                  </div>
+                  <p class="feedback-text">{{ liv.coachComment }}</p>
+              </div>
+          </div>
+      </div>
+
+      <!-- Empty State -->
+      <div class="premium-empty-state" *ngIf="filtered().length === 0">
+          <div class="empty-illustration">
+              <i class="pi pi-folder-open"></i>
+          </div>
+          <h2>Aucun livrable</h2>
+          <p>Vous n'avez pas de documents dans cette catégorie pour le moment.</p>
+      </div>
+
+      <div *ngIf="loading()" class="global-loader-wrap">
+          <div class="premium-spinner"></div>
+      </div>
+
+      <!-- Depôt Modal -->
+      <div *ngIf="showDepotModal" class="modal-overlay" (click)="showDepotModal = false">
+          <div class="modal-box" (click)="$event.stopPropagation()">
+              <div class="modal-header">
+                  <div class="modal-header-info">
+                      <h2 class="modal-name">Déposer un livrable</h2>
+                      <p class="modal-subtitle">Envoyez un document à vos coachs</p>
+                  </div>
+                  <button class="modal-close" (click)="showDepotModal = false"><i class="pi pi-times"></i></button>
+              </div>
+
+              <div class="modal-body scrollable-body">
+                  <div class="form-group" style="margin-bottom: 16px;">
+                      <label class="form-label">Titre du document *</label>
+                      <input type="text" class="search-input-alt" [(ngModel)]="newLivrable.titre" placeholder="Ex: Rapport d'activité" />
+                  </div>
+
+                  <div class="form-group" style="margin-bottom: 16px;">
+                      <label class="form-label">Coach destinataire *</label>
+                      <select class="search-input-alt" [(ngModel)]="newLivrable.coachId">
+                          <option [ngValue]="null">Sélectionner un coach...</option>
+                          <option *ngFor="let c of coaches" [value]="c.id">{{c.nom}} ({{c.thematiqueName}})</option>
+                      </select>
+                  </div>
+
+                  <div class="form-group" style="margin-bottom: 16px;">
+                      <label class="form-label">Programme associé</label>
+                      <select class="search-input-alt" [(ngModel)]="newLivrable.programmeId">
+                          <option [ngValue]="null">Sélectionner un programme (optionnel)...</option>
+                          <option *ngFor="let p of programmes" [value]="p.id">{{p.nom}}</option>
+                      </select>
+                  </div>
+
+                  <div class="form-group" style="margin-bottom: 16px;">
+                      <label class="form-label">Document à transmettre *</label>
+                      <div class="premium-drop-zone" [class.has-file]="selectedFile" (click)="fileInput.click()">
+                          <div class="drop-content" *ngIf="!selectedFile">
+                              <div class="upload-pulse">
+                                <i class="pi pi-cloud-upload"></i>
+                              </div>
+                              <p>Cliquez pour <span class="browse-link">parcourrez vos fichiers</span></p>
+                          </div>
+                          <div class="selected-file-preview" *ngIf="selectedFile">
+                              <i class="pi pi-file" style="font-size: 1.5rem; color: #ea5073;"></i>
+                              <div class="file-details">
+                                  <span class="f-name">{{ selectedFile.name }}</span>
+                              </div>
+                              <button class="btn-remove-file" (click)="$event.stopPropagation(); selectedFile = null"><i class="pi pi-times"></i></button>
+                          </div>
+                          <input type="file" #fileInput class="hidden" (change)="onFileSelected($event)" accept=".pdf,.docx,.xlsx" />
+                      </div>
+                  </div>
+              </div>
+
+              <div class="modal-footer">
+                  <button class="btn-close-modal" (click)="showDepotModal = false" style="margin-right: 12px;">Annuler</button>
+                  <button class="btn-detail" (click)="deposerLivrable()" [disabled]="loading() || !selectedFile || !newLivrable.titre || !newLivrable.coachId" style="background: #ea5073; color: white;">
+                      <i class="pi" [class.pi-check]="!loading()" [class.pi-spin]="loading()" [class.pi-spinner]="loading()" style="margin-right: 6px;"></i>
+                      {{ loading() ? 'Dépôt en cours...' : 'Confirmer le dépôt' }}
                   </button>
-                  <input type="file" [id]="'fu-' + liv.id" class="hidden" (change)="onFile($event, liv.id)">
-                }
               </div>
-            </div>
-          }
-        </div>
-
-        <!-- EMPTY STATE -->
-        <div class="empty-state-v2" *ngIf="filtered().length === 0">
-          <div class="empty-icon-wrap">
-            <i class="pi pi-folder-open"></i>
           </div>
-          <h3>Aucun livrable trouvé</h3>
-          <p>Les documents partagés par vos coachs apparaîtront ici.</p>
-        </div>
-      }
+      </div>
     </div>
   `,
   styles: [`
-    :host { display: block; }
-    .cand-page { padding: 2.5rem; background: #f8fafc; min-height: 100vh; font-family: var(--font-family, 'Inter', sans-serif); }
+    .livrables-page { padding: 2rem; background: #f8fafc; min-height: 100vh; }
+    .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 24px; }
+    .page-title { font-size: 2rem; font-weight: 800; color: #1e293b; margin: 0; }
+    .page-subtitle { color: #64748b; font-size: 1rem; margin-top: 4px; }
 
-    /* ── Header ── */
-    .cand-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2.5rem; flex-wrap: wrap; gap: 1.5rem; }
-    .cand-title { font-size: 2.25rem; font-weight: 800; color: #1e293b; margin: 0; letter-spacing: -0.025em; }
-    .cand-subtitle { color: #64748b; font-size: 1.05rem; margin-top: 0.4rem; }
+    .tabs-container { display: flex; gap: 2rem; padding: 0.5rem 1.5rem; background: white; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,.04); border: 1px solid #f1f5f9; }
+    .tab-item { padding: 1rem 0.5rem; display: flex; align-items: center; gap: 0.75rem; color: #64748b; font-weight: 700; cursor: pointer; position: relative; transition: all 0.2s; }
+    .tab-item:hover { color: #0f172a; }
+    .tab-item.active { color: #ea5073; }
+    .tab-item.active::after { content: ''; position: absolute; bottom: -2px; left: 0; right: 0; height: 3px; background: #ea5073; border-radius: 3px 3px 0 0; }
+    .count-badge { background: #f1f5f9; color: #64748b; font-size: 0.75rem; padding: 0.1rem 0.5rem; border-radius: 99px; }
+    .tab-item.active .count-badge { background: #fff1f2; color: #ea5073; }
 
-    .header-stats { display: flex; align-items: center; gap: 2rem; background: white; padding: 1rem 2rem; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,.04); border: 1px solid #f1f5f9; }
-    .stat-item { display: flex; flex-direction: column; align-items: center; }
-    .stat-value { font-size: 1.5rem; font-weight: 800; color: #1e293b; }
-    .stat-label { font-size: 0.7rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .06em; }
-    .stat-divider { width: 1px; height: 30px; background: #f1f5f9; }
+    .filters-container { padding: 1.5rem; background: white; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,.04); border: 1px solid #f1f5f9; }
+    .filter-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; align-items: center; }
+    .filter-item { display: flex; flex-direction: column; }
+    .filter-select { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 0.75rem; font-size: 0.9rem; color: #1e293b; outline: none; transition: all 0.2s; cursor: pointer; }
+    .filter-select:focus { border-color: #ea5073; background: white; }
+    .search-input-wrap i { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #94a3b8; }
+    .search-input-wrap input { width: 100%; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 0.75rem 1rem 0.75rem 2.5rem; font-size: 0.95rem; color: #1e293b; outline: none; }
 
-    /* ── Tabs ── */
-    .cand-tabs { display: flex; gap: 0.5rem; margin-bottom: 2rem; flex-wrap: wrap; }
-    .cand-tab {
-      padding: 0.7rem 1.4rem; border-radius: 14px; font-size: 0.9rem; font-weight: 700;
-      border: 1px solid #f1f5f9; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;
-      transition: all .3s cubic-bezier(.4,0,.2,1); background: white; color: #64748b;
-    }
-    .cand-tab.active { background: #1e293b; color: #fff; box-shadow: 0 4px 12px rgba(30,41,59,.2); border-color: #1e293b; }
-    .cand-tab:hover:not(.active) { background: #f1f5f9; transform: translateY(-1px); }
-    .tab-count { background: rgba(0,0,0,.06); color: inherit; font-size: .75rem; font-weight: 800; padding: .1rem .55rem; border-radius: 99px; }
-    .cand-tab.active .tab-count { background: rgba(255,255,255,.18); }
+    .livrables-list-wrap { display: flex; flex-direction: column; gap: 1rem; }
+    .livrable-item { padding: 1.5rem; border-radius: 24px; border: 1px solid #f1f5f9; transition: all 0.3s; background: white; }
+    .livrable-item:hover { transform: translateX(5px); border-color: #e2e8f0; box-shadow: 0 10px 30px rgba(0,0,0,.05); }
 
-    /* ── Grid ── */
-    .sessions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 2rem; }
+    .livrable-main { display: flex; justify-content: space-between; align-items: center; gap: 2rem; flex-wrap: wrap; }
+    .livrable-info-grid { display: grid; grid-template-columns: 1fr 1.5fr 2fr 1fr; gap: 1.5rem; flex: 1; align-items: start; }
+    
+    .info-cell { display: flex; flex-direction: column; gap: 0.75rem; }
+    .cell-label { font-size: 0.75rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+    
+    .user-info { display: flex; align-items: center; gap: 0.75rem; }
+    .user-avatar { width: 36px; height: 36px; color: white; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; }
+    .user-name { font-weight: 700; color: #1e293b; font-size: 0.95rem; }
 
-    .premium-session-card {
-      background: white; border-radius: 24px; padding: 1.5rem; border: 1px solid #f1f5f9;
-      box-shadow: 0 4px 20px rgba(0,0,0,.04); transition: all .4s cubic-bezier(.4,0,.2,1);
-      cursor: default; position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 1.25rem;
-    }
-    .premium-session-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,.08); border-color: #e2e8f0; }
-    .card-rejected { border-left: 4px solid #ef4444; }
+    .context-info { display: flex; flex-direction: column; gap: 0.4rem; }
+    .programme-badge, .thematique-badge { font-size: 0.8rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.25rem 0.75rem; border-radius: 99px; }
+    .programme-badge { background: #eff6ff; color: #3b82f6; }
+    .thematique-badge { background: #f0fdf4; color: #10b981; }
 
-    /* ── Card Top ── */
-    .card-top { display: flex; justify-content: space-between; align-items: center; }
+    .task-info { display: flex; flex-direction: column; gap: 0.25rem; }
+    .task-name { font-weight: 700; color: #1e293b; font-size: 0.95rem; }
 
-    .file-type-pill {
-      padding: .45rem 1rem; border-radius: 100px; font-size: .75rem; font-weight: 700;
-      display: flex; align-items: center; gap: .45rem; text-transform: uppercase; letter-spacing: .02em; color: #475569;
-    }
-    .file-type-pill i { font-size: .9rem; }
+    .doc-link-wrap { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0.75rem; background: #f8fafc; border-radius: 10px; border: 1px solid #e2e8f0; width: fit-content; }
+    .doc-link-wrap i { font-size: 1.1rem; }
+    .doc-title { font-weight: 600; color: #1e293b; font-size: 0.85rem; }
 
-    .status-dot-wrap { display: flex; align-items: center; gap: .5rem; }
-    .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-    .status-text { font-size: .75rem; font-weight: 700; color: #64748b; text-transform: uppercase; }
+    .status-badge { padding: 0.4rem 0.8rem; border-radius: 8px; font-size: 0.75rem; font-weight: 800; text-align: center; width: fit-content; }
+    .status-badge.submitted, .status-badge.pending_review { background: #fef3c7; color: #d97706; }
+    .status-badge.accepted, .status-badge.valide, .status-badge.approved { background: #dcfce7; color: #15803d; }
+    .status-badge.rejected, .status-badge.rejete { background: #fee2e2; color: #b91c1c; }
+    .status-badge.revision { background: #eff6ff; color: #1d4ed8; }
 
-    /* ── Card Body ── */
-    .card-body { display: flex; flex-direction: column; gap: .75rem; flex: 1; }
-    .session-title { font-size: 1.15rem; font-weight: 800; color: #1e293b; margin: 0; line-height: 1.3; }
-    .session-theme { font-size: .88rem; font-weight: 600; color: #64748b; margin: 0; display: flex; align-items: center; gap: .4rem; }
-    .session-theme i { color: #94a3b8; font-size: .8rem; }
+    .livrable-actions { display: flex; flex-direction: column; gap: 0.5rem; width: 150px; }
+    .action-btn { border: none; padding: 0.6rem 1rem; border-radius: 10px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: all 0.2s; font-size: 0.85rem; }
+    .action-btn.download { background: #f1f5f9; color: #1e293b; }
+    .action-btn.submit-btn { background: #ea5073; color: white; box-shadow: 0 4px 12px rgba(234, 80, 115, 0.2); }
+    .action-btn.submit-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 15px rgba(234, 80, 115, 0.3); }
+    .action-btn.submit-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
-    .session-meta { display: flex; flex-direction: column; gap: .4rem; }
-    .meta-item { display: flex; align-items: center; gap: .75rem; color: #475569; font-size: .9rem; font-weight: 500; }
-    .meta-item i { color: #94a3b8; font-size: .95rem; }
+    .feedback-box { margin-top: 1.5rem; padding: 1.25rem; background: #fffbeb; border-radius: 16px; border-left: 4px solid #f59e0b; }
+    .feedback-header { display: flex; align-items: center; gap: 0.75rem; color: #b45309; font-weight: 700; font-size: 0.9rem; margin-bottom: 0.5rem; }
+    .feedback-text { color: #78350f; font-size: 0.9rem; margin: 0; line-height: 1.5; }
 
-    .coach-info-mini {
-      display: flex; align-items: center; gap: 1rem; padding: .85rem 1rem; background: #f8fafc;
-      border-radius: 14px; border: 1px solid #f1f5f9;
-    }
-    .coach-avatar-mini {
-      width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center;
-      justify-content: center; color: white; font-weight: 800; font-size: 1rem; flex-shrink: 0;
-    }
-    .coach-details-mini { display: flex; flex-direction: column; min-width: 0; }
-    .coach-label { font-size: .62rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .05em; }
-    .coach-name { font-size: .9rem; font-weight: 700; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-    .feedback-box {
-      background: #fffbeb; border-left: 3px solid #f59e0b; padding: .75rem 1rem;
-      border-radius: 0 12px 12px 0; font-size: .88rem; color: #78350f; display: flex; gap: .6rem; align-items: flex-start;
-    }
-    .feedback-box i { color: #f59e0b; margin-top: 2px; flex-shrink: 0; }
-
-    /* ── Card Footer ── */
-    .card-footer { display: flex; gap: .75rem; margin-top: auto; }
-    .btn-card-action {
-      flex: 1; padding: .75rem; border-radius: 12px; border: 1px solid #e2e8f0;
-      font-weight: 700; font-size: .88rem; cursor: pointer; transition: all .2s;
-      display: flex; align-items: center; justify-content: center; gap: .5rem;
-    }
-    .btn-download { background: white; color: #1e293b; }
-    .btn-download:hover { background: #f8fafc; border-color: #cbd5e1; }
-    .btn-reupload { background: #1e293b; color: white; border-color: #1e293b; }
-    .btn-reupload:hover { background: #0f172a; }
-
-    /* ── Empty State ── */
-    .empty-state-v2 {
-      text-align: center; padding: 5rem 2rem; background: white; border-radius: 32px;
-      border: 2px dashed #e2e8f0; max-width: 600px; margin: 3rem auto;
-    }
-    .empty-icon-wrap { width: 80px; height: 80px; background: #f8fafc; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; }
-    .empty-icon-wrap i { font-size: 2.5rem; color: #cbd5e1; }
-    .empty-state-v2 h3 { font-size: 1.4rem; font-weight: 800; color: #1e293b; margin-bottom: .5rem; }
-    .empty-state-v2 p { color: #64748b; font-size: 1rem; }
-
-    /* ── Loading ── */
-    .loading-wrap { display: flex; justify-content: center; align-items: center; padding: 6rem; }
-    .spinner { width: 48px; height: 48px; border: 5px solid #f1f5f9; border-bottom-color: #1e293b; border-radius: 50%; animation: spin 1s linear infinite; }
+    .premium-empty-state { background: white; border-radius: 32px; padding: 5rem 2rem; text-align: center; border: 2px dashed #e2e8f0; max-width: 600px; margin: 3rem auto; }
+    .empty-illustration { width: 80px; height: 80px; background: #f8fafc; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; }
+    .empty-illustration i { font-size: 2.5rem; color: #cbd5e1; }
+    .premium-spinner { width: 48px; height: 48px; border: 5px solid #f1f5f9; border-top-color: #ea5073; border-radius: 50%; animation: spin 1s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
-
     .hidden { display: none; }
+    .mb-6 { margin-bottom: 1.5rem; }
+    .mb-8 { margin-bottom: 2rem; }
   `]
 })
 export class EntrepreneurLivrablesComponent implements OnInit {
   private livrableSvc = inject(LivrableService);
   private authSvc = inject(AuthService);
+  private matchSvc = inject(MatchingService);
+  private coachSvc = inject(CoachService);
 
-  tabs = TAB_CFG;
-  activeTab = signal<LivTab>('ALL');
+  showDepotModal = false;
+  selectedFile: File | null = null;
+  coaches: any[] = [];
+  programmes: any[] = [];
+  newLivrable: { titre: string, coachId: number | null, programmeId: number | null } = { titre: '', coachId: null, programmeId: null };
+
+  activeTab = signal<LivTab>('EN_COURS');
   allLivrables = signal<any[]>([]);
   loading = signal(true);
-  selectedFiles = signal<Record<string, string>>({});
+  searchTerm = '';
+
+  selectedProgramme = '';
+  selectedCoach = '';
+  selectedSession = '';
+  selectedThematique = '';
+
+  uniqueProgrammes = computed(() => {
+    const set = new Set<string>();
+    this.allLivrables().forEach(l => { if (l.programme?.nom) set.add(l.programme.nom); });
+    return Array.from(set).sort();
+  });
+
+  uniqueCoaches = computed(() => {
+    const set = new Set<string>();
+    this.allLivrables().forEach(l => { if (l.coachName) set.add(l.coachName); });
+    return Array.from(set).sort();
+  });
+
+  uniqueSessions = computed(() => {
+    const set = new Set<string>();
+    this.allLivrables().forEach(l => { if (l.sessionName) set.add(l.sessionName); });
+    return Array.from(set).sort();
+  });
+
+  uniqueThematiques = computed(() => {
+    const set = new Set<string>();
+    this.allLivrables().forEach(l => { if (l.thematiqueName) set.add(l.thematiqueName); });
+    return Array.from(set).sort();
+  });
 
   filtered = computed(() => {
     const tab = this.activeTab();
-    if (tab === 'ALL') return this.allLivrables();
-    return this.allLivrables().filter(l => this.mapToGroup(l.statut || l.status) === tab);
+    const term = this.searchTerm.toLowerCase().trim();
+    const prog = this.selectedProgramme;
+    const coach = this.selectedCoach;
+    const sess = this.selectedSession;
+    const theme = this.selectedThematique;
+    
+    return this.allLivrables().filter(l => {
+      const matchesTab = this.mapToGroup(l.statut) === tab;
+      const matchesSearch = !term || (l.titre || '').toLowerCase().includes(term);
+      const matchesProg = !prog || l.programme?.nom === prog;
+      const matchesCoach = !coach || l.coachName === coach;
+      const matchesSess = !sess || l.sessionName === sess;
+      const matchesTheme = !theme || l.thematiqueName === theme;
+
+      return matchesTab && matchesSearch && matchesProg && matchesCoach && matchesSess && matchesTheme;
+    });
   });
 
   ngOnInit(): void {
+    this.loadLivrables();
+    this.loadCoaches();
+  }
+
+  loadCoaches() {
     const user = this.authSvc.currentUser$.value;
     if (!user) return;
+    this.matchSvc.getEntrepreneurCoaches(user.id).subscribe(data => {
+      this.coaches = data || [];
+      
+      // Extraire les programmes uniques des matchings
+      const progMap = new Map<number, any>();
+      this.coaches.forEach(m => {
+        if (m.programmeId && m.programmeName) {
+          progMap.set(Number(m.programmeId), { id: Number(m.programmeId), nom: m.programmeName });
+        }
+      });
+      this.programmes = Array.from(progMap.values());
+    });
+  }
 
+  openDepotModal() {
+    this.newLivrable = { titre: '', coachId: null, programmeId: null };
+    this.selectedFile = null;
+    this.showDepotModal = true;
+  }
+
+  onFileSelected(event: any) {
+    const file = event.target.files[0];
+    if (file) this.selectedFile = file;
+  }
+
+  deposerLivrable() {
+    if (!this.newLivrable.titre || !this.selectedFile || !this.newLivrable.coachId) return;
+    
+    const userId = this.authSvc.currentUser$.value?.id;
+    if (!userId) return;
+
+    this.loading.set(true);
+    this.livrableSvc.upload(
+      this.newLivrable.programmeId ? this.newLivrable.programmeId.toString() : '',
+      [userId.toString()],
+      this.selectedFile,
+      { titre: this.newLivrable.titre, type: 'Document' },
+      this.newLivrable.coachId
+    ).subscribe({
+      next: () => {
+        this.showDepotModal = false;
+        this.loadLivrables();
+        this.loading.set(false);
+      },
+      error: () => this.loading.set(false)
+    });
+  }
+
+  loadLivrables() {
+    const user = this.authSvc.currentUser$.value;
+    if (!user) return;
+    this.loading.set(true);
     this.livrableSvc.getAll({ entrepreneurId: user.id }).subscribe({
       next: (res) => {
         const data = Array.isArray(res) ? res : (res as any)?.data || [];
         this.allLivrables.set(data);
         this.loading.set(false);
       },
-      error: (err) => {
-        console.error('Error loading livrables:', err);
+      error: () => {
         this.allLivrables.set([]);
         this.loading.set(false);
       }
     });
   }
 
-  getTabCount(tab: LivTab): number {
-    if (tab === 'ALL') return this.allLivrables().length;
-    return this.allLivrables().filter(l => this.mapToGroup(l.statut || l.status) === tab).length;
-  }
-
   mapToGroup(statut: string): LivTab {
-    if (['VALIDE', 'APPROVED', 'ACCEPTED'].includes(statut)) return 'VALIDE';
-    if (['REJETE', 'REJECTED', 'REVISION'].includes(statut)) return 'REJETE';
-    return 'EN_ATTENTE';
+    if (['ACCEPTE', 'APPROVED', 'VALIDE'].includes(statut)) return 'TERMINE';
+    if (statut === 'EN_REVISION' || statut === 'REVISION') return 'REVISION';
+    return 'EN_COURS';
   }
 
-  isRejected(statut: string): boolean {
-    return ['REJETE', 'REJECTED', 'REVISION'].includes(statut);
+  getTabCount(tab: LivTab): number {
+    return this.allLivrables().filter(l => this.mapToGroup(l.statut) === tab).length;
   }
 
-  getStatus(statut: string) {
-    return STATUS_MAP[statut] || { label: statut, bg: '#F3F4F6', color: '#374151', dot: '#94a3b8' };
+  getStatusLabel(statut: string) {
+    const config: any = {
+      SUBMITTED: 'Soumis',
+      PENDING_REVIEW: 'En revue',
+      ACCEPTED: 'Validé',
+      APPROVED: 'Approuvé',
+      REJECTED: 'Rejeté',
+      REVISION: 'Révision',
+      VALIDE: 'Approuvé'
+    };
+    return config[statut] || statut;
   }
 
-  formatDate(date: any): string {
-    if (!date) return '—';
-    return new Date(date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+  canSubmit(statut: string): boolean {
+    return !statut || ['EN_REVISION', 'REVISION', 'A_REMPLIR', 'EN_ATTENTE'].includes(statut);
   }
 
-  getFileIcon(fileName: string) {
-    const ext = (fileName || '').split('.').pop()?.toLowerCase();
-    if (ext === 'pdf') return { icon: 'pi-file-pdf', color: '#ef4444', bg: '#fef2f2', label: 'PDF' };
-    if (['doc', 'docx'].includes(ext!)) return { icon: 'pi-file-word', color: '#3b82f6', bg: '#eff6ff', label: 'Word' };
-    if (['xls', 'xlsx'].includes(ext!)) return { icon: 'pi-file-excel', color: '#10b981', bg: '#f0fdf4', label: 'Excel' };
-    if (['ppt', 'pptx'].includes(ext!)) return { icon: 'pi-file', color: '#f97316', bg: '#fff7ed', label: 'PowerPoint' };
-    if (['zip', 'rar'].includes(ext!)) return { icon: 'pi-box', color: '#8b5cf6', bg: '#f5f3ff', label: 'Archive' };
-    return { icon: 'pi-file', color: '#64748b', bg: '#f8fafc', label: 'Fichier' };
+  triggerUpload(id: string) {
+    const el = document.getElementById('fu-' + id) as HTMLInputElement;
+    el?.click();
+  }
+
+  onFile(event: Event, liv: any) {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+
+    const userId = this.authSvc.currentUser$.value?.id;
+    if (!userId) return;
+
+    this.loading.set(true);
+    this.livrableSvc.upload(
+      liv.programme?.id?.toString() || '',
+      [userId.toString()],
+      file,
+      { titre: liv.titre, type: liv.type || 'Document', id: liv.id },
+      liv.coachId
+    ).subscribe({
+      next: () => {
+        // Update status to SUBMITTED
+        this.livrableSvc.updateStatus(liv.id, 'SUBMITTED' as any).subscribe(() => {
+          this.loadLivrables();
+        });
+      },
+      error: () => this.loading.set(false)
+    });
+  }
+
+  download(url: string) {
+    if (url) {
+      const fullUrl = url.startsWith('http') ? url : environment.apiUrl.replace('/api', '') + url;
+      window.open(fullUrl, '_blank');
+    }
   }
 
   getCoachColor(name: string): string {
@@ -354,20 +529,11 @@ export class EntrepreneurLivrablesComponent implements OnInit {
     return colors[Math.abs(hash) % colors.length];
   }
 
-  triggerUpload(id: string) {
-    const el = document.getElementById('fu-' + id) as HTMLInputElement;
-    el?.click();
-  }
-
-  onFile(event: Event, id: string) {
-    const file = (event.target as HTMLInputElement).files?.[0];
-    if (file) this.selectedFiles.update(s => ({ ...s, [id]: file.name }));
-  }
-
-  download(url: string) {
-    if (url) {
-      const fullUrl = url.startsWith('http') ? url : environment.apiUrl.replace('/api', '') + url;
-      window.open(fullUrl, '_blank');
-    }
+  getFileIcon(fileName: string) {
+    const ext = (fileName || '').split('.').pop()?.toLowerCase();
+    if (ext === 'pdf') return { icon: 'pi-file-pdf', color: '#ef4444' };
+    if (['doc', 'docx'].includes(ext!)) return { icon: 'pi-file-word', color: '#3b82f6' };
+    if (['xls', 'xlsx'].includes(ext!)) return { icon: 'pi-file-excel', color: '#10b981' };
+    return { icon: 'pi-file', color: '#64748b' };
   }
 }

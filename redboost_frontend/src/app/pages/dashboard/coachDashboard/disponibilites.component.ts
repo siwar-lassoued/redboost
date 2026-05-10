@@ -97,7 +97,8 @@ interface DateGroupView {
                     [class.out-of-range]="isOutOfRange(cell.fullDate)">
                       <div class="cell-day" [class.today-circle]="cell.isToday">{{cell.day}}</div>
                       <div class="cell-events">
-                          <div *ngFor="let ev of getEventsForDay(cell.fullDate)" class="event-chip" [style.background]="ev.color">
+                          <div *ngFor="let ev of getEventsForDay(cell.fullDate)" class="event-chip" [class.booked]="ev.isBooked" [style.background]="ev.color">
+                              <i *ngIf="ev.isBooked" class="pi pi-check-circle" style="font-size: 8px; margin-right: 2px;"></i>
                               {{ev.title | slice:0:12}}{{ev.title.length > 12 ? '...' : ''}}
                           </div>
                       </div>
@@ -116,7 +117,7 @@ interface DateGroupView {
                       </div>
                       <div class="event-details">
                           <div class="event-name">{{event.title}}</div>
-                          <div class="event-thematique" *ngIf="event.thematiqueNom" style="font-size: 11px; color: #FF4D85; font-weight: 600; margin-top: 2px;">
+                          <div class="event-thematique" *ngIf="event.thematiqueNom" [style.color]="event.color || '#FF4D85'" style="font-size: 11px; font-weight: 600; margin-top: 2px;">
                             <i class="pi pi-tag" style="font-size: 10px; margin-right: 4px;"></i>
                             {{event.thematiqueNom}}
                           </div>
@@ -135,7 +136,7 @@ interface DateGroupView {
               <!-- Disponibilités actives -->
               <div class="sidebar-section">
                   <h3>Disponibilités actives <span class="count-badge">{{disponibilites.length}}</span></h3>
-                  <div *ngFor="let dispo of disponibilites" class="dispo-item">
+                  <div *ngFor="let dispo of disponibilites" class="dispo-item" [style.border-left]="'4px solid ' + (dispo.couleur || '#FF4D85')">
                       <div class="dispo-info">
                           <strong>{{dispo.thematiqueNom || 'Thématique'}}</strong>
                           <span>Du {{dispo.dateDebut | date:'dd/MM/yyyy'}} au {{dispo.dateFin | date:'dd/MM/yyyy'}}</span>
@@ -429,7 +430,8 @@ interface DateGroupView {
     .cell-day { font-size: 0.85rem; font-weight: 500; color: #4A5568; padding: 0.2rem 0.4rem; }
     .today-circle { background: #4299E1; color: white !important; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
     .cell-events { display: flex; flex-direction: column; gap: 2px; margin-top: 2px; }
-    .event-chip { font-size: 0.65rem; color: white; padding: 2px 6px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+    .event-chip { font-size: 0.65rem; color: white; padding: 2px 6px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; display: flex; align-items: center; border: 1px solid transparent; }
+    .event-chip.booked { box-shadow: inset 0 0 0 100px rgba(0,0,0,0.15); border-color: rgba(0,0,0,0.2); font-weight: 700; }
     .sidebar-section { background: white; border-radius: 1.5rem; padding: 1.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.03); }
     .sidebar-section h3 { font-size: 1.1rem; font-weight: 700; color: #2D3748; margin: 0 0 1rem 0; }
     .count-badge { background: #2D3748; color: white; font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 50%; font-weight: 700; }
@@ -440,7 +442,7 @@ interface DateGroupView {
     .event-details { flex: 1; }
     .event-name { font-weight: 700; color: #2D3748; font-size: 0.9rem; }
     .event-datetime { font-size: 0.8rem; color: #718096; margin-top: 0.2rem; display: flex; align-items: center; gap: 0.3rem; }
-    .dispo-item { display: flex; justify-content: space-between; align-items: center; padding: 0.8rem; border-radius: 10px; background: #F8FAFC; border: 1px solid #E2E8F0; margin-bottom: 0.5rem; }
+    .dispo-item { display: flex; justify-content: space-between; align-items: center; padding: 0.8rem; border-radius: 10px; background: #F8FAFC; border: 1px solid #E2E8F0; margin-bottom: 0.5rem; border-left: 4px solid transparent; transition: all 0.2s; }
     .dispo-actions { display: flex; gap: 0.4rem; }
     .btn-icon-edit { background: #EBF8FF; color: #3182CE; border: none; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
     .btn-icon-edit:hover { background: #BEE3F8; }
@@ -449,7 +451,7 @@ interface DateGroupView {
     .dispo-info span { color: #718096; font-size: 0.8rem; margin-top: 0.1rem; }
     .btn-icon-danger { background: #FFF5F5; color: #E53E3E; border: none; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
     .btn-icon-danger:hover { background: #FED7D7; }
-    .btn-primary { background: linear-gradient(135deg, #FF4D85, #FF75A0); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 12px; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; transition: transform 0.2s; }
+    .btn-primary { background: linear-gradient(135deg, #FF4D85); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 12px; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; transition: transform 0.2s; }
     .btn-primary:hover { transform: translateY(-2px); }
     .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
     .shadow-glow { box-shadow: 0 4px 15px rgba(233,30,99,0.4); }
@@ -807,14 +809,7 @@ dispoIdsForActiveTheme: number[] = [];
     if (value.includes('T')) return value.split('T')[0];
     return value.length >= 10 ? value.slice(0, 10) : value;
   }
-private mapCalendarEvents(events: CoachCalendarEventDTO[]): any[] {
-    const colorByType: Record<string, string> = {
-      DISPONIBILITE_COACH: '#FF4D85',
-      SESSION_SLOT: '#4299E1',
-      SESSION: '#38B2AC',
-      SEANCE_EXCEPTIONNELLE: '#ED8936'
-    };
-
+  private mapCalendarEvents(events: CoachCalendarEventDTO[]): any[] {
     return events.map((ev) => ({
       id: ev.id,
       type: ev.type,
@@ -823,7 +818,8 @@ private mapCalendarEvents(events: CoachCalendarEventDTO[]): any[] {
       time: (ev.startTime || '').slice(0, 5),
       startTime: ev.startTime ? ev.startTime.slice(0, 5) : '',
       endTime: ev.endTime ? ev.endTime.slice(0, 5) : '',
-      color: colorByType[ev.type] || '#805AD5',
+      color: ev.color || '#4299E1',
+      isBooked: !!ev.booked,
       thematiqueNom: ev.thematiqueNom,
       programmeNom: ev.programmeNom
     }));

@@ -10,4 +10,5 @@ import java.util.List;
 public interface DisponibiliteRepository extends JpaRepository<Disponibilite, Long> {
     List<Disponibilite> findByCoachId(Long coachId);
     List<Disponibilite> findByThematiqueId(Long thematiqueId);
+    List<Disponibilite> findByCoachIdAndThematiqueId(Long coachId, Long thematiqueId);
 }

@@ -21,4 +21,5 @@ public class SessionCoachDTO {
     private String meetLink;
     private String couleur;
     private Boolean isExceptionnelle;
+    private String bookingStatus;
 }
