@@ -70,7 +70,13 @@ import { SessionService } from '../../../core/services/session.service';
 
         <!-- History -->
         <div class="section-card" style="margin-top: 1.5rem;">
-           <h2 class="section-title"><i class="pi pi-history"></i> Historique des Rapports ({{ history.length }})</h2>
+           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1.5rem;">
+               <h2 class="section-title" style="margin:0;"><i class="pi pi-history"></i> Historique des Rapports ({{ history.length }})</h2>
+               <button class="btn-primary" (click)="downloadConsolidatedPdf()" *ngIf="selectedEntrepreneurId > 0" style="background:#E11D48;">
+                  <i class="pi pi-file-pdf"></i> Télécharger Rapport Consolidé
+               </button>
+           </div>
+           
            <div *ngIf="history.length === 0" class="empty-state">
              <p>Aucun rapport de session n'a été créé.</p>
            </div>
@@ -627,5 +633,30 @@ export class CoachRapportSessionComponent implements OnInit {
         });
         this.currentSection = originalSection;
     }
+  }
+
+  downloadConsolidatedPdf() {
+    if (this.selectedEntrepreneurId === 0) return;
+    
+    this.toastr.info("Génération du rapport consolidé...");
+    this.coachService.getConsolidatedPdf(this.selectedEntrepreneurId, this.coachId).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const ent = this.entrepreneurs.find(e => e.id == this.selectedEntrepreneurId);
+        const name = ent ? `${ent.firstName}_${ent.lastName}` : 'Entrepreneur';
+        a.download = `Rapport_Consolide_${name}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        this.toastr.success("Rapport consolidé téléchargé.");
+      },
+      error: (err) => {
+        console.error(err);
+        this.toastr.error("Aucun rapport trouvé ou erreur serveur.");
+      }
+    });
   }
 }

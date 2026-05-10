@@ -383,6 +383,12 @@ export class CoachService {
     return this.http.delete<void>(`${environment.apiUrl}/rapports-session-coach/${id}`);
   }
 
+  getConsolidatedPdf(entrepreneurId: number, coachId: number): Observable<Blob> {
+    return this.http.get(`${environment.apiUrl}/rapports-session-coach/entrepreneur/${entrepreneurId}/coach/${coachId}/consolidated-pdf`, {
+      responseType: 'blob'
+    });
+  }
+
 
 getMyCoaches(entrepreneurId: number): Observable<any[]> {
   return this.http.get<any[]>(
