@@ -373,8 +373,13 @@ export class EntrepreneurLivrablesComponent implements OnInit {
     const coach = this.selectedCoach;
     const sess = this.selectedSession;
     const theme = this.selectedThematique;
-    
     return this.allLivrables().filter(l => {
+      const matchesSearch = !term || (l.titre || '').toLowerCase().includes(term);
+      const matchesProg = !prog || l.programme?.nom === prog;
+      const matchesCoach = !coach || l.coachName === coach;
+      const matchesSess = !sess || l.sessionName === sess;
+      const matchesTheme = !theme || l.thematiqueName === theme;
+
       return matchesSearch && matchesProg && matchesCoach && matchesSess && matchesTheme;
     });
   });

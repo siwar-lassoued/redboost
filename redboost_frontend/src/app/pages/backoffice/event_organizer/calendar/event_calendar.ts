@@ -210,7 +210,7 @@ export class CalendarComponent implements OnInit {
           allCalendarEvents = [...allCalendarEvents, ...bookedMapped];
         }
 
-        // Load coach's own sessions from the unified my-calendar endpoint
+     
         if (response.myCalendar && response.myCalendar.length > 0) {
           const myCalMapped = this.mapMyCalendarEventsToCalendarEvents(response.myCalendar);
           // Avoid duplicates with already mapped booked sessions
