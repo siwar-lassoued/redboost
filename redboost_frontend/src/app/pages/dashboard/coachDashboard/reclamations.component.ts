@@ -58,6 +58,30 @@ import { environment } from '../../../../environment';
                                </div>
                            </div>
 
+                           <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                               <div class="form-group">
+                                   <label class="form-label">Programme</label>
+                                   <select [(ngModel)]="newReclamation.programmeName" class="premium-input">
+                                      <option value="">Non spécifié</option>
+                                      <option *ngFor="let p of programmes" [value]="p.nom">{{p.nom}}</option>
+                                   </select>
+                               </div>
+                               <div class="form-group">
+                                   <label class="form-label">Thématique</label>
+                                   <select [(ngModel)]="newReclamation.thematiqueName" class="premium-input">
+                                      <option value="">Non spécifié</option>
+                                      <option *ngFor="let t of thematiques" [value]="t.nom">{{t.nom}}</option>
+                                   </select>
+                               </div>
+                               <div class="form-group">
+                                   <label class="form-label">Session visée</label>
+                                   <select [(ngModel)]="newReclamation.sessionDetails" class="premium-input">
+                                      <option value="">Non spécifié</option>
+                                      <option *ngFor="let s of sessions" [value]="s.titre + ' (' + s.dateSession + ')'">{{s.titre}} - {{s.dateSession}}</option>
+                                   </select>
+                               </div>
+                           </div>
+
                            <div class="form-group">
                                <label class="form-label">Sujet / Titre *</label>
                                <input type="text" [(ngModel)]="newReclamation.sujet" placeholder="Ex: Absence non justifiée session du 10/05" class="premium-input">
@@ -100,7 +124,7 @@ import { environment } from '../../../../environment';
                            </div>
                            
                            <div class="pt-4">
-                               <button (click)="submit()" [disabled]="loading" class="w-full bg-[#1A1A2E] hover:bg-[#0f0f1c] text-white py-4 rounded-2xl font-bold shadow-lg shadow-[#1A1A2E]/10 transition-all flex items-center justify-center gap-3 group">
+                               <button (click)="submit()" [disabled]="loading" class="w-full bg-[#E44D62] hover:bg-[#D43D52] text-white py-4 rounded-2xl font-bold shadow-lg shadow-[#E44D62]/10 transition-all flex items-center justify-center gap-3 group">
                                    <i class="pi" [class.pi-send]="!loading" [class.pi-spin]="loading" [class.pi-spinner]="loading"></i>
                                    {{ loading ? 'Envoi en cours...' : 'Envoyer à l\\'administration' }}
                                </button>
@@ -132,8 +156,13 @@ import { environment } from '../../../../environment';
                            </div>
                            
                            <h4 class="font-bold text-[#1A1A2E] mb-1">{{ r.sujet }}</h4>
-                           <div class="text-xs font-semibold text-[#E44D62] mb-3 flex items-center gap-1">
+                           <div class="text-xs font-semibold text-[#E44D62] mb-2 flex items-center gap-1">
                                <i class="pi pi-user text-[10px]"></i> {{ r.entrepreneurName }}
+                           </div>
+
+                           <div class="flex flex-wrap gap-1 mb-3">
+                               <span *ngIf="r.programmeName" class="px-2 py-0.5 bg-gray-50 text-gray-500 rounded text-[9px] font-bold border border-gray-100">{{r.programmeName}}</span>
+                               <span *ngIf="r.thematiqueName" class="px-2 py-0.5 bg-blue-50 text-blue-500 rounded text-[9px] font-bold border border-blue-100">{{r.thematiqueName}}</span>
                            </div>
                            
                            <p class="text-xs text-gray-500 line-clamp-3 mb-4 leading-relaxed italic border-l-2 border-gray-100 pl-3">
@@ -187,16 +216,22 @@ import { environment } from '../../../../environment';
 export class ReclamationsComponent implements OnInit {
   coachId!: number;
   entrepreneurs: any[] = [];
-  reclamations: ReclamationDTO[] = [];
+  reclamations: any[] = [];
+  programmes: any[] = [];
+  thematiques: any[] = [];
+  sessions: any[] = [];
   loading = false;
   selectedFile: File | null = null;
   
-  newReclamation: ReclamationDTO = {
+  newReclamation: any = {
     coachId: 0,
     entrepreneurId: 0,
     sujet: '',
     typeReclamation: 'COMPORTEMENT',
-    description: ''
+    description: '',
+    programmeName: '',
+    thematiqueName: '',
+    sessionDetails: ''
   };
 
   constructor(
@@ -212,7 +247,14 @@ export class ReclamationsComponent implements OnInit {
       this.newReclamation.coachId = this.coachId;
       this.loadEntrepreneurs();
       this.loadReclamations();
+      this.loadContexts();
     }
+  }
+
+  loadContexts() {
+    this.coachService.getCoachProgrammes(this.coachId).subscribe(p => this.programmes = p);
+    this.coachService.getThematiquesAssignedToCoach(this.coachId).subscribe(t => this.thematiques = t);
+    this.coachService.getReclamationSessions(this.coachId).subscribe(s => this.sessions = s);
   }
 
   loadEntrepreneurs() {
@@ -293,7 +335,10 @@ export class ReclamationsComponent implements OnInit {
       entrepreneurId: 0,
       sujet: '',
       typeReclamation: 'COMPORTEMENT',
-      description: ''
+      description: '',
+      programmeName: '',
+      thematiqueName: '',
+      sessionDetails: ''
     };
     this.selectedFile = null;
   }

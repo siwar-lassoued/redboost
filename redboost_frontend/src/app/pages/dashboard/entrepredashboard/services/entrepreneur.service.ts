@@ -49,4 +49,16 @@ export class EntrepreneurService {
     }
     return this.http.post<ReclamationDTO>(`${this.apiUrl}/${entrepreneurId}/reclamations/${coachId}`, formData);
   }
+
+  getProgrammes(entrepreneurId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/${entrepreneurId}/programmes`);
+  }
+
+  getThematiques(entrepreneurId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/${entrepreneurId}/thematiques`);
+  }
+
+  getSessions(entrepreneurId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/${entrepreneurId}/sessions`);
+  }
 }

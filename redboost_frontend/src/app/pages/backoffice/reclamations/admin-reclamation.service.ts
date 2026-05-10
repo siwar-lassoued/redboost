@@ -12,6 +12,7 @@ export interface AdminReclamation {
   description: string;
   statut: string;
   dateReclamation: string;
+  roleEmetteur?: string;
 }
 
 @Injectable({

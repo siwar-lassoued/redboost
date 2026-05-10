@@ -20,7 +20,7 @@ import { environment } from '../../../../../environment';
                    <p class="text-gray-500 mt-1 font-medium">Signalez un incident ou un comportement anormal concernant un coach.</p>
                </div>
                <div class="px-4 py-2 bg-white rounded-2xl shadow-sm border border-gray-100 flex items-center gap-3">
-                   <div class="w-10 h-10 rounded-xl bg-[#F0F7FF] flex items-center justify-center text-[#3B82F6]">
+                   <div class="w-10 h-10 rounded-xl bg-[#FFF5F8] flex items-center justify-center text-[#E44D62]">
                        <i class="pi pi-shield text-xl"></i>
                    </div>
                    <div>
@@ -35,7 +35,7 @@ import { environment } from '../../../../../environment';
                <div class="lg:col-span-2">
                    <div class="premium-card p-6 md:p-8">
                        <h3 class="text-xl font-bold text-[#1A1A2E] mb-6 flex items-center gap-2">
-                           <i class="pi pi-plus-circle text-[#3B82F6]"></i>
+                           <i class="pi pi-plus-circle text-[#E44D62]"></i>
                            Nouvelle réclamation
                        </h3>
                        
@@ -54,6 +54,30 @@ import { environment } from '../../../../../environment';
                                       <option value="COMPORTEMENT">Problème de comportement</option>
                                       <option value="RETARD">Absences / Retards répétés</option>
                                       <option value="AUTRE">Autre motif</option>
+                                   </select>
+                               </div>
+                           </div>
+
+                           <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                               <div class="form-group">
+                                   <label class="form-label">Programme</label>
+                                   <select [(ngModel)]="newReclamation.programmeName" class="premium-input">
+                                      <option value="">Non spécifié</option>
+                                      <option *ngFor="let p of programmes" [value]="p.nom">{{p.nom}}</option>
+                                   </select>
+                               </div>
+                               <div class="form-group">
+                                   <label class="form-label">Thématique</label>
+                                   <select [(ngModel)]="newReclamation.thematiqueName" class="premium-input">
+                                      <option value="">Non spécifié</option>
+                                      <option *ngFor="let t of thematiques" [value]="t.nom">{{t.nom}}</option>
+                                   </select>
+                               </div>
+                               <div class="form-group">
+                                   <label class="form-label">Session visée</label>
+                                   <select [(ngModel)]="newReclamation.sessionDetails" class="premium-input">
+                                      <option value="">Non spécifié</option>
+                                      <option *ngFor="let s of sessions" [value]="s.titre + ' (' + s.dateSession + ')'">{{s.titre}} - {{s.dateSession}}</option>
                                    </select>
                                </div>
                            </div>
@@ -82,9 +106,9 @@ import { environment } from '../../../../../environment';
                                        <p class="text-xs text-gray-400 mt-1">PDF, Images ou Word (Max 5MB)</p>
                                    </div>
 
-                                   <div *ngIf="selectedFile" class="flex items-center justify-between w-full bg-white p-3 rounded-xl border border-[#3B82F6]/20">
+                                   <div *ngIf="selectedFile" class="flex items-center justify-between w-full bg-white p-3 rounded-xl border border-[#E44D62]/20">
                                        <div class="flex items-center gap-3">
-                                           <div class="w-10 h-10 rounded-lg bg-[#F0F7FF] flex items-center justify-center text-[#3B82F6]">
+                                           <div class="w-10 h-10 rounded-lg bg-[#FFF5F8] flex items-center justify-center text-[#E44D62]">
                                                <i class="pi pi-file text-lg"></i>
                                            </div>
                                            <div class="text-left">
@@ -100,7 +124,7 @@ import { environment } from '../../../../../environment';
                            </div>
                            
                            <div class="pt-4">
-                               <button (click)="submit()" [disabled]="loading" class="w-full bg-[#1A1A2E] hover:bg-[#0f0f1c] text-white py-4 rounded-2xl font-bold shadow-lg shadow-[#1A1A2E]/10 transition-all flex items-center justify-center gap-3 group">
+                               <button (click)="submit()" [disabled]="loading" class="w-full bg-[#E44D62] hover:bg-[#D43D52] text-white py-4 rounded-2xl font-bold shadow-lg shadow-[#E44D62]/10 transition-all flex items-center justify-center gap-3 group">
                                    <i class="pi" [class.pi-send]="!loading" [class.pi-spin]="loading" [class.pi-spinner]="loading"></i>
                                    {{ loading ? 'Envoi en cours...' : 'Envoyer à l\\'administration' }}
                                </button>
@@ -117,7 +141,7 @@ import { environment } from '../../../../../environment';
                    </h3>
                    
                    <div class="space-y-4 max-h-[800px] overflow-y-auto pr-2 custom-scrollbar">
-                       <div *ngFor="let r of reclamations" class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:border-[#3B82F6]/30 transition-all">
+                       <div *ngFor="let r of reclamations" class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:border-[#E44D62]/30 transition-all">
                            <div class="flex justify-between items-start mb-3">
                                <span class="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider" 
                                      [ngClass]="{
@@ -132,8 +156,13 @@ import { environment } from '../../../../../environment';
                            </div>
                            
                            <h4 class="font-bold text-[#1A1A2E] mb-1">{{ r.sujet }}</h4>
-                           <div class="text-xs font-semibold text-[#3B82F6] mb-3 flex items-center gap-1">
+                           <div class="text-xs font-semibold text-[#E44D62] mb-2 flex items-center gap-1">
                                <i class="pi pi-user text-[10px]"></i> Coach concerné
+                           </div>
+
+                           <div class="flex flex-wrap gap-1 mb-3">
+                               <span *ngIf="r.programmeName" class="px-2 py-0.5 bg-gray-50 text-gray-500 rounded text-[9px] font-bold border border-gray-100">{{r.programmeName}}</span>
+                               <span *ngIf="r.thematiqueName" class="px-2 py-0.5 bg-blue-50 text-blue-500 rounded text-[9px] font-bold border border-blue-100">{{r.thematiqueName}}</span>
                            </div>
                            
                            <p class="text-xs text-gray-500 line-clamp-3 mb-4 leading-relaxed italic border-l-2 border-gray-100 pl-3">
@@ -145,7 +174,7 @@ import { environment } from '../../../../../environment';
                                    <div class="w-6 h-6 rounded bg-gray-50 flex items-center justify-center text-gray-400" title="Type: {{r.typeReclamation}}">
                                        <i class="pi pi-tag text-[10px]"></i>
                                    </div>
-                                   <div *ngIf="r.pieceJointeUrl" (click)="downloadAttachment(r.pieceJointeUrl)" class="w-6 h-6 rounded bg-[#F0F7FF] flex items-center justify-center text-[#3B82F6] cursor-pointer hover:bg-[#3B82F6] hover:text-white transition-all" title="Télécharger la pièce jointe">
+                                   <div *ngIf="r.pieceJointeUrl" (click)="downloadAttachment(r.pieceJointeUrl)" class="w-6 h-6 rounded bg-[#FFF5F8] flex items-center justify-center text-[#E44D62] cursor-pointer hover:bg-[#E44D62] hover:text-white transition-all" title="Télécharger la pièce jointe">
                                        <i class="pi pi-paperclip text-[10px]"></i>
                                    </div>
                                </div>
@@ -166,14 +195,18 @@ import { environment } from '../../../../../environment';
     </div>
   `,
   styles: [`
-    .reclamations-page { background: #F8FAFC; min-h-screen; font-family: 'Inter', sans-serif; }
+    .reclamations-page { 
+      background: #F8FAFC; 
+      min-height: 100vh; 
+      font-family: 'Inter', sans-serif; 
+    }
     .premium-card { background: white; border-radius: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.02); }
     .form-label { display: block; font-size: 13px; font-weight: 700; color: #64748B; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
     .premium-input { width: 100%; background: #F9FAFB; border: 2px solid #F1F5F9; border-radius: 16px; padding: 12px 16px; font-size: 14px; color: #1A1A2E; font-weight: 500; transition: all 0.2s; outline: none; }
-    .premium-input:focus { border-color: #3B82F6; background: white; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.05); }
+    .premium-input:focus { border-color: #E44D62; background: white; box-shadow: 0 0 0 4px rgba(228, 77, 98, 0.05); }
     .upload-zone { border: 2px dashed #F1F5F9; border-radius: 16px; background: #F9FAFB; transition: all 0.2s; cursor: pointer; padding: 12px; }
-    .upload-zone:hover { border-color: #3B82F6; background: #F0F7FF; }
-    .upload-zone.has-file { border-style: solid; border-color: #3B82F6; background: white; }
+    .upload-zone:hover { border-color: #E44D62; background: #FFF5F8; }
+    .upload-zone.has-file { border-style: solid; border-color: #E44D62; background: white; }
     .custom-scrollbar::-webkit-scrollbar { width: 4px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #E2E8F0; border-radius: 10px; }
@@ -183,16 +216,22 @@ import { environment } from '../../../../../environment';
 export class EntrepreneurReclamationsComponent implements OnInit {
   entrepreneurId!: number;
   coaches: EntrepreneurCoachDTO[] = [];
-  reclamations: ReclamationDTO[] = [];
+  reclamations: any[] = [];
+  programmes: any[] = [];
+  thematiques: any[] = [];
+  sessions: any[] = [];
   loading = false;
   selectedFile: File | null = null;
   
-  newReclamation: ReclamationDTO = {
+  newReclamation: any = {
     coachId: 0,
     entrepreneurId: 0,
     sujet: '',
     typeReclamation: 'COMPORTEMENT',
-    description: ''
+    description: '',
+    programmeName: '',
+    thematiqueName: '',
+    sessionDetails: ''
   };
 
   constructor(
@@ -208,7 +247,14 @@ export class EntrepreneurReclamationsComponent implements OnInit {
       this.newReclamation.entrepreneurId = this.entrepreneurId;
       this.loadCoaches();
       this.loadReclamations();
+      this.loadContexts();
     }
+  }
+
+  loadContexts() {
+    this.entrepreneurService.getProgrammes(this.entrepreneurId).subscribe(p => this.programmes = p);
+    this.entrepreneurService.getThematiques(this.entrepreneurId).subscribe(t => this.thematiques = t);
+    this.entrepreneurService.getSessions(this.entrepreneurId).subscribe(s => this.sessions = s);
   }
 
   loadCoaches() {
@@ -289,7 +335,10 @@ export class EntrepreneurReclamationsComponent implements OnInit {
       coachId: 0,
       sujet: '',
       typeReclamation: 'COMPORTEMENT',
-      description: ''
+      description: '',
+      programmeName: '',
+      thematiqueName: '',
+      sessionDetails: ''
     };
     this.selectedFile = null;
   }

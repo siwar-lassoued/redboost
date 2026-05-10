@@ -15,6 +15,14 @@ import team.project.redboost.repositories.MatchingRepository;
 import team.project.redboost.repositories.ReclamationRepository;
 import team.project.redboost.repositories.UserRepository;
 import team.project.redboost.repositories.ThematiqueRepository;
+import team.project.redboost.repositories.ProgrammeRepository;
+import team.project.redboost.repositories.SessionRepository;
+import team.project.redboost.repositories.SessionCoachRepository;
+import team.project.redboost.dto.ProgrammeDTO;
+import team.project.redboost.dto.SessionCoachDTO;
+import team.project.redboost.entities.Programme;
+import team.project.redboost.entities.ThematiqueCoaching;
+import team.project.redboost.entities.SessionCoach;
 
 import java.io.IOException;
 import java.util.List;
@@ -31,6 +39,9 @@ public class EntrepreneurService {
     private final UserRepository userRepository;
     private final LocalFileStorageService fileStorageService;
     private final ThematiqueRepository thematiqueRepository;
+    private final ProgrammeRepository programmeRepository;
+    private final SessionCoachRepository sessionCoachRepository;
+    private final SessionRepository sessionRepository;
 
     public List<EntrepreneurCoachDTO> getMatchedCoaches(Long entrepreneurId) {
         return matchingRepository.findByEntrepreneurIdAndStatut(entrepreneurId, Matching.StatutMatching.VALIDE).stream()
@@ -85,6 +96,9 @@ public class EntrepreneurService {
                 .pieceJointeUrl(fileUrl != null ? fileUrl : dto.getPieceJointeUrl())
                 .statut(Reclamation.StatutReclamation.EN_ATTENTE)
                 .roleEmetteur(Reclamation.RoleEmetteur.ENTREPRENEUR)
+                .programmeName(dto.getProgrammeName())
+                .thematiqueName(dto.getThematiqueName())
+                .sessionDetails(dto.getSessionDetails())
                 .build();
 
         Reclamation saved = reclamationRepository.save(rec);
@@ -97,9 +111,6 @@ public class EntrepreneurService {
         dto.setEntrepreneurId(r.getEntrepreneur().getId());
         dto.setEntrepreneurName(r.getEntrepreneur().getFirstName() + " " + r.getEntrepreneur().getLastName());
         dto.setCoachId(r.getCoach().getId());
-        // For entrepreneur view, they might want to know WHICH coach it's about
-        // I'll reuse the name field or add a coachName field to DTO if needed
-        // For now, I'll use entrepreneurName as target name in the UI if needed
         dto.setSujet(r.getSujet());
         dto.setTypeReclamation(r.getTypeReclamation().name());
         dto.setDescription(r.getDescription());
@@ -107,6 +118,51 @@ public class EntrepreneurService {
         dto.setStatut(r.getStatut().name());
         dto.setDateReclamation(r.getDateReclamation());
         dto.setRoleEmetteur(r.getRoleEmetteur() != null ? r.getRoleEmetteur().name() : "ENTREPRENEUR");
+        dto.setProgrammeName(r.getProgrammeName());
+        dto.setThematiqueName(r.getThematiqueName());
+        dto.setSessionDetails(r.getSessionDetails());
         return dto;
+    }
+
+    public List<ProgrammeDTO> getEntrepreneurProgrammes(Long entrepreneurId) {
+        return matchingRepository.findByEntrepreneurIdAndStatut(entrepreneurId, Matching.StatutMatching.VALIDE).stream()
+                .map(m -> {
+                    return programmeRepository.findById(m.getProgrammeId()).map(p -> {
+                        ProgrammeDTO d = new ProgrammeDTO();
+                        d.setId(p.getId());
+                        d.setNom(p.getNom());
+                        return d;
+                    }).orElse(null);
+                })
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+    }
+
+    public List<java.util.Map<String, Object>> getEntrepreneurThematiques(Long entrepreneurId) {
+        return matchingRepository.findByEntrepreneurIdAndStatut(entrepreneurId, Matching.StatutMatching.VALIDE).stream()
+                .map(m -> thematiqueRepository.findById(m.getThematiqueId()))
+                .filter(java.util.Optional::isPresent)
+                .map(java.util.Optional::get)
+                .map(t -> {
+                    java.util.Map<String, Object> d = new java.util.HashMap<>();
+                    d.put("id", t.getId());
+                    d.put("nom", t.getNom());
+                    return d;
+                })
+                .distinct()
+                .collect(Collectors.toList());
+    }
+
+    public List<SessionCoachDTO> getEntrepreneurSessions(Long entrepreneurId) {
+        // Find booked sessions for this entrepreneur
+        return sessionRepository.findByEntrepreneurId(entrepreneurId).stream()
+                .map(s -> {
+                    SessionCoachDTO d = new SessionCoachDTO();
+                    d.setId(0L); // Placeholder since Session uses String ID
+                    d.setTitre(s.getTitre());
+                    d.setDateSession(s.getDate() != null ? s.getDate().toLocalDate() : null);
+                    return d;
+                }).collect(Collectors.toList());
     }
 }

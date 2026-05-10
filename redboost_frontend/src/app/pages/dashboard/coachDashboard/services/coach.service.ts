@@ -245,7 +245,7 @@ export class CoachService {
 
   // THEMATIQUES
   getThematiquesAssignedToCoach(coachId: number): Observable<ThematiqueCoachingDTO[]> {
-    return this.http.get<ThematiqueCoachingDTO[]>(`${environment.apiUrl}/thematiques/coach/${coachId}`);
+    return this.http.get<ThematiqueCoachingDTO[]>(`${this.apiUrl}/${coachId}/thematiques`);
   }
 
   // USERS / ENTREPRENEURS
@@ -314,6 +314,10 @@ export class CoachService {
    */
   getCoachProgrammes(coachId: number): Observable<ProgrammeDTO[]> {
     return this.http.get<ProgrammeDTO[]>(`${this.apiUrl}/${coachId}/programmes`);
+  }
+
+  getReclamationSessions(coachId: number): Observable<SessionCoachDTO[]> {
+    return this.http.get<SessionCoachDTO[]>(`${this.apiUrl}/${coachId}/reclamation-sessions`);
   }
 
   // BOOKING (Entrepreneur)

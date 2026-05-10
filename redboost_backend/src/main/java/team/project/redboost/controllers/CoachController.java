@@ -107,8 +107,8 @@ public class CoachController {
             @RequestPart("reclamation") String reclamationJson,
             @RequestPart(value = "file", required = false) MultipartFile file) throws IOException {
         
-        com.fasterxml.jackson.databind.ObjectMapper objMapper = new com.fasterxml.jackson.databind.ObjectMapper();
-        ReclamationDTO dto = objMapper.readValue(reclamationJson, ReclamationDTO.class);
+        com.fasterxml.jackson.databind.ObjectMapper reclamationMapper = new com.fasterxml.jackson.databind.ObjectMapper();
+        ReclamationDTO dto = reclamationMapper.readValue(reclamationJson, ReclamationDTO.class);
         dto.setRoleEmetteur("COACH");
         return ResponseEntity.ok(coachService.addReclamation(coachId, entrepreneurId, dto, file));
     }
@@ -153,6 +153,16 @@ public class CoachController {
     @GetMapping("/{coachId}/programmes")
     public ResponseEntity<List<ProgrammeDTO>> getCoachProgrammes(@PathVariable Long coachId) {
         return ResponseEntity.ok(coachService.getCoachProgrammes(coachId));
+    }
+
+    @GetMapping("/{coachId}/thematiques")
+    public ResponseEntity<List<java.util.Map<String, Object>>> getThematiques(@PathVariable Long coachId) {
+        return ResponseEntity.ok(coachService.getThematiquesAssignedToCoach(coachId));
+    }
+
+    @GetMapping("/{coachId}/reclamation-sessions")
+    public ResponseEntity<List<SessionCoachDTO>> getReclamationSessions(@PathVariable Long coachId) {
+        return ResponseEntity.ok(coachService.getCoachSessions(coachId));
     }
 
     // --- BOOKING (Entrepreneur) ---

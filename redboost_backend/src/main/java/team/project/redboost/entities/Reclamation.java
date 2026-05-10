@@ -63,6 +63,15 @@ public class Reclamation {
     @Column(name = "piece_jointe_url")
     private String pieceJointeUrl;
 
+    @Column(name = "programme_name")
+    private String programmeName;
+
+    @Column(name = "thematique_name")
+    private String thematiqueName;
+
+    @Column(name = "session_details")
+    private String sessionDetails;
+
     @PrePersist
     protected void onCreate() {
         dateReclamation = LocalDateTime.now();

@@ -648,6 +648,9 @@ public class CoachService {
                 .pieceJointeUrl(fileUrl != null ? fileUrl : dto.getPieceJointeUrl())
                 .statut(Reclamation.StatutReclamation.EN_ATTENTE)
                 .roleEmetteur(Reclamation.RoleEmetteur.COACH)
+                .programmeName(dto.getProgrammeName())
+                .thematiqueName(dto.getThematiqueName())
+                .sessionDetails(dto.getSessionDetails())
                 .build();
 
         Reclamation saved = reclamationRepository.save(rec);
@@ -763,6 +766,10 @@ public class CoachService {
         dto.setPieceJointeUrl(r.getPieceJointeUrl());
         dto.setStatut(r.getStatut().name());
         dto.setDateReclamation(r.getDateReclamation());
+        dto.setRoleEmetteur(r.getRoleEmetteur() != null ? r.getRoleEmetteur().name() : "COACH");
+        dto.setProgrammeName(r.getProgrammeName());
+        dto.setThematiqueName(r.getThematiqueName());
+        dto.setSessionDetails(r.getSessionDetails());
         return dto;
     }
 
@@ -1272,12 +1279,30 @@ public class CoachService {
         }
     }
 
-    public List<ThematiqueCoaching> getThematiquesAssignedToCoach(Long coachId)
+    public List<java.util.Map<String, Object>> getThematiquesAssignedToCoach(Long coachId)
     {
         return matchingRepository.findByCoachIdAndStatut(coachId, Matching.StatutMatching.VALIDE).stream()
-                .map(m -> thematiqueRepository.findById(m.getThematiqueId()).orElse(null))
-                .filter(Objects::nonNull)
+                .map(m -> thematiqueRepository.findById(m.getThematiqueId()))
+                .filter(java.util.Optional::isPresent)
+                .map(java.util.Optional::get)
+                .map(t -> {
+                    java.util.Map<String, Object> d = new java.util.HashMap<>();
+                    d.put("id", t.getId());
+                    d.put("nom", t.getNom());
+                    return d;
+                })
                 .distinct()
                 .collect(Collectors.toList());
+    }
+
+    public List<SessionCoachDTO> getCoachSessions(Long coachId) {
+        return sessionRepository.findByCoachId(coachId).stream()
+                .map(s -> {
+                    SessionCoachDTO d = new SessionCoachDTO();
+                    d.setId(0L); // Placeholder for String ID
+                    d.setTitre(s.getTitre());
+                    d.setDateSession(s.getDate() != null ? s.getDate().toLocalDate() : null);
+                    return d;
+                }).collect(Collectors.toList());
     }
 }

@@ -16,4 +16,7 @@ public class ReclamationDTO {
     private String statut;
     private LocalDateTime dateReclamation;
     private String roleEmetteur;
+    private String programmeName;
+    private String thematiqueName;
+    private String sessionDetails;
 }
