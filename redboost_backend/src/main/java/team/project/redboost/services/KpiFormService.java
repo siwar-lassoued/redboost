@@ -18,6 +18,8 @@ public class KpiFormService {
     private final KpiFormResponseRepository kpiFormResponseRepository;
     private final UserRepository userRepository;
     private final ProgrammeKpiService programmeKpiService;
+    private final ThematiqueRepository thematiqueRepository;
+    private final MatchingRepository matchingRepository;
 
     public List<KpiForm> getAllForms() {
         return kpiFormRepository.findAll();
@@ -55,6 +57,44 @@ public class KpiFormService {
             .collect(Collectors.toList());
     }
 
+    // Get thématiques for a programme
+    public List<ThematiqueCoaching> getThematiquesByProgramme(Long programmeId) {
+        return thematiqueRepository.findByProgrammeId(programmeId);
+    }
+
+    // Get unique coaches for a programme's thématiques
+    public List<User> getCoachesByProgramme(Long programmeId) {
+        List<ThematiqueCoaching> thematiques = thematiqueRepository.findByProgrammeId(programmeId);
+        return thematiques.stream()
+            .map(ThematiqueCoaching::getCoachId)
+            .distinct()
+            .map(coachId -> userRepository.findById(coachId).orElse(null))
+            .filter(coach -> coach != null)
+            .collect(Collectors.toList());
+    }
+
+    // Get entrepreneurs matching programme + thématique criteria
+    public List<User> getEntrepreneursForEvaluation(Long programmeId, Long thematiqueId) {
+        List<Matching> matchings = matchingRepository.findByProgrammeAndThematique(programmeId, thematiqueId);
+        return matchings.stream()
+            .map(Matching::getEntrepreneurId)
+            .distinct()
+            .map(entId -> userRepository.findById(entId).orElse(null))
+            .filter(ent -> ent != null)
+            .collect(Collectors.toList());
+    }
+
+    // Get all entrepreneurs for a programme
+    public List<User> getEntrepreneursForProgramme(Long programmeId) {
+        List<Matching> matchings = matchingRepository.findActiveByProgramme(programmeId);
+        return matchings.stream()
+            .map(Matching::getEntrepreneurId)
+            .distinct()
+            .map(entId -> userRepository.findById(entId).orElse(null))
+            .filter(ent -> ent != null)
+            .collect(Collectors.toList());
+    }
+
     public KpiForm getFormById(Long id) {
         return kpiFormRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Form not found"));
     }
@@ -68,7 +108,22 @@ public class KpiFormService {
                 q.setOrderIndex(i);
             }
         }
-        return kpiFormRepository.save(form);
+        
+        KpiForm savedForm = kpiFormRepository.save(form);
+        
+        // Auto-send evaluation forms to relevant entrepreneurs
+        if (form.getFormType() == KpiForm.FormType.EVALUATION && form.getProgrammeId() != null && form.getThematiqueId() != null) {
+            List<User> entrepreneurs = getEntrepreneursForEvaluation(form.getProgrammeId(), form.getThematiqueId());
+            List<Long> entrepreneurIds = entrepreneurs.stream()
+                .map(User::getId)
+                .collect(Collectors.toList());
+            
+            if (!entrepreneurIds.isEmpty()) {
+                sendFormToEntrepreneurs(savedForm.getId(), entrepreneurIds);
+            }
+        }
+        
+        return savedForm;
     }
 
     @Transactional

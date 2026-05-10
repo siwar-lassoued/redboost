@@ -49,6 +49,22 @@ export interface KpiFormResponse {
     answers: KpiFormAnswer[];
 }
 
+export interface User {
+    id: number;
+    firstName: string;
+    lastName: string;
+    email: string;
+    role: string;
+}
+
+export interface ThematiqueCoaching {
+    id: number;
+    titre: string;
+    description?: string;
+    programmeId: number;
+    coachId: number;
+}
+
 @Injectable({
     providedIn: 'root'
 })
@@ -79,6 +95,22 @@ export class KpiFormService {
 
     getEvaluationFormsByCoach(coachId: string | number): Observable<KpiForm[]> {
         return this.http.get<KpiForm[]>(`${this.apiUrl}/evaluation/coach/${coachId}`);
+    }
+
+    getThematiquesByProgramme(programmeId: string | number): Observable<ThematiqueCoaching[]> {
+        return this.http.get<ThematiqueCoaching[]>(`${this.apiUrl}/programme/${programmeId}/thematiques`);
+    }
+
+    getCoachesByProgramme(programmeId: string | number): Observable<User[]> {
+        return this.http.get<User[]>(`${this.apiUrl}/programme/${programmeId}/coaches`);
+    }
+
+    getEntrepreneursForEvaluation(programmeId: string | number, thematiqueId: string | number): Observable<User[]> {
+        return this.http.get<User[]>(`${this.apiUrl}/programme/${programmeId}/thematique/${thematiqueId}/entrepreneurs`);
+    }
+
+    getEntrepreneursForProgramme(programmeId: string | number): Observable<User[]> {
+        return this.http.get<User[]>(`${this.apiUrl}/programme/${programmeId}/entrepreneurs`);
     }
 
     getFormById(id: string | number): Observable<KpiForm> {

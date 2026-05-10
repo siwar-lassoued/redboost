@@ -6,6 +6,8 @@ import org.springframework.web.bind.annotation.*;
 import team.project.redboost.entities.KpiForm;
 import team.project.redboost.entities.KpiFormAnswer;
 import team.project.redboost.entities.KpiFormResponse;
+import team.project.redboost.entities.ThematiqueCoaching;
+import team.project.redboost.entities.User;
 import team.project.redboost.services.KpiFormService;
 
 import java.util.List;
@@ -47,6 +49,28 @@ public class KpiFormController {
     @GetMapping("/evaluation/coach/{coachId}")
     public ResponseEntity<List<KpiForm>> getEvaluationFormsByCoach(@PathVariable Long coachId) {
         return ResponseEntity.ok(kpiFormService.getEvaluationFormsByCoach(coachId));
+    }
+
+    @GetMapping("/programme/{programmeId}/thematiques")
+    public ResponseEntity<List<ThematiqueCoaching>> getThematiquesByProgramme(@PathVariable Long programmeId) {
+        return ResponseEntity.ok(kpiFormService.getThematiquesByProgramme(programmeId));
+    }
+
+    @GetMapping("/programme/{programmeId}/coaches")
+    public ResponseEntity<List<User>> getCoachesByProgramme(@PathVariable Long programmeId) {
+        return ResponseEntity.ok(kpiFormService.getCoachesByProgramme(programmeId));
+    }
+
+    @GetMapping("/programme/{programmeId}/thematique/{thematiqueId}/entrepreneurs")
+    public ResponseEntity<List<User>> getEntrepreneursForEvaluation(
+            @PathVariable Long programmeId,
+            @PathVariable Long thematiqueId) {
+        return ResponseEntity.ok(kpiFormService.getEntrepreneursForEvaluation(programmeId, thematiqueId));
+    }
+
+    @GetMapping("/programme/{programmeId}/entrepreneurs")
+    public ResponseEntity<List<User>> getEntrepreneursForProgramme(@PathVariable Long programmeId) {
+        return ResponseEntity.ok(kpiFormService.getEntrepreneursForProgramme(programmeId));
     }
 
     @GetMapping("/{id}")

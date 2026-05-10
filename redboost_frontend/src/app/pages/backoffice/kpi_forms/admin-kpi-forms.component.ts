@@ -1,7 +1,7 @@
 import { Component, OnInit, signal, computed, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { KpiFormService, KpiForm, KpiFormQuestion } from './kpi-form.service';
+import { KpiFormService, KpiForm, KpiFormQuestion, User, ThematiqueCoaching } from './kpi-form.service';
 import { ProgrammeService } from '../programmes/programme.service';
 
 @Component({
@@ -167,14 +167,41 @@ import { ProgrammeService } from '../programmes/programme.service';
                  }
 
                  @if (editingForm.formType === 'EVALUATION') {
+                   <div style="grid-column: span 2;">
+                     <label style="display: block; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Programme *</label>
+                     <select [(ngModel)]="editingForm.programmeId" (change)="onProgrammeChange()" class="filter-select" style="width: 100%; padding: 12px 16px;">
+                       <option [value]="null">-- Sélectionner un programme --</option>
+                       @for (p of programmes(); track p.id) {
+                         <option [value]="p.id">{{ p.nom }}</option>
+                       }
+                     </select>
+                   </div>
                    <div>
                      <label style="display: block; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Thématique *</label>
-                     <input type="number" [(ngModel)]="editingForm.thematiqueId" placeholder="ID de la thématique" class="search-input" style="padding: 12px 16px;">
+                     <select [(ngModel)]="editingForm.thematiqueId" (change)="onThematiqueChange()" class="filter-select" style="width: 100%; padding: 12px 16px;">
+                       <option [value]="null">-- Sélectionner une thématique --</option>
+                       @for (t of thematiques(); track t.id) {
+                         <option [value]="t.id">{{ t.titre }}</option>
+                       }
+                     </select>
                    </div>
                    <div>
                      <label style="display: block; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Coach *</label>
-                     <input type="number" [(ngModel)]="editingForm.coachId" placeholder="ID du coach" class="search-input" style="padding: 12px 16px;">
+                     <select [(ngModel)]="editingForm.coachId" class="filter-select" style="width: 100%; padding: 12px 16px;">
+                       <option [value]="null">-- Sélectionner un coach --</option>
+                       @for (c of coaches(); track c.id) {
+                         <option [value]="c.id">{{ c.firstName }} {{ c.lastName }}</option>
+                       }
+                     </select>
                    </div>
+                   @if (entrepreneurs().length > 0) {
+                     <div style="grid-column: span 3; background: #F0F9FF; padding: 12px 16px; border-radius: 12px; border: 1px solid #e0f2fe;">
+                       <p style="font-size: 12px; font-weight: 600; color: #0369a1; margin: 0; margin-bottom: 8px;">
+                         <i class="pi pi-info-circle" style="margin-right: 6px;"></i>
+                         {{ entrepreneurs().length }} entrepreneur(s) sélectionné(s) recevront ce formulaire automatiquement
+                       </p>
+                     </div>
+                   }
                  }
                </div>
 
@@ -259,7 +286,7 @@ import { ProgrammeService } from '../programmes/programme.service';
       <!-- SEND MODAL -->
       @if (showSendModal) {
         <div class="modal-overlay" (click)="closeModals()">
-          <div class="modal-box" style="max-width: 500px;" (click)="$event.stopPropagation()">
+          <div class="modal-box" style="max-width: 600px;" (click)="$event.stopPropagation()">
             <div class="modal-header">
               <div class="modal-header-info">
                 <h2 class="modal-name">Envoyer un Formulaire</h2>
@@ -267,19 +294,31 @@ import { ProgrammeService } from '../programmes/programme.service';
               <button (click)="closeModals()" class="modal-close"><i class="pi pi-times"></i></button>
             </div>
             <div class="modal-body" style="background: #F9FAFB;">
-               <div class="note-box note-info" style="margin-top: 0; margin-bottom: 20px; background: #fff; border-color: #ea5073;">
-                  <p style="color: #333;">Vous allez envoyer le formulaire <strong style="color: #1A1A2E;">"{{ formToSend?.title }}"</strong>.</p>
+               <div class="note-box note-info" style="margin-top: 0; margin-bottom: 20px; background: #FFF0F5; border-color: #ea5073;">
+                  <p style="color: #333;">Vous allez envoyer le formulaire <strong style="color: #1A1A2E;">"{{ formToSend?.title }}"</strong> à des entrepreneurs.</p>
                </div>
                
                <div>
-                 <label style="display: block; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">IDs des Entrepreneurs (séparés par virgule)</label>
-                 <input type="text" [(ngModel)]="entrepreneurIdsString" placeholder="Ex: 5, 8, 12" class="search-input" style="padding: 12px 16px;">
-                 <p style="font-size: 12px; color: #9CA3AF; margin-top: 8px;">En production, cela sera un sélecteur multiple avec recherche.</p>
+                 <label style="display: block; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;">IDs des Entrepreneurs (séparés par virgule)</label>
+                 <input type="text" [(ngModel)]="entrepreneurIdsString" placeholder="Ex: 5, 8, 12" class="search-input" style="padding: 12px 16px; margin-bottom: 16px;">
+                 
+                 @if (entrepreneurIdsString.trim()) {
+                   <div style="background: white; border: 1px solid #E5E7EB; border-radius: 12px; padding: 12px; margin-top: 16px;">
+                     <p style="font-size: 12px; font-weight: 600; color: #6B7280; margin: 0 0 12px 0;">Entrepreneurs sélectionnés :</p>
+                     <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                       @for (id of entrepreneurIdsString.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n)); track id) {
+                         <span style="background: #F3F4F6; border: 1px solid #E5E7EB; border-radius: 8px; padding: 6px 12px; font-size: 12px; color: #333;">
+                           ID: {{ id }}
+                         </span>
+                       }
+                     </div>
+                   </div>
+                 }
                </div>
             </div>
             <div class="modal-footer">
                <button (click)="closeModals()" class="btn-close-modal">Annuler</button>
-               <button (click)="submitSendForm()" class="btn-gradient">
+               <button (click)="submitSendForm()" [disabled]="!entrepreneurIdsString.trim()" class="btn-gradient" [style.opacity]="!entrepreneurIdsString.trim() ? '0.5' : '1'">
                  <i class="pi pi-send"></i> Envoyer
                </button>
             </div>
@@ -383,6 +422,11 @@ export class AdminKpiFormsComponent implements OnInit {
   formToSend: KpiForm | null = null;
   entrepreneurIdsString = '';
 
+  // Signaux pour les listes dynamiques
+  thematiques = signal<ThematiqueCoaching[]>([]);
+  coaches = signal<User[]>([]);
+  entrepreneurs = signal<User[]>([]);
+
   ngOnInit() {
     this.loadForms();
     this.programmeSvc.getAllProgrammesBasic().subscribe(p => 
@@ -398,6 +442,51 @@ export class AdminKpiFormsComponent implements OnInit {
     if (!id) return 'Non assigné';
     const prog = this.programmes().find(p => p.id === id);
     return prog ? prog.nom : 'Programme inconnu';
+  }
+
+  loadThematiquesForProgramme(programmeId: number | undefined) {
+    if (!programmeId) {
+      this.thematiques.set([]);
+      return;
+    }
+    this.svc.getThematiquesByProgramme(programmeId).subscribe(t => 
+      this.thematiques.set(t || [])
+    );
+  }
+
+  loadCoachesForProgramme(programmeId: number | undefined) {
+    if (!programmeId) {
+      this.coaches.set([]);
+      return;
+    }
+    this.svc.getCoachesByProgramme(programmeId).subscribe(c => 
+      this.coaches.set(c || [])
+    );
+  }
+
+  loadEntrepreneursForEvaluation(programmeId: number | undefined, thematiqueId: number | undefined) {
+    if (!programmeId || !thematiqueId) {
+      this.entrepreneurs.set([]);
+      return;
+    }
+    this.svc.getEntrepreneursForEvaluation(programmeId, thematiqueId).subscribe(e => 
+      this.entrepreneurs.set(e || [])
+    );
+  }
+
+  onProgrammeChange() {
+    const programmeId = this.editingForm.programmeId;
+    this.loadThematiquesForProgramme(programmeId);
+    this.loadCoachesForProgramme(programmeId);
+    // Reset thématique when programme changes
+    this.editingForm.thematiqueId = undefined;
+    this.entrepreneurs.set([]);
+  }
+
+  onThematiqueChange() {
+    const programmeId = this.editingForm.programmeId;
+    const thematiqueId = this.editingForm.thematiqueId;
+    this.loadEntrepreneursForEvaluation(programmeId, thematiqueId);
   }
 
   stats = computed(() => {
