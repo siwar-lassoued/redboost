@@ -646,6 +646,8 @@ public class CoachService {
                 .typeReclamation(Reclamation.TypeReclamation.valueOf(dto.getTypeReclamation() != null ? dto.getTypeReclamation() : "AUTRE"))
                 .description(dto.getDescription())
                 .pieceJointeUrl(fileUrl != null ? fileUrl : dto.getPieceJointeUrl())
+                .statut(Reclamation.StatutReclamation.EN_ATTENTE)
+                .roleEmetteur(Reclamation.RoleEmetteur.COACH)
                 .build();
 
         Reclamation saved = reclamationRepository.save(rec);

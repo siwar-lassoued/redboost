@@ -15,4 +15,5 @@ public class ReclamationDTO {
     private String pieceJointeUrl;
     private String statut;
     private LocalDateTime dateReclamation;
+    private String roleEmetteur;
 }

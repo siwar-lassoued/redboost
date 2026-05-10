@@ -8,6 +8,7 @@ import team.project.redboost.dto.*;
 import team.project.redboost.services.CoachService;
 
 import java.util.List;
+import java.io.IOException;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
@@ -99,15 +100,18 @@ public class CoachController {
         return ResponseEntity.ok(coachService.getReclamationsByCoach(coachId));
     }
 
-    @PostMapping(value = "/{coachId}/reclamations/{entrepreneurId}", consumes = {"multipart/form-data"})
+    @PostMapping("/{coachId}/reclamations/{entrepreneurId}")
     public ResponseEntity<ReclamationDTO> addReclamation(
-            @PathVariable Long coachId, 
-            @PathVariable Long entrepreneurId, 
-            @RequestPart("reclamation") ReclamationDTO dto,
-            @RequestPart(value = "file", required = false) MultipartFile file) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(coachService.addReclamation(coachId, entrepreneurId, dto, file));
+            @PathVariable Long coachId,
+            @PathVariable Long entrepreneurId,
+            @RequestPart("reclamation") String reclamationJson,
+            @RequestPart(value = "file", required = false) MultipartFile file) throws IOException {
+        
+        com.fasterxml.jackson.databind.ObjectMapper objMapper = new com.fasterxml.jackson.databind.ObjectMapper();
+        ReclamationDTO dto = objMapper.readValue(reclamationJson, ReclamationDTO.class);
+        dto.setRoleEmetteur("COACH");
+        return ResponseEntity.ok(coachService.addReclamation(coachId, entrepreneurId, dto, file));
     }
-
     // --- DASHBOARD OVERVIEW ---
 
     @GetMapping("/{coachId}/dashboard-stats")

@@ -372,7 +372,7 @@ export class AppMenu implements OnInit {
                     {
                         label: 'Réclamations',
                         icon: 'pi pi-fw pi-exclamation-circle',
-                        routerLink: ['/messagerie-reclamation'],
+                        routerLink: ['/entrepreneur/reclamations'],
                     },
                     {
                         label: 'Formulaires à remplir',

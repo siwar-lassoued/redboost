@@ -43,6 +43,14 @@ public class Reclamation {
     public enum TypeReclamation {
         COMPORTEMENT, RETARD, AUTRE
     }
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role_emetteur")
+    private RoleEmetteur roleEmetteur;
+
+    public enum RoleEmetteur {
+        COACH, ENTREPRENEUR
+    }
     
     @Builder.Default
     @Enumerated(EnumType.STRING)
