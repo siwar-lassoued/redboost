@@ -20,6 +20,7 @@ public class KpiFormService {
     private final ProgrammeKpiService programmeKpiService;
     private final ThematiqueRepository thematiqueRepository;
     private final MatchingRepository matchingRepository;
+    private final DisponibiliteRepository disponibiliteRepository;
 
     public List<KpiForm> getAllForms() {
         return kpiFormRepository.findAll();
@@ -66,10 +67,9 @@ public class KpiFormService {
     public List<User> getCoachesByProgramme(Long programmeId) {
         List<ThematiqueCoaching> thematiques = thematiqueRepository.findByProgrammeId(programmeId);
         return thematiques.stream()
-            .map(ThematiqueCoaching::getCoachId)
+            .flatMap(thematique -> disponibiliteRepository.findByThematiqueId(thematique.getId()).stream())
+            .map(Disponibilite::getCoach)
             .distinct()
-            .map(coachId -> userRepository.findById(coachId).orElse(null))
-            .filter(coach -> coach != null)
             .collect(Collectors.toList());
     }
 
@@ -77,7 +77,7 @@ public class KpiFormService {
     public List<User> getEntrepreneursForEvaluation(Long programmeId, Long thematiqueId) {
         List<Matching> matchings = matchingRepository.findByProgrammeAndThematique(programmeId, thematiqueId);
         return matchings.stream()
-            .map(Matching::getEntrepreneurId)
+            .map(m -> m.getEntrepreneurId())
             .distinct()
             .map(entId -> userRepository.findById(entId).orElse(null))
             .filter(ent -> ent != null)
@@ -88,7 +88,7 @@ public class KpiFormService {
     public List<User> getEntrepreneursForProgramme(Long programmeId) {
         List<Matching> matchings = matchingRepository.findActiveByProgramme(programmeId);
         return matchings.stream()
-            .map(Matching::getEntrepreneurId)
+            .map(m -> m.getEntrepreneurId())
             .distinct()
             .map(entId -> userRepository.findById(entId).orElse(null))
             .filter(ent -> ent != null)
