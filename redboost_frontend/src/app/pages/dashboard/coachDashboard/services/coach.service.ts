@@ -312,6 +312,11 @@ export class CoachService {
     }
     return this.http.post(url, {});
   }
+
+  cancelBooking(sessionCoachId: number, entrepreneurId: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/sessions/${sessionCoachId}/book?entrepreneurId=${entrepreneurId}`);
+  }
+
   rescheduleSession(sessionId: string, newDate: string, entrepreneurId: number): Observable<any> {
     return this.http.put(`${this.apiUrl}/sessions/${sessionId}/reschedule?newDate=${newDate}&entrepreneurId=${entrepreneurId}`, {});
   }

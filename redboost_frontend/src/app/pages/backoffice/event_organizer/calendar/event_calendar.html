@@ -167,54 +167,85 @@
               <i class="pi pi-question-circle" title="Centralisez vos réservations ici"></i>
             </div>
 
-            <div class="thematique-list scrollable-sidebar">
-              <div *ngFor="let thematique of thematiquesList" class="thematique-group">
-                <div class="thematique-header">
-                  <i class="pi pi-tag"></i>
-                  <span>{{ thematique.name }}</span>
+            <div class="coach-entries-list scrollable-sidebar">
+              <!-- Empty state -->
+              <div *ngIf="coachEntriesList.length === 0" class="empty-sidebar-msg">
+                <i class="pi pi-calendar-times"></i>
+                <p>Aucun créneau disponible pour le moment.</p>
+              </div>
+
+              <!-- COACH LEVEL -->
+              <div *ngFor="let coachEntry of coachEntriesList" class="coach-top-card">
+                <!-- Coach Header -->
+                <div class="coach-top-header">
+                  <div class="coach-avatar-circle" [style.background]="getCoachColor(coachEntry.coach.id)">
+                    {{ coachEntry.coach.nom ? coachEntry.coach.nom[0].toUpperCase() : 'C' }}
+                  </div>
+                  <div class="coach-top-info">
+                    <h5>{{ coachEntry.coach.nom }}</h5>
+                    <p>{{ coachEntry.coach.specialite || 'Coach Expert' }}</p>
+                  </div>
                 </div>
 
-                <div class="coach-cards-list">
-                  <div *ngFor="let coachEntry of thematique.coaches" class="premium-coach-booking-card" 
-                       [style.border-left-color]="getCoachColor(coachEntry.coach.id)">
-                    <div class="coach-booking-header">
-                      <div class="coach-avatar-circle" [style.background]="getCoachColor(coachEntry.coach.id)">
-                        {{ coachEntry.coach.nom ? coachEntry.coach.nom[0] : 'C' }}
-                      </div>
-                      <div class="coach-booking-info">
-                        <h5>{{ coachEntry.coach.nom }}</h5>
-                        <p>{{ coachEntry.coach.specialite || 'Coach Expert' }}</p>
-                      </div>
+                <!-- PROGRAMME LEVEL -->
+                <div *ngFor="let prog of coachEntry.programmes" class="prog-section">
+                  <div class="prog-badge">
+                    <i class="pi pi-folder"></i>
+                    <span>{{ prog.programmeName }}</span>
+                  </div>
+
+                  <!-- THEMATIQUE LEVEL -->
+                  <div *ngFor="let them of prog.thematiques" class="them-section">
+                    <div class="them-header">
+                      <i class="pi pi-tag"></i>
+                      <span>{{ them.thematiqueName }}</span>
                     </div>
 
-                    <div class="session-groups-box">
-                      <div *ngFor="let group of coachEntry.sessionGroups" class="session-group-pill-card" [class.is-reserved]="group.reservedByMe">
-                        <div class="group-header-row">
-                          <div class="group-title-label">
-                            <i class="pi pi-bookmark-fill"></i>
-                            <span>{{ group.sessionTitle }}</span>
-                          </div>
-                          <span class="slots-count">{{ group.slots.length }} créneau{{ group.slots.length > 1 ? 'x' : '' }}</span>
-                        </div>
+                    <!-- SESSION LEVEL -->
+                    <div *ngFor="let session of them.sessions" class="session-card-ent"
+                         [class.is-reserved]="session.reservedByMe">
 
-                        <div class="slots-mini-grid">
-                          <button *ngFor="let slot of group.slots" class="btn-slot-premium"
-                                  [class.active]="selectedSlot?.id === slot.id"
-                                  [disabled]="slot.isBooked || group.reservedByMe"
-                                  (click)="selectSlot(slot, group.sessionTitle, coachEntry.coach)">
-                            <div class="slot-d">{{ slot.dateSession | date:'dd MMM' }}</div>
-                            <div class="slot-t">{{ formatSlotTime(slot.heureDebut) }}</div>
-                          </button>
+                      <div class="session-card-header">
+                        <div class="session-title-row">
+                          <i class="pi pi-bookmark-fill"></i>
+                          <span>{{ session.sessionTitle }}</span>
                         </div>
+                        <div class="session-badges-row">
+                          <span class="slots-count-badge">{{ session.slots.length }} créneau{{ session.slots.length > 1 ? 'x' : '' }}</span>
+                          <span *ngIf="session.reservedByMe" class="reserved-badge">
+                            <i class="pi pi-check-circle"></i> Réservée
+                          </span>
+                        </div>
+                      </div>
+
+                      <!-- If already reserved: show booked slot info + Modifier button -->
+                      <div *ngIf="session.reservedByMe && session.myBookedSlot" class="booked-slot-info">
+                        <div class="booked-slot-detail">
+                          <i class="pi pi-calendar"></i>
+                          <span>{{ session.myBookedSlot.dateSession | date:'dd MMM yyyy' }}</span>
+                          <i class="pi pi-clock" style="margin-left:8px"></i>
+                          <span>{{ formatSlotTime(session.myBookedSlot.heureDebut) }}</span>
+                        </div>
+                        <button class="btn-modify-slot" (click)="cancelAndRebook(session)" [disabled]="isCancellingBooking">
+                          <i class="pi pi-pencil"></i>
+                          {{ isCancellingBooking ? 'Annulation...' : 'Modifier' }}
+                        </button>
+                      </div>
+
+                      <!-- If not reserved: show available slot buttons -->
+                      <div *ngIf="!session.reservedByMe" class="slots-mini-grid">
+                        <button *ngFor="let slot of session.slots" class="btn-slot-premium"
+                                [class.active]="selectedSlot?.id === slot.id"
+                                [disabled]="slot.isBooked"
+                                (click)="selectSlot(slot, session.sessionTitle, session.coachRef); selectedSession = session">
+                          <div class="slot-d">{{ slot.dateSession | date:'dd MMM' }}</div>
+                          <div class="slot-t">{{ formatSlotTime(slot.heureDebut) }}</div>
+                          <div class="slot-booked-label" *ngIf="slot.isBooked">Pris</div>
+                        </button>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-
-              <div *ngIf="thematiquesList.length === 0" class="empty-sidebar-msg">
-                <i class="pi pi-calendar-times"></i>
-                <p>Aucun créneau disponible pour le moment.</p>
               </div>
             </div>
           </div>
