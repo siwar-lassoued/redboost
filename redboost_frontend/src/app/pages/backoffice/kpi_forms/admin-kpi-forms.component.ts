@@ -447,32 +447,59 @@ export class AdminKpiFormsComponent implements OnInit {
 
   loadThematiquesForProgramme(programmeId: number | undefined) {
     if (!programmeId) {
+      console.log('[v0] No programmeId, clearing thematiques');
       this.thematiques.set([]);
       return;
     }
-    this.svc.getThematiquesByProgramme(programmeId).subscribe(t => 
-      this.thematiques.set(t || [])
-    );
+    console.log('[v0] Loading thematiques for programme:', programmeId);
+    this.svc.getThematiquesByProgramme(programmeId).subscribe({
+      next: (t) => {
+        console.log('[v0] Thematiques received:', t);
+        this.thematiques.set(t || []);
+      },
+      error: (err) => {
+        console.error('[v0] Error loading thematiques:', err);
+        this.thematiques.set([]);
+      }
+    });
   }
 
   loadCoachesForProgramme(programmeId: number | undefined) {
     if (!programmeId) {
+      console.log('[v0] No programmeId, clearing coaches');
       this.coaches.set([]);
       return;
     }
-    this.svc.getCoachesByProgramme(programmeId).subscribe(c => 
-      this.coaches.set(c || [])
-    );
+    console.log('[v0] Loading coaches for programme:', programmeId);
+    this.svc.getCoachesByProgramme(programmeId).subscribe({
+      next: (c) => {
+        console.log('[v0] Coaches received:', c);
+        this.coaches.set(c || []);
+      },
+      error: (err) => {
+        console.error('[v0] Error loading coaches:', err);
+        this.coaches.set([]);
+      }
+    });
   }
 
   loadEntrepreneursForEvaluation(programmeId: number | undefined, thematiqueId: number | undefined) {
     if (!programmeId || !thematiqueId) {
+      console.log('[v0] Missing programmeId or thematiqueId, clearing entrepreneurs');
       this.entrepreneurs.set([]);
       return;
     }
-    this.svc.getEntrepreneursForEvaluation(programmeId, thematiqueId).subscribe(e => 
-      this.entrepreneurs.set(e || [])
-    );
+    console.log('[v0] Loading entrepreneurs for programme:', programmeId, 'thematique:', thematiqueId);
+    this.svc.getEntrepreneursForEvaluation(programmeId, thematiqueId).subscribe({
+      next: (e) => {
+        console.log('[v0] Entrepreneurs received:', e);
+        this.entrepreneurs.set(e || []);
+      },
+      error: (err) => {
+        console.error('[v0] Error loading entrepreneurs:', err);
+        this.entrepreneurs.set([]);
+      }
+    });
   }
 
   onProgrammeChange() {
