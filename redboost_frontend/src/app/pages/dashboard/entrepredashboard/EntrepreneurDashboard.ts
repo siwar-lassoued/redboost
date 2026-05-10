@@ -3,27 +3,23 @@ import {
     Component,
     OnInit,
     OnDestroy,
-    ViewChild,
     ChangeDetectorRef,
     ChangeDetectionStrategy,
 } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { ChartData, ChartOptions, ChartType } from 'chart.js';
 import { NgChartsModule } from 'ng2-charts';
-import { FullCalendarModule } from '@fullcalendar/angular';
-import dayGridPlugin from '@fullcalendar/daygrid';
-import frLocale from '@fullcalendar/core/locales/fr';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../frontoffice/service/auth.service';
 import { jwtDecode } from 'jwt-decode';
 import { WebSocketService } from '../../frontoffice/service/WebSocketService';
 import { ToastrService } from 'ngx-toastr';
-import { Subscription, Observable } from 'rxjs';
+import { Subscription } from 'rxjs';
 import { debounceTime } from 'rxjs/operators';
-import { Calendar } from '@fullcalendar/core';
 import { environment } from '../../../../environment';
 import { ImageService } from '../../frontoffice/image.service';
 import { SafeUrl } from '@angular/platform-browser';
+import { CalendarComponent } from '../../backoffice/event_organizer/calendar/event_calendar';
 
 interface Project {
     id: number;
@@ -62,57 +58,20 @@ interface DashboardStats {
 @Component({
     selector: 'app-entrepreneur-dashboard',
     standalone: true,
-    imports: [CommonModule, NgChartsModule, FullCalendarModule],
+    imports: [CommonModule, NgChartsModule, CalendarComponent],
     template: `
         <div class="entrepreneur-dashboard">
-            <!-- Header avec bouton calendrier -->
-            <div class="flex items-center justify-between mb-10 px-6 pt-8">
+            <!-- Header -->
+            <div class="ent-page-header">
                 <div>
-                    <h1
-                        class="text-4xl font-extrabold text-[#0A4955] tracking-tight"
-                    >
-                        Tableau de bord de l'entrepreneur
-                    </h1>
-                    <p class="text-gray-500 mt-1">
-                        Bienvenue,
-                        <span class="font-semibold text-[#E44D62]"
-                            >ENTREPRENEUR</span
-                        >
-                    </p>
+                    <h1 class="ent-page-title">Tableau de bord</h1>
+                    <p class="ent-page-subtitle">Bienvenue, <span class="ent-name-accent">Entrepreneur</span></p>
                 </div>
-                <button
-                    class="calendar-btn"
-                    (click)="showCalendar = !showCalendar; cdr.detectChanges()"
-                    type="button"
-                >
-                    <svg
-                        class="w-5 h-5 mr-2"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        viewBox="0 0 24 24"
-                    >
-                        <rect
-                            x="3"
-                            y="4"
-                            width="18"
-                            height="18"
-                            rx="2"
-                            fill="#fff"
-                            stroke="#0A4955"
-                        />
-                        <path d="M16 2v4M8 2v4M3 10h18" stroke="#0A4955" />
-                    </svg>
-                    Voir le calendrier
-                </button>
             </div>
-            <!-- Calendrier moderne -->
-            <div *ngIf="showCalendar" class="calendar-container mb-8 px-6">
-                <full-calendar
-                    #calendar
-                    [options]="calendarOptions"
-                    class="modern-calendar"
-                ></full-calendar>
+
+            <!-- Calendrier de coaching (même style que le coach) -->
+            <div class="ent-calendar-section">
+                <app-calendar></app-calendar>
             </div>
             <!-- Rendez-vous Modal -->
             <div
@@ -380,11 +339,38 @@ interface DashboardStats {
     styles: [
         `
             .entrepreneur-dashboard {
-                background: linear-gradient(120deg, #f0f4ff 0%, #e0e7ff 100%);
+                background: #f8fafc;
                 min-height: 100vh;
-                padding: 32px 8px;
-                font-family: 'Poppins', Arial, sans-serif;
+                padding: 0;
+                font-family: 'Inter', 'Poppins', Arial, sans-serif;
             }
+            .ent-page-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 2rem 2.5rem 1rem;
+            }
+            .ent-page-title {
+                font-size: 2rem;
+                font-weight: 800;
+                color: #0f172a;
+                margin: 0;
+                letter-spacing: -0.5px;
+            }
+            .ent-page-subtitle {
+                color: #64748b;
+                font-size: 1rem;
+                margin-top: 0.25rem;
+                margin-bottom: 0;
+            }
+            .ent-name-accent {
+                font-weight: 700;
+                color: #FF4D85;
+            }
+            .ent-calendar-section {
+                padding: 0;
+            }
+
             .glass-card {
                 background: rgba(255, 255, 255, 0.8);
                 border-radius: 1.5rem;
@@ -755,7 +741,6 @@ interface DashboardStats {
 })
 export class EntrepreneurDashboardComponent implements OnInit, OnDestroy {
     stats: DashboardStats = { nbPhases: 0, nbTasks: 0, nbRendezVous: 0 };
-    showCalendar = false;
     activities: Activity[] = [];
     acceptedRendezVous: RendezVous[] = [];
     projects: Project[] = [];
@@ -764,9 +749,6 @@ export class EntrepreneurDashboardComponent implements OnInit, OnDestroy {
     selectedRendezVous: RendezVous | null = null;
     projectLogoUrls: { [key: string]: SafeUrl } = {};
     guestAvatarUrls: { [key: string]: SafeUrl } = {};
-
-    @ViewChild('calendar') calendarComponent: any;
-    private calendarApi: Calendar | null = null;
     private webSocketSubscription: Subscription | null = null;
 
     public barChartData: ChartData<'bar'> = {

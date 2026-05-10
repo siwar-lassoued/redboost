@@ -75,7 +75,7 @@ export class CalendarComponent implements OnInit {
   isCoach = false;
   matchedCoaches: any[] = [];
   coachGroupsMap: { [coachId: string]: any[] } = {};
-  thematiquesList: any[] = [];
+  coachEntriesList: any[] = [];
   
   // Entrepreneur Slot Statistics
   availableSlotsCount = 0;
@@ -86,8 +86,10 @@ export class CalendarComponent implements OnInit {
   selectedSlot: any | null = null;
   selectedCoachForBooking: any | null = null;
   selectedGroupTitle: string = '';
+  selectedSession: any | null = null;
   bookingNotes: string = '';
   isBooking: boolean = false;
+  isCancellingBooking: boolean = false;
   
   // Selected date and its event
   selectedDate: Date | null = null;
@@ -236,34 +238,57 @@ export class CalendarComponent implements OnInit {
             const slotsArray = allData.slice(0, numCoaches);
             const groupsArray = allData.slice(numCoaches);
 
-            const globalThematiques: any[] = [];
+            // Build Coach → Programme → Thématique → Session hierarchy
+            const coachEntriesList: any[] = [];
 
             response.coaches.forEach((c: any, index: number) => {
               const groups: any[] = groupsArray[index] || [];
               this.coachGroupsMap[c.id] = groups;
-              
-              groups.forEach(g => {
-                const themName = g.slots[0]?.thematiqueNom || 'Thématique Générale';
-                
-                // Find or create thematique in global list
-                let thematiqueObj = globalThematiques.find(t => t.name === themName);
-                if (!thematiqueObj) {
-                  thematiqueObj = { name: themName, coaches: [] };
-                  globalThematiques.push(thematiqueObj);
+
+              // Find or create coach entry
+              let coachEntry = coachEntriesList.find((e: any) => e.coach.id === c.id);
+              if (!coachEntry) {
+                coachEntry = { coach: c, programmes: [] };
+                coachEntriesList.push(coachEntry);
+              }
+
+              // Programme from matching data
+              const programmeName = c.programmeName || 'Programme';
+              const programmeId = c.programmeId || '';
+
+              let progEntry = coachEntry.programmes.find((p: any) => p.programmeId === programmeId);
+              if (!progEntry) {
+                progEntry = { programmeName, programmeId, thematiques: [] };
+                coachEntry.programmes.push(progEntry);
+              }
+
+              // Group sessions by thématique
+              groups.forEach((g: any) => {
+                const themName = g.slots[0]?.thematiqueNom || c.thematiqueName || 'Thématique Générale';
+                const themId = c.thematiqueId || '';
+
+                let themEntry = progEntry.thematiques.find((t: any) => t.thematiqueName === themName);
+                if (!themEntry) {
+                  themEntry = { thematiqueName: themName, thematiqueId: themId, sessions: [] };
+                  progEntry.thematiques.push(themEntry);
                 }
-                
-                // Find or create coach inside this thematique
-                let coachObj = thematiqueObj.coaches.find((coachEntry: any) => coachEntry.coach.id === c.id);
-                if (!coachObj) {
-                  coachObj = { coach: c, sessionGroups: [] };
-                  thematiqueObj.coaches.push(coachObj);
-                }
-                
-                // Add the session group to this coach
-                coachObj.sessionGroups.push(g);
+
+                // Find the slot booked by this entrepreneur
+                const myBookedSlot = g.reservedByMe
+                  ? (g.slots.find((s: any) => s.isBookedByMe) || g.slots.find((s: any) => s.isBooked) || null)
+                  : null;
+
+                themEntry.sessions.push({
+                  sessionTitle: g.sessionTitle,
+                  sessionGroupId: g.sessionGroupId,
+                  reservedByMe: g.reservedByMe,
+                  myBookedSlot,
+                  slots: g.slots,
+                  coachRef: c
+                });
               });
             });
-            this.thematiquesList = globalThematiques;
+            this.coachEntriesList = coachEntriesList;
 
             // Instead of separate slotRequests, we use slots from the groups to ensure consistency
             const allSlotsFromGroups = groupsArray.flat().map(g => g.slots).flat();
@@ -360,17 +385,36 @@ export class CalendarComponent implements OnInit {
           });
         }
         this.selectedSlot = null;
-        this.loadEventTypesAndEvents(); // Refresh calendar
+        this.selectedSession = null;
+        this.loadEventTypesAndEvents();
       },
       error: (err) => {
         this.isBooking = false;
         console.error('ERREUR BACKEND DÉTAILLÉE:', err);
         const msg = err.error?.error || err.error?.message || err.message || 'Erreur lors de la réservation';
-        
-        // Affiche l'erreur exacte dans une alerte pour être sûr de la voir !
         alert("ERREUR DU SERVEUR : " + msg);
-        
         this.snackBar.open(msg, 'Fermer', { duration: 5000 });
+      }
+    });
+  }
+
+  cancelAndRebook(session: any): void {
+    const currentUser = this.authService.currentUser$.value;
+    if (!currentUser || !session.myBookedSlot) return;
+
+    this.isCancellingBooking = true;
+    this.coachService.cancelBooking(Number(session.myBookedSlot.id), Number(currentUser.id)).subscribe({
+      next: () => {
+        this.isCancellingBooking = false;
+        this.snackBar.open('Réservation annulée. Choisissez un nouveau créneau.', 'OK', {
+          duration: 4000, panelClass: ['success-snackbar']
+        });
+        this.loadEventTypesAndEvents();
+      },
+      error: (err: any) => {
+        this.isCancellingBooking = false;
+        const msg = err.error?.message || 'Erreur lors de l\'annulation';
+        this.snackBar.open(msg, 'Fermer', { duration: 4000 });
       }
     });
   }
@@ -454,7 +498,9 @@ export class CalendarComponent implements OnInit {
     });
   }
 
+
   formatSlotDay(dateStr: string): string {
+
     if (!dateStr) return '';
     return new Date(dateStr).getDate().toString();
   }
