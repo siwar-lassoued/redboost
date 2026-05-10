@@ -27,8 +27,14 @@ public class Livrable {
     @Column(name = "cloudinary_public_id")
     private String cloudinaryPublicId;
 
+    @Column(name = "fichier_retour_url")
+    private String fichierRetourUrl;
+
+    @Column(name = "file_retour_size")
+    private String fileRetourSize;
+
     @Enumerated(EnumType.STRING)
-    private Statut statut = Statut.SUBMITTED;
+    private Statut statut = Statut.TRAVAIL_DEMANDE;
 
     @Column(name = "date_soumission")
     private LocalDateTime dateSoumission;
@@ -48,10 +54,16 @@ public class Livrable {
     private Tache tache;
 
     @Column(columnDefinition = "TEXT")
-    private String commentaire;
+    private String commentaire; // Correspond au commentaireDemande
+
+    @Column(name = "commentaire_revision", columnDefinition = "TEXT")
+    private String commentaireRevision;
+
+    @Column(name = "commentaire_acceptation", columnDefinition = "TEXT")
+    private String commentaireAcceptation;
 
     @Column(name = "coach_comment", columnDefinition = "TEXT")
-    private String coachComment;
+    private String coachComment; // Ancien champ conservé par sécurité
 
     @Column(name = "validated_at")
     private LocalDateTime validatedAt;
@@ -65,11 +77,11 @@ public class Livrable {
     @Column(name = "coach_email")
     private String coachEmail;
 
-    @Transient
+    @Column(name = "programme_name")
     private String programmeName;
-    @Transient
+    @Column(name = "thematique_name")
     private String thematiqueName;
-    @Transient
+    @Column(name = "session_name")
     private String sessionName;
     @Transient
     private String tacheName;
@@ -84,7 +96,7 @@ public class Livrable {
     }
 
     public enum Statut {
-        A_REMPLIR, SOUMIS, SUBMITTED, EN_REVISION, REVISION, RESOUMIS, ACCEPTE, REJETE
+        TRAVAIL_DEMANDE, SOUMIS, SUBMITTED, EN_REVISION, REVISION, RESOUMIS, ACCEPTE, REJETE
     }
 
     public Livrable() {}
@@ -102,6 +114,10 @@ public class Livrable {
     public void setFichierUrl(String fichierUrl) { this.fichierUrl = fichierUrl; }
     public String getCloudinaryPublicId() { return cloudinaryPublicId; }
     public void setCloudinaryPublicId(String cloudinaryPublicId) { this.cloudinaryPublicId = cloudinaryPublicId; }
+    public String getFichierRetourUrl() { return fichierRetourUrl; }
+    public void setFichierRetourUrl(String fichierRetourUrl) { this.fichierRetourUrl = fichierRetourUrl; }
+    public String getFileRetourSize() { return fileRetourSize; }
+    public void setFileRetourSize(String fileRetourSize) { this.fileRetourSize = fileRetourSize; }
     public Statut getStatut() { return statut; }
     public void setStatut(Statut statut) { this.statut = statut; }
     public LocalDateTime getDateSoumission() { return dateSoumission; }
@@ -114,6 +130,10 @@ public class Livrable {
     public void setTache(Tache tache) { this.tache = tache; }
     public String getCommentaire() { return commentaire; }
     public void setCommentaire(String commentaire) { this.commentaire = commentaire; }
+    public String getCommentaireRevision() { return commentaireRevision; }
+    public void setCommentaireRevision(String commentaireRevision) { this.commentaireRevision = commentaireRevision; }
+    public String getCommentaireAcceptation() { return commentaireAcceptation; }
+    public void setCommentaireAcceptation(String commentaireAcceptation) { this.commentaireAcceptation = commentaireAcceptation; }
     public String getCoachComment() { return coachComment; }
     public void setCoachComment(String coachComment) { this.coachComment = coachComment; }
     public LocalDateTime getValidatedAt() { return validatedAt; }

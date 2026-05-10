@@ -25,19 +25,7 @@ import { environment } from '../../../../environment';
           </div>
       </div>
 
-      <!-- Tabs -->
-      <div class="tabs-container premium-card mb-6">
-          <div class="tab-item" [class.active]="activeTab === 'received'" (click)="setTab('received')">
-              <i class="pi pi-download"></i>
-              <span>Livrables Reçus</span>
-              <span class="count-badge" *ngIf="receivedLivrables.length > 0">{{ receivedLivrables.length }}</span>
-          </div>
-          <div class="tab-item" [class.active]="activeTab === 'sent'" (click)="setTab('sent')">
-              <i class="pi pi-upload"></i>
-              <span>Livrables Déposés</span>
-              <span class="count-badge" *ngIf="sentLivrables.length > 0">{{ sentLivrables.length }}</span>
-          </div>
-      </div>
+      <!-- Tabs supprimés selon la demande -->
 
       <!-- Advanced Filters -->
       <div class="filters-container premium-card mb-8">
@@ -89,8 +77,8 @@ import { environment } from '../../../../environment';
                       <div class="info-cell details">
                           <span class="cell-label">Contexte</span>
                           <div class="context-info">
-                              <span class="programme-badge" *ngIf="liv.programmeName">
-                                  <i class="pi pi-bookmark"></i> {{ liv.programmeName }}
+                              <span class="programme-badge" *ngIf="liv.programmeName || liv.programme?.nom">
+                                  <i class="pi pi-bookmark"></i> {{ liv.programmeName || liv.programme?.nom }}
                               </span>
                               <span class="thematique-badge" *ngIf="liv.thematiqueName">
                                   <i class="pi pi-tag"></i> {{ liv.thematiqueName }}
@@ -101,21 +89,38 @@ import { environment } from '../../../../environment';
                           </div>
                       </div>
 
-                      <div class="info-cell task">
-                          <span class="cell-label">Tâche associée</span>
-                          <div class="task-info">
-                              <span class="task-name">{{ liv.tacheName || 'Sans tâche' }}</span>
-                              <span class="task-date" *ngIf="liv.tacheDate">
-                                  <i class="pi pi-clock"></i> Échéance : {{ liv.tacheDate | date:'d MMM yyyy' }}
-                              </span>
+                      <div class="info-cell document">
+                          <span class="cell-label">Document Coach</span>
+                          <div class="doc-link-wrap clickable" *ngIf="liv.fichierUrl" (click)="download(liv.fichierUrl)">
+                              <i class="pi" [class]="getFileIconConfig(liv.fichierUrl).icon" [style.color]="getFileIconConfig(liv.fichierUrl).color"></i>
+                              <span class="doc-title">{{ liv.titre }}</span>
                           </div>
                       </div>
 
                       <div class="info-cell document">
-                          <span class="cell-label">Document</span>
-                          <div class="doc-link-wrap">
-                              <i class="pi" [class]="getFileIconConfig(liv.fichierUrl).icon" [style.color]="getFileIconConfig(liv.fichierUrl).color"></i>
-                              <span class="doc-title">{{ liv.titre }}</span>
+                          <span class="cell-label">Retour Entrepreneur</span>
+                          <div class="doc-link-wrap clickable" *ngIf="liv.fichierRetourUrl" (click)="download(liv.fichierRetourUrl)">
+                              <i class="pi" [class]="getFileIconConfig(liv.fichierRetourUrl).icon" [style.color]="getFileIconConfig(liv.fichierRetourUrl).color"></i>
+                              <span class="doc-title">Retour de {{ liv.entrepreneurName }}</span>
+                          </div>
+                          <span class="empty-doc" *ngIf="!liv.fichierRetourUrl">—</span>
+                      </div>
+
+                      <div class="info-cell comments-cell">
+                          <span class="cell-label">Commentaires</span>
+                          <div class="comments-stack">
+                              <div class="comment-block demande" *ngIf="liv.commentaire">
+                                  <span class="c-title">Demande:</span> {{ liv.commentaire }}
+                              </div>
+                              <div class="comment-block revision" *ngIf="liv.commentaireRevision">
+                                  <span class="c-title">Révision:</span> {{ liv.commentaireRevision }}
+                              </div>
+                              <div class="comment-block acceptation" *ngIf="liv.commentaireAcceptation">
+                                  <span class="c-title">Acceptation:</span> {{ liv.commentaireAcceptation }}
+                              </div>
+                              <div class="comment-block legacy" *ngIf="liv.coachComment && !liv.commentaireRevision && !liv.commentaireAcceptation">
+                                  <span class="c-title">Note:</span> {{ liv.coachComment }}
+                              </div>
                           </div>
                       </div>
 
@@ -124,25 +129,23 @@ import { environment } from '../../../../environment';
                           <div class="status-badge" [class]="liv.statut.toLowerCase()">
                               {{ getStatusLabel(liv.statut) }}
                           </div>
+                          <div class="deadline-text" *ngIf="liv.deadline">
+                              <i class="pi pi-clock"></i> {{ liv.deadline | date:'d MMM yyyy' }}
+                          </div>
                       </div>
                   </div>
 
                   <div class="livrable-actions">
-                      <button class="action-btn download" (click)="download(liv)" title="Télécharger">
-                          <i class="pi pi-download"></i>
-                          <span>Consulter</span>
-                      </button>
-                      
-                      <div class="validation-actions" *ngIf="activeTab === 'received' && (liv.statut === 'SUBMITTED' || liv.statut === 'PENDING_REVIEW' || liv.statut === 'REVISION')">
-                          <button class="action-btn validate" (click)="updateLivrableStatus(liv, 'ACCEPTED')" title="Accepter">
+                      <div class="validation-actions" *ngIf="liv.statut === 'SUBMITTED' || liv.statut === 'SOUMIS' || liv.statut === 'RESOUMIS'">
+                          <button class="action-btn validate" (click)="promptStatusUpdate(liv, 'ACCEPTE')" title="Accepter">
                               <i class="pi pi-check"></i>
                           </button>
-                          <button class="action-btn revision" (click)="promptStatusUpdate(liv, 'REVISION')" title="Demander Révision">
+                          <button class="action-btn revision" (click)="promptStatusUpdate(liv, 'EN_REVISION')" title="Demander Révision">
                               <i class="pi pi-sync"></i>
                           </button>
                       </div>
                       
-                      <button class="action-btn delete" *ngIf="activeTab === 'sent'" (click)="deleteLivrable(liv.id)" title="Supprimer">
+                      <button class="action-btn delete" *ngIf="liv.statut !== 'ACCEPTE'" (click)="deleteLivrable(liv.id)" title="Supprimer">
                           <i class="pi pi-trash"></i>
                       </button>
                   </div>
@@ -155,8 +158,8 @@ import { environment } from '../../../../environment';
           <div class="empty-illustration">
               <i class="pi pi-folder-open"></i>
           </div>
-          <h2>Aucun livrable {{ activeTab === 'received' ? 'reçu' : 'déposé' }}</h2>
-          <p>{{ activeTab === 'received' ? 'Les documents soumis par vos entrepreneurs apparaîtront ici.' : 'Vous n’avez pas encore déposé de documents pour vos entrepreneurs.' }}</p>
+          <h2>Aucun livrable</h2>
+          <p>Vous n'avez pas encore déposé ou reçu de documents pour vos entrepreneurs.</p>
       </div>
 
       <div *ngIf="loading && !showDepotModal" class="global-loader-wrap">
@@ -186,6 +189,33 @@ import { environment } from '../../../../environment';
                           <option [ngValue]="null">Sélectionner un programme...</option>
                           <option *ngFor="let p of programmes" [value]="p.id">{{p.nom}}</option>
                       </select>
+                  </div>
+
+                  <div class="form-group" style="margin-bottom: 16px; display: flex; gap: 1rem;">
+                      <div style="flex: 1;">
+                          <label class="form-label">Thématique *</label>
+                          <select class="search-input-alt" [(ngModel)]="newLivrable.thematiqueName" (change)="onThematiqueChange()">
+                              <option [ngValue]="''">Sélectionner une thématique...</option>
+                              <option *ngFor="let t of formThematiques" [value]="t.nom">{{t.nom}}</option>
+                          </select>
+                      </div>
+                      <div style="flex: 1;">
+                          <label class="form-label">Session *</label>
+                          <select class="search-input-alt" [(ngModel)]="newLivrable.sessionName" [disabled]="!newLivrable.thematiqueName">
+                              <option [ngValue]="''">Sélectionner une session...</option>
+                              <option *ngFor="let s of filteredFormSessions" [value]="s.titre">{{s.titre}}</option>
+                          </select>
+                      </div>
+                  </div>
+
+                  <div class="form-group" style="margin-bottom: 16px;">
+                      <label class="form-label">Commentaire de demande</label>
+                      <textarea class="search-input-alt" [(ngModel)]="newLivrable.commentaire" rows="2" placeholder="Consignes pour l'entrepreneur..."></textarea>
+                  </div>
+
+                  <div class="form-group" style="margin-bottom: 16px;">
+                      <label class="form-label">Deadline</label>
+                      <input type="date" class="search-input-alt" [(ngModel)]="newLivrable.deadline" />
                   </div>
 
                   <div class="form-group" style="margin-bottom: 16px;">
@@ -239,7 +269,7 @@ import { environment } from '../../../../environment';
 
               <div class="modal-footer">
                   <button class="btn-close-modal" (click)="showDepotModal = false" style="margin-right: 12px;">Annuler</button>
-                  <button class="btn-detail" (click)="deposerLivrable()" [disabled]="loading || !selectedFile || !newLivrable.titre" style="background: #ea5073; color: white;">
+                  <button class="btn-detail" (click)="deposerLivrable()" [disabled]="loading || !selectedFile || !newLivrable.titre || !newLivrable.thematiqueName || !newLivrable.sessionName" style="background: #ea5073; color: white;">
                       <i class="pi" [class.pi-check]="!loading" [class.pi-spin]="loading" [class.pi-spinner]="loading" style="margin-right: 6px;"></i>
                       {{ loading ? 'Dépôt en cours...' : 'Confirmer le dépôt' }}
                   </button>
@@ -259,15 +289,15 @@ import { environment } from '../../../../environment';
               </div>
               <div class="modal-body">
                   <div class="form-group">
-                      <label class="form-label">Votre commentaire *</label>
-                      <textarea class="search-input-alt" [(ngModel)]="statusComment" rows="4" placeholder="Expliquez ce qui doit être corrigé..." style="height: auto;"></textarea>
+                      <label class="form-label">Votre commentaire <span *ngIf="pendingStatus === 'EN_REVISION'">*</span><span *ngIf="pendingStatus !== 'EN_REVISION'">(Optionnel)</span></label>
+                      <textarea class="search-input-alt" [(ngModel)]="statusComment" rows="4" placeholder="Expliquez ce qui doit être corrigé ou félicitez l'entrepreneur..." style="height: auto;"></textarea>
                   </div>
               </div>
               <div class="modal-footer">
                   <button class="btn-close-modal" (click)="showDecisionModal = false" style="margin-right: 12px;">Annuler</button>
-                  <button class="btn-detail" (click)="confirmStatusUpdate()" [disabled]="loading || !statusComment.trim()" 
-                          [style.background]="pendingStatus === 'REVISION' ? '#3b82f6' : '#ef4444'" style="color: white; border: none;">
-                      <i class="pi pi-send" style="margin-right: 8px;"></i> Envoyer la décision
+                  <button class="btn-detail" (click)="confirmStatusUpdate()" [disabled]="loading || (pendingStatus === 'EN_REVISION' && !statusComment.trim())" 
+                          [style.background]="pendingStatus === 'EN_REVISION' ? '#3b82f6' : '#10b981'" style="color: white; border: none;">
+                      <i class="pi" [class.pi-send]="pendingStatus === 'EN_REVISION'" [class.pi-check]="pendingStatus !== 'EN_REVISION'" style="margin-right: 8px;"></i> Envoyer la décision
                   </button>
               </div>
           </div>
@@ -297,7 +327,7 @@ import { environment } from '../../../../environment';
     .livrable-item:hover { transform: translateX(5px); border-color: #e2e8f0; box-shadow: 0 10px 30px rgba(0,0,0,.05); }
 
     .livrable-main { display: flex; justify-content: space-between; align-items: center; gap: 2rem; flex-wrap: wrap; }
-    .livrable-info-grid { display: grid; grid-template-columns: 1.5fr 2fr 2fr 2fr 1fr; gap: 1.5rem; flex: 1; align-items: start; }
+    .livrable-info-grid { display: grid; grid-template-columns: 1.5fr 1.5fr 1.5fr 1.5fr 1.5fr 1fr; gap: 1rem; flex: 1; align-items: start; }
     
     .info-cell { display: flex; flex-direction: column; gap: 0.75rem; }
     .cell-label { font-size: 0.75rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -320,11 +350,14 @@ import { environment } from '../../../../environment';
     .doc-link-wrap i { font-size: 1.25rem; }
     .doc-title { font-weight: 600; color: #1e293b; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; }
 
-    .status-badge { padding: 0.4rem 0.8rem; border-radius: 8px; font-size: 0.75rem; font-weight: 800; text-align: center; }
-    .status-badge.submitted, .status-badge.pending_review { background: #fef3c7; color: #d97706; }
-    .status-badge.accepted, .status-badge.valide, .status-badge.approved { background: #dcfce7; color: #15803d; }
-    .status-badge.rejected, .status-badge.rejete { background: #fee2e2; color: #b91c1c; }
-    .status-badge.revision { background: #eff6ff; color: #1d4ed8; }
+    .doc-link-wrap.clickable { cursor: pointer; transition: background 0.2s; }
+    .doc-link-wrap.clickable:hover { background: #e2e8f0; }
+
+    .status-badge { padding: 0.4rem 0.8rem; border-radius: 8px; font-size: 0.75rem; font-weight: 800; text-align: center; width: fit-content; }
+    .status-badge.travail_demande { background: #eff6ff; color: #1d4ed8; }
+    .status-badge.soumis, .status-badge.submitted, .status-badge.pending_review { background: #fef3c7; color: #d97706; }
+    .status-badge.accepte, .status-badge.accepted, .status-badge.valide, .status-badge.approved { background: #dcfce7; color: #15803d; }
+    .status-badge.en_revision, .status-badge.revision, .status-badge.rejected, .status-badge.rejete { background: #fee2e2; color: #b91c1c; }
 
     .livrable-actions { display: flex; flex-direction: column; gap: 0.5rem; }
     .action-btn { border: none; padding: 0.6rem 1rem; border-radius: 10px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: all 0.2s; font-size: 0.85rem; }
@@ -434,7 +467,7 @@ export class CoachLivrablesComponent implements OnInit {
   selectedFile: File | null = null;
   entrepreneurSearch: string = '';
   
-  activeTab: 'received' | 'sent' = 'received';
+  activeTab: 'all' = 'all';
 
   selectedEntrepreneurId: number | null = null;
   selectedProgrammeId: number | null = null;
@@ -442,14 +475,15 @@ export class CoachLivrablesComponent implements OnInit {
 
   coachId: number | null = null;
 
-  newLivrable = { titre: '', programmeId: null as number | null };
+  newLivrable = { titre: '', programmeId: null as number | null, thematiqueName: '', sessionName: '', commentaire: '', deadline: '' };
 
   programmes: ProgrammeDTO[] = [];
   entrepreneurs: (UserDTO & { selected?: boolean })[] = [];
+  formThematiques: any[] = [];
+  formSessions: any[] = [];
   thematiques: string[] = [];
   
-  receivedLivrables: any[] = [];
-  sentLivrables: any[] = [];
+  allLivrables: any[] = [];
   filteredLivrables: any[] = [];
 
   showDecisionModal = false;
@@ -473,38 +507,68 @@ export class CoachLivrablesComponent implements OnInit {
     this.loadProgrammes(this.coachId);
     this.loadEntrepreneurs();
     this.loadLivrables();
+    this.loadFormData(this.coachId);
+  }
+
+  loadFormData(coachId: number) {
+    this.coachService.getThematiquesAssignedToCoach(coachId).subscribe({
+      next: (data) => this.formThematiques = data || [],
+      error: () => { this.formThematiques = []; }
+    });
+
+    this.coachService.getAllSessionsByCoach(coachId).subscribe({
+      next: (data) => this.formSessions = data || [],
+      error: () => { this.formSessions = []; }
+    });
+  }
+
+  onThematiqueChange() {
+    this.newLivrable.sessionName = '';
+  }
+
+  get filteredFormSessions() {
+    if (!this.newLivrable.thematiqueName) return [];
+    return this.formSessions.filter(s => s.thematiqueNom === this.newLivrable.thematiqueName);
   }
 
   loadLivrables() {
     if (!this.coachId) return;
     this.loading = true;
     
-    // Fetch both Received and Sent
+    // Fetch both Received and Sent and merge
     const received$ = this.livrableService.getReceived(this.coachId);
     const sent$ = this.livrableService.getSent(this.coachId);
 
-    // Using forkJoin or just separate calls. Let's do separate for simplicity in error handling
+    // Simplest way without forkJoin: handle both statefully
+    let recvDone = false;
+    let sentDone = false;
+    let tempRecv: any[] = [];
+    let tempSent: any[] = [];
+
+    const checkDone = () => {
+        if (recvDone && sentDone) {
+            const map = new Map<number, any>();
+            tempRecv.forEach(l => map.set(l.id, l));
+            tempSent.forEach(l => map.set(l.id, l));
+            this.allLivrables = Array.from(map.values()).sort((a, b) => new Date(b.dateSoumission).getTime() - new Date(a.dateSoumission).getTime());
+            this.updateView();
+            this.loading = false;
+        }
+    };
+
     received$.subscribe({
-      next: (res: any[]) => {
-        this.receivedLivrables = res;
-        this.updateView();
-        this.loading = false;
-      },
-      error: () => { this.receivedLivrables = []; this.loading = false; }
+      next: (res: any[]) => { tempRecv = res; recvDone = true; checkDone(); },
+      error: () => { recvDone = true; checkDone(); }
     });
 
     sent$.subscribe({
-      next: (res: any[]) => {
-        this.sentLivrables = res;
-        this.updateView();
-      },
-      error: () => { this.sentLivrables = []; }
+      next: (res: any[]) => { tempSent = res; sentDone = true; checkDone(); },
+      error: () => { sentDone = true; checkDone(); }
     });
   }
 
-  setTab(tab: 'received' | 'sent') {
-    this.activeTab = tab;
-    this.updateView();
+  setTab(tab: any) {
+    // legacy, not used anymore
   }
 
   updateView() {
@@ -513,7 +577,7 @@ export class CoachLivrablesComponent implements OnInit {
   }
 
   extractFilterOptions() {
-    const currentList = this.activeTab === 'received' ? this.receivedLivrables : this.sentLivrables;
+    const currentList = this.allLivrables;
     const themes = new Set<string>();
     currentList.forEach(l => {
       if (l.thematiqueName) themes.add(l.thematiqueName);
@@ -542,7 +606,7 @@ export class CoachLivrablesComponent implements OnInit {
   }
 
   openDepotModal() {
-    this.newLivrable = { titre: '', programmeId: null };
+    this.newLivrable = { titre: '', programmeId: null, thematiqueName: '', sessionName: '', commentaire: '', deadline: '' };
     this.selectedFile = null;
     this.entrepreneurSearch = '';
     this.entrepreneurs.forEach(e => e.selected = false);
@@ -550,8 +614,7 @@ export class CoachLivrablesComponent implements OnInit {
   }
 
   filterLivrables() {
-    const currentList = this.activeTab === 'received' ? this.receivedLivrables : this.sentLivrables;
-    let result = [...currentList];
+    let result = [...this.allLivrables];
 
     if (this.selectedEntrepreneurId) {
       result = result.filter(l => (l.entrepreneur?.id === Number(this.selectedEntrepreneurId)) || (l.entrepreneurId === Number(this.selectedEntrepreneurId)));
@@ -586,14 +649,20 @@ export class CoachLivrablesComponent implements OnInit {
 
   getStatusLabel(statut: string) {
     const config: any = {
+      TRAVAIL_DEMANDE: 'Travail demandé',
       SUBMITTED: 'Soumis',
-      PENDING_REVIEW: 'À valider',
-      ACCEPTED: 'Validé',
+      SOUMIS: 'Soumis',
+      RESOUMIS: 'Soumis',
+      PENDING_REVIEW: 'Soumis',
+      ACCEPTED: 'Accepté',
+      ACCEPTE: 'Accepté',
+      APPROVED: 'Accepté',
+      VALIDE: 'Accepté',
       REJECTED: 'Rejeté',
-      REVISION: 'Révision demandée',
-      VALIDE: 'Validé',
+      REVISION: 'En révision',
+      EN_REVISION: 'En révision',
       REJETE: 'Rejeté',
-      APPROVED: 'Approuvé'
+      A_REMPLIR: 'Travail demandé'
     };
     return config[statut] || statut;
   }
@@ -668,7 +737,7 @@ export class CoachLivrablesComponent implements OnInit {
 
   deposerLivrable() {
     const selectedEnts = this.entrepreneurs.filter(e => e.selected);
-    if (!this.newLivrable.titre || !this.selectedFile || selectedEnts.length === 0) {
+    if (!this.newLivrable.titre || !this.selectedFile || selectedEnts.length === 0 || !this.newLivrable.thematiqueName || !this.newLivrable.sessionName) {
       return;
     }
     this.loading = true;
@@ -678,13 +747,13 @@ export class CoachLivrablesComponent implements OnInit {
       this.newLivrable.programmeId?.toString() || '',
       entrepreneurIds,
       this.selectedFile,
-      { titre: this.newLivrable.titre, type: 'Document' },
+      { titre: this.newLivrable.titre, type: 'Document', thematiqueName: this.newLivrable.thematiqueName, sessionName: this.newLivrable.sessionName, commentaire: this.newLivrable.commentaire, deadline: this.newLivrable.deadline },
       this.coachId ?? undefined
     ).subscribe({
       next: () => {
         this.loadLivrables();
         this.showDepotModal = false;
-        this.newLivrable = { titre: '', programmeId: null };
+        this.newLivrable = { titre: '', programmeId: null, thematiqueName: '', sessionName: '', commentaire: '', deadline: '' };
         this.selectedFile = null;
         this.entrepreneurs.forEach(e => e.selected = false);
         this.loading = false;

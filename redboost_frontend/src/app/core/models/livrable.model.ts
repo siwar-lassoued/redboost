@@ -23,6 +23,12 @@ export interface Livrable {
     validatedAt?: string;
     fileSize?: string;
     fileName?: string;
+    thematiqueName?: string;
+    sessionName?: string;
+    deadline?: string;
+    fichierRetourUrl?: string;
+    commentaireRevision?: string;
+    commentaireAcceptation?: string;
     isNew?: boolean;
     status?: string;     // alias for template usage
     submittedAt?: string;

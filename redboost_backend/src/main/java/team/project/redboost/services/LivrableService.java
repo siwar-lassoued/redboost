@@ -41,8 +41,14 @@ public class LivrableService {
         Livrable livrable = getLivrableById(id);
         if (livrable != null) {
             livrable.setStatut(statut);
-            if (coachComment != null) {
-                livrable.setCoachComment(coachComment);
+            if (coachComment != null && !coachComment.trim().isEmpty()) {
+                if (statut == Livrable.Statut.REVISION || statut == Livrable.Statut.EN_REVISION) {
+                    livrable.setCommentaireRevision(coachComment);
+                } else if (statut == Livrable.Statut.ACCEPTE) {
+                    livrable.setCommentaireAcceptation(coachComment);
+                } else {
+                    livrable.setCoachComment(coachComment);
+                }
             }
             // Si le coach accepte ou met en révision, on peut enregistrer la date
             if (statut == Livrable.Statut.ACCEPTE || statut == Livrable.Statut.EN_REVISION || statut == Livrable.Statut.REVISION) {
@@ -57,15 +63,10 @@ public class LivrableService {
     public Livrable submitLivrable(Long id, String fileUrl, String fileSize) {
         Livrable livrable = getLivrableById(id);
         if (livrable != null) {
-            // Si c'était en révision, le nouveau statut est RESOUMIS, sinon c'est SOUMIS
-            if (livrable.getStatut() == Livrable.Statut.EN_REVISION || livrable.getStatut() == Livrable.Statut.REVISION) {
-                livrable.setStatut(Livrable.Statut.RESOUMIS);
-            } else {
-                livrable.setStatut(Livrable.Statut.SUBMITTED);
-            }
+            livrable.setStatut(Livrable.Statut.SOUMIS);
             
-            livrable.setFichierUrl(fileUrl);
-            livrable.setFileSize(fileSize);
+            livrable.setFichierRetourUrl(fileUrl);
+            livrable.setFileRetourSize(fileSize);
             livrable.setDateSoumission(LocalDateTime.now());
             return livrableRepository.save(livrable);
         }
@@ -135,10 +136,45 @@ public class LivrableService {
                 l.setTacheDate(l.getTache().getDateLimite());
             }
 
-            if (l.getEntrepreneur() != null) {
+            if (l.getEntrepreneur() != null && (l.getSessionName() == null || l.getSessionName().isEmpty())) {
                 List<team.project.redboost.entities.Session> sessions = sessionRepository.findByCoachIdAndEntrepreneurId(coachId, l.getEntrepreneur().getId());
                 if (!sessions.isEmpty()) {
                     l.setSessionName(sessions.get(0).getTitre());
+                }
+            }
+        }
+        return livrables;
+    }
+
+    public List<Livrable> enrichLivrablesForEntrepreneur(List<Livrable> livrables, Long entrepreneurId) {
+        if (livrables == null || livrables.isEmpty()) return livrables;
+        List<team.project.redboost.entities.Matching> matchings = matchingRepository.findByEntrepreneurIdAndStatut(entrepreneurId, team.project.redboost.entities.Matching.StatutMatching.VALIDE);
+        
+        for (Livrable l : livrables) {
+            if (l.getCoachEmail() != null && (l.getCoachName() == null || l.getCoachName().isEmpty())) {
+                team.project.redboost.entities.User coach = userRepository.findByEmail(l.getCoachEmail());
+                if (coach != null) l.setCoachName(coach.getFirstName() + " " + coach.getLastName());
+            }
+            
+            if (l.getCoachEmail() != null) {
+                team.project.redboost.entities.User coach = userRepository.findByEmail(l.getCoachEmail());
+                if (coach != null) {
+                    team.project.redboost.entities.Matching m = matchings.stream()
+                        .filter(match -> match.getCoachId().equals(coach.getId()))
+                        .findFirst().orElse(null);
+                        
+                    if (m != null) {
+                        if (m.getThematiqueId() != null && (l.getThematiqueName() == null || l.getThematiqueName().isEmpty())) {
+                            thematiqueRepository.findById(m.getThematiqueId()).ifPresent(t -> l.setThematiqueName(t.getNom()));
+                        }
+                    }
+                    
+                    if (l.getSessionName() == null || l.getSessionName().isEmpty()) {
+                        List<team.project.redboost.entities.Session> sessions = sessionRepository.findByCoachIdAndEntrepreneurId(coach.getId(), entrepreneurId);
+                        if (!sessions.isEmpty()) {
+                            l.setSessionName(sessions.get(0).getTitre());
+                        }
+                    }
                 }
             }
         }

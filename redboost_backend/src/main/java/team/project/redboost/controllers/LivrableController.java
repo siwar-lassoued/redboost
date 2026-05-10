@@ -48,7 +48,6 @@ public class LivrableController {
                             && l.getEntrepreneur().getId().equals(entrepreneurId))
                     .collect(Collectors.toList());
         }
-
         if (coachId != null) {
             User coach = userRepository.findById(coachId).orElse(null);
             if (coach != null && coach.getEmail() != null) {
@@ -57,6 +56,10 @@ public class LivrableController {
                         .filter(l -> coachEmail.equals(l.getCoachEmail()))
                         .collect(Collectors.toList());
             }
+        }
+
+        if (entrepreneurId != null && !livrables.isEmpty()) {
+            livrables = livrableService.enrichLivrablesForEntrepreneur(livrables, entrepreneurId);
         }
 
         return ResponseEntity.ok(livrables);
@@ -83,10 +86,7 @@ public class LivrableController {
         return ResponseEntity.ok(livrableService.createLivrable(livrable));
     }
 
-    /**
-     * Upload a file and create one Livrable record per entrepreneur.
-     * The uploading coach's identity is extracted from the JWT and stored on each record.
-     */
+  
     @PostMapping(value = "/upload", produces = "application/json")
     public ResponseEntity<List<Livrable>> uploadLivrable(
             @RequestParam("file") MultipartFile file,
@@ -96,6 +96,9 @@ public class LivrableController {
             @RequestParam("type") String type,
             @RequestParam(value = "deadline", required = false) String deadlineStr,
             @RequestParam(value = "coachId", required = false) Long coachId,
+            @RequestParam(value = "thematiqueName", required = false) String thematiqueName,
+            @RequestParam(value = "sessionName", required = false) String sessionName,
+            @RequestParam(value = "commentaire", required = false) String commentaire,
             HttpServletRequest request) {
 
         try {
@@ -164,8 +167,11 @@ public class LivrableController {
                 livrable.setFileSize(sizeStr);
                 livrable.setEntrepreneur(entrepreneur);
                 livrable.setProgramme(finalProgramme);
-                livrable.setStatut(Livrable.Statut.A_REMPLIR);
+                livrable.setStatut(Livrable.Statut.TRAVAIL_DEMANDE);
                 livrable.setDeadline(deadline);
+                livrable.setThematiqueName(thematiqueName);
+                livrable.setSessionName(sessionName);
+                livrable.setCommentaire(commentaire);
                 // On n'enregistre pas de date de soumission car c'est juste une demande
 
                 if (finalCoach != null) {

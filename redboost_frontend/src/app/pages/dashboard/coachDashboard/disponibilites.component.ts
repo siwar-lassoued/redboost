@@ -38,7 +38,7 @@ interface DateGroupView {
       <!-- Page Header -->
       <div class="page-header">
           <div class="page-title-row">
-              <div class="page-icon"></div>
+            
               <div>
                   <h1>Calendrier & Disponibilités</h1>
                   <p>Gérez vos créneaux et sessions planifiées</p>

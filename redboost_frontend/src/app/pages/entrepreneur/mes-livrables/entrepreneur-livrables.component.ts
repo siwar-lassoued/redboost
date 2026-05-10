@@ -22,24 +22,7 @@ type LivTab = 'EN_COURS' | 'TERMINE' | 'REVISION';
           </div>
       </div>
 
-      <!-- Tabs -->
-      <div class="tabs-container premium-card mb-6">
-          <div class="tab-item" [class.active]="activeTab() === 'EN_COURS'" (click)="activeTab.set('EN_COURS')">
-              <i class="pi pi-clock"></i>
-              <span>En cours</span>
-              <span class="count-badge">{{ getTabCount('EN_COURS') }}</span>
-          </div>
-          <div class="tab-item" [class.active]="activeTab() === 'TERMINE'" (click)="activeTab.set('TERMINE')">
-              <i class="pi pi-check-circle"></i>
-              <span>Terminé</span>
-              <span class="count-badge">{{ getTabCount('TERMINE') }}</span>
-          </div>
-          <div class="tab-item" [class.active]="activeTab() === 'REVISION'" (click)="activeTab.set('REVISION')">
-              <i class="pi pi-sync"></i>
-              <span>En révision</span>
-              <span class="count-badge">{{ getTabCount('REVISION') }}</span>
-          </div>
-      </div>
+      <!-- Les onglets ont été supprimés selon la demande, on utilise la vue liste unique -->
 
       <!-- Filters -->
       <div class="filters-container premium-card mb-8">
@@ -87,7 +70,7 @@ type LivTab = 'EN_COURS' | 'TERMINE' | 'REVISION';
               <div class="livrable-main">
                   <div class="livrable-info-grid">
                       <div class="info-cell coach">
-                          <span class="cell-label">Coach Référent</span>
+                          <span class="cell-label">Coach</span>
                           <div class="user-info">
                               <div class="user-avatar" [style.background]="getCoachColor(liv.coachName)">{{ (liv.coachName || 'C')[0] }}</div>
                               <span class="user-name">{{ liv.coachName || 'Votre Coach' }}</span>
@@ -106,19 +89,40 @@ type LivTab = 'EN_COURS' | 'TERMINE' | 'REVISION';
                               <span class="thematique-badge" *ngIf="liv.thematiqueName">
                                   <i class="pi pi-tag"></i> {{ liv.thematiqueName }}
                               </span>
-                              <span class="deadline-badge" *ngIf="liv.deadline" [class.overdue]="isOverdue(liv.deadline)">
-                                  <i class="pi pi-clock"></i> {{ isOverdue(liv.deadline) ? 'En retard' : 'Avant le' }} {{ liv.deadline | date:'dd/MM/yyyy' }}
-                              </span>
                           </div>
                       </div>
 
                       <div class="info-cell document">
-                          <span class="cell-label">Titre / Document</span>
-                          <div class="task-info">
-                              <span class="task-name">{{ liv.titre }}</span>
-                              <div class="doc-link-wrap" *ngIf="liv.fichierUrl" (click)="download(liv.fichierUrl)" style="cursor: pointer; margin-top: 5px;">
-                                  <i class="pi" [class]="getFileIcon(liv.titre || '').icon" [style.color]="getFileIcon(liv.titre || '').color"></i>
-                                  <span class="doc-title">{{ liv.fileSize || 'Consulter' }}</span>
+                          <span class="cell-label">Document Coach</span>
+                          <div class="doc-link-wrap" *ngIf="liv.fichierUrl" (click)="download(liv.fichierUrl)" style="cursor: pointer;">
+                              <i class="pi" [class]="getFileIcon(liv.titre || '').icon" [style.color]="getFileIcon(liv.titre || '').color"></i>
+                              <span class="doc-title">{{ liv.titre }}</span>
+                          </div>
+                      </div>
+
+                      <div class="info-cell document">
+                          <span class="cell-label">Mon Retour</span>
+                          <div class="doc-link-wrap" *ngIf="liv.fichierRetourUrl" (click)="download(liv.fichierRetourUrl)" style="cursor: pointer; background: #f0fdf4; border-color: #bbf7d0;">
+                              <i class="pi" [class]="getFileIcon(liv.fichierRetourUrl || '').icon" [style.color]="getFileIcon(liv.fichierRetourUrl || '').color"></i>
+                              <span class="doc-title">Mon envoi</span>
+                          </div>
+                          <span class="empty-doc" *ngIf="!liv.fichierRetourUrl">—</span>
+                      </div>
+
+                      <div class="info-cell comments-cell">
+                          <span class="cell-label">Commentaires</span>
+                          <div class="comments-stack">
+                              <div class="comment-block demande" *ngIf="liv.commentaire">
+                                  <span class="c-title">Demande:</span> {{ liv.commentaire }}
+                              </div>
+                              <div class="comment-block revision" *ngIf="liv.commentaireRevision">
+                                  <span class="c-title">Révision:</span> {{ liv.commentaireRevision }}
+                              </div>
+                              <div class="comment-block acceptation" *ngIf="liv.commentaireAcceptation">
+                                  <span class="c-title">Acceptation:</span> {{ liv.commentaireAcceptation }}
+                              </div>
+                              <div class="comment-block legacy" *ngIf="liv.coachComment && !liv.commentaireRevision && !liv.commentaireAcceptation">
+                                  <span class="c-title">Note:</span> {{ liv.coachComment }}
                               </div>
                           </div>
                       </div>
@@ -128,45 +132,26 @@ type LivTab = 'EN_COURS' | 'TERMINE' | 'REVISION';
                           <div class="status-badge" [class]="liv.statut?.toLowerCase()">
                               {{ getStatusLabel(liv.statut) }}
                           </div>
+                          <div class="deadline-badge" *ngIf="liv.deadline" [class.overdue]="isOverdue(liv.deadline)" style="margin-top: 8px;">
+                              <i class="pi pi-clock"></i> {{ isOverdue(liv.deadline) ? 'En retard' : 'Avant le' }} {{ liv.deadline | date:'dd/MM/yyyy' }}
+                          </div>
                       </div>
 
                       <div class="livrable-actions" style="display: flex; flex-direction: column; gap: 8px;">
-                          <button class="action-btn download" *ngIf="liv.fichierUrl && (liv.statut === 'A_REMPLIR' || liv.statut === 'EN_REVISION')" (click)="download(liv.fichierUrl)" 
-                                  style="background: #f8fafc; border: 1px solid #e2e8f0; color: #1e293b; padding: 8px 12px; border-radius: 10px;" title="Télécharger le document du coach">
-                              <i class="pi pi-file-import"></i>
-                              <span>Doc Coach</span>
-                          </button>
-                          
                           <button class="action-btn submit-btn" 
-                                  *ngIf="isSubmissionStatus(liv.statut)" 
                                   (click)="triggerUpload(liv.id)" 
-                                  [disabled]="loading() || isOverdue(liv.deadline)"
-                                  [title]="isOverdue(liv.deadline) ? 'Le délai est dépassé' : ''"
-                                  [style.opacity]="isOverdue(liv.deadline) ? '0.5' : '1'"
-                                  [style.cursor]="isOverdue(liv.deadline) ? 'not-allowed' : 'pointer'"
+                                  [disabled]="loading() || isOverdue(liv.deadline) || isAlreadySubmitted(liv.statut) || isAccepted(liv.statut)"
+                                  [title]="isAccepted(liv.statut) ? 'Livrable validé' : (isOverdue(liv.deadline) ? 'Le délai est dépassé' : (isAlreadySubmitted(liv.statut) ? 'En attente de validation du coach' : ''))"
+                                  [style.opacity]="(isOverdue(liv.deadline) || isAlreadySubmitted(liv.statut) || isAccepted(liv.statut)) ? '0.5' : '1'"
+                                  [style.cursor]="(isOverdue(liv.deadline) || isAlreadySubmitted(liv.statut) || isAccepted(liv.statut)) ? 'not-allowed' : 'pointer'"
                                   style="background: #ea5073; color: white; min-width: 140px; padding: 10px 12px; border-radius: 10px; border: none; font-weight: bold;">
-                              <i class="pi pi-reply"></i>
-                              <span>{{ (liv.statut === 'EN_REVISION' || liv.statut === 'REVISION') ? 'Renvoyer' : 'Faire un retour' }}</span>
-                          </button>
-                          
-                          <button class="action-btn download" *ngIf="liv.fichierUrl && liv.statut !== 'A_REMPLIR'" (click)="download(liv.fichierUrl)" 
-                                  style="background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 8px 12px; border-radius: 10px;" title="Voir mon envoi">
-                              <i class="pi pi-eye"></i>
-                              <span>Mon Retour</span>
+                              <i class="pi" [class.pi-reply]="!isAlreadySubmitted(liv.statut) && !isAccepted(liv.statut)" [class.pi-check]="isAlreadySubmitted(liv.statut) || isAccepted(liv.statut)"></i>
+                              <span>{{ getButtonLabel(liv.statut) }}</span>
                           </button>
                           
                           <input type="file" [id]="'fu-' + liv.id" class="hidden" (change)="onFile($event, liv)">
                       </div>
                   </div>
-              </div>
-
-              <!-- Coach Feedback -->
-              <div class="feedback-box" *ngIf="liv.coachComment">
-                  <div class="feedback-header">
-                      <i class="pi pi-info-circle"></i>
-                      <span>Consignes / Feedback du coach</span>
-                  </div>
-                  <p class="feedback-text">{{ liv.coachComment }}</p>
               </div>
           </div>
       </div>
@@ -276,10 +261,10 @@ type LivTab = 'EN_COURS' | 'TERMINE' | 'REVISION';
     .livrable-item:hover { transform: translateX(5px); border-color: #e2e8f0; box-shadow: 0 10px 30px rgba(0,0,0,.05); }
 
     .livrable-main { display: flex; justify-content: space-between; align-items: center; gap: 2rem; flex-wrap: wrap; }
-    .livrable-info-grid { display: grid; grid-template-columns: 1fr 1.5fr 2fr 1fr; gap: 1.5rem; flex: 1; align-items: start; }
+    .livrable-info-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1.5fr 1fr 150px; gap: 1rem; flex: 1; align-items: start; }
     
     .info-cell { display: flex; flex-direction: column; gap: 0.75rem; }
-    .cell-label { font-size: 0.75rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+    .cell-label { font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
     
     .user-info { display: flex; align-items: center; gap: 0.75rem; }
     .user-avatar { width: 36px; height: 36px; color: white; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; }
@@ -297,13 +282,22 @@ type LivTab = 'EN_COURS' | 'TERMINE' | 'REVISION';
 
     .doc-link-wrap { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0.75rem; background: #f8fafc; border-radius: 10px; border: 1px solid #e2e8f0; width: fit-content; }
     .doc-link-wrap i { font-size: 1.1rem; }
-    .doc-title { font-weight: 600; color: #1e293b; font-size: 0.85rem; }
+    .doc-title { font-weight: 600; color: #1e293b; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
 
     .status-badge { padding: 0.4rem 0.8rem; border-radius: 8px; font-size: 0.75rem; font-weight: 800; text-align: center; width: fit-content; }
-    .status-badge.submitted, .status-badge.pending_review { background: #fef3c7; color: #d97706; }
-    .status-badge.accepted, .status-badge.valide, .status-badge.approved { background: #dcfce7; color: #15803d; }
-    .status-badge.rejected, .status-badge.rejete { background: #fee2e2; color: #b91c1c; }
-    .status-badge.revision { background: #eff6ff; color: #1d4ed8; }
+    .status-badge.travail_demande { background: #eff6ff; color: #1d4ed8; }
+    .status-badge.soumis { background: #fef3c7; color: #d97706; }
+    .status-badge.accepte, .status-badge.valide { background: #dcfce7; color: #15803d; }
+    .status-badge.en_revision { background: #fee2e2; color: #b91c1c; }
+
+    .comments-stack { display: flex; flex-direction: column; gap: 0.5rem; }
+    .comment-block { padding: 0.5rem; border-radius: 8px; font-size: 0.8rem; line-height: 1.4; }
+    .comment-block.demande { background: #f8fafc; border-left: 3px solid #94a3b8; color: #334155; }
+    .comment-block.revision { background: #fef2f2; border-left: 3px solid #ef4444; color: #991b1b; }
+    .comment-block.acceptation { background: #f0fdf4; border-left: 3px solid #22c55e; color: #166534; }
+    .comment-block.legacy { background: #fffbeb; border-left: 3px solid #f59e0b; color: #92400e; }
+    .c-title { font-weight: 700; display: block; margin-bottom: 2px; }
+    .empty-doc { color: #94a3b8; font-size: 0.85rem; font-style: italic; }
 
     .livrable-actions { display: flex; flex-direction: column; gap: 0.5rem; width: 150px; }
     .action-btn { border: none; padding: 0.6rem 1rem; border-radius: 10px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: all 0.2s; font-size: 0.85rem; }
@@ -338,7 +332,7 @@ export class EntrepreneurLivrablesComponent implements OnInit {
   programmes: any[] = [];
   newLivrable: { titre: string, coachId: number | null, programmeId: number | null } = { titre: '', coachId: null, programmeId: null };
 
-  activeTab = signal<LivTab>('EN_COURS');
+  activeTab = signal<string>('ALL'); // Onglets supprimés, on garde juste une référence
   allLivrables = signal<any[]>([]);
   loading = signal(true);
   searchTerm = '';
@@ -379,16 +373,14 @@ export class EntrepreneurLivrablesComponent implements OnInit {
     const coach = this.selectedCoach;
     const sess = this.selectedSession;
     const theme = this.selectedThematique;
-    
     return this.allLivrables().filter(l => {
-      const matchesTab = this.mapToGroup(l.statut) === tab;
       const matchesSearch = !term || (l.titre || '').toLowerCase().includes(term);
       const matchesProg = !prog || l.programme?.nom === prog;
       const matchesCoach = !coach || l.coachName === coach;
       const matchesSess = !sess || l.sessionName === sess;
       const matchesTheme = !theme || l.thematiqueName === theme;
 
-      return matchesTab && matchesSearch && matchesProg && matchesCoach && matchesSess && matchesTheme;
+      return matchesSearch && matchesProg && matchesCoach && matchesSess && matchesTheme;
     });
   });
 
@@ -465,36 +457,43 @@ export class EntrepreneurLivrablesComponent implements OnInit {
     });
   }
 
-  mapToGroup(statut: string): LivTab {
-    if (['ACCEPTE', 'APPROVED', 'VALIDE'].includes(statut)) return 'TERMINE';
-    if (statut === 'EN_REVISION' || statut === 'REVISION') return 'REVISION';
-    return 'EN_COURS';
-  }
-
-  getTabCount(tab: LivTab): number {
-    return this.allLivrables().filter(l => this.mapToGroup(l.statut) === tab).length;
-  }
+  // Fonctions des onglets supprimées
 
   getStatusLabel(statut: string) {
     const config: any = {
+      TRAVAIL_DEMANDE: 'Travail demandé',
       SUBMITTED: 'Soumis',
       SOUMIS: 'Soumis',
-      RESOUMIS: 'Resoumis',
-      PENDING_REVIEW: 'En revue',
-      ACCEPTED: 'Validé',
-      ACCEPTE: 'Validé',
-      APPROVED: 'Approuvé',
+      RESOUMIS: 'Soumis',
+      PENDING_REVIEW: 'Soumis',
+      ACCEPTED: 'Accepté',
+      ACCEPTE: 'Accepté',
+      APPROVED: 'Accepté',
+      VALIDE: 'Accepté',
       REJECTED: 'Rejeté',
-      REVISION: 'Révision',
-      EN_REVISION: 'Révision',
-      VALIDE: 'Approuvé',
-      A_REMPLIR: 'À Remplir'
+      REVISION: 'En révision',
+      EN_REVISION: 'En révision',
+      A_REMPLIR: 'Travail demandé'
     };
     return config[statut] || statut;
   }
 
   isSubmissionStatus(statut: string): boolean {
     return !statut || ['EN_REVISION', 'REVISION', 'A_REMPLIR', 'EN_ATTENTE'].includes(statut);
+  }
+
+  isAlreadySubmitted(statut: string): boolean {
+    return ['SUBMITTED', 'SOUMIS', 'RESOUMIS'].includes(statut);
+  }
+
+  isAccepted(statut: string): boolean {
+    return ['ACCEPTE', 'ACCEPTED', 'APPROVED', 'VALIDE'].includes(statut);
+  }
+
+  getButtonLabel(statut: string): string {
+    if (this.isAlreadySubmitted(statut)) return 'Document Soumis';
+    if (statut === 'EN_REVISION' || statut === 'REVISION') return 'Renvoyer';
+    return 'Faire un retour';
   }
 
   isOverdue(deadline: string | null): boolean {
@@ -516,7 +515,11 @@ export class EntrepreneurLivrablesComponent implements OnInit {
       next: () => {
         this.loadLivrables();
       },
-      error: () => this.loading.set(false)
+      error: (err) => {
+        this.loading.set(false);
+        console.error("Erreur lors de l'upload: ", err);
+        alert("Erreur de soumission. Assurez-vous que le backend a été déployé avec la dernière mise à jour.");
+      }
     });
   }
 
