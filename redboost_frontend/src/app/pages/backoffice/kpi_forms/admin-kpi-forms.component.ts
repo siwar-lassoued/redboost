@@ -181,7 +181,7 @@ import { ProgrammeService } from '../programmes/programme.service';
                      <select [(ngModel)]="editingForm.thematiqueId" (change)="onThematiqueChange()" class="filter-select" style="width: 100%; padding: 12px 16px;">
                        <option [value]="null">-- Sélectionner une thématique --</option>
                        @for (t of thematiques(); track t.id) {
-                         <option [value]="t.id">{{ t.titre }}</option>
+                         <option [value]="t.id">{{ t.nom || t.titre }}</option>
                        }
                      </select>
                    </div>
