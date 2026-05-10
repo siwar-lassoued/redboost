@@ -97,8 +97,11 @@ type LivTab = 'EN_COURS' | 'TERMINE' | 'REVISION';
                       <div class="info-cell details">
                           <span class="cell-label">Contexte</span>
                           <div class="context-info">
-                              <span class="programme-badge" *ngIf="liv.programme?.nom">
-                                  <i class="pi pi-bookmark"></i> {{ liv.programme?.nom }}
+                              <span class="programme-badge" *ngIf="liv.programmeName || liv.programme?.nom">
+                                  <i class="pi pi-bookmark"></i> {{ liv.programmeName || liv.programme?.nom }}
+                              </span>
+                              <span class="session-badge" *ngIf="liv.sessionName" style="background: #fdf2f8; color: #db2777; font-size: 0.8rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.25rem 0.75rem; border-radius: 99px;">
+                                  <i class="pi pi-calendar"></i> {{ liv.sessionName }}
                               </span>
                               <span class="thematique-badge" *ngIf="liv.thematiqueName">
                                   <i class="pi pi-tag"></i> {{ liv.thematiqueName }}
@@ -123,31 +126,39 @@ type LivTab = 'EN_COURS' | 'TERMINE' | 'REVISION';
                               {{ getStatusLabel(liv.statut) }}
                           </div>
                       </div>
-                  </div>
 
-                  <div class="livrable-actions">
-                      <button class="action-btn download" *ngIf="liv.fichierUrl" (click)="download(liv.fichierUrl)" title="Télécharger">
-                          <i class="pi pi-download"></i>
-                          <span>Consulter</span>
-                      </button>
-                      
-                      <button class="action-btn submit-btn" 
-                              *ngIf="canSubmit(liv.statut)" 
-                              (click)="triggerUpload(liv.id)" 
-                              [disabled]="loading()">
-                          <i class="pi pi-cloud-upload"></i>
-                          <span>{{ liv.fichierUrl ? 'Renvoyer' : 'Soumettre' }}</span>
-                      </button>
-                      
-                      <input type="file" [id]="'fu-' + liv.id" class="hidden" (change)="onFile($event, liv)">
+                      <div class="livrable-actions" style="display: flex; flex-direction: column; gap: 8px;">
+                          <button class="action-btn download" *ngIf="liv.fichierUrl && (liv.statut === 'A_REMPLIR' || liv.statut === 'EN_REVISION')" (click)="download(liv.fichierUrl)" 
+                                  style="background: #f8fafc; border: 1px solid #e2e8f0; color: #1e293b; padding: 8px 12px; border-radius: 10px;" title="Télécharger le document du coach">
+                              <i class="pi pi-file-import"></i>
+                              <span>Doc Coach</span>
+                          </button>
+                          
+                          <button class="action-btn submit-btn" 
+                                  *ngIf="canSubmit(liv.statut)" 
+                                  (click)="triggerUpload(liv.id)" 
+                                  [disabled]="loading()"
+                                  style="background: #ea5073; color: white; min-width: 140px; padding: 10px 12px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer;">
+                              <i class="pi pi-reply"></i>
+                              <span>{{ (liv.statut === 'EN_REVISION' || liv.statut === 'REVISION') ? 'Renvoyer' : 'Faire un retour' }}</span>
+                          </button>
+                          
+                          <button class="action-btn download" *ngIf="liv.fichierUrl && liv.statut !== 'A_REMPLIR'" (click)="download(liv.fichierUrl)" 
+                                  style="background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 8px 12px; border-radius: 10px;" title="Voir mon envoi">
+                              <i class="pi pi-eye"></i>
+                              <span>Mon Retour</span>
+                          </button>
+                          
+                          <input type="file" [id]="'fu-' + liv.id" class="hidden" (change)="onFile($event, liv)">
+                      </div>
                   </div>
               </div>
 
               <!-- Coach Feedback -->
               <div class="feedback-box" *ngIf="liv.coachComment">
                   <div class="feedback-header">
-                      <i class="pi pi-comment"></i>
-                      <span>Commentaire du coach</span>
+                      <i class="pi pi-info-circle"></i>
+                      <span>Consignes / Feedback du coach</span>
                   </div>
                   <p class="feedback-text">{{ liv.coachComment }}</p>
               </div>
@@ -376,7 +387,6 @@ export class EntrepreneurLivrablesComponent implements OnInit {
   ngOnInit(): void {
     this.loadLivrables();
     this.loadCoaches();
-    this.loadProgrammes();
   }
 
   loadCoaches() {
@@ -384,17 +394,15 @@ export class EntrepreneurLivrablesComponent implements OnInit {
     if (!user) return;
     this.matchSvc.getEntrepreneurCoaches(user.id).subscribe(data => {
       this.coaches = data || [];
-    });
-  }
-
-  loadProgrammes() {
-    const user = this.authSvc.currentUser$.value;
-    if (!user?.id) return;
-    // We could use CoachService if it has a getByEntrepreneur, but usually we can get them from matchings or a specific endpoint.
-    // For now, let's look for an endpoint in CoachService that might help.
-    // If not, we'll just keep it empty or populate from existing ones.
-    this.coachSvc.getCoachProgrammes(0).subscribe({ // Placeholder or similar
-        next: (res) => { /* some logic */ }
+      
+      // Extraire les programmes uniques des matchings
+      const progMap = new Map<number, any>();
+      this.coaches.forEach(m => {
+        if (m.programmeId && m.programmeName) {
+          progMap.set(Number(m.programmeId), { id: Number(m.programmeId), nom: m.programmeName });
+        }
+      });
+      this.programmes = Array.from(progMap.values());
     });
   }
 
