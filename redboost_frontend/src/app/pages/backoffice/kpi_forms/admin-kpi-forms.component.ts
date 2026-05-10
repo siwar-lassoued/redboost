@@ -44,10 +44,10 @@ import { ProgrammeService } from '../programmes/programme.service';
             <thead>
               <tr>
                 <th>Titre</th>
-                <th>Programme</th>
+                <th>Type</th>
+                <th>Lien</th>
                 <th>Créé le</th>
                 <th>Deadline</th>
-                <th>Type</th>
                 <th>Questions</th>
                 <th style="text-align: center;">Statut</th>
                 <th style="text-align: center;">Actions</th>
@@ -63,18 +63,26 @@ import { ProgrammeService } from '../programmes/programme.service';
                     </div>
                   </td>
                   <td>
-                    <span class="prog-badge">
-                      <i class="pi pi-book" style="font-size: 10px;"></i>
-                      {{ getProgrammeName(f.programmeId) }}
-                    </span>
-                  </td>
-                  <td class="date-cell">{{ f.createdAt | date:'dd/MM/yyyy' }}</td>
-                  <td class="date-cell" style="color: #ea5073; font-weight: 700;">{{ f.deadline | date:'dd/MM/yyyy' }}</td>
-                  <td>
                     <span class="status-badge" [ngClass]="{'bg-blue-100 text-blue-600': f.formType === 'EVALUATION', 'bg-purple-100 text-purple-600': f.formType !== 'EVALUATION'}">
                       {{ f.formType === 'EVALUATION' ? 'Évaluation' : 'KPI' }}
                     </span>
                   </td>
+                  <td>
+                    @if (f.formType === 'KPI') {
+                      <span class="prog-badge">
+                        <i class="pi pi-book" style="font-size: 10px;"></i>
+                        {{ getProgrammeName(f.programmeId) }}
+                      </span>
+                    }
+                    @if (f.formType === 'EVALUATION') {
+                      <span class="prog-badge" style="background: #FFF0F5; color: #ea5073;">
+                        <i class="pi pi-users" style="font-size: 10px;"></i>
+                        Thém: {{ f.thematiqueId || '—' }}
+                      </span>
+                    }
+                  </td>
+                  <td class="date-cell">{{ f.createdAt | date:'dd/MM/yyyy' }}</td>
+                  <td class="date-cell" style="color: #ea5073; font-weight: 700;">{{ f.deadline | date:'dd/MM/yyyy' }}</td>
                   <td>
                     <span style="font-size: 14px; font-weight: 700; color: #1A1A2E;">{{ f.questions.length || 0 }}</span>
                   </td>
@@ -99,7 +107,7 @@ import { ProgrammeService } from '../programmes/programme.service';
               }
               @if (forms().length === 0) {
                 <tr>
-                  <td colSpan="7">
+                  <td colSpan="8">
                     <div class="empty-state">
                       <i class="pi pi-file-edit" style="font-size: 3rem; color: #D1D5DB; margin-bottom: 1rem; display: block;"></i>
                       <p class="empty-text">Aucun formulaire trouvé</p>
@@ -135,25 +143,39 @@ import { ProgrammeService } from '../programmes/programme.service';
                    <textarea [(ngModel)]="editingForm.description" rows="2" class="search-input" style="padding: 12px 16px; resize: vertical;"></textarea>
                  </div>
                  <div>
-                   <label style="display: block; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Programme *</label>
-                   <select [(ngModel)]="editingForm.programmeId" class="filter-select" style="width: 100%; padding: 12px 16px;">
-                     <option [value]="null">-- Sélectionner un programme --</option>
-                     @for (p of programmes(); track p.id) {
-                       <option [value]="p.id">{{ p.nom }}</option>
-                     }
-                   </select>
-                 </div>
-                 <div>
-                   <label style="display: block; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Date limite</label>
-                   <input type="datetime-local" [(ngModel)]="editingForm.deadline" class="search-input" style="padding: 11px 16px;">
-                 </div>
-                 <div>
                    <label style="display: block; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Type de formulaire *</label>
                    <select [(ngModel)]="editingForm.formType" class="filter-select" style="width: 100%; padding: 12px 16px;">
                      <option value="KPI">KPI (Tableau de bord)</option>
                      <option value="EVALUATION">Évaluation (Feedback)</option>
                    </select>
                  </div>
+                 <div>
+                   <label style="display: block; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Date limite</label>
+                   <input type="datetime-local" [(ngModel)]="editingForm.deadline" class="search-input" style="padding: 11px 16px;">
+                 </div>
+
+                 @if (editingForm.formType === 'KPI') {
+                   <div style="grid-column: span 2;">
+                     <label style="display: block; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Programme *</label>
+                     <select [(ngModel)]="editingForm.programmeId" class="filter-select" style="width: 100%; padding: 12px 16px;">
+                       <option [value]="null">-- Sélectionner un programme --</option>
+                       @for (p of programmes(); track p.id) {
+                         <option [value]="p.id">{{ p.nom }}</option>
+                       }
+                     </select>
+                   </div>
+                 }
+
+                 @if (editingForm.formType === 'EVALUATION') {
+                   <div>
+                     <label style="display: block; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Thématique *</label>
+                     <input type="number" [(ngModel)]="editingForm.thematiqueId" placeholder="ID de la thématique" class="search-input" style="padding: 12px 16px;">
+                   </div>
+                   <div>
+                     <label style="display: block; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Coach *</label>
+                     <input type="number" [(ngModel)]="editingForm.coachId" placeholder="ID du coach" class="search-input" style="padding: 12px 16px;">
+                   </div>
+                 }
                </div>
 
                <div>

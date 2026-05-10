@@ -27,6 +27,34 @@ public class KpiFormService {
         return kpiFormRepository.findByProgrammeId(programmeId);
     }
 
+    public List<KpiForm> getFormsByType(KpiForm.FormType formType) {
+        return kpiFormRepository.findAll().stream()
+            .filter(form -> form.getFormType() == formType)
+            .collect(Collectors.toList());
+    }
+
+    public List<KpiForm> getKpiForms() {
+        return getFormsByType(KpiForm.FormType.KPI);
+    }
+
+    public List<KpiForm> getEvaluationForms() {
+        return getFormsByType(KpiForm.FormType.EVALUATION);
+    }
+
+    public List<KpiForm> getEvaluationFormsByThematique(Long thematiqueId) {
+        return kpiFormRepository.findAll().stream()
+            .filter(form -> form.getFormType() == KpiForm.FormType.EVALUATION 
+                && thematiqueId.equals(form.getThematiqueId()))
+            .collect(Collectors.toList());
+    }
+
+    public List<KpiForm> getEvaluationFormsByCoach(Long coachId) {
+        return kpiFormRepository.findAll().stream()
+            .filter(form -> form.getFormType() == KpiForm.FormType.EVALUATION 
+                && coachId.equals(form.getCoachId()))
+            .collect(Collectors.toList());
+    }
+
     public KpiForm getFormById(Long id) {
         return kpiFormRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Form not found"));
     }
@@ -49,6 +77,9 @@ public class KpiFormService {
         existing.setTitle(updatedForm.getTitle());
         existing.setDescription(updatedForm.getDescription());
         existing.setProgrammeId(updatedForm.getProgrammeId());
+        existing.setThematiqueId(updatedForm.getThematiqueId());
+        existing.setCoachId(updatedForm.getCoachId());
+        existing.setFormType(updatedForm.getFormType());
         existing.setDeadline(updatedForm.getDeadline());
 
         existing.getQuestions().clear();
@@ -112,26 +143,43 @@ public class KpiFormService {
             
         KpiForm form = response.getForm();
         
-        for (KpiFormAnswer answer : answers) {
-            answer.setResponse(response);
-            
-            // Auto Update KPI if the question is linked to one
-            if (answer.getKpiId() != null && form.getProgrammeId() != null) {
-                // Here we inject logic to update the BackofficeKpi via ProgrammeKpiService
-                try {
-                    // Update the entrepreneur value! The previous, actuelle, cible can be parsed depending on the KPI type.
-                    // For simplicity, we send the answer as "valeurActuelle" and "valeurCible" empty
-                    // In a progression kpi, they would only provide the delta or the new "valeurActuelle".
-                    programmeKpiService.updateEntrepreneurValue(
-                        form.getProgrammeId(), 
-                        answer.getKpiId(), 
-                        response.getEntrepreneurId(), 
-                        null, 
-                        answer.getAnswerValue(), 
-                        null
-                    );
-                } catch (Exception e) {
-                    System.err.println("Could not update KPI " + answer.getKpiId() + ": " + e.getMessage());
+        // Validate form type
+        if (form.getFormType() == null) {
+            form.setFormType(KpiForm.FormType.KPI);
+        }
+        
+        // Process answers based on form type
+        if (form.getFormType() == KpiForm.FormType.KPI) {
+            // KPI Form: Update KPI values and create history
+            for (KpiFormAnswer answer : answers) {
+                answer.setResponse(response);
+                
+                // Auto Update KPI if the question is linked to one
+                if (answer.getKpiId() != null && form.getProgrammeId() != null) {
+                    try {
+                        // Update the entrepreneur value and create history entry
+                        programmeKpiService.updateEntrepreneurValue(
+                            form.getProgrammeId(), 
+                            answer.getKpiId(), 
+                            response.getEntrepreneurId(), 
+                            null, 
+                            answer.getAnswerValue(), 
+                            null
+                        );
+                    } catch (Exception e) {
+                        System.err.println("Could not update KPI " + answer.getKpiId() + ": " + e.getMessage());
+                    }
+                }
+            }
+        } else if (form.getFormType() == KpiForm.FormType.EVALUATION) {
+            // Evaluation Form: Just store answers, no KPI update
+            // Validate that evaluation forms don't have KPI associations
+            for (KpiFormAnswer answer : answers) {
+                answer.setResponse(response);
+                
+                // Log warning if a KPI question is somehow in an evaluation form
+                if (answer.getKpiId() != null) {
+                    System.out.println("Warning: KPI association found in EVALUATION form (Form: " + form.getId() + ", Question: " + answer.getQuestion().getId() + ")");
                 }
             }
         }

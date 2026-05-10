@@ -26,6 +26,12 @@ public class KpiForm {
     @Column(name = "programme_id")
     private Long programmeId;
 
+    @Column(name = "thematique_id")
+    private Long thematiqueId;
+
+    @Column(name = "coach_id")
+    private Long coachId;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private KpiFormStatus status = KpiFormStatus.DRAFT;
@@ -85,6 +91,12 @@ public class KpiForm {
 
     public Long getProgrammeId() { return programmeId; }
     public void setProgrammeId(Long programmeId) { this.programmeId = programmeId; }
+
+    public Long getThematiqueId() { return thematiqueId; }
+    public void setThematiqueId(Long thematiqueId) { this.thematiqueId = thematiqueId; }
+
+    public Long getCoachId() { return coachId; }
+    public void setCoachId(Long coachId) { this.coachId = coachId; }
 
     public KpiFormStatus getStatus() { return status; }
     public void setStatus(KpiFormStatus status) { this.status = status; }

@@ -1,0 +1,53 @@
+feat: Add KPI and Evaluation form system with automatic history
+
+## Summary
+Implemented dual form system allowing admins to:
+- Create KPI forms linked to Programs with automatic KPI updates
+- Create Evaluation forms linked to Thematic + Coach without KPI updates
+- Automatic history creation for KPI responses
+- Distinct UI for each form type
+
+## Backend Changes
+- KpiForm.java: Added thematiqueId and coachId fields
+- KpiFormService.java:
+  * Enhanced submitResponse() for dual form type handling
+  * Added 5 filtering methods (getKpiForms, getEvaluationForms, etc.)
+  * Updated updateForm() to support new fields
+- KpiFormController.java: Added 4 new GET endpoints for filtering by type
+
+## Frontend Changes
+- kpi-form.service.ts:
+  * Extended KpiForm interface with thematiqueId, coachId, labels
+  * Added 4 new HTTP endpoints for filtered data retrieval
+- admin-kpi-forms.component.ts:
+  * Dynamic form fields based on form type (Program for KPI, Thematique+Coach for Eval)
+  * Reorganized table columns for better clarity
+  * Improved badge display for form type distinction
+
+## Key Features
+✅ Automatic KPI history creation on form submission
+✅ Evaluation forms don't affect KPI values
+✅ Form type clearly distinguished in UI
+✅ Backward compatible - existing KPI forms still work
+✅ Extensible architecture for future form types
+
+## Testing
+- 7 test scenarios provided in TESTING_GUIDE.md
+- All validation points covered
+- Example data provided for quick testing
+
+## Documentation
+- IMPLEMENTATION_SUMMARY.md: Technical details
+- TESTING_GUIDE.md: Complete test scenarios
+- EXECUTIVE_SUMMARY.md: High-level overview
+- FUTURE_ENHANCEMENTS.md: Roadmap
+- QUICKSTART_ADMIN.md: Admin guide
+- CHANGES_LOG.md: Detailed change log
+
+## Migration
+No database migration required - new columns are nullable.
+All existing forms continue to work as before (formType=KPI by default).
+
+## References
+- Jira: [insert ticket ID if applicable]
+- Design: See IMPLEMENTATION_SUMMARY.md

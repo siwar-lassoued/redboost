@@ -29,6 +29,26 @@ public class KpiFormController {
         return ResponseEntity.ok(kpiFormService.getFormsByProgramme(programmeId));
     }
 
+    @GetMapping("/type/kpi")
+    public ResponseEntity<List<KpiForm>> getKpiForms() {
+        return ResponseEntity.ok(kpiFormService.getKpiForms());
+    }
+
+    @GetMapping("/type/evaluation")
+    public ResponseEntity<List<KpiForm>> getEvaluationForms() {
+        return ResponseEntity.ok(kpiFormService.getEvaluationForms());
+    }
+
+    @GetMapping("/evaluation/thematique/{thematiqueId}")
+    public ResponseEntity<List<KpiForm>> getEvaluationFormsByThematique(@PathVariable Long thematiqueId) {
+        return ResponseEntity.ok(kpiFormService.getEvaluationFormsByThematique(thematiqueId));
+    }
+
+    @GetMapping("/evaluation/coach/{coachId}")
+    public ResponseEntity<List<KpiForm>> getEvaluationFormsByCoach(@PathVariable Long coachId) {
+        return ResponseEntity.ok(kpiFormService.getEvaluationFormsByCoach(coachId));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<KpiForm> getFormById(@PathVariable Long id) {
         return ResponseEntity.ok(kpiFormService.getFormById(id));

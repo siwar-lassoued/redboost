@@ -19,6 +19,10 @@ export interface KpiForm {
     title: string;
     description: string;
     programmeId?: number;
+    thematiqueId?: number;
+    coachId?: number;
+    thematiqueLabel?: string;
+    coachName?: string;
     status?: 'DRAFT' | 'SENT' | 'CLOSED';
     formType?: 'KPI' | 'EVALUATION';
     deadline?: string;
@@ -59,6 +63,22 @@ export class KpiFormService {
 
     getFormsByProgramme(programmeId: string | number): Observable<KpiForm[]> {
         return this.http.get<KpiForm[]>(`${this.apiUrl}/programme/${programmeId}`);
+    }
+
+    getKpiForms(): Observable<KpiForm[]> {
+        return this.http.get<KpiForm[]>(`${this.apiUrl}/type/kpi`);
+    }
+
+    getEvaluationForms(): Observable<KpiForm[]> {
+        return this.http.get<KpiForm[]>(`${this.apiUrl}/type/evaluation`);
+    }
+
+    getEvaluationFormsByThematique(thematiqueId: string | number): Observable<KpiForm[]> {
+        return this.http.get<KpiForm[]>(`${this.apiUrl}/evaluation/thematique/${thematiqueId}`);
+    }
+
+    getEvaluationFormsByCoach(coachId: string | number): Observable<KpiForm[]> {
+        return this.http.get<KpiForm[]>(`${this.apiUrl}/evaluation/coach/${coachId}`);
     }
 
     getFormById(id: string | number): Observable<KpiForm> {
