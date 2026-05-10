@@ -179,7 +179,7 @@ public class KpiFormService {
                 
                 // Log warning if a KPI question is somehow in an evaluation form
                 if (answer.getKpiId() != null) {
-                    System.out.println("Warning: KPI association found in EVALUATION form (Form: " + form.getId() + ", Question: " + answer.getQuestion().getId() + ")");
+                    System.out.println("Warning: KPI association found in EVALUATION form (Form: " + form.getId() + ", Question: " + answer.getQuestionId() + ")");
                 }
             }
         }
