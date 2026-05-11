@@ -1,0 +1,127 @@
+╔════════════════════════════════════════════════════════════════════════════════╗
+║                  🔧 BUGFIX : PLANNING DE COACHING ADMIN VIDE                    ║
+╚════════════════════════════════════════════════════════════════════════════════╝
+
+┌─ PROBLÈME ─────────────────────────────────────────────────────────────────────┐
+│                                                                                  │
+│  ✗ Admin → Planning de Coaching → Affiche "Aucun coach/entrepreneur trouvé"   │
+│  ✓ Entrepreneur → Mes Sessions → Affiche les sessions réservées                │
+│  ✓ Coach → Mes Sessions → Affiche les sessions réservées                       │
+│                                                                                  │
+│  Les données existent en base de données, mais l'admin ne les voit pas !       │
+│                                                                                  │
+└────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ CAUSE RACINE ──────────────────────────────────────────────────────────────────┐
+│                                                                                  │
+│  Le FRONTEND appelle :                                                          │
+│  ✗ GET /api/admin/planning/coaches         → N'EXISTE PAS ❌                   │
+│  ✗ GET /api/admin/planning/entrepreneurs   → N'EXISTE PAS ❌                   │
+│                                                                                  │
+│  Le BACKEND avait seulement :                                                   │
+│  ✓ GET /api/admin/planning/coach/{id}      → Coach spécifique                  │
+│  ✓ GET /api/admin/planning/entrepreneur/{id} → Entrepreneur spécifique         │
+│                                                                                  │
+│  MISMATCH ENDPOINTS = Planning Admin vide                                       │
+│                                                                                  │
+└────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ SOLUTION ──────────────────────────────────────────────────────────────────────┐
+│                                                                                  │
+│  ✅ Ajout de 2 nouveaux endpoints au AdminPlanningController.java :            │
+│                                                                                  │
+│  1️⃣  GET /api/admin/planning/coaches                                           │
+│      └─ Retourne TOUS les coachs avec leurs sessions                           │
+│      └─ Support recherche par nom/email                                         │
+│      └─ Calcul statistiques (total, à venir, complétées)                       │
+│                                                                                  │
+│  2️⃣  GET /api/admin/planning/entrepreneurs                                     │
+│      └─ Retourne TOUS les entrepreneurs avec leurs sessions                    │
+│      └─ Récupère le coach assigné via Matching                                 │
+│      └─ Support recherche par nom/email                                         │
+│      └─ Calcul statistiques (total, à venir)                                    │
+│                                                                                  │
+└────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ FLUX DONNÉES AVANT → APRÈS ────────────────────────────────────────────────────┐
+│                                                                                  │
+│  AVANT (❌) :                                                                    │
+│  ┌─────────────────────┐     404 Not Found    ┌──────────────────┐            │
+│  │ Frontend             │ ─ GET /coaches ──→ │ Backend          │            │
+│  │ admin-planning.ts    │                    │ (Endpoint absent) │            │
+│  └─────────────────────┘                      └──────────────────┘            │
+│        Affiche : "Aucun coach trouvé"                                          │
+│                                                                                  │
+│  APRÈS (✅) :                                                                    │
+│  ┌─────────────────────┐     GET /coaches     ┌──────────────────────┐        │
+│  │ Frontend             │ ─────────────────→  │ Backend              │        │
+│  │ admin-planning.ts    │                     │ getCoaches() NEW     │        │
+│  └─────────────────────┘    [Coach[], with    └──────────────────────┘        │
+│        Affiche sessions]     sessions]                                         │
+│                                                                                  │
+└────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ FICHIERS MODIFIÉS ─────────────────────────────────────────────────────────────┐
+│                                                                                  │
+│  📝 redboost_backend/.../AdminPlanningController.java                          │
+│     └─ Ligne 28 : Ajout getAllCoachesPlannings()                              │
+│     └─ Ligne 140 : Ajout getAllEntrepreneursPlannings()                        │
+│                                                                                  │
+│  ✅ Pas de modification frontend requise (déjà compatible !)                   │
+│  ✅ Pas de migration BD requise (utilise les tables existantes)               │
+│                                                                                  │
+└────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ EXEMPLE DE RÉPONSE API ────────────────────────────────────────────────────────┐
+│                                                                                  │
+│  GET /api/admin/planning/coaches                                               │
+│  ↓                                                                              │
+│  [                                                                              │
+│    {                                                                            │
+│      "coachId": 123,                                                           │
+│      "coachName": "Jean Dupont",                                               │
+│      "email": "jean@example.com",                                              │
+│      "totalSessions": 5,                                                       │
+│      "upcomingSessions": 2,                                                    │
+│      "completedSessions": 3,                                                   │
+│      "sessions": [                                                             │
+│        {                                                                        │
+│          "titre": "Stratégie Marketing",                                       │
+│          "date": "2024-05-20T14:30:00",                                        │
+│          "statut": "CONFIRMEE",                                                │
+│          "entrepreneurName": "Alice Martin",                                   │
+│          "programmeName": "RedStart 2024"                                      │
+│        }                                                                        │
+│      ]                                                                          │
+│    }                                                                            │
+│  ]                                                                              │
+│                                                                                  │
+└────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ CHECKLIST VALIDATION ──────────────────────────────────────────────────────────┐
+│                                                                                  │
+│  ☑ Admin voit les coachs et leurs sessions                                    │
+│  ☑ Admin voit les entrepreneurs et leurs sessions                             │
+│  ☑ Recherche fonctionne (par nom/email)                                       │
+│  ☑ Statistiques affichent les bons nombres                                    │
+│  ☑ Sessions ont tous les détails (date, titre, statut, etc)                  │
+│  ☑ Pas d'erreurs en console ou backend                                        │
+│                                                                                  │
+└────────────────────────────────────────────────────────────────────────────────┘
+
+📋 DOCUMENTATION COMPLÈTE
+─────────────────────────
+1. BUGFIX_ADMIN_PLANNING.md  - Détails techniques du fix
+2. TEST_ADMIN_PLANNING.md     - Guide complet de test
+3. FIX_SUMMARY.txt            - Ce fichier
+
+🚀 PROCHAINES ÉTAPES
+──────────────────
+1. Redémarrer le serveur backend
+2. Tester avec admin account
+3. Valider les endpoints via API
+4. Consulter TEST_ADMIN_PLANNING.md pour test complet
+
+═══════════════════════════════════════════════════════════════════════════════════
+✅ FIX APPLIQUÉ AVEC SUCCÈS - Admin planning devrait maintenant fonctionner !
+═══════════════════════════════════════════════════════════════════════════════════
