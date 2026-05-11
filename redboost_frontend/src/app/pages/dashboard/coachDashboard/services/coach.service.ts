@@ -33,6 +33,7 @@ export interface SessionCoachDTO {
   couleur?: string;
   isExceptionnelle?: boolean;
   bookingStatus?: string;
+  entrepreneurName?: string;
 }
 
 export interface SessionGroupDTO {

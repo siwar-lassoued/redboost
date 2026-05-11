@@ -25,4 +25,5 @@ public class SessionCoachDTO {
     private String couleur;
     private Boolean isExceptionnelle;
     private String bookingStatus;
+    private String entrepreneurName;
 }

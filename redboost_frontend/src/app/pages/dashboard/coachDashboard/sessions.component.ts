@@ -184,7 +184,7 @@ export interface SessionGroup {
                    @if (s.isBooked) {
                       <div class="booked-entrepreneur">
                         <i class="pi pi-user-check text-green-500"></i>
-                        <span>Réservez par un entrepreneur</span>
+                        <span>{{ s.entrepreneurName || 'Réservez par un entrepreneur' }}</span>
                       </div>
                    } @else {
                       <span class="empty-slot-badge">Disponible</span>
@@ -427,6 +427,7 @@ export class SessionsComponent implements OnInit {
           typeSession: 'EN_LIGNE',
           sessionGroupId: `seance-${se.id}`,
           isBooked: true,
+          entrepreneurName: se.entrepreneurName,
           isExceptionnelle: true,
           bookingStatus: 'CONFIRME'
         } as SessionCoachDTO));

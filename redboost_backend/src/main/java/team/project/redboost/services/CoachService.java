@@ -731,6 +731,9 @@ public class CoachService {
             if (bookings.get(0).getStatut() != null) {
                 dto.setBookingStatus(bookings.get(0).getStatut().name());
             }
+            if (bookings.get(0).getEntrepreneur() != null) {
+                dto.setEntrepreneurName(bookings.get(0).getEntrepreneur().getFirstName() + " " + bookings.get(0).getEntrepreneur().getLastName());
+            }
         } else {
             dto.setIsExceptionnelle(false);
         }
