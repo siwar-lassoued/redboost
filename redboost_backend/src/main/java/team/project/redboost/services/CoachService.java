@@ -1292,6 +1292,11 @@ public class CoachService {
                     java.util.Map<String, Object> d = new java.util.HashMap<>();
                     d.put("id", t.getId());
                     d.put("nom", t.getNom());
+                    d.put("programmeId", t.getProgrammeId());
+                    d.put("description", t.getDescription());
+                    d.put("dateDebut", t.getDateDebut() != null ? t.getDateDebut().toString() : null);
+                    d.put("dateFin", t.getDateFin() != null ? t.getDateFin().toString() : null);
+                    d.put("statut", t.getStatut() != null ? t.getStatut().name() : null);
                     return d;
                 })
                 .distinct()

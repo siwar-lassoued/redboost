@@ -135,8 +135,8 @@ interface DateGroupView {
 
               <!-- Disponibilités actives -->
               <div class="sidebar-section">
-                  <h3>Disponibilités actives <span class="count-badge">{{disponibilites.length}}</span></h3>
-                  <div *ngFor="let dispo of disponibilites" class="dispo-item" [style.border-left]="'4px solid ' + (dispo.couleur || '#FF4D85')">
+                  <h3>Disponibilités actives <span class="count-badge">{{filteredDisponibilites.length}}</span></h3>
+                  <div *ngFor="let dispo of filteredDisponibilites" class="dispo-item" [style.border-left]="'4px solid ' + (dispo.couleur || '#FF4D85')">
                       <div class="dispo-info">
                           <strong>{{dispo.thematiqueNom || 'Thématique'}}</strong>
                           <span>Du {{dispo.dateDebut | date:'dd/MM/yyyy'}} au {{dispo.dateFin | date:'dd/MM/yyyy'}}</span>
@@ -146,7 +146,7 @@ interface DateGroupView {
                         <button (click)="deleteDispo(dispo.id!)" class="btn-icon-danger"><i class="pi pi-trash"></i></button>
                       </div>
                   </div>
-                  <div *ngIf="disponibilites.length === 0" class="text-sm text-gray-400 italic">Aucune disponibilité.</div>
+                  <div *ngIf="filteredDisponibilites.length === 0" class="text-sm text-gray-400 italic">Aucune disponibilité.</div>
               </div>
           </div>
       </div>
@@ -174,12 +174,11 @@ interface DateGroupView {
                 </div>
 
                 <!-- STEP 1B: Nom du programme (linked to thematique) -->
-                <div class="form-group" *ngIf="selectedThematiqueId">
-                    <label>Nom du programme <span style="color:#E53E3E">*</span></label>
-                    <select class="premium-input" [(ngModel)]="selectedProgrammeId">
-                      <option [ngValue]="null">Sélectionner un programme...</option>
-                      <option *ngFor="let p of programmesForSelectedThematique" [ngValue]="p.id">{{ p.nom }}</option>
-                    </select>
+                <div class="form-group" *ngIf="selectedThematiqueId && selectedProgrammeObj">
+                    <label>Nom du programme</label>
+                    <div class="premium-input" style="background: #EDF2F7; color: #4A5568; cursor: not-allowed; border-color: #E2E8F0;">
+                      {{ selectedProgrammeObj.nom }}
+                    </div>
                 </div>
 
                 <!-- STEP 1C: Couleur de la thématique -->
@@ -227,7 +226,7 @@ interface DateGroupView {
                               <div class="dsg-date-row">
                                 <i class="pi pi-calendar-plus text-sky-500"></i>
                                 <input type="date" class="premium-input dsg-date-input" [(ngModel)]="group.date"
-                                  [min]="selectedThematiqueObj?.dateDebut" [max]="selectedThematiqueObj?.dateFin">
+                                  [min]="getMinDate(selectedThematiqueObj?.dateDebut)" [max]="selectedThematiqueObj?.dateFin">
                                 <button *ngIf="sForm.dateSlotGroups.length > 1" class="btn-remove-inline" (click)="removeDateGroupFromForm(si, gi)">
                                   <i class="pi pi-times"></i>
                                 </button>
@@ -340,7 +339,7 @@ interface DateGroupView {
                       <div class="dsg-header">
                         <div class="dsg-date-row">
                           <span *ngIf="group.date !== ''" class="dsg-badge"> {{ group.date | date:'dd/MM/yyyy' }}</span>
-                          <input *ngIf="group.date === ''" type="date" class="premium-input dsg-date-input" style="padding: 4px;font-size: 0.9rem;" [(ngModel)]="group.date" [min]="selectedEditThematiqueObj?.dateDebut || ''" [max]="selectedEditThematiqueObj?.dateFin || ''">
+                          <input *ngIf="group.date === ''" type="date" class="premium-input dsg-date-input" style="padding: 4px;font-size: 0.9rem;" [(ngModel)]="group.date" [min]="getMinDate(selectedEditThematiqueObj?.dateDebut)" [max]="selectedEditThematiqueObj?.dateFin || ''">
                         </div>
                       </div>
                       <div class="dsg-slots">
@@ -616,6 +615,11 @@ dispoIdsForActiveTheme: number[] = [];
   calendarEvents: any[] = [];
   upcomingEvents: any[] = [];
 
+  get filteredDisponibilites(): DisponibiliteDTO[] {
+    if (!this.activeFilterThematique) return this.disponibilites;
+    return this.disponibilites.filter(d => d.thematiqueId === this.activeFilterThematique!.id);
+  }
+
   currentMonth: number = new Date().getMonth();
   currentYear: number = new Date().getFullYear();
   dayLabels: string[] = ['DIM', 'LUN', 'MAR', 'MER', 'JEU', 'VEN', 'SAM'];
@@ -829,7 +833,7 @@ dispoIdsForActiveTheme: number[] = [];
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     this.upcomingEvents = this.calendarEvents
-      .filter(e => new Date(e.date) >= today)
+      .filter(e => new Date(e.date) >= today && (!this.activeFilterThematique || e.thematiqueNom === this.activeFilterThematique.nom))
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
       .slice(0, 5)
       .map(e => ({
@@ -922,17 +926,8 @@ dispoIdsForActiveTheme: number[] = [];
   }
 
   addSessionForm(): void {
-    let title = '';
-    const selectedTheme = this.selectedThematiqueObj;
-    if (selectedTheme) {
-      const linkedProgramme = this.programmes.find(p => p.id === selectedTheme.programmeId);
-      if (linkedProgramme) title = linkedProgramme.nom;
-    }
-    if (!title && this.programmes.length > 0) {
-      title = this.programmes[0].nom;
-    }
     this.sessionForms.push({
-      titre: title,
+      titre: '',
       typeSession: 'EN_LIGNE',
       dateSlotGroups: [{ date: '', slots: [{ start: '', end: '' }] }]
     });
@@ -1178,6 +1173,7 @@ dispoIdsForActiveTheme: number[] = [];
   setFilterThematique(id: number | null) {
     this.selectedFilterThematiqueId = id;
     this.activeFilterThematique = id ? (this.thematiques.find(t => t.id === id) || null) : null;
+    this.buildUpcomingEvents();
   }
 
   /** Returns true if date is outside the selected thematique's range */
@@ -1189,6 +1185,17 @@ dispoIdsForActiveTheme: number[] = [];
     return d < start || d > end;
   }
 
+  getMinDate(dateDebut: string | undefined | null): string {
+    if (!dateDebut) return '';
+    const themeStart = new Date(dateDebut);
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const minDate = themeStart > today ? themeStart : today;
+    return this.formatDate(minDate.getFullYear(), minDate.getMonth(), minDate.getDate());
+  }
+
   formatDate(year: number, month: number, day: number): string { return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`; }
-  getEventsForDay(dateStr: string): any[] { return this.calendarEvents.filter(e => e.date === dateStr); }
+  getEventsForDay(dateStr: string): any[] { 
+    return this.calendarEvents.filter(e => e.date === dateStr && (!this.activeFilterThematique || e.thematiqueNom === this.activeFilterThematique.nom)); 
+  }
 }
