@@ -817,9 +817,19 @@
 }
 
 .btn-slot-premium:hover:not(:disabled) {
-  border-color: #FF4D85;
-  background: #fff1f2;
-  transform: translateY(-2px);
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.btn-slot-premium.past-slot {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+  opacity: 0.6;
+}
+
+.btn-slot-premium.past-slot .slot-d,
+.btn-slot-premium.past-slot .slot-t {
+  color: #94a3b8;
 }
 
 .btn-slot-premium.active {

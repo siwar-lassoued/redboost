@@ -372,7 +372,7 @@ export class AppMenu implements OnInit {
                     {
                         label: 'Réclamations',
                         icon: 'pi pi-fw pi-exclamation-circle',
-                        routerLink: ['/messagerie-reclamation'],
+                        routerLink: ['/entrepreneur/reclamations'],
                     },
                     {
                         label: 'Formulaires à remplir',
@@ -427,7 +427,7 @@ export class AppMenu implements OnInit {
                     {
                         label: 'Mes Entrepreneurs',
                         icon: 'pi pi-fw pi-user',
-                        routerLink: ['/coach-entrepreneurs'], // Needs to be created/mapped
+                        routerLink: ['/coach-entrepreneurs'],
                     },
                     {
                         label: 'Chat',
@@ -450,9 +450,17 @@ export class AppMenu implements OnInit {
                         routerLink: ['/rapport-sessions'],
                     },
                 ],
-
+            },
+            {
+                label: 'SUPPORT',
+                items: [
+                    {
+                        label: 'Réclamations',
+                        icon: 'pi pi-fw pi-exclamation-triangle',
+                        routerLink: ['/coach-reclamations'],
+                    },
+                ],
             }
-
         ];
     }
 }

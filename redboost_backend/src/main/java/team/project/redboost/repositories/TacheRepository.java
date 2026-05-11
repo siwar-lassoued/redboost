@@ -10,4 +10,5 @@ public interface TacheRepository extends JpaRepository<Tache, Long> {
     List<Tache> findByActiviteId(Long activiteId);
     List<Tache> findByResponsableId(Long responsableId);
     List<Tache> findByStatusAndDateDebutLessThanEqual(Tache.StatusTache status, LocalDate date);
+    long countByStatus(Tache.StatusTache status);
 }

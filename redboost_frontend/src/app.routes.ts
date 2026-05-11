@@ -80,6 +80,7 @@ import { EntrepreneurChatComponent } from './app/pages/entrepreneur/chat/entrepr
 import { EntrepreneurParametresComponent } from './app/pages/entrepreneur/parametres/entrepreneur-parametres.component';
 
 import { CoachPlanningComponent } from './app/pages/dashboard/coachDashboard/coach-planning.component';
+import { EntrepreneurReclamationsComponent } from './app/pages/dashboard/entrepredashboard/reclamations/reclamations.component';
 export const pagesRoutes: Routes = [
     { path: 'profile', component: UserProfileComponent },
     { path: 'all-users', component: UserListComponent },
@@ -161,6 +162,7 @@ export const appRoutes: Routes = [
             { path: 'coach-livrables', component: CoachLivrablesComponent },
             { path: 'note-de-synthese-create/:id', component: NoteDeSyntheseCreateComponent },
             { path: 'messagerie-reclamation', component: ReclamationsComponent },
+            { path: 'coach-reclamations', component: ReclamationsComponent },
             { path: 'seance-exceptionnelle', component: SeanceExceptionnelleComponent },
 
             // New KPI and Form features
@@ -186,6 +188,7 @@ export const appRoutes: Routes = [
             { path: 'entrepreneur/mon-programme', component: EntrepreneurProgrammeComponent },
             { path: 'entrepreneur/chat', component: EntrepreneurChatComponent },
             { path: 'entrepreneur/parametres', component: EntrepreneurParametresComponent },
+            { path: 'entrepreneur/reclamations', component: EntrepreneurReclamationsComponent },
             { path: 'coach-rating/:sessionId', component: CoachRatingComponent },
 
             ...pagesRoutes,

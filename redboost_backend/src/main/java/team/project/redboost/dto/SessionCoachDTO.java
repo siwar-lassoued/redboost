@@ -15,6 +15,9 @@ public class SessionCoachDTO {
     private String typeSession; // EN_LIGNE or PRESENTIEL
     private String sessionGroupId; // Groups related créneaux under the same logical session
     private String thematiqueNom;
+    private String thematiqueDateDebut;
+    private String thematiqueDateFin;
+    private String programmeNom;
     private Boolean isBooked;
     private Boolean isBookedByMe;
     private Boolean isGroupReservedByMe;
@@ -22,4 +25,5 @@ public class SessionCoachDTO {
     private String couleur;
     private Boolean isExceptionnelle;
     private String bookingStatus;
+    private String entrepreneurName;
 }

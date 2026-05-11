@@ -1,13 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { CoachService, ReclamationDTO, UserDTO } from './services/coach.service';
-import { AuthService } from '../../frontoffice/service/auth.service';
+import { EntrepreneurService, ReclamationDTO, EntrepreneurCoachDTO } from '../services/entrepreneur.service';
+import { AuthService } from '../../../frontoffice/service/auth.service';
 import { ToastrService } from 'ngx-toastr';
-import { environment } from '../../../../environment';
+import { environment } from '../../../../../environment';
 
 @Component({
-  selector: 'app-coach-reclamations',
+  selector: 'app-entrepre-reclamations',
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
@@ -17,7 +17,7 @@ import { environment } from '../../../../environment';
            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                <div>
                    <h1 class="text-3xl font-extrabold text-[#1A1A2E] tracking-tight">Réclamations Administratives</h1>
-                   <p class="text-gray-500 mt-1 font-medium">Signalez un incident ou un comportement anormal concernant un entrepreneur.</p>
+                   <p class="text-gray-500 mt-1 font-medium">Signalez un incident ou un comportement anormal concernant un coach.</p>
                </div>
                <div class="px-4 py-2 bg-white rounded-2xl shadow-sm border border-gray-100 flex items-center gap-3">
                    <div class="w-10 h-10 rounded-xl bg-[#FFF5F8] flex items-center justify-center text-[#E44D62]">
@@ -42,10 +42,10 @@ import { environment } from '../../../../environment';
                        <div class="space-y-6">
                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                <div class="form-group">
-                                   <label class="form-label">Entrepreneur concerné *</label>
-                                   <select [(ngModel)]="newReclamation.entrepreneurId" class="premium-input">
-                                      <option [value]="0">Choisir un entrepreneur...</option>
-                                      <option *ngFor="let e of entrepreneurs" [value]="e.id">{{e.firstName}} {{e.lastName}}</option>
+                                   <label class="form-label">Coach concerné *</label>
+                                   <select [(ngModel)]="newReclamation.coachId" class="premium-input">
+                                      <option [value]="0">Choisir un coach...</option>
+                                      <option *ngFor="let c of coaches" [value]="c.id">{{c.firstName}} {{c.lastName}} ({{c.thematiqueName}})</option>
                                    </select>
                                </div>
                                <div class="form-group">
@@ -84,7 +84,7 @@ import { environment } from '../../../../environment';
 
                            <div class="form-group">
                                <label class="form-label">Sujet / Titre *</label>
-                               <input type="text" [(ngModel)]="newReclamation.sujet" placeholder="Ex: Absence non justifiée session du 10/05" class="premium-input">
+                               <input type="text" [(ngModel)]="newReclamation.sujet" placeholder="Ex: Report incessant de session" class="premium-input">
                            </div>
 
                            <div class="form-group">
@@ -157,7 +157,7 @@ import { environment } from '../../../../environment';
                            
                            <h4 class="font-bold text-[#1A1A2E] mb-1">{{ r.sujet }}</h4>
                            <div class="text-xs font-semibold text-[#E44D62] mb-2 flex items-center gap-1">
-                               <i class="pi pi-user text-[10px]"></i> {{ r.entrepreneurName }}
+                               <i class="pi pi-user text-[10px]"></i> Coach concerné
                            </div>
 
                            <div class="flex flex-wrap gap-1 mb-3">
@@ -213,9 +213,9 @@ import { environment } from '../../../../environment';
     .hidden { display: none; }
   `]
 })
-export class ReclamationsComponent implements OnInit {
-  coachId!: number;
-  entrepreneurs: any[] = [];
+export class EntrepreneurReclamationsComponent implements OnInit {
+  entrepreneurId!: number;
+  coaches: EntrepreneurCoachDTO[] = [];
   reclamations: any[] = [];
   programmes: any[] = [];
   thematiques: any[] = [];
@@ -235,36 +235,36 @@ export class ReclamationsComponent implements OnInit {
   };
 
   constructor(
-      private coachService: CoachService, 
+      private entrepreneurService: EntrepreneurService, 
       private authService: AuthService, 
       private toastr: ToastrService
   ) {}
 
   ngOnInit(): void {
     const rawId = this.authService.getUserId();
-    this.coachId = typeof rawId === 'string' ? parseInt(rawId, 10) : (rawId ?? 0);
-    if (this.coachId) {
-      this.newReclamation.coachId = this.coachId;
-      this.loadEntrepreneurs();
+    this.entrepreneurId = typeof rawId === 'string' ? parseInt(rawId, 10) : (rawId ?? 0);
+    if (this.entrepreneurId) {
+      this.newReclamation.entrepreneurId = this.entrepreneurId;
+      this.loadCoaches();
       this.loadReclamations();
       this.loadContexts();
     }
   }
 
   loadContexts() {
-    this.coachService.getCoachProgrammes(this.coachId).subscribe(p => this.programmes = p);
-    this.coachService.getThematiquesAssignedToCoach(this.coachId).subscribe(t => this.thematiques = t);
-    this.coachService.getReclamationSessions(this.coachId).subscribe(s => this.sessions = s);
+    this.entrepreneurService.getProgrammes(this.entrepreneurId).subscribe(p => this.programmes = p);
+    this.entrepreneurService.getThematiques(this.entrepreneurId).subscribe(t => this.thematiques = t);
+    this.entrepreneurService.getSessions(this.entrepreneurId).subscribe(s => this.sessions = s);
   }
 
-  loadEntrepreneurs() {
-      this.coachService.getCoachEntrepreneurs(this.coachId).subscribe({
-          next: (data) => this.entrepreneurs = data
+  loadCoaches() {
+      this.entrepreneurService.getCoaches(this.entrepreneurId).subscribe({
+          next: (data) => this.coaches = data
       });
   }
 
   loadReclamations() {
-      this.coachService.getReclamations(this.coachId).subscribe({
+      this.entrepreneurService.getReclamations(this.entrepreneurId).subscribe({
           next: (data) => this.reclamations = data.sort((a,b) => 
             new Date(b.dateReclamation!).getTime() - new Date(a.dateReclamation!).getTime())
       });
@@ -309,13 +309,13 @@ export class ReclamationsComponent implements OnInit {
   }
 
   submit() {
-      if (this.newReclamation.entrepreneurId === 0 || !this.newReclamation.sujet || !this.newReclamation.description) {
+      if (this.newReclamation.coachId === 0 || !this.newReclamation.sujet || !this.newReclamation.description) {
           this.toastr.warning('Veuillez remplir tous les champs obligatoires');
           return;
       }
       
       this.loading = true;
-      this.coachService.addReclamation(this.coachId, this.newReclamation.entrepreneurId, this.newReclamation, this.selectedFile || undefined).subscribe({
+      this.entrepreneurService.addReclamation(this.entrepreneurId, this.newReclamation.coachId, this.newReclamation, this.selectedFile || undefined).subscribe({
           next: (data) => {
               this.toastr.success('Réclamation envoyée à l\'administration.');
               this.reclamations.unshift(data);
@@ -331,8 +331,8 @@ export class ReclamationsComponent implements OnInit {
 
   resetForm() {
     this.newReclamation = {
-      coachId: this.coachId,
-      entrepreneurId: 0,
+      entrepreneurId: this.entrepreneurId,
+      coachId: 0,
       sujet: '',
       typeReclamation: 'COMPORTEMENT',
       description: '',

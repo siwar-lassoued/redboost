@@ -23,6 +23,9 @@ export interface SessionCoachDTO {
   typeSession?: string; 
   sessionGroupId?: string; 
   thematiqueNom?: string;
+  thematiqueDateDebut?: string;
+  thematiqueDateFin?: string;
+  programmeNom?: string;
   isBooked?: boolean;
   isBookedByMe?: boolean;
   isGroupReservedByMe?: boolean;
@@ -30,6 +33,7 @@ export interface SessionCoachDTO {
   couleur?: string;
   isExceptionnelle?: boolean;
   bookingStatus?: string;
+  entrepreneurName?: string;
 }
 
 export interface SessionGroupDTO {
@@ -57,7 +61,9 @@ export interface ReclamationDTO {
   entrepreneurId: number;
   entrepreneurName?: string;
   sujet: string;
+  typeReclamation?: string;
   description: string;
+  pieceJointeUrl?: string;
   statut?: string;
   dateReclamation?: string;
 }
@@ -119,6 +125,8 @@ export interface CoachCalendarEventDTO {
   endTime?: string;
   source?: 'coach' | 'entrepreneur';
   thematiqueNom?: string;
+  thematiqueDateDebut?: string;
+  thematiqueDateFin?: string;
   programmeNom?: string;
   color?: string;
   booked?: boolean;
@@ -222,8 +230,13 @@ export class CoachService {
   getReclamations(coachId: number): Observable<ReclamationDTO[]> {
     return this.http.get<ReclamationDTO[]>(`${this.apiUrl}/${coachId}/reclamations`);
   }
-  addReclamation(coachId: number, entrepreneurId: number, reclamation: ReclamationDTO): Observable<ReclamationDTO> {
-    return this.http.post<ReclamationDTO>(`${this.apiUrl}/${coachId}/reclamations/${entrepreneurId}`, reclamation);
+  addReclamation(coachId: number, entrepreneurId: number, reclamation: ReclamationDTO, file?: File): Observable<ReclamationDTO> {
+    const formData = new FormData();
+    formData.append('reclamation', new Blob([JSON.stringify(reclamation)], { type: 'application/json' }));
+    if (file) {
+      formData.append('file', file);
+    }
+    return this.http.post<ReclamationDTO>(`${this.apiUrl}/${coachId}/reclamations/${entrepreneurId}`, formData);
   }
 
   // PROGRAMMES
@@ -233,7 +246,7 @@ export class CoachService {
 
   // THEMATIQUES
   getThematiquesAssignedToCoach(coachId: number): Observable<ThematiqueCoachingDTO[]> {
-    return this.http.get<ThematiqueCoachingDTO[]>(`${environment.apiUrl}/thematiques/coach/${coachId}`);
+    return this.http.get<ThematiqueCoachingDTO[]>(`${this.apiUrl}/${coachId}/thematiques`);
   }
 
   // USERS / ENTREPRENEURS
@@ -302,6 +315,10 @@ export class CoachService {
    */
   getCoachProgrammes(coachId: number): Observable<ProgrammeDTO[]> {
     return this.http.get<ProgrammeDTO[]>(`${this.apiUrl}/${coachId}/programmes`);
+  }
+
+  getReclamationSessions(coachId: number): Observable<SessionCoachDTO[]> {
+    return this.http.get<SessionCoachDTO[]>(`${this.apiUrl}/${coachId}/reclamation-sessions`);
   }
 
   // BOOKING (Entrepreneur)
@@ -376,6 +393,21 @@ export class CoachService {
 
   deleteRapportSession(id: number): Observable<void> {
     return this.http.delete<void>(`${environment.apiUrl}/rapports-session-coach/${id}`);
+  }
+
+  getConsolidatedPdf(entrepreneurId: number, coachId: number, thematiqueId?: number, dateSession?: string): Observable<Blob> {
+    let url = `${environment.apiUrl}/rapports-session-coach/entrepreneur/${entrepreneurId}/coach/${coachId}/consolidated-pdf`;
+    const params: string[] = [];
+    if (thematiqueId) params.push(`thematiqueId=${thematiqueId}`);
+    if (dateSession) params.push(`dateSession=${dateSession}`);
+    
+    if (params.length > 0) {
+      url += `?${params.join('&')}`;
+    }
+    
+    return this.http.get(url, {
+      responseType: 'blob'
+    });
   }
 
 

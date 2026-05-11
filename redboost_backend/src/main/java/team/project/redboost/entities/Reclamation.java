@@ -43,6 +43,14 @@ public class Reclamation {
     public enum TypeReclamation {
         COMPORTEMENT, RETARD, AUTRE
     }
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role_emetteur")
+    private RoleEmetteur roleEmetteur;
+
+    public enum RoleEmetteur {
+        COACH, ENTREPRENEUR
+    }
     
     @Builder.Default
     @Enumerated(EnumType.STRING)
@@ -52,6 +60,18 @@ public class Reclamation {
     @Column(name = "date_reclamation")
     private LocalDateTime dateReclamation;
 
+    @Column(name = "piece_jointe_url")
+    private String pieceJointeUrl;
+
+    @Column(name = "programme_name")
+    private String programmeName;
+
+    @Column(name = "thematique_name")
+    private String thematiqueName;
+
+    @Column(name = "session_details")
+    private String sessionDetails;
+
     @PrePersist
     protected void onCreate() {
         dateReclamation = LocalDateTime.now();
@@ -59,6 +79,6 @@ public class Reclamation {
     }
     
     public enum StatutReclamation {
-        EN_ATTENTE, TRAITEE, REJETEE
+        EN_ATTENTE, TRAITEE, REJETEE, ANNULEE
     }
 }

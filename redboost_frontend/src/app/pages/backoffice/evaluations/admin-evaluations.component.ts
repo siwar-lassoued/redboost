@@ -13,6 +13,7 @@ export interface CoachStats {
     avgComm: number;
     avgExp: number;
     avgDispo: number;
+    avgImpact: number;
     programs: string[];
 }
 
@@ -187,6 +188,7 @@ type PageTab = 'byCoach' | 'allRatings';
                       <p>COMM : <span class="text-gray-900">{{ coach.avgComm }}</span></p>
                       <p>EXP : <span class="text-gray-900">{{ coach.avgExp }}</span></p>
                       <p>DISPO : <span class="text-gray-900">{{ coach.avgDispo }}</span></p>
+                      <p>IMPACT : <span class="text-gray-900">{{ coach.avgImpact }}</span></p>
                     </td>
                     <td class="px-6 py-5 text-center">
                       @if (coach.count > 0) {
@@ -206,6 +208,7 @@ type PageTab = 'byCoach' | 'allRatings';
               <thead>
                 <tr class="bg-gray-50 border-b border-gray-100">
                   <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500">Coach</th>
+                  <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500">Séance</th>
                   <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500">Programme</th>
                   <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500">Entrepreneur</th>
                   <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500">Note</th>
@@ -218,6 +221,7 @@ type PageTab = 'byCoach' | 'allRatings';
                 @for (r of filtered(); track r.id) {
                   <tr class="hover:bg-gray-50 transition-colors" [class]="r.globalRating <= 2 ? 'bg-red-50' : ''">
                     <td class="px-6 py-5 text-sm font-black text-gray-900">{{ r.coach?.firstName }} {{ r.coach?.lastName }}</td>
+                    <td class="px-6 py-5 text-xs font-bold text-[#3B82A6]">{{ r.session?.titre || 'Session' }}</td>
                     <td class="px-6 py-5 text-xs font-medium text-gray-500">{{ r.programme?.nom }}</td>
                     <td class="px-6 py-5">
                       <span class="text-sm font-bold text-gray-900">{{ r.entrepreneur?.firstName }} {{ r.entrepreneur?.lastName }}</span>
@@ -279,7 +283,8 @@ type PageTab = 'byCoach' | 'allRatings';
                   @for (c of [
                     { label: 'Communication', value: selectedCoach()?.avgComm || 0 },
                     { label: 'Expertise', value: selectedCoach()?.avgExp || 0 },
-                    { label: 'Disponibilité', value: selectedCoach()?.avgDispo || 0 }
+                    { label: 'Disponibilité', value: selectedCoach()?.avgDispo || 0 },
+                    { label: 'Impact', value: selectedCoach()?.avgImpact || 0 }
                   ]; track c.label) {
                     <div class="flex items-center gap-4">
                       <span class="text-xs font-bold text-gray-600 w-32">{{ c.label }}</span>
@@ -366,7 +371,8 @@ type PageTab = 'byCoach' | 'allRatings';
                 @for (c of [
                   { label: 'Communication', value: selectedRating()?.communication || 0 },
                   { label: 'Expertise', value: selectedRating()?.expertise || 0 },
-                  { label: 'Disponibilité', value: selectedRating()?.availability || 0 }
+                  { label: 'Disponibilité', value: selectedRating()?.availability || 0 },
+                  { label: 'Impact', value: selectedRating()?.impact || 0 }
                 ]; track c.label) {
                   <div class="bg-gray-50 rounded-2xl p-4 text-center">
                     <p class="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-2">{{ c.label }}</p>
@@ -375,6 +381,14 @@ type PageTab = 'byCoach' | 'allRatings';
                   </div>
                 }
               </div>
+
+              @if (selectedRating()?.tags) {
+                <div class="flex flex-wrap gap-2 mb-4">
+                  @for (tag of selectedRating()?.tags?.split(', '); track tag) {
+                    <span class="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-100">{{ tag }}</span>
+                  }
+                </div>
+              }
 
               @if (selectedRating()?.commentaire) {
                 <div class="bg-pink-50/30 border-l-4 border-pink-500 p-6 rounded-r-2xl shadow-sm">
@@ -385,14 +399,21 @@ type PageTab = 'byCoach' | 'allRatings';
               <div class="grid grid-cols-3 gap-4">
                 @for (item of [
                   { icon: 'pi-book', label: 'Programme', value: selectedRating()?.programme?.nom },
-                  { icon: 'pi-calendar', label: 'Date', value: selectedRating()?.createdAt | date:'dd MMMM yyyy' }
+                  { icon: 'pi-calendar-clock', label: 'Séance', value: selectedRating()?.session?.titre },
+                  { icon: 'pi-calendar', label: 'Date', value: selectedRating()?.createdAt }
                 ]; track item.label) {
                   <div class="bg-gray-50 rounded-2xl p-4">
                     <div class="flex items-center gap-2 mb-1 text-gray-400">
                       <i class="pi {{ item.icon }} text-[10px]"></i>
                       <span class="text-[10px] font-black uppercase tracking-widest">{{ item.label }}</span>
                     </div>
-                    <p class="text-sm font-black text-gray-900">{{ item.value }}</p>
+                    <p class="text-sm font-black text-gray-900">
+                      @if (item.label === 'Date') {
+                        {{ item.value | date:'dd MMMM yyyy' }}
+                      } @else {
+                        {{ item.value || '—' }}
+                      }
+                    </p>
                   </div>
                 }
               </div>
@@ -431,7 +452,13 @@ export class AdminEvaluationsComponent implements OnInit {
   filterNote = 'all';
 
   ngOnInit(): void {
-    this.svc.getAllRatings().subscribe(r => this.ratings.set(r));
+    this.svc.getAllRatings().subscribe(r => {
+      // Sort by date descending
+      const sorted = r.sort((a, b) => {
+        return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+      });
+      this.ratings.set(sorted);
+    });
   }
 
   programs = computed(() => Array.from(new Set(this.ratings().map(r => r.programme?.nom))));
@@ -486,6 +513,7 @@ export class AdminEvaluationsComponent implements OnInit {
         avgComm: n ? parseFloat((cr.reduce((acc, r) => acc + r.communication, 0) / n).toFixed(1)) : 0,
         avgExp: n ? parseFloat((cr.reduce((acc, r) => acc + r.expertise, 0) / n).toFixed(1)) : 0,
         avgDispo: n ? parseFloat((cr.reduce((acc, r) => acc + r.availability, 0) / n).toFixed(1)) : 0,
+        avgImpact: n ? parseFloat((cr.reduce((acc, r) => acc + (r.impact || 0), 0) / n).toFixed(1)) : 0,
         programs: Array.from(new Set(cr.map(r => r.programme?.nom).filter(p => p != null)))
       } as CoachStats;
     });

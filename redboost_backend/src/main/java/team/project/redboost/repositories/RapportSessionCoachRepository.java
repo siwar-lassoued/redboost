@@ -11,4 +11,6 @@ public interface RapportSessionCoachRepository extends JpaRepository<RapportSess
     List<RapportSessionCoach> findByCoachIdOrderByDateCreationDesc(Long coachId);
     List<RapportSessionCoach> findByEntrepreneurIdOrderByDateCreationDesc(Long entrepreneurId);
     List<RapportSessionCoach> findByCoachIdAndThematiqueIdOrderByDateCreationDesc(Long coachId, Long thematiqueId);
+    List<RapportSessionCoach> findByEntrepreneurIdAndCoachId(Long entrepreneurId, Long coachId);
+    List<RapportSessionCoach> findByEntrepreneurIdAndCoachIdAndThematiqueId(Long entrepreneurId, Long coachId, Long thematiqueId);
 }

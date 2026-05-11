@@ -36,6 +36,10 @@ public class CoachRating {
     private double communication;
     private double expertise;
     private double availability;
+    private double impact;
+
+    @Column(columnDefinition = "TEXT")
+    private String tags;
 
     @Column(columnDefinition = "TEXT")
     private String commentaire;
@@ -76,6 +80,10 @@ public class CoachRating {
     public void setExpertise(double expertise) { this.expertise = expertise; }
     public double getAvailability() { return availability; }
     public void setAvailability(double availability) { this.availability = availability; }
+    public double getImpact() { return impact; }
+    public void setImpact(double impact) { this.impact = impact; }
+    public String getTags() { return tags; }
+    public void setTags(String tags) { this.tags = tags; }
     public String getCommentaire() { return commentaire; }
     public void setCommentaire(String commentaire) { this.commentaire = commentaire; }
     public RatingStatut getStatut() { return statut; }

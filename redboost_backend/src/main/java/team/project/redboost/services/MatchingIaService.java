@@ -1027,23 +1027,27 @@ public class MatchingIaService {
         List<Map<String, Object>> result = new ArrayList<>();
         Set<String> seenKey = new HashSet<>(); // coachId + "_" + thematiqueId to allow same coach in different thematiques
 
+        List<Matching.StatutMatching> statuses = List.of(
+            Matching.StatutMatching.VALIDE, 
+            Matching.StatutMatching.TERMINE,
+            Matching.StatutMatching.LIBERE
+        );
+        
         // 1. Search matchings via candidature IDs
         for (CandidatureRedstarter cand : candidatures) {
-            List<Matching> matchings = matchingRepo.findByEntrepreneurIdAndStatut(
-                    cand.getId(), Matching.StatutMatching.VALIDE);
+            List<Matching> matchings = matchingRepo.findByEntrepreneurIdAndStatutIn(cand.getId(), statuses);
 
             for (Matching m : matchings) {
-                String key = m.getCoachId() + "_" + m.getThematiqueId();
+                String key = m.getCoachId() + "_" + (m.getThematiqueId() != null ? m.getThematiqueId() : "global");
                 if (!seenKey.add(key)) continue;
                 buildCoachView(m, result);
             }
         }
 
-        // 2. Fallback: Search matchings via direct User ID (in case some were created that way)
-        List<Matching> directMatchings = matchingRepo.findByEntrepreneurIdAndStatut(
-                entrepreneurUserId, Matching.StatutMatching.VALIDE);
+        // 2. Fallback: Search matchings via direct User ID
+        List<Matching> directMatchings = matchingRepo.findByEntrepreneurIdAndStatutIn(entrepreneurUserId, statuses);
         for (Matching m : directMatchings) {
-            String key = m.getCoachId() + "_" + m.getThematiqueId();
+            String key = m.getCoachId() + "_" + (m.getThematiqueId() != null ? m.getThematiqueId() : "global");
             if (!seenKey.add(key)) continue;
             buildCoachView(m, result);
         }

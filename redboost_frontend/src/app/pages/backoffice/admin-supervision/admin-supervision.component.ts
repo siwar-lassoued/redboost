@@ -343,7 +343,7 @@ export class AdminSupervisionDashboardComponent implements OnInit {
         next: (res) => { merged.sessions = res.sessions || []; done(); },
         error: () => done()
       });
-      // Tâches (via todos endpoint which includes entrepreneur context)
+      // Tâches
       this.http.get<any>(`${environment.apiUrl}/admin/planning/coach/${userId}/todos`, { headers: this.headers }).subscribe({
         next: (res) => { merged.taches = Array.isArray(res) ? res : []; done(); },
         error: () => done()
@@ -354,19 +354,25 @@ export class AdminSupervisionDashboardComponent implements OnInit {
         error: () => done()
       });
     } else {
-      // Entrepreneur: use SessionController + TacheController
-      let remaining = 2;
+      let remaining = 3;
       const merged: any = { sessions: [], taches: [], livrables: [] };
       const done = () => {
         remaining--;
         if (remaining === 0) { this.detail.set(merged); this.loadingDetail.set(false); this.cdr.markForCheck(); }
       };
+      // Sessions
       this.http.get<any>(`${environment.apiUrl}/admin/planning/entrepreneur/${userId}`, { headers: this.headers }).subscribe({
         next: (res) => { merged.sessions = res.sessions || []; done(); },
         error: () => done()
       });
-      this.http.get<any>(`${environment.apiUrl}/taches/entrepreneur/${userId}`, { headers: this.headers }).subscribe({
-        next: (res) => { merged.taches = Array.isArray(res) ? res : (res.data || []); done(); },
+      // Tâches
+      this.http.get<any>(`${environment.apiUrl}/admin/planning/entrepreneur/${userId}/todos`, { headers: this.headers }).subscribe({
+        next: (res) => { merged.taches = Array.isArray(res) ? res : []; done(); },
+        error: () => done()
+      });
+      // Livrables
+      this.http.get<any>(`${environment.apiUrl}/admin/planning/entrepreneur/${userId}/livrables`, { headers: this.headers }).subscribe({
+        next: (res) => { merged.livrables = Array.isArray(res) ? res : []; done(); },
         error: () => done()
       });
     }

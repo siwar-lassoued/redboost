@@ -104,16 +104,44 @@ public class SessionService {
     }
 
     public List<Session> getByEntrepreneur(Long entrepreneurId) {
-        List<Session> sessions = new ArrayList<>(sessionRepository.findByEntrepreneurId(entrepreneurId));
+        List<Session> sessions = sessionRepository.findByEntrepreneurId(entrepreneurId);
         autoUpdatePastSessions(sessions);
         populateThematiqueNames(sessions);
 
+        List<Session> result = new ArrayList<>();
+        for (Session s : sessions) {
+            result.add(Session.builder()
+                .id(s.getId())
+                .titre(s.getTitre())
+                .description(s.getDescription())
+                .date(s.getDate())
+                .dureeMinutes(s.getDureeMinutes())
+                .statut(s.getStatut())
+                .meetLink(s.getMeetLink())
+                .coach(s.getCoach() != null ? User.builder()
+                    .id(s.getCoach().getId())
+                    .firstName(s.getCoach().getFirstName())
+                    .lastName(s.getCoach().getLastName())
+                    .build() : null)
+                .programme(s.getProgramme() != null ? team.project.redboost.entities.Programme.builder()
+                    .id(s.getProgramme().getId())
+                    .nom(s.getProgramme().getNom())
+                    .build() : null)
+                .isExceptionnelle(false)
+                .thematiqueName(s.getThematiqueName())
+                .build());
+        }
+
         List<SeanceExceptionnelle> seances = seanceExceptionnelleRepository.findByEntrepreneurId(entrepreneurId);
         for (SeanceExceptionnelle s : seances) {
-            Session mapped = Session.builder()
+            result.add(Session.builder()
                 .id("seance-" + s.getId())
                 .titre(s.getTitre())
-                .coach(s.getCoach())
+                .coach(s.getCoach() != null ? User.builder()
+                    .id(s.getCoach().getId())
+                    .firstName(s.getCoach().getFirstName())
+                    .lastName(s.getCoach().getLastName())
+                    .build() : null)
                 .entrepreneur(s.getEntrepreneur())
                 .date(s.getDateSeance().atTime(s.getHeureDebut()))
                 .dureeMinutes((int) java.time.Duration.between(s.getHeureDebut(), s.getHeureFin()).toMinutes())
@@ -122,11 +150,10 @@ public class SessionService {
                 ).isBefore(LocalDateTime.now()) ? Session.Statut.TERMINE : Session.Statut.PLANIFIE)
                 .isExceptionnelle(true)
                 .thematiqueName(s.getThematique() != null ? s.getThematique().getNom() : null)
-                .build();
-            sessions.add(mapped);
+                .build());
         }
 
-        return sessions;
+        return result;
     }
 
     public List<Session> getUpcoming() {

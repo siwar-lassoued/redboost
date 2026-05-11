@@ -398,6 +398,17 @@ export class CalendarComponent implements OnInit {
     });
   }
 
+  isSlotPast(slot: any): boolean {
+    if (!slot.dateSession) return false;
+    const now = new Date();
+    const slotDate = new Date(slot.dateSession);
+    if (slot.heureDebut) {
+      const [h, m] = slot.heureDebut.split(':');
+      slotDate.setHours(Number(h), Number(m));
+    }
+    return slotDate < now;
+  }
+
   cancelAndRebook(session: any): void {
     const currentUser = this.authService.currentUser$.value;
     if (!currentUser || !session.myBookedSlot) return;
@@ -487,7 +498,7 @@ export class CalendarComponent implements OnInit {
         type: 'creneau', 
         location: s.typeSession === 'EN_LIGNE' ? 'En ligne' : (s.adresse || 'En personne'),
         mode: s.typeSession === 'EN_LIGNE' ? 'virtuel' : 'en-personne',
-        program: themName, // Use program field for thematique name in slots
+        program: themName, 
         description: 'Réservez via le panneau de droite',
         participants: [],
         isDisabled: s.isBooked || s.isGroupReservedByMe || false,

@@ -23,6 +23,8 @@ public class CoachRatingController {
     private final CoachRatingService coachRatingService;
     private final UserRepository userRepository;
     private final SessionRepository sessionRepository;
+    private final team.project.redboost.repositories.ProgrammeRepository programmeRepository;
+    private final team.project.redboost.repositories.CoachRatingRepository coachRatingRepository;
 
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN')")
     @GetMapping
@@ -62,7 +64,18 @@ public class CoachRatingController {
 
             if (payload.get("sessionId") != null) {
                 String sessionId = payload.get("sessionId").toString();
+                
+                // Check if already rated to avoid 500 error from unique constraint
+                if (coachRatingRepository.existsByEntrepreneurIdAndSessionId(entrepreneurId, sessionId)) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "Vous avez déjà évalué cette séance."));
+                }
+                
                 sessionRepository.findById(sessionId).ifPresent(rating::setSession);
+            }
+
+            if (payload.get("programmeId") != null) {
+                Long progId = ((Number) payload.get("programmeId")).longValue();
+                programmeRepository.findById(progId).ifPresent(rating::setProgramme);
             }
 
             if (payload.get("globalRating") != null)
@@ -73,6 +86,10 @@ public class CoachRatingController {
                 rating.setExpertise(((Number) payload.get("expertise")).doubleValue());
             if (payload.get("availability") != null)
                 rating.setAvailability(((Number) payload.get("availability")).doubleValue());
+            if (payload.get("impact") != null)
+                rating.setImpact(((Number) payload.get("impact")).doubleValue());
+            if (payload.get("tags") != null)
+                rating.setTags(payload.get("tags").toString());
             if (payload.get("commentaire") != null)
                 rating.setCommentaire(payload.get("commentaire").toString());
 
