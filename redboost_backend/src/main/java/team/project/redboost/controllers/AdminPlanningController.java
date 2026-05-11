@@ -2,12 +2,12 @@ package team.project.redboost.controllers;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import team.project.redboost.entities.Role;
-import team.project.redboost.entities.User;
-import team.project.redboost.repositories.UserRepository;
+import team.project.redboost.entities.*;
+import team.project.redboost.repositories.*;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -37,222 +37,252 @@ import java.util.stream.Collectors;
 @CrossOrigin(origins = "*")
 public class AdminPlanningController {
 
-    private final UserRepository userRepository;
+    @Autowired
+    private SessionRepository sessionRepository;
+    @Autowired private SessionCoachRepository sessionCoachRepository;
+    @Autowired private MatchingRepository matchingRepository;
+    @Autowired private UserRepository userRepository;
+    @Autowired private TacheRepository tacheRepository;
+    @Autowired private TacheDocumentRepository tacheDocumentRepository;
+    @Autowired private DisponibiliteRepository disponibiliteRepository;
+    @Autowired private ProgrammeRepository programmeRepository;
+
+
 
     @PersistenceContext
     private EntityManager entityManager;
-
-    // ─── 1. OVERVIEW ──────────────────────────────────────────────────────────
-
     @GetMapping("/overview")
-    public ResponseEntity<Map<String, Object>> getOverview() {
-        Map<String, Object> overview = new HashMap<>();
-
-        try {
-            // Count coaches
-            long totalCoaches = userRepository.countByRole(Role.COACH);
-            long totalEntrepreneurs = userRepository.countByRole(Role.ENTREPRENEUR);
-
-            // Count sessions via native query (table name may vary)
-            long totalSessions = countSessions();
-            long sessionsThisWeek = countSessionsThisWeek();
-
-            overview.put("totalCoaches", totalCoaches);
-            overview.put("totalEntrepreneurs", totalEntrepreneurs);
-            overview.put("totalSessions", totalSessions);
-            overview.put("sessionsThisWeek", sessionsThisWeek);
-            overview.put("pendingTodos", 0);
-            overview.put("pendingLivrables", 0);
-
-        } catch (Exception e) {
-            log.warn("Error computing overview stats: {}", e.getMessage());
-            overview.put("totalCoaches", userRepository.countByRole(Role.COACH));
-            overview.put("totalEntrepreneurs", userRepository.countByRole(Role.ENTREPRENEUR));
-            overview.put("totalSessions", 0);
-            overview.put("sessionsThisWeek", 0);
-            overview.put("pendingTodos", 0);
-            overview.put("pendingLivrables", 0);
-        }
-
-        return ResponseEntity.ok(overview);
+    public ResponseEntity<Map<String, Object>> getPlanningOverview() {
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("totalCoaches", userRepository.countByRole(Role.COACH));
+        stats.put("totalEntrepreneurs", userRepository.countByRole(Role.ENTREPRENEUR));
+        stats.put("totalSessions", sessionRepository.count());
+        stats.put("sessionsThisWeek", 0);
+        stats.put("pendingTodos", tacheRepository.countByStatus(Tache.StatusTache.EN_COURS));
+        stats.put("pendingLivrables", tacheDocumentRepository.count());
+        return ResponseEntity.ok(stats);
     }
-
-    // ─── 2. COACHES WITH SESSIONS ────────────────────────────────────────────
 
     @GetMapping("/coaches")
-    public ResponseEntity<List<Map<String, Object>>> getCoachPlannings(
-            @RequestParam(required = false) String search) {
-
+    public ResponseEntity<List<Map<String, Object>>> getAllCoachesPlanning() {
         List<User> coaches = userRepository.findByRole(Role.COACH);
-
-        if (search != null && !search.isBlank()) {
-            String q = search.toLowerCase();
-            coaches = coaches.stream()
-                    .filter(c -> (c.getFirstName() + " " + c.getLastName()).toLowerCase().contains(q)
-                            || c.getEmail().toLowerCase().contains(q))
-                    .collect(Collectors.toList());
-        }
-
         List<Map<String, Object>> result = coaches.stream().map(coach -> {
-            List<Map<String, Object>> sessions = getSessionsForCoach(coach.getId());
-            Map<String, Object> item = new LinkedHashMap<>();
-            item.put("id", String.valueOf(coach.getId()));
-            item.put("coachId", String.valueOf(coach.getId()));
-            item.put("coachName", coach.getFirstName() + " " + coach.getLastName());
-            item.put("email", coach.getEmail());
-            item.put("specialty", coach.getExpertise());
-            item.put("sessions", sessions);
-            item.put("totalSessions", sessions.size());
-            item.put("upcomingSessions", sessions.stream()
-                    .filter(s -> isUpcoming(s)).count());
-            item.put("completedSessions", sessions.stream()
-                    .filter(s -> "REALISEE".equals(s.get("statut")) || "TERMINE".equals(s.get("statut"))).count());
-            item.put("expanded", false);
-            return item;
-        }).collect(Collectors.toList());
+            Map<String, Object> coachData = new HashMap<>();
+            coachData.put("id", coach.getId().toString());
+            coachData.put("coachId", coach.getId());
+            coachData.put("coachName", coach.getFirstName() + " " + coach.getLastName());
+            coachData.put("email", coach.getEmail());
+            coachData.put("specialty", "Coach");
 
+            List<Session> sessions = sessionRepository.findByCoachId(coach.getId());
+            coachData.put("sessions", sessions.stream().map(this::mapSession).collect(Collectors.toList()));
+            return coachData;
+        }).collect(Collectors.toList());
         return ResponseEntity.ok(result);
     }
-
-    // ─── 3. SESSIONS FOR A SPECIFIC COACH ────────────────────────────────────
-
-    @GetMapping("/coaches/{coachId}/sessions")
-    public ResponseEntity<List<Map<String, Object>>> getCoachSessions(@PathVariable String coachId) {
-        try {
-            Long id = Long.parseLong(coachId);
-            return ResponseEntity.ok(getSessionsForCoach(id));
-        } catch (Exception e) {
-            log.warn("Error loading sessions for coach {}: {}", coachId, e.getMessage());
-            return ResponseEntity.ok(Collections.emptyList());
-        }
-    }
-
-    // ─── 4. ENTREPRENEURS WITH SESSIONS ──────────────────────────────────────
 
     @GetMapping("/entrepreneurs")
-    public ResponseEntity<List<Map<String, Object>>> getEntrepreneurPlannings(
-            @RequestParam(required = false) String search) {
-
+    public ResponseEntity<List<Map<String, Object>>> getAllEntrepreneursPlanning() {
         List<User> entrepreneurs = userRepository.findByRole(Role.ENTREPRENEUR);
-
-        if (search != null && !search.isBlank()) {
-            String q = search.toLowerCase();
-            entrepreneurs = entrepreneurs.stream()
-                    .filter(e -> (e.getFirstName() + " " + e.getLastName()).toLowerCase().contains(q)
-                            || e.getEmail().toLowerCase().contains(q))
-                    .collect(Collectors.toList());
-        }
-
         List<Map<String, Object>> result = entrepreneurs.stream().map(ent -> {
-                    List<Map<String, Object>> sessions = getSessionsForEntrepreneur(ent.getId());
-                    Map<String, Object> item = new LinkedHashMap<>();
-                    item.put("id", String.valueOf(ent.getId()));
-                    item.put("entrepreneurId", String.valueOf(ent.getId()));
-                    item.put("entrepreneurName", ent.getFirstName() + " " + ent.getLastName());
-                    item.put("email", ent.getEmail());
-                    item.put("sessions", sessions);
-                    item.put("totalSessions", sessions.size());
-                    item.put("upcomingSessions", sessions.stream().filter(s -> isUpcoming(s)).count());
-                    item.put("expanded", false);
+            Map<String, Object> entData = new HashMap<>();
+            entData.put("id", ent.getId().toString());
+            entData.put("entrepreneurId", ent.getId());
+            entData.put("entrepreneurName", ent.getFirstName() + " " + ent.getLastName());
+            entData.put("email", ent.getEmail());
 
-                    // Find the coach from the first session
-                    if (!sessions.isEmpty() && sessions.get(0).get("coachId") != null) {
-                        item.put("coachId", sessions.get(0).get("coachId"));
-                        item.put("coachName", sessions.get(0).get("coachName"));
-                    }
-                    return item;
-                }).filter(item -> (Long) item.get("totalSessions") > 0)
-                .collect(Collectors.toList());
+            List<Matching> matchings = matchingRepository.findByEntrepreneurIdAndStatut(ent.getId(), Matching.StatutMatching.VALIDE);
+            if (!matchings.isEmpty()) {
+                Matching m = matchings.get(0);
+                entData.put("coachId", m.getCoachId());
+                userRepository.findById(m.getCoachId()).ifPresent(c -> entData.put("coachName", c.getFirstName() + " " + c.getLastName()));
+                programmeRepository.findById(m.getProgrammeId()).ifPresent(p -> entData.put("programme", p.getNom()));
+            }
 
+            List<Session> sessions = sessionRepository.findByEntrepreneurId(ent.getId());
+            entData.put("sessions", sessions.stream().map(this::mapSession).collect(Collectors.toList()));
+            return entData;
+        }).collect(Collectors.toList());
         return ResponseEntity.ok(result);
     }
 
-    // ─── 5. SESSIONS FOR A SPECIFIC ENTREPRENEUR ─────────────────────────────
-
-    @GetMapping("/entrepreneurs/{entrepreneurId}/sessions")
-    public ResponseEntity<List<Map<String, Object>>> getEntrepreneurSessions(
-            @PathVariable String entrepreneurId) {
-        try {
-            Long id = Long.parseLong(entrepreneurId);
-            return ResponseEntity.ok(getSessionsForEntrepreneur(id));
-        } catch (Exception e) {
-            log.warn("Error loading sessions for entrepreneur {}: {}", entrepreneurId, e.getMessage());
-            return ResponseEntity.ok(Collections.emptyList());
-        }
+    @GetMapping("/todos")
+    public ResponseEntity<List<Map<String, Object>>> getAllTodos() {
+        List<Tache> tasks = tacheRepository.findAll();
+        return ResponseEntity.ok(tasks.stream().map(this::mapTache).collect(Collectors.toList()));
     }
 
-    // ─── 6. ALL SESSIONS ─────────────────────────────────────────────────────
-
-    @GetMapping("/sessions")
-    public ResponseEntity<List<Map<String, Object>>> getAllSessions() {
-        return ResponseEntity.ok(loadAllSessions());
+    @GetMapping("/livrables")
+    public ResponseEntity<List<Map<String, Object>>> getAllLivrables() {
+        List<TacheDocument> docs = tacheDocumentRepository.findAll();
+        return ResponseEntity.ok(docs.stream().map(this::mapLivrable).collect(Collectors.toList()));
     }
 
-    // ─── PRIVATE HELPERS ─────────────────────────────────────────────────────
+    @GetMapping("/stats/sessions")
+    public ResponseEntity<Map<String, Long>> getSessionStats() {
+        Map<String, Long> stats = new HashMap<>();
+        stats.put("total", sessionRepository.count());
+        stats.put("confirmees", sessionRepository.countByStatut(Session.Statut.CONFIRME));
+        stats.put("realisees", sessionRepository.countByStatut(Session.Statut.TERMINE));
+        stats.put("annulees", sessionRepository.countByStatut(Session.Statut.ANNULE));
+        return ResponseEntity.ok(stats);
+    }
 
-    /**
-     * Charge les sessions d'un coach depuis la base.
-     * Essaie d'abord la table "sessions" (entité Session), puis "session_coach" (créneaux).
-     */
-    private List<Map<String, Object>> getSessionsForCoach(Long coachId) {
-        List<Map<String, Object>> sessions = new ArrayList<>();
+    @GetMapping("/stats/todos")
+    public ResponseEntity<Map<String, Long>> getTodoStats() {
+        Map<String, Long> stats = new HashMap<>();
+        stats.put("total", tacheRepository.count());
+        stats.put("enCours", tacheRepository.countByStatus(Tache.StatusTache.EN_COURS));
+        stats.put("bloquees", tacheRepository.countByStatus(Tache.StatusTache.BLOQUE));
+        stats.put("enRetard", tacheRepository.countByStatus(Tache.StatusTache.EN_RETARD));
+        stats.put("terminees", tacheRepository.countByStatus(Tache.StatusTache.TERMINEE));
+        return ResponseEntity.ok(stats);
+    }
 
-        // --- Approach 1: table "sessions" (réservations entrepreneur) ---
-        try {
-            String sql = "SELECT s.id, s.titre, s.date, s.duree_minutes, s.statut, s.google_meet_link, s.type_session, s.adresse, s.notes_coach, " +
-                    "s.entrepreneur_id, s.programme_id, NULL as thematique_id, " +
-                    "u.first_name, u.last_name, u.email " +
-                    "FROM sessions s " +
-                    "LEFT JOIN user u ON u.id = s.entrepreneur_id " +
-                    "WHERE s.coach_id = :coachId " +
-                    "ORDER BY s.date DESC";
+    private Map<String, Object> mapSession(Session s) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("id", s.getId());
+        m.put("titre", s.getTitre());
+        m.put("date", s.getDate());
+        m.put("dureeMinutes", s.getDureeMinutes());
+        m.put("statut", s.getStatut().name());
+        m.put("meetLink", s.getMeetLink());
+        if (s.getCoach() != null) {
+            m.put("coachId", s.getCoach().getId());
+            m.put("coachName", s.getCoach().getFirstName() + " " + s.getCoach().getLastName());
+        }
+        if (s.getEntrepreneur() != null) {
+            m.put("entrepreneurId", s.getEntrepreneur().getId());
+            m.put("entrepreneurName", s.getEntrepreneur().getFirstName() + " " + s.getEntrepreneur().getLastName());
+        }
+        return m;
+    }
 
-            Query q = entityManager.createNativeQuery(sql);
-            q.setParameter("coachId", coachId);
+    private Map<String, Object> mapTache(Tache t) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("id", t.getId().toString());
+        m.put("titre", t.getTitre());
+        m.put("description", t.getDescription());
+        m.put("status", t.getStatus().name());
+        m.put("priorite", t.getPriorite() != null ? t.getPriorite() : "MOYENNE");
+        m.put("dateLimite", t.getDateLimite());
 
-            @SuppressWarnings("unchecked")
-            List<Object[]> rows = q.getResultList();
+        User ent = userRepository.findById(t.getResponsableId()).orElse(null);
+        if (ent != null) {
+            m.put("entrepreneurId", ent.getId());
+            m.put("entrepreneurName", ent.getFirstName() + " " + ent.getLastName());
 
-            for (Object[] row : rows) {
-                sessions.add(mapSessionRow(row, coachId));
+            matchingRepository.findByEntrepreneurIdAndStatut(ent.getId(), Matching.StatutMatching.VALIDE).stream().findFirst().ifPresent(match -> {
+                m.put("coachId", match.getCoachId());
+                userRepository.findById(match.getCoachId()).ifPresent(c -> m.put("coachName", c.getFirstName() + " " + c.getLastName()));
+                programmeRepository.findById(match.getProgrammeId()).ifPresent(p -> m.put("programmeName", p.getNom()));
+            });
+        }
+
+        List<TacheDocument> docs = tacheDocumentRepository.findByTacheId(t.getId());
+        m.put("documents", docs.stream().map(d -> {
+            Map<String, Object> dm = new HashMap<>();
+            dm.put("id", d.getId());
+            dm.put("nom", d.getNom());
+            dm.put("url", d.getCheminFichier());
+            return dm;
+        }).collect(Collectors.toList()));
+
+        return m;
+    }
+
+    private Map<String, Object> mapLivrable(TacheDocument d) {
+        Map<String, Object> dm = new LinkedHashMap<>();
+        dm.put("id", d.getId().toString());
+        dm.put("nom", d.getNom());
+        dm.put("url", d.getCheminFichier());
+        dm.put("dateUpload", d.getDateUpload());
+        dm.put("fileSize", d.getTailleFichier());
+
+        tacheRepository.findById(d.getTache().getId()).ifPresent(t -> {
+            dm.put("tacheId", t.getId());
+            dm.put("tacheTitre", t.getTitre());
+            User ent = userRepository.findById(t.getResponsableId()).orElse(null);
+            if (ent != null) {
+                dm.put("entrepreneurId", ent.getId());
+                dm.put("entrepreneurName", ent.getFirstName() + " " + ent.getLastName());
+                matchingRepository.findByEntrepreneurIdAndStatut(ent.getId(), Matching.StatutMatching.VALIDE).stream().findFirst().ifPresent(match -> {
+                    dm.put("coachId", match.getCoachId());
+                    userRepository.findById(match.getCoachId()).ifPresent(c -> dm.put("coachName", c.getFirstName() + " " + c.getLastName()));
+                });
             }
-        } catch (Exception e) {
-            log.debug("Table 'sessions' query failed for coachId {}: {}", coachId, e.getMessage());
-        }
+        });
+        return dm;
+    }
 
-        // --- Approach 2: table "session_coach" (disponibilités réservées) ---
-        if (sessions.isEmpty()) {
-            try {
-                String sql2 = "SELECT sc.id, sc.titre, sc.date_session, sc.heure_debut, sc.heure_fin, " +
-                        "sc.type_session, NULL as statut, NULL as meet_link, NULL as adresse, NULL as notes_coach, " +
-                        "b.entrepreneur_id, NULL as programme_id, NULL as thematique_id, " +
-                        "u.first_name, u.last_name, u.email " +
-                        "FROM session_coach sc " +
-                        "LEFT JOIN session_booking b ON b.session_coach_id = sc.id " +
-                        "LEFT JOIN user u ON u.id = b.entrepreneur_id " +
-                        "WHERE sc.coach_id = :coachId " +
-                        "ORDER BY sc.date_session DESC";
+    @GetMapping("/coach/{coachId}")
+    public ResponseEntity<?> getCoachPlanning(@PathVariable Long coachId) {
+        User coach = userRepository.findById(coachId).orElse(null);
+        if (coach == null) return ResponseEntity.notFound().build();
 
-                Query q2 = entityManager.createNativeQuery(sql2);
-                q2.setParameter("coachId", coachId);
+        List<Session> sessions = sessionRepository.findByCoachId(coachId);
+        List<Map<String, Object>> sessionList = sessions.stream().map(this::mapSession).collect(Collectors.toList());
 
-                @SuppressWarnings("unchecked")
-                List<Object[]> rows2 = q2.getResultList();
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("coachId", coachId);
+        result.put("coachName", coach.getFirstName() + " " + coach.getLastName());
+        result.put("sessions", sessionList);
+        return ResponseEntity.ok(result);
+    }
 
-                for (Object[] row : rows2) {
-                    sessions.add(mapSessionRow(row, coachId));
-                }
-            } catch (Exception e2) {
-                log.debug("Table 'session_coach' query also failed for coachId {}: {}", coachId, e2.getMessage());
-            }
-        }
+    @GetMapping("/coach/{coachId}/todos")
+    public ResponseEntity<List<Map<String, Object>>> getCoachTodos(@PathVariable Long coachId) {
+        List<Matching> matchings = matchingRepository.findByCoachIdAndStatut(coachId, Matching.StatutMatching.VALIDE);
+        List<Long> entrepreneurIds = matchings.stream().map(Matching::getEntrepreneurId).collect(Collectors.toList());
 
-        // If still empty, build from bookings joined to disponibilites
-        if (sessions.isEmpty()) {
-            sessions = loadSessionsViaBookings(coachId, null);
-        }
+        List<Tache> tasks = entrepreneurIds.stream()
+                .flatMap(id -> tacheRepository.findByResponsableId(id).stream())
+                .collect(Collectors.toList());
 
-        return sessions;
+        return ResponseEntity.ok(tasks.stream().map(this::mapTache).collect(Collectors.toList()));
+    }
+
+    @GetMapping("/coach/{coachId}/livrables")
+    public ResponseEntity<List<Map<String, Object>>> getCoachLivrables(@PathVariable Long coachId) {
+        List<Matching> matchings = matchingRepository.findByCoachIdAndStatut(coachId, Matching.StatutMatching.VALIDE);
+        List<Long> entrepreneurIds = matchings.stream().map(Matching::getEntrepreneurId).collect(Collectors.toList());
+
+        List<TacheDocument> docs = entrepreneurIds.stream()
+                .flatMap(id -> tacheRepository.findByResponsableId(id).stream())
+                .flatMap(t -> tacheDocumentRepository.findByTacheId(t.getId()).stream())
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(docs.stream().map(this::mapLivrable).collect(Collectors.toList()));
+    }
+
+    @GetMapping("/entrepreneur/{entrepreneurId}")
+    public ResponseEntity<?> getEntrepreneurPlanning(@PathVariable Long entrepreneurId) {
+        User entrepreneur = userRepository.findById(entrepreneurId).orElse(null);
+        if (entrepreneur == null) return ResponseEntity.notFound().build();
+
+        List<Session> sessions = sessionRepository.findByEntrepreneurId(entrepreneurId);
+        List<Map<String, Object>> sessionList = sessions.stream().map(this::mapSession).collect(Collectors.toList());
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("entrepreneurId", entrepreneurId);
+        result.put("entrepreneurName", entrepreneur.getFirstName() + " " + entrepreneur.getLastName());
+        result.put("sessions", sessionList);
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/entrepreneur/{entrepreneurId}/todos")
+    public ResponseEntity<List<Map<String, Object>>> getEntrepreneurTodos(@PathVariable Long entrepreneurId) {
+        List<Tache> tasks = tacheRepository.findByResponsableId(entrepreneurId);
+        return ResponseEntity.ok(tasks.stream().map(this::mapTache).collect(Collectors.toList()));
+    }
+
+    @GetMapping("/entrepreneur/{entrepreneurId}/livrables")
+    public ResponseEntity<List<Map<String, Object>>> getEntrepreneurLivrables(@PathVariable Long entrepreneurId) {
+        List<TacheDocument> docs = tacheRepository.findByResponsableId(entrepreneurId).stream()
+                .flatMap(t -> tacheDocumentRepository.findByTacheId(t.getId()).stream())
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(docs.stream().map(this::mapLivrable).collect(Collectors.toList()));
     }
 
     /**

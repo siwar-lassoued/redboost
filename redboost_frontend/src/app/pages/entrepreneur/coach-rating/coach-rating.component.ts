@@ -197,7 +197,7 @@ export class CoachRatingComponent implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
-    private router: Router,
+    public router: Router,
     private http: HttpClient,
     private authService: AuthService,
     private ratingService: CoachRatingService
