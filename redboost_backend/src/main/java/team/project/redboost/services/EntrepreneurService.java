@@ -44,7 +44,8 @@ public class EntrepreneurService {
     private final SessionRepository sessionRepository;
 
     public List<EntrepreneurCoachDTO> getMatchedCoaches(Long entrepreneurId) {
-        return matchingRepository.findByEntrepreneurIdAndStatut(entrepreneurId, Matching.StatutMatching.VALIDE).stream()
+        List<Matching.StatutMatching> activeStatuses = java.util.Arrays.asList(Matching.StatutMatching.PROPOSE, Matching.StatutMatching.VALIDE, Matching.StatutMatching.TERMINE);
+        return matchingRepository.findByEntrepreneurIdAndStatutIn(entrepreneurId, activeStatuses).stream()
                 .map(m -> {
                     User coach = userRepository.findById(m.getCoachId()).orElse(null);
                     if (coach == null) return null;
@@ -125,7 +126,8 @@ public class EntrepreneurService {
     }
 
     public List<ProgrammeDTO> getEntrepreneurProgrammes(Long entrepreneurId) {
-        return matchingRepository.findByEntrepreneurIdAndStatut(entrepreneurId, Matching.StatutMatching.VALIDE).stream()
+        List<Matching.StatutMatching> activeStatuses = java.util.Arrays.asList(Matching.StatutMatching.PROPOSE, Matching.StatutMatching.VALIDE, Matching.StatutMatching.TERMINE);
+        return matchingRepository.findByEntrepreneurIdAndStatutIn(entrepreneurId, activeStatuses).stream()
                 .map(m -> {
                     return programmeRepository.findById(m.getProgrammeId()).map(p -> {
                         ProgrammeDTO d = new ProgrammeDTO();
@@ -140,7 +142,9 @@ public class EntrepreneurService {
     }
 
     public List<java.util.Map<String, Object>> getEntrepreneurThematiques(Long entrepreneurId) {
-        return matchingRepository.findByEntrepreneurIdAndStatut(entrepreneurId, Matching.StatutMatching.VALIDE).stream()
+        List<Matching.StatutMatching> activeStatuses = java.util.Arrays.asList(Matching.StatutMatching.PROPOSE, Matching.StatutMatching.VALIDE, Matching.StatutMatching.TERMINE);
+        return matchingRepository.findByEntrepreneurIdAndStatutIn(entrepreneurId, activeStatuses).stream()
+                .filter(m -> m.getThematiqueId() != null)
                 .map(m -> thematiqueRepository.findById(m.getThematiqueId()))
                 .filter(java.util.Optional::isPresent)
                 .map(java.util.Optional::get)
