@@ -29,7 +29,7 @@ import { environment } from '../../../../environment';
               class="w-full p-4 rounded-2xl border-2 border-gray-100 bg-gray-50 text-sm font-semibold text-[#1A1A2E] focus:outline-none focus:border-[#3B82A6] transition-colors cursor-pointer">
               <option value="">-- Choisir une séance --</option>
               @for (s of sessions; track s.id) {
-                <option [value]="s.id">{{ s.titre || 'Séance' }} - {{ s.dateSession | date:'dd/MM/yyyy' }} {{ s.heureDebut }}</option>
+                <option [value]="s.id">{{ s.titre || 'Séance' }} - {{ s.date | date:'dd/MM/yyyy HH:mm' }}</option>
               }
             </select>
           </div>
@@ -175,7 +175,7 @@ export class CoachRatingComponent implements OnInit {
           const sessions = res?.data || res || [];
           // Only show past sessions
           const now = new Date();
-          this.sessions = sessions.filter((s: any) => new Date(s.dateSession) < now);
+          this.sessions = sessions.filter((s: any) => new Date(s.date) < now);
           if (this.rating.sessionId) {
             this.onSessionChange(this.rating.sessionId);
           }
@@ -191,8 +191,11 @@ export class CoachRatingComponent implements OnInit {
   onSessionChange(sessionId: any) {
     const session = this.sessions.find(s => s.id == sessionId);
     if (session) {
-      this.rating.coachId = session.coachId;
-      this.selectedCoachName = session.coachName || session.coachNom || '';
+      this.rating.coachId = session.coach?.id;
+      this.selectedCoachName = (session.coach?.firstName || '') + ' ' + (session.coach?.lastName || '');
+      if (session.programme) {
+        this.rating.programmeId = session.programme.id;
+      }
     }
   }
 

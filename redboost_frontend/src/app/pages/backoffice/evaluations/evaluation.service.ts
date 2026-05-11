@@ -8,6 +8,7 @@ export interface CoachRating {
     coach?: { id: number, firstName: string, lastName: string };
     entrepreneur?: { id: number, firstName: string, lastName: string };
     programme?: { id: number, nom: string };
+    session?: { id: string, titre: string };
     globalRating: number;
     communication: number;
     expertise: number;
