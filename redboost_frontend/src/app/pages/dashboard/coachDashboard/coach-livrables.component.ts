@@ -184,27 +184,17 @@ import { environment } from '../../../../environment';
                   </div>
 
                   <div class="form-group" style="margin-bottom: 16px;">
-                      <label class="form-label">Programme associé</label>
-                      <select class="search-input-alt" [(ngModel)]="newLivrable.programmeId">
-                          <option [ngValue]="null">Sélectionner un programme...</option>
-                          <option *ngFor="let p of programmes" [value]="p.id">{{p.nom}}</option>
+                      <label class="form-label">Thématique *</label>
+                      <select class="search-input-alt" [(ngModel)]="newLivrable.thematiqueName" (change)="onThematiqueChange()">
+                          <option [ngValue]="''">Sélectionner une thématique...</option>
+                          <option *ngFor="let t of formThematiques" [value]="t.nom">{{t.nom}}</option>
                       </select>
                   </div>
 
-                  <div class="form-group" style="margin-bottom: 16px; display: flex; gap: 1rem;">
-                      <div style="flex: 1;">
-                          <label class="form-label">Thématique *</label>
-                          <select class="search-input-alt" [(ngModel)]="newLivrable.thematiqueName" (change)="onThematiqueChange()">
-                              <option [ngValue]="''">Sélectionner une thématique...</option>
-                              <option *ngFor="let t of formThematiques" [value]="t.nom">{{t.nom}}</option>
-                          </select>
-                      </div>
-                      <div style="flex: 1;">
-                          <label class="form-label">Session *</label>
-                          <select class="search-input-alt" [(ngModel)]="newLivrable.sessionName" [disabled]="!newLivrable.thematiqueName">
-                              <option [ngValue]="''">Sélectionner une session...</option>
-                              <option *ngFor="let s of filteredFormSessions" [value]="s.titre">{{s.titre}}</option>
-                          </select>
+                  <div class="form-group" style="margin-bottom: 16px;">
+                      <label class="form-label">Programme associé</label>
+                      <div class="search-input-alt" style="background: #f1f5f9; color: #475569; border-color: #e2e8f0; font-weight: 600; min-height: 42px; display: flex; align-items: center;">
+                          {{ selectedProgrammeNom || 'Aucun programme lié' }}
                       </div>
                   </div>
 
@@ -269,7 +259,7 @@ import { environment } from '../../../../environment';
 
               <div class="modal-footer">
                   <button class="btn-close-modal" (click)="showDepotModal = false" style="margin-right: 12px;">Annuler</button>
-                  <button class="btn-detail" (click)="deposerLivrable()" [disabled]="loading || !selectedFile || !newLivrable.titre || !newLivrable.thematiqueName || !newLivrable.sessionName" style="background: #ea5073; color: white;">
+                  <button class="btn-detail" (click)="deposerLivrable()" [disabled]="loading || !selectedFile || !newLivrable.titre || !newLivrable.thematiqueName" style="background: #ea5073; color: white;">
                       <i class="pi" [class.pi-check]="!loading" [class.pi-spin]="loading" [class.pi-spinner]="loading" style="margin-right: 6px;"></i>
                       {{ loading ? 'Dépôt en cours...' : 'Confirmer le dépôt' }}
                   </button>
@@ -472,6 +462,7 @@ export class CoachLivrablesComponent implements OnInit {
   selectedEntrepreneurId: number | null = null;
   selectedProgrammeId: number | null = null;
   selectedThematique: string | null = null;
+  selectedProgrammeNom: string = '';
 
   coachId: number | null = null;
 
@@ -523,7 +514,14 @@ export class CoachLivrablesComponent implements OnInit {
   }
 
   onThematiqueChange() {
-    this.newLivrable.sessionName = '';
+    const theme = this.formThematiques.find(t => t.nom === this.newLivrable.thematiqueName);
+    if (theme) {
+      this.newLivrable.programmeId = theme.programmeId;
+      this.selectedProgrammeNom = theme.programmeNom;
+    } else {
+      this.newLivrable.programmeId = null;
+      this.selectedProgrammeNom = '';
+    }
   }
 
   get filteredFormSessions() {
@@ -609,7 +607,7 @@ export class CoachLivrablesComponent implements OnInit {
     this.newLivrable = { titre: '', programmeId: null, thematiqueName: '', sessionName: '', commentaire: '', deadline: '' };
     this.selectedFile = null;
     this.entrepreneurSearch = '';
-    this.entrepreneurs.forEach(e => e.selected = false);
+    this.selectedProgrammeNom = '';
     this.showDepotModal = true;
   }
 
@@ -737,7 +735,7 @@ export class CoachLivrablesComponent implements OnInit {
 
   deposerLivrable() {
     const selectedEnts = this.entrepreneurs.filter(e => e.selected);
-    if (!this.newLivrable.titre || !this.selectedFile || selectedEnts.length === 0 || !this.newLivrable.thematiqueName || !this.newLivrable.sessionName) {
+    if (!this.newLivrable.titre || !this.selectedFile || selectedEnts.length === 0 || !this.newLivrable.thematiqueName) {
       return;
     }
     this.loading = true;
@@ -754,6 +752,7 @@ export class CoachLivrablesComponent implements OnInit {
         this.loadLivrables();
         this.showDepotModal = false;
         this.newLivrable = { titre: '', programmeId: null, thematiqueName: '', sessionName: '', commentaire: '', deadline: '' };
+        this.selectedProgrammeNom = '';
         this.selectedFile = null;
         this.entrepreneurs.forEach(e => e.selected = false);
         this.loading = false;

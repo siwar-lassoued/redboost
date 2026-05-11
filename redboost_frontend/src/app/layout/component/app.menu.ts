@@ -409,11 +409,7 @@ export class AppMenu implements OnInit {
                         icon: 'pi pi-fw pi-users',
                         routerLink: ['/mes-sessions'],
                     },
-                    {
-                        label: 'Séance Exceptionnelle',
-                        icon: 'pi pi-fw pi-star',
-                        routerLink: ['/seance-exceptionnelle'],
-                    },
+
                     {
                         label: 'Livrables',
                         icon: 'pi pi-fw pi-file-export',
@@ -440,14 +436,14 @@ export class AppMenu implements OnInit {
                 label: 'RAPPORTS',
                 items: [
                     {
-                        label: 'Rapport de missions',
-                        icon: 'pi pi-fw pi-file-pdf',
-                        routerLink: ['/rapport-missions'],
-                    },
-                    {
                         label: 'Rapport de sessions',
                         icon: 'pi pi-fw pi-file-edit',
                         routerLink: ['/rapport-sessions'],
+                    },
+                    {
+                        label: 'Rapport de missions',
+                        icon: 'pi pi-fw pi-file-pdf',
+                        routerLink: ['/rapport-missions'],
                     },
                 ],
             },

@@ -1,22 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { CoachService, SessionCoachDTO, SeanceExceptionnelleDTO } from './services/coach.service';
+import { CoachService, SessionCoachDTO, SeanceExceptionnelleDTO, CoachEntrepreneurDTO } from './services/coach.service';
 import { AuthService } from '../../frontoffice/service/auth.service';
-import { forkJoin } from 'rxjs';
-import { firstValueFrom } from 'rxjs';
-
-export interface SessionGroup {
-  sessionGroupId: string;
-  titre: string;
-  sessions: SessionCoachDTO[];
-  dateRange: string;
-  typeSession: string;
-  totalSlots: number;
-  bookedSlots: number;
-  isUpcoming: boolean;
-  meetLink?: string;
-}
+import { forkJoin, firstValueFrom } from 'rxjs';
+import { ToastrService } from 'ngx-toastr';
 
 @Component({
   selector: 'app-coach-sessions',
@@ -28,10 +16,13 @@ export interface SessionGroup {
       <div class="cand-header">
           <div>
               <h1 class="cand-title">Mes Sessions</h1>
-              <p class="cand-subtitle">Gérez et suivez vos créneaux de coaching</p>
+              <p class="cand-subtitle">Gérez et suivez vos créneaux de coaching et séances exceptionnelles</p>
           </div>
-          <div class="cand-header-actions">
-             <p class="cand-count-badge">{{filteredGroups.length}} Session{{filteredGroups.length > 1 ? 's' : ''}} au total</p>
+          <div class="cand-header-actions" style="display: flex; gap: 12px; align-items: center;">
+              <button class="btn-primary shadow-glow" (click)="openExceptionnelleModal()">
+                  <i class="pi pi-plus" style="margin-right: 8px;"></i> Ajouter une séance exceptionnelle
+              </button>
+             <p class="cand-count-badge">{{filteredSessions.length}} Session{{filteredSessions.length > 1 ? 's' : ''}} au total</p>
           </div>
       </div>
 
@@ -62,7 +53,7 @@ export interface SessionGroup {
       </div>
 
       <!-- SESSIONS TABLE -->
-      @if (filteredGroups.length > 0) {
+      @if (filteredSessions.length > 0) {
         <div class="table-card">
           <div class="table-scroll">
             <table class="cand-table">
@@ -70,77 +61,68 @@ export interface SessionGroup {
                 <tr>
                   <th>Titre de la Session</th>
                   <th>Dates & Horaires</th>
+                  <th>Nom de l'entrepreneur</th>
                   <th>Type</th>
-                  <th>Réservations</th>
                   <th>Statut</th>
-                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                <ng-container *ngFor="let g of filteredGroups">
+                <ng-container *ngFor="let s of filteredSessions">
                   <tr class="table-row">
                     <td>
                       <div class="name-cell">
                         <div class="flex items-center gap-2">
-                          <span class="name-text">{{ g.titre }}</span>
-                          <span *ngIf="g.sessions[0]?.isExceptionnelle" class="exception-badge">Exceptionnelle</span>
+                          <span class="name-text">{{ s.titre }}</span>
+                          <span *ngIf="s.isExceptionnelle" class="exception-badge">Exceptionnelle</span>
                         </div>
-                        <span class="email-text">ID Groupe: {{ g.sessionGroupId.substring(0,8) }}</span>
+                        <span class="email-text" *ngIf="s.programmeNom">{{ s.programmeNom }}</span>
                       </div>
                     </td>
                     <td>
                       <div class="date-cell-custom">
-                        <div *ngFor="let s of g.sessions | slice:0:2" class="mini-date-badge">
-                           {{ s.dateSession | date:'dd/MM' }} &#64; {{ s.heureDebut.substring(0,5) }}
+                        <div class="mini-date-badge">
+                           {{ s.dateSession | date:'dd/MM/yyyy' }} de {{ s.heureDebut.substring(0,5) }} à {{ s.heureFin.substring(0,5) }}
                         </div>
-                        <span *ngIf="g.sessions.length > 2" class="more-dates text-xs text-gray-400">
-                          + {{ g.sessions.length - 2 }} autres
-                        </span>
                       </div>
                     </td>
                     <td>
-                      <ng-container *ngIf="g.typeSession === 'EN_LIGNE'">
-                        <a *ngIf="g.meetLink" [href]="g.meetLink" target="_blank" class="type-badge online" style="text-decoration:none; cursor:pointer; background:#E0F2FE; color:#0369A1;" title="Rejoindre le Meet">
+                      <div class="name-cell">
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                          <span class="name-text" *ngIf="s.isBooked && s.entrepreneurName">{{ s.entrepreneurName }}</span>
+                          <button *ngIf="s.isBooked" (click)="openReclamationModal(s)" title="Signaler un problème" 
+                            style="background: transparent; border: 1px solid #EF4444; color: #EF4444; border-radius: 6px; padding: 2px 6px; cursor: pointer; font-size: 10px;">
+                            <i class="pi pi-exclamation-triangle"></i>
+                          </button>
+                        </div>
+                        <span class="text-sm text-gray-400 italic" *ngIf="!s.isBooked || !s.entrepreneurName">Non réservé</span>
+                      </div>
+                    </td>
+                    <td>
+                      <ng-container *ngIf="s.typeSession === 'EN_LIGNE'">
+                        <a *ngIf="s.meetLink" [href]="s.meetLink" target="_blank" class="type-badge online" style="text-decoration:none; cursor:pointer; background:#E0F2FE; color:#0369A1;" title="Rejoindre le Meet">
                           <i class="pi pi-video"></i> Rejoindre Meet
                         </a>
-                        <span *ngIf="!g.meetLink" class="type-badge online">
+                        <span *ngIf="!s.meetLink" class="type-badge online">
                           <i class="pi pi-video"></i> En ligne
                         </span>
                       </ng-container>
-                      <span *ngIf="g.typeSession === 'PRESENTIEL'" class="type-badge presentiel">
+                      <span *ngIf="s.typeSession === 'PRESENTIEL'" class="type-badge presentiel">
                         <i class="pi pi-building"></i> Présentiel
                       </span>
                     </td>
                     <td>
-                      <div class="booking-stats">
-                        <span class="stats-text">{{ g.bookedSlots }} / {{ g.totalSlots }}</span>
-                        <div class="progress-bar-mini">
-                          <div class="progress-fill" [style.width.%]="(g.bookedSlots / g.totalSlots) * 100"></div>
-                        </div>
-                      </div>
-                    </td>
-                    <td>
                       <div class="status-badge" 
-                        [class.upcoming]="g.isUpcoming && !hasCancelled(g)" 
-                        [class.past]="!g.isUpcoming && !hasCancelled(g)"
-                        [class.cancelled]="hasCancelled(g)">
+                        [class.upcoming]="isUpcoming(s) && !hasCancelled(s)" 
+                        [class.past]="!isUpcoming(s) && !hasCancelled(s)"
+                        [class.cancelled]="hasCancelled(s)">
                         <i class="pi" 
-                          [class.pi-calendar-clock]="g.isUpcoming && !hasCancelled(g)" 
-                          [class.pi-check-circle]="!g.isUpcoming && !hasCancelled(g)"
-                          [class.pi-times-circle]="hasCancelled(g)"></i>
-                        {{ hasCancelled(g) ? 'Annulée' : (g.isUpcoming ? 'À venir' : 'Terminée') }}
+                          [class.pi-calendar-clock]="isUpcoming(s) && !hasCancelled(s)" 
+                          [class.pi-check-circle]="!isUpcoming(s) && !hasCancelled(s)"
+                          [class.pi-times-circle]="hasCancelled(s)"></i>
+                        {{ hasCancelled(s) ? 'Annulée' : (isUpcoming(s) ? 'À venir' : 'Terminée') }}
                       </div>
                     </td>
-                    <td>
-                      <div class="action-buttons">
-                        <button class="btn-detail" (click)="viewGroupDetails(g)">
-                           Détails
-                        </button>
-                        <button *ngIf="g.isUpcoming && g.bookedSlots === 0" class="btn-delete-icon" (click)="deleteGroup(g)">
-                           <i class="pi pi-trash"></i>
-                        </button>
-                      </div>
-                    </td>
+
                   </tr>
                 </ng-container>
               </tbody>
@@ -155,85 +137,64 @@ export interface SessionGroup {
         </div>
       }
 
-      <!-- DETAILS MODAL -->
-      <div *ngIf="showGroupModal" class="modal-overlay" (click)="closeGroupModal()">
-        <div class="modal-box" (click)="$event.stopPropagation()">
-          <div class="modal-header">
-            <div class="modal-header-info">
-              <h3 class="modal-name">{{ selectedGroup?.titre }}</h3>
-              <div class="modal-badges">
-                <span class="type-badge online" *ngIf="selectedGroup?.typeSession === 'EN_LIGNE'">Visioconférence</span>
-                <span class="type-badge presentiel" *ngIf="selectedGroup?.typeSession === 'PRESENTIEL'">Présentiel</span>
-                <span class="status-badge" [class.upcoming]="selectedGroup?.isUpcoming" [class.past]="!selectedGroup?.isUpcoming">
-                  {{ selectedGroup?.isUpcoming ? 'Session Active' : 'Session Terminée' }}
-                </span>
+      <!-- Modal Planifier une séance exceptionnelle -->
+      <div *ngIf="showExceptionnelleModal" class="modal-overlay" (click)="closeExceptionnelleModal()">
+          <div class="modal-box" (click)="$event.stopPropagation()">
+              <div class="modal-header">
+                  <div class="modal-header-info">
+                      <h2 class="modal-name">Planifier une séance exceptionnelle</h2>
+                      <p class="modal-subtitle" style="color: #64748B; font-size: 13px;">En dehors de vos disponibilités habituelles</p>
+                  </div>
+                  <button class="modal-close" (click)="closeExceptionnelleModal()"><i class="pi pi-times"></i></button>
               </div>
-            </div>
-            <button (click)="closeGroupModal()" class="modal-close"><i class="pi pi-times"></i></button>
-          </div>
-
-          <div class="modal-body">
-            <h4 class="section-title"><i class="pi pi-list"></i> Liste des créneaux ({{ selectedGroup?.sessions?.length }})</h4>
-            <div class="slots-list-modal">
-              <div *ngFor="let s of selectedGroup?.sessions" class="slot-item-card">
-                <div class="slot-time-info">
-                  <span class="slot-date">{{ s.dateSession | date:'fullDate' }}</span>
-                  <span class="slot-hours">{{ s.heureDebut.substring(0,5) }} — {{ s.heureFin.substring(0,5) }}</span>
-                </div>
-                <div class="slot-booking-info">
-                   @if (s.isBooked) {
-                      <div class="booked-entrepreneur">
-                        <i class="pi pi-user-check text-green-500"></i>
-                        <span>{{ s.entrepreneurName || 'Réservez par un entrepreneur' }}</span>
+              <div class="modal-body">
+                  <div class="form-group" style="margin-bottom: 12px;">
+                      <label style="font-size: 13px; font-weight: 600; margin-bottom: 6px; display: block;">Thématique *</label>
+                      <select class="search-input" [(ngModel)]="newSeance.thematiqueId" (ngModelChange)="onThematiqueChange()" style="padding: 10px 16px;">
+                          <option [ngValue]="undefined">Sélectionnez une thématique...</option>
+                          <option *ngFor="let t of thematiques" [ngValue]="t.id">{{ t.nom }}</option>
+                      </select>
+                  </div>
+                  <div class="form-group" style="margin-bottom: 12px;">
+                      <label style="font-size: 13px; font-weight: 600; margin-bottom: 6px; display: block;">Titre de la séance (modèle) *</label>
+                      <select class="search-input" [(ngModel)]="newSeance.titre" [disabled]="!newSeance.thematiqueId" style="padding: 10px 16px;">
+                          <option value="">Sélectionnez une session...</option>
+                          <option *ngFor="let title of availableTitles" [ngValue]="title">{{ title }}</option>
+                      </select>
+                  </div>
+                  <div class="form-group" style="margin-bottom: 12px;">
+                      <label style="font-size: 13px; font-weight: 600; margin-bottom: 6px; display: block;">Entrepreneur *</label>
+                      <select class="search-input" [(ngModel)]="newSeance.entrepreneurId" [disabled]="!newSeance.thematiqueId" style="padding: 10px 16px;">
+                          <option [ngValue]="0">Sélectionnez un entrepreneur...</option>
+                          <option *ngFor="let e of filteredEntrepreneurs" [ngValue]="e.id">{{ e.firstName }} {{ e.lastName }} — {{ e.entreprise || 'N/A' }}</option>
+                      </select>
+                  </div>
+                  <div class="form-row" style="display: flex; gap: 12px; margin-bottom: 12px;">
+                      <div class="form-group" style="flex: 1;">
+                          <label style="font-size: 13px; font-weight: 600; margin-bottom: 6px; display: block;">Date *</label>
+                          <input type="date" class="search-input" [(ngModel)]="newSeance.dateSeance" style="padding: 10px 16px;">
                       </div>
-                   } @else {
-                      <span class="empty-slot-badge">Disponible</span>
-                   }
-                </div>
-                <button *ngIf="s.isBooked" class="btn-view-entrepreneur" (click)="viewBookings(s)">
-                  Inscriptions
-                </button>
+                      <div class="form-group" style="flex: 1;">
+                          <label style="font-size: 13px; font-weight: 600; margin-bottom: 6px; display: block;">Début *</label>
+                          <input type="time" class="search-input" [(ngModel)]="newSeance.heureDebut" style="padding: 10px 16px;">
+                      </div>
+                      <div class="form-group" style="flex: 1;">
+                          <label style="font-size: 13px; font-weight: 600; margin-bottom: 6px; display: block;">Fin *</label>
+                          <input type="time" class="search-input" [(ngModel)]="newSeance.heureFin" style="padding: 10px 16px;">
+                      </div>
+                  </div>
+                  <div *ngIf="modalError" style="color: #E53E3E; background: #FFF5F5; padding: 10px; border-radius: 8px; font-size: 13px; margin-top: 12px;">
+                      <i class="pi pi-exclamation-triangle"></i> {{ modalError }}
+                  </div>
               </div>
-            </div>
-          </div>
-
-          <div class="modal-footer">
-            <button (click)="closeGroupModal()" class="btn-close-modal">Fermer</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Bookings Modal -->
-      <div *ngIf="showBookingsModal" class="modal-overlay" (click)="closeBookingsModal()">
-        <div class="modal-box max-w-lg" (click)="$event.stopPropagation()">
-          <div class="modal-header">
-            <h3 class="modal-name"><i class="pi pi-users" style="color: #ea5073"></i> Entrepreneurs inscrits</h3>
-            <button (click)="closeBookingsModal()" class="modal-close"><i class="pi pi-times"></i></button>
-          </div>
-          <div class="modal-body">
-            <div *ngIf="loadingBookings" class="loading-state" style="display: flex; justify-content: center; padding: 2rem;">
-              <div class="spinner"></div>
-            </div>
-            <div *ngIf="!loadingBookings && selectedSessionBookings.length === 0" class="empty-msg" style="text-align: center; color: #6B7280; padding: 2rem;">
-              Aucun entrepreneur inscrit pour le moment.
-            </div>
-            <div *ngFor="let b of selectedSessionBookings" class="booking-item" style="padding: 1rem; border-bottom: 1px solid #F1F5F9; display: flex; justify-content: space-between; align-items: center;">
-              <div class="booking-info" style="display: flex; flex-direction: column;">
-                <strong style="color: #1E293B;">{{b.entrepreneurName}}</strong>
-                <span class="booking-date" style="font-size: 11px; color: #94A3B8;">Réservé le : {{b.dateBooking | date:'dd/MM/yyyy HH:mm'}}</span>
+              <div class="modal-footer">
+                  <button class="btn-close-modal" (click)="closeExceptionnelleModal()" style="margin-right: 12px;">Annuler</button>
+                  <button class="btn-detail" (click)="submitSeanceExceptionnelle()" [disabled]="savingSeance" style="background: #ea5073; color: white;">
+                      <i class="pi" [class.pi-check]="!savingSeance" [class.pi-spin]="savingSeance" [class.pi-spinner]="savingSeance" style="margin-right: 6px;"></i>
+                      {{ savingSeance ? 'Planification...' : 'Planifier' }}
+                  </button>
               </div>
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span class="status-pill" [class]="'pill-' + b.statut?.toLowerCase()" style="font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 12px; background: #F3F4F6; color: #64748B;">{{b.statut}}</span>
-                <button class="btn-detail" style="border-color: #EF4444; color: #EF4444;" (click)="openReclamationModal(b)" onmouseover="this.style.backgroundColor='#EF4444'; this.style.color='#fff'" onmouseout="this.style.backgroundColor='transparent'; this.style.color='#EF4444'">
-                  <i class="pi pi-exclamation-triangle" style="font-size: 10px"></i> Signaler
-                </button>
-              </div>
-            </div>
           </div>
-          <div class="modal-footer">
-            <button (click)="closeBookingsModal()" class="btn-close-modal">Fermer</button>
-          </div>
-        </div>
       </div>
 
       <!-- Main Loading Overlay -->
@@ -295,7 +256,6 @@ export interface SessionGroup {
     }
     .filter-select { padding: 10px 14px; border: 1px solid #E5E7EB; border-radius: 12px; font-size: 13px; outline: none; color: #333; cursor: pointer; background: #fff; }
 
-    /* NEW TABS & TOGGLE */
     .sessions-nav-header { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 24px; flex-wrap: wrap; }
     .status-tabs { display: flex; background: #fff; padding: 6px; border-radius: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
     .tab-btn {
@@ -327,11 +287,6 @@ export interface SessionGroup {
     .type-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
     .type-badge.online { background: #E0F2FE; color: #0369A1; }
     .type-badge.presentiel { background: #FEF3C7; color: #92400E; }
-    
-    .booking-stats { display: flex; flex-direction: column; gap: 4px; }
-    .stats-text { font-size: 12px; font-weight: 700; color: #4A5568; }
-    .progress-bar-mini { width: 60px; height: 6px; background: #E2E8F0; border-radius: 3px; overflow: hidden; }
-    .progress-fill { height: 100%; background: #ea5073; border-radius: 3px; }
 
     .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; }
     .status-badge.upcoming { background: #D1FAE5; color: #065F46; }
@@ -342,6 +297,8 @@ export interface SessionGroup {
     .btn-detail { padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; color: #ea5073; border: 1px solid #ea5073; background: transparent; cursor: pointer; transition: all .2s; }
     .btn-detail:hover { background: #ea5073; color: white; }
     .btn-delete-icon { background: #FFF5F5; color: #E53E3E; border: none; padding: 6px 10px; border-radius: 8px; cursor: pointer; }
+    .btn-primary { background: linear-gradient(135deg, #FF4D85); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 12px; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; transition: transform 0.2s; }
+    .btn-primary:hover { transform: translateY(-2px); }
 
     .empty-state { text-align: center; padding: 60px 20px; background: #fff; border-radius: 20px; }
     .empty-text { font-weight: 700; font-size: 16px; color: #4A5568; }
@@ -352,20 +309,9 @@ export interface SessionGroup {
     .modal-header { padding: 24px; border-bottom: 1px solid #F1F5F9; display: flex; justify-content: space-between; align-items: center; }
     .modal-header-info { flex: 1; }
     .modal-name { font-size: 20px; font-weight: 800; color: #1E293B; margin: 0 0 8px; }
-    .modal-badges { display: flex; gap: 8px; }
     .modal-close { background: #F8FAFC; border: none; width: 36px; height: 36px; border-radius: 12px; cursor: pointer; color: #64748B; }
     
     .modal-body { padding: 24px; overflow-y: auto; }
-    .section-title { font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
-    
-    .slot-item-card { display: flex; align-items: center; justify-content: space-between; padding: 16px; background: #F8FAFC; border: 1px solid #F1F5F9; border-radius: 16px; margin-bottom: 12px; }
-    .slot-time-info { display: flex; flex-direction: column; gap: 4px; }
-    .slot-date { font-size: 13px; font-weight: 700; color: #1E293B; }
-    .slot-hours { font-size: 12px; color: #64748B; }
-    .booked-entrepreneur { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: #059669; }
-    .empty-slot-badge { font-size: 11px; font-weight: 700; color: #94A3B8; background: #EDF2F7; padding: 4px 10px; border-radius: 8px; }
-    .btn-view-entrepreneur { padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 700; background: #3B82A6; color: white; border: none; cursor: pointer; }
-
     .modal-footer { padding: 20px 24px; border-top: 1px solid #F1F5F9; display: flex; justify-content: flex-end; }
     .btn-close-modal { padding: 10px 24px; border-radius: 12px; background: #F1F5F9; border: none; font-weight: 700; color: #475569; cursor: pointer; }
 
@@ -379,16 +325,30 @@ export class SessionsComponent implements OnInit {
   searchTerm: string = '';
   activeFilter: string = 'en_cours';
   showExceptionnelle: boolean = true;
-  showOnlyReserved: boolean = true;
+  
   sessions: SessionCoachDTO[] = [];
-  filteredGroups: SessionGroup[] = [];
-  selectedGroup: SessionGroup | null = null;
-  showGroupModal: boolean = false;
+  filteredSessions: SessionCoachDTO[] = [];
   
-  showBookingsModal: boolean = false;
-  loadingBookings: boolean = false;
-  selectedSessionBookings: any[] = [];
+  // Exceptionnelle
+  showExceptionnelleModal = false;
+  savingSeance = false;
+  modalError: string | null = null;
+  entrepreneurs: CoachEntrepreneurDTO[] = [];
+  filteredEntrepreneurs: CoachEntrepreneurDTO[] = [];
+  thematiques: any[] = [];
+  availableTitles: string[] = [];
+  groupedMatchings: any[] = [];
   
+  newSeance: SeanceExceptionnelleDTO = {
+    coachId: 0,
+    entrepreneurId: 0,
+    thematiqueId: undefined,
+    titre: '',
+    dateSeance: '',
+    heureDebut: '',
+    heureFin: ''
+  };
+
   showReclamationModal: boolean = false;
   reclamationTarget: any = null;
   reclamationData = {
@@ -399,14 +359,19 @@ export class SessionsComponent implements OnInit {
 
   constructor(
     private coachService: CoachService,
-    private authService: AuthService
+    private authService: AuthService,
+    private toastr: ToastrService
   ) {}
 
   ngOnInit(): void {
     const rawId = this.authService.getUserId();
     if (rawId) {
       this.coachId = typeof rawId === 'string' ? parseInt(rawId, 10) : rawId;
+      this.newSeance.coachId = this.coachId;
       this.loadSessions();
+      this.loadThematiques();
+      this.loadEntrepreneurs();
+      this.loadMatchedEntrepreneurs();
     }
   }
 
@@ -418,9 +383,9 @@ export class SessionsComponent implements OnInit {
     }).subscribe({
       next: ({ sessions, seances }) => {
         const mappedSeances: SessionCoachDTO[] = seances.map(se => ({
-          id: (se.id || 0) + 1000000, // offset id
+          id: (se.id || 0) + 1000000, 
           disponibiliteId: 0,
-          titre: se.titre + ' (Session Exceptionnelle)',
+          titre: se.titre,
           dateSession: se.dateSeance,
           heureDebut: se.heureDebut,
           heureFin: se.heureFin,
@@ -453,34 +418,8 @@ export class SessionsComponent implements OnInit {
     return sessionDate.getTime() > new Date().getTime();
   }
 
-  groupSessions(sessions: SessionCoachDTO[]): SessionGroup[] {
-    const groupsMap: { [key: string]: SessionGroup } = {};
-    
-    sessions.forEach(s => {
-      const gid = s.sessionGroupId || `single-${s.id}`;
-      if (!groupsMap[gid]) {
-        groupsMap[gid] = {
-          sessionGroupId: gid,
-          titre: s.titre,
-          sessions: [],
-          dateRange: '',
-          typeSession: s.typeSession || 'EN_LIGNE',
-          totalSlots: 0,
-          bookedSlots: 0,
-          isUpcoming: false
-        };
-      }
-      groupsMap[gid].sessions.push(s);
-      groupsMap[gid].totalSlots++;
-      if (s.isBooked) groupsMap[gid].bookedSlots++;
-      if (this.isUpcoming(s)) groupsMap[gid].isUpcoming = true;
-      if (s.meetLink && !groupsMap[gid].meetLink) groupsMap[gid].meetLink = s.meetLink;
-    });
-
-    return Object.values(groupsMap).map(g => {
-      g.sessions.sort((a, b) => new Date(a.dateSession).getTime() - new Date(b.dateSession).getTime());
-      return g;
-    });
+  hasCancelled(s: SessionCoachDTO): boolean {
+    return s.bookingStatus === 'ANNULE';
   }
 
   filterSessions() {
@@ -489,7 +428,7 @@ export class SessionsComponent implements OnInit {
     // Search
     if (this.searchTerm.trim()) {
       const term = this.searchTerm.toLowerCase();
-      rawResult = rawResult.filter(s => s.titre.toLowerCase().includes(term));
+      rawResult = rawResult.filter(s => s.titre.toLowerCase().includes(term) || (s.programmeNom && s.programmeNom.toLowerCase().includes(term)));
     }
 
     // Exceptional Sessions Filter
@@ -497,76 +436,33 @@ export class SessionsComponent implements OnInit {
       rawResult = rawResult.filter(s => !s.isExceptionnelle);
     }
 
-    let grouped = this.groupSessions(rawResult);
-
-    // Reserved Only Filter
-    if (this.showOnlyReserved) {
-      grouped = grouped.filter(g => g.bookedSlots > 0);
-    }
-
     // Status Filter (Tabs)
     if (this.activeFilter === 'en_cours') {
-      grouped = grouped.filter(g => g.isUpcoming && !this.hasCancelled(g));
+      rawResult = rawResult.filter(s => this.isUpcoming(s) && !this.hasCancelled(s));
     } else if (this.activeFilter === 'termine') {
-      grouped = grouped.filter(g => !g.isUpcoming && !this.hasCancelled(g));
+      rawResult = rawResult.filter(s => !this.isUpcoming(s) && !this.hasCancelled(s));
     } else if (this.activeFilter === 'annule') {
-      grouped = grouped.filter(g => this.hasCancelled(g));
+      rawResult = rawResult.filter(s => this.hasCancelled(s));
     }
 
-    this.filteredGroups = grouped.sort((a,b) => {
-        const dateA = new Date(a.sessions[0].dateSession).getTime();
-        const dateB = new Date(b.sessions[0].dateSession).getTime();
+    this.filteredSessions = rawResult.sort((a,b) => {
+        const dateA = new Date(a.dateSession).getTime();
+        const dateB = new Date(b.dateSession).getTime();
         return dateB - dateA;
     });
   }
 
-  hasCancelled(g: SessionGroup): boolean {
-    return g.sessions.some(s => s.bookingStatus === 'ANNULE');
-  }
-
-  viewGroupDetails(g: SessionGroup) {
-    this.selectedGroup = g;
-    this.showGroupModal = true;
-  }
-
-  closeGroupModal() {
-    this.showGroupModal = false;
-    this.selectedGroup = null;
-  }
-
-  async deleteGroup(g: SessionGroup) {
-    if (confirm(`Supprimer tout le groupe de session "${g.titre}" (${g.sessions.length} créneaux) ?`)) {
+  async deleteSession(s: SessionCoachDTO) {
+    if (confirm(`Supprimer le créneau "${s.titre}" ?`)) {
       this.loading = true;
       try {
-        const promises = g.sessions.map(s => firstValueFrom(this.coachService.deleteSession(s.id!)));
-        await Promise.all(promises);
+        await firstValueFrom(this.coachService.deleteSession(s.id!));
         this.loadSessions();
       } catch (error) {
         this.loading = false;
-        alert('Erreur lors de la suppression de certains créneaux.');
+        alert('Erreur lors de la suppression.');
       }
     }
-  }
-
-  viewBookings(session: SessionCoachDTO) {
-    if (!session.id) return;
-    this.showBookingsModal = true;
-    this.loadingBookings = true;
-    this.selectedSessionBookings = [];
-    this.coachService.getSessionBookings(session.id).subscribe({
-      next: (data) => {
-        this.selectedSessionBookings = data;
-        this.loadingBookings = false;
-      },
-      error: () => {
-        this.loadingBookings = false;
-      }
-    });
-  }
-
-  closeBookingsModal() {
-    this.showBookingsModal = false;
-    this.selectedSessionBookings = [];
   }
 
   openReclamationModal(booking: any) {
@@ -589,9 +485,10 @@ export class SessionsComponent implements OnInit {
     const finalReclamation: any = {
       ...this.reclamationData,
       coachId: this.coachId,
-      entrepreneurId: this.reclamationTarget.entrepreneurId
+      entrepreneurId: this.reclamationTarget.entrepreneurId || 0
     };
-    this.coachService.addReclamation(this.coachId, this.reclamationTarget.entrepreneurId, finalReclamation)
+    
+    this.coachService.addReclamation(this.coachId, finalReclamation.entrepreneurId, finalReclamation)
       .subscribe({
         next: () => {
           alert('Réclamation envoyée avec succès.');
@@ -599,10 +496,113 @@ export class SessionsComponent implements OnInit {
           this.closeReclamationModal();
         },
         error: (err) => {
-          alert('Erreur lors de l\'envoi de la réclamation.');
+          alert("Erreur lors de l'envoi de la réclamation. L'entrepreneur n'est peut-être pas trouvé.");
           console.error(err);
           this.loading = false;
         }
+      });
+  }
+
+  // --- Seance Exceptionnelle Modal Logic ---
+  openExceptionnelleModal() {
+    this.showExceptionnelleModal = true;
+    this.modalError = null;
+  }
+
+  closeExceptionnelleModal() {
+    this.showExceptionnelleModal = false;
+  }
+
+  loadMatchedEntrepreneurs() {
+    this.coachService.getMatchedEntrepreneursGrouped(this.coachId).subscribe({
+      next: (data) => this.groupedMatchings = data,
+      error: () => {}
+    });
+  }
+
+  loadThematiques() {
+      this.coachService.getThematiquesAssignedToCoach(this.coachId).subscribe({
+          next: (data) => this.thematiques = data,
+          error: () => console.error('Erreur chargement thematiques')
+      });
+  }
+
+  loadEntrepreneurs() {
+      this.coachService.getCoachEntrepreneurs(this.coachId).subscribe({
+          next: (data) => this.entrepreneurs = data,
+          error: () => console.error('Erreur chargement entrepreneurs')
+      });
+  }
+
+  onThematiqueChange() {
+    this.availableTitles = [];
+    this.filteredEntrepreneurs = [];
+    this.newSeance.titre = '';
+    this.newSeance.entrepreneurId = 0;
+
+    if (!this.newSeance.thematiqueId) return;
+
+    const theme = this.thematiques.find(t => t.id === this.newSeance.thematiqueId);
+    if (theme) {
+      const titlesSet = new Set<string>();
+      this.sessions.forEach(s => {
+        if (s.thematiqueNom === theme.nom) {
+          titlesSet.add(s.titre);
+        }
+      });
+      this.availableTitles = Array.from(titlesSet).sort();
+
+      const matchingGroup = this.groupedMatchings.find(g => g.thematiqueId === this.newSeance.thematiqueId);
+      if (matchingGroup) {
+        this.filteredEntrepreneurs = matchingGroup.entrepreneurs;
+      }
+    }
+  }
+
+  submitSeanceExceptionnelle() {
+      this.modalError = null;
+      if (!this.newSeance.thematiqueId) {
+          this.modalError = 'Veuillez sélectionner une thématique.'; return;
+      }
+      if (!this.newSeance.titre) { this.modalError = 'Le titre est requis.'; return; }
+      if (!this.newSeance.entrepreneurId || this.newSeance.entrepreneurId === 0) {
+          this.modalError = 'Veuillez sélectionner un entrepreneur.'; return;
+      }
+      if (!this.newSeance.dateSeance) { this.modalError = 'La date est requise.'; return; }
+      if (!this.newSeance.heureDebut || !this.newSeance.heureFin) { this.modalError = 'Les heures sont requises.'; return; }
+      if (this.newSeance.heureDebut >= this.newSeance.heureFin) {
+          this.modalError = "L'heure de début doit être avant l'heure de fin."; return;
+      }
+
+      this.savingSeance = true;
+      this.coachService.addSeanceExceptionnelle(this.coachId, this.newSeance.entrepreneurId, this.newSeance).subscribe({
+          next: (data) => {
+              this.toastr.success('Séance exceptionnelle planifiée !');
+              
+              const mappedSeance: SessionCoachDTO = {
+                id: (data.id || 0) + 1000000, 
+                disponibiliteId: 0,
+                titre: data.titre,
+                dateSession: data.dateSeance,
+                heureDebut: data.heureDebut,
+                heureFin: data.heureFin,
+                typeSession: 'EN_LIGNE',
+                sessionGroupId: `seance-${data.id}`,
+                isBooked: true,
+                entrepreneurName: data.entrepreneurName,
+                isExceptionnelle: true,
+                bookingStatus: 'CONFIRME'
+              };
+              
+              this.sessions.push(mappedSeance);
+              this.filterSessions();
+              this.newSeance = { coachId: this.coachId, entrepreneurId: 0, thematiqueId: undefined, titre: '', dateSeance: '', heureDebut: '', heureFin: '' };
+              this.availableTitles = [];
+              this.filteredEntrepreneurs = [];
+              this.closeExceptionnelleModal();
+              this.savingSeance = false;
+          },
+          error: () => { this.modalError = 'Erreur lors de la planification.'; this.savingSeance = false; }
       });
   }
 }

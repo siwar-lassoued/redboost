@@ -1293,6 +1293,14 @@ public class CoachService {
                     d.put("id", t.getId());
                     d.put("nom", t.getNom());
                     d.put("programmeId", t.getProgrammeId());
+                    
+                    
+                    if (t.getProgrammeId() != null) {
+                        programmeRepository.findById(t.getProgrammeId()).ifPresent(p -> {
+                            d.put("programmeNom", p.getNom());
+                        });
+                    }
+                    
                     d.put("description", t.getDescription());
                     d.put("dateDebut", t.getDateDebut() != null ? t.getDateDebut().toString() : null);
                     d.put("dateFin", t.getDateFin() != null ? t.getDateFin().toString() : null);
@@ -1307,7 +1315,7 @@ public class CoachService {
         return sessionRepository.findByCoachId(coachId).stream()
                 .map(s -> {
                     SessionCoachDTO d = new SessionCoachDTO();
-                    d.setId(0L); // Placeholder for String ID
+                    d.setId(0L); 
                     d.setTitre(s.getTitre());
                     d.setDateSession(s.getDate() != null ? s.getDate().toLocalDate() : null);
                     return d;
