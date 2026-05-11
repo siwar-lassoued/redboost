@@ -204,6 +204,31 @@ public class AdminPlanningController {
         return ResponseEntity.ok(result);
     }
 
+    @GetMapping("/coach/{coachId}/todos")
+    public ResponseEntity<List<Map<String, Object>>> getCoachTodos(@PathVariable Long coachId) {
+        List<Matching> matchings = matchingRepository.findByCoachIdAndStatut(coachId, Matching.StatutMatching.VALIDE);
+        List<Long> entrepreneurIds = matchings.stream().map(Matching::getEntrepreneurId).collect(Collectors.toList());
+        
+        List<Tache> tasks = entrepreneurIds.stream()
+                .flatMap(id -> tacheRepository.findByResponsableId(id).stream())
+                .collect(Collectors.toList());
+                
+        return ResponseEntity.ok(tasks.stream().map(this::mapTache).collect(Collectors.toList()));
+    }
+
+    @GetMapping("/coach/{coachId}/livrables")
+    public ResponseEntity<List<Map<String, Object>>> getCoachLivrables(@PathVariable Long coachId) {
+        List<Matching> matchings = matchingRepository.findByCoachIdAndStatut(coachId, Matching.StatutMatching.VALIDE);
+        List<Long> entrepreneurIds = matchings.stream().map(Matching::getEntrepreneurId).collect(Collectors.toList());
+        
+        List<TacheDocument> docs = entrepreneurIds.stream()
+                .flatMap(id -> tacheRepository.findByResponsableId(id).stream())
+                .flatMap(t -> tacheDocumentRepository.findByTacheId(t.getId()).stream())
+                .collect(Collectors.toList());
+                
+        return ResponseEntity.ok(docs.stream().map(this::mapLivrable).collect(Collectors.toList()));
+    }
+
     @GetMapping("/entrepreneur/{entrepreneurId}")
     public ResponseEntity<?> getEntrepreneurPlanning(@PathVariable Long entrepreneurId) {
         User entrepreneur = userRepository.findById(entrepreneurId).orElse(null);
@@ -217,5 +242,20 @@ public class AdminPlanningController {
         result.put("entrepreneurName", entrepreneur.getFirstName() + " " + entrepreneur.getLastName());
         result.put("sessions", sessionList);
         return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/entrepreneur/{entrepreneurId}/todos")
+    public ResponseEntity<List<Map<String, Object>>> getEntrepreneurTodos(@PathVariable Long entrepreneurId) {
+        List<Tache> tasks = tacheRepository.findByResponsableId(entrepreneurId);
+        return ResponseEntity.ok(tasks.stream().map(this::mapTache).collect(Collectors.toList()));
+    }
+
+    @GetMapping("/entrepreneur/{entrepreneurId}/livrables")
+    public ResponseEntity<List<Map<String, Object>>> getEntrepreneurLivrables(@PathVariable Long entrepreneurId) {
+        List<TacheDocument> docs = tacheRepository.findByResponsableId(entrepreneurId).stream()
+                .flatMap(t -> tacheDocumentRepository.findByTacheId(t.getId()).stream())
+                .collect(Collectors.toList());
+                
+        return ResponseEntity.ok(docs.stream().map(this::mapLivrable).collect(Collectors.toList()));
     }
 }
