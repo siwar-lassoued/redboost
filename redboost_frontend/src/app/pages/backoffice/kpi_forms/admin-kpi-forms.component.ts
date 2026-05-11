@@ -245,22 +245,26 @@ import { ProgrammeService } from '../programmes/programme.service';
                               <label style="display: block; font-size: 10px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Options (séparées par virgule)</label>
                               <input type="text" [(ngModel)]="q.options" placeholder="Option 1, Option 2, Option 3..." class="search-input" style="padding: 10px 14px;">
                            </div>
-                         }
-
-                         @if (editingForm.formType !== 'EVALUATION') {
-                           <div style="grid-column: span 3; background: #FFF0F5; padding: 12px 16px; border-radius: 12px; border: 1px solid #fad2e1; display: flex; align-items: center; gap: 16px; margin-top: 8px;">
-                             <div style="flex: 1;">
-                               <label style="display: flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 800; color: #C0392B; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">
-                                 <i class="pi pi-link"></i> Lier à un KPI Backoffice (Automatique)
-                               </label>
-                               <div style="display: flex; gap: 12px;">
-                                 <input type="number" [(ngModel)]="q.kpiId" placeholder="ID du KPI" class="search-input" style="width: 100px; padding: 8px 12px;">
-                                 <p style="font-size: 12px; color: #ea5073; margin: 0; line-height: 1.4; display: flex; align-items: center;">
-                                   Si l'ID du KPI est renseigné, la réponse mettra à jour automatiquement le tableau de bord de l'entrepreneur.
-                                 </p>
-                               </div>
-                             </div>
-                           </div>
+                           @if (editingForm.formType !== 'EVALUATION') {
+                            <div style="grid-column: span 3; background: #FFF0F5; padding: 12px 16px; border-radius: 12px; border: 1px solid #fad2e1; display: flex; align-items: center; gap: 16px; margin-top: 8px;">
+                              <div style="flex: 1;">
+                                <label style="display: flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 800; color: #C0392B; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">
+                                  <i class="pi pi-link"></i> Lier à un KPI Backoffice (Automatique)
+                                </label>
+                                <div style="display: flex; gap: 12px; align-items: center;">
+                                  <select [(ngModel)]="q.kpiId" class="filter-select" style="flex: 1; padding: 8px 12px;">
+                                    <option [value]="undefined">-- Aucun KPI lié --</option>
+                                    @for (k of availableKpis(); track k.id) {
+                                      <option [value]="k.id">{{ k.nom }} ({{ k.uniteMesure }})</option>
+                                    }
+                                  </select>
+                                  <p style="font-size: 11px; color: #ea5073; margin: 0; line-height: 1.4; max-width: 200px;">
+                                    La réponse mettra à jour automatiquement ce KPI pour l'entrepreneur.
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          }
                          }
 
                        </div>
@@ -298,22 +302,41 @@ import { ProgrammeService } from '../programmes/programme.service';
                   <p style="color: #333;">Vous allez envoyer le formulaire <strong style="color: #1A1A2E;">"{{ formToSend?.title }}"</strong> à des entrepreneurs.</p>
                </div>
                
-               <div>
-                 <label style="display: block; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;">IDs des Entrepreneurs (séparés par virgule)</label>
-                 <input type="text" [(ngModel)]="entrepreneurIdsString" (input)="onEntrepreneurIdsChange()" placeholder="Ex: 5, 8, 12" class="search-input" style="padding: 12px 16px; margin-bottom: 16px;">
+               <div style="margin-bottom: 24px;">
+                 <label style="display: block; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;">Sélectionner les Entrepreneurs</label>
                  
-                 @if (parsedEntrepreneurIds().length > 0) {
-                   <div style="background: white; border: 1px solid #E5E7EB; border-radius: 12px; padding: 12px; margin-top: 16px;">
-                     <p style="font-size: 12px; font-weight: 600; color: #6B7280; margin: 0 0 12px 0;">Entrepreneurs sélectionnés :</p>
-                     <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-                       @for (id of parsedEntrepreneurIds(); track id) {
-                         <span style="background: #F3F4F6; border: 1px solid #E5E7EB; border-radius: 8px; padding: 6px 12px; font-size: 12px; color: #333;">
-                           ID: {{ id }}
-                         </span>
-                       }
+                 <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+                   <button (click)="selectAllEntrepreneurs()" class="btn-outline-sm" style="font-size: 11px; padding: 6px 12px;">Tout sélectionner</button>
+                   <button (click)="deselectAllEntrepreneurs()" class="btn-outline-sm" style="font-size: 11px; padding: 6px 12px;">Tout désélectionner</button>
+                 </div>
+
+                 <div style="background: white; border: 1px solid #E5E7EB; border-radius: 16px; max-height: 300px; overflow-y: auto;">
+                   @if (availableEntrepreneurs().length === 0) {
+                     <div style="padding: 24px; text-align: center; color: #9CA3AF;">
+                       <i class="pi pi-users" style="font-size: 24px; margin-bottom: 8px; display: block;"></i>
+                       Aucun entrepreneur trouvé pour ce programme.
                      </div>
-                   </div>
-                 }
+                   }
+                   @for (ent of availableEntrepreneurs(); track ent.id) {
+                     <label style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #F3F4F6; cursor: pointer; transition: background .2s;">
+                       <input type="checkbox" 
+                              [checked]="selectedEntIds().includes(ent.id)" 
+                              (change)="toggleEntrepreneurSelection(ent.id)"
+                              style="width: 18px; height: 18px; accent-color: #ea5073;">
+                       <div style="display: flex; flex-direction: column;">
+                         <span style="font-size: 14px; font-weight: 700; color: #1A1A2E;">{{ ent.firstName }} {{ ent.lastName }}</span>
+                         <span style="font-size: 11px; color: #6B7280;">ID: {{ ent.id }} · {{ ent.email }}</span>
+                       </div>
+                     </label>
+                   }
+                 </div>
+                 
+                 <div style="margin-top: 16px; padding: 12px; background: #F0F9FF; border-radius: 12px; border: 1px solid #E0F2FE;">
+                   <p style="font-size: 12px; color: #0369a1; margin: 0; font-weight: 600;">
+                     <i class="pi pi-check-circle" style="margin-right: 6px;"></i>
+                     {{ selectedEntIds().length }} entrepreneur(s) sélectionné(s)
+                   </p>
+                 </div>
                </div>
             </div>
             <div class="modal-footer">
@@ -426,6 +449,9 @@ export class AdminKpiFormsComponent implements OnInit {
   thematiques = signal<ThematiqueCoaching[]>([]);
   coaches = signal<User[]>([]);
   entrepreneurs = signal<User[]>([]);
+  availableKpis = signal<any[]>([]);
+  availableEntrepreneurs = signal<User[]>([]);
+  selectedEntIds = signal<number[]>([]);
   parsedEntrepreneurIds = signal<number[]>([]);
 
   ngOnInit() {
@@ -502,10 +528,43 @@ export class AdminKpiFormsComponent implements OnInit {
     });
   }
 
+  loadAvailableKpis(programmeId: number | undefined) {
+    if (!programmeId) {
+      this.availableKpis.set([]);
+      return;
+    }
+    this.programmeSvc.getProgrammeKpiValues(programmeId).subscribe({
+      next: (kpis) => {
+        this.availableKpis.set(kpis || []);
+      },
+      error: (err) => {
+        console.error('Error loading KPIs:', err);
+        this.availableKpis.set([]);
+      }
+    });
+  }
+
+  loadAvailableEntrepreneurs(programmeId: number | undefined) {
+    if (!programmeId) {
+      this.availableEntrepreneurs.set([]);
+      return;
+    }
+    this.svc.getEntrepreneursForProgramme(programmeId).subscribe({
+      next: (ents) => {
+        this.availableEntrepreneurs.set(ents || []);
+      },
+      error: (err) => {
+        console.error('Error loading eligible entrepreneurs:', err);
+        this.availableEntrepreneurs.set([]);
+      }
+    });
+  }
+
   onProgrammeChange() {
     const programmeId = this.editingForm.programmeId;
     this.loadThematiquesForProgramme(programmeId);
     this.loadCoachesForProgramme(programmeId);
+    this.loadAvailableKpis(programmeId);
     // Reset thématique when programme changes
     this.editingForm.thematiqueId = undefined;
     this.entrepreneurs.set([]);
@@ -534,11 +593,28 @@ export class AdminKpiFormsComponent implements OnInit {
   }
 
   isSubmitDisabled(): boolean {
-    return !this.entrepreneurIdsString.trim();
+    return this.selectedEntIds().length === 0;
   }
 
   getSubmitOpacity(): string {
     return this.isSubmitDisabled() ? '0.5' : '1';
+  }
+
+  toggleEntrepreneurSelection(id: number) {
+    const current = this.selectedEntIds();
+    if (current.includes(id)) {
+      this.selectedEntIds.set(current.filter(i => i !== id));
+    } else {
+      this.selectedEntIds.set([...current, id]);
+    }
+  }
+
+  selectAllEntrepreneurs() {
+    this.selectedEntIds.set(this.availableEntrepreneurs().map(e => e.id));
+  }
+
+  deselectAllEntrepreneurs() {
+    this.selectedEntIds.set([]);
   }
 
   stats = computed(() => {
@@ -563,6 +639,11 @@ export class AdminKpiFormsComponent implements OnInit {
   openFormModal(form?: KpiForm) {
     if (form) {
       this.editingForm = { ...form, questions: [...(form.questions || [])], formType: form.formType || 'KPI' };
+      if (this.editingForm.programmeId) {
+        this.loadAvailableKpis(this.editingForm.programmeId);
+        this.loadThematiquesForProgramme(this.editingForm.programmeId);
+        this.loadCoachesForProgramme(this.editingForm.programmeId);
+      }
     } else {
       this.editingForm = { title: '', description: '', questions: [], formType: 'KPI', status: 'DRAFT' };
     }
@@ -595,16 +676,14 @@ export class AdminKpiFormsComponent implements OnInit {
 
   openSendModal(form: KpiForm) {
     this.formToSend = form;
-    this.entrepreneurIdsString = '';
+    this.selectedEntIds.set([]);
+    this.loadAvailableEntrepreneurs(form.programmeId);
     this.showSendModal = true;
   }
 
   submitSendForm() {
     if (!this.formToSend?.id) return;
-    const ids = this.entrepreneurIdsString
-      .split(',')
-      .map(s => parseInt(s.trim()))
-      .filter(n => !isNaN(n));
+    const ids = this.selectedEntIds();
       
     if (ids.length === 0) return;
 

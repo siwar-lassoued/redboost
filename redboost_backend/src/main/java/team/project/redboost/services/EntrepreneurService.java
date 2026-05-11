@@ -126,8 +126,22 @@ public class EntrepreneurService {
     }
 
     public List<ProgrammeDTO> getEntrepreneurProgrammes(Long entrepreneurId) {
+        User user = userRepository.findById(entrepreneurId).orElse(null);
+        if (user == null) return List.of();
+
+        // Get programmes directly from the user_programme table
+        List<ProgrammeDTO> programmes = user.getProgrammes().stream()
+                .map(p -> {
+                    ProgrammeDTO d = new ProgrammeDTO();
+                    d.setId(p.getId());
+                    d.setNom(p.getNom());
+                    return d;
+                })
+                .collect(Collectors.toList());
+
+        // Also add programmes from matchings just in case
         List<Matching.StatutMatching> activeStatuses = java.util.Arrays.asList(Matching.StatutMatching.PROPOSE, Matching.StatutMatching.VALIDE, Matching.StatutMatching.TERMINE);
-        return matchingRepository.findByEntrepreneurIdAndStatutIn(entrepreneurId, activeStatuses).stream()
+        List<ProgrammeDTO> matchingProgrammes = matchingRepository.findByEntrepreneurIdAndStatutIn(entrepreneurId, activeStatuses).stream()
                 .map(m -> {
                     return programmeRepository.findById(m.getProgrammeId()).map(p -> {
                         ProgrammeDTO d = new ProgrammeDTO();
@@ -137,8 +151,10 @@ public class EntrepreneurService {
                     }).orElse(null);
                 })
                 .filter(Objects::nonNull)
-                .distinct()
                 .collect(Collectors.toList());
+
+        programmes.addAll(matchingProgrammes);
+        return programmes.stream().distinct().collect(Collectors.toList());
     }
 
     public List<java.util.Map<String, Object>> getEntrepreneurThematiques(Long entrepreneurId) {
@@ -163,8 +179,9 @@ public class EntrepreneurService {
         return sessionRepository.findByEntrepreneurId(entrepreneurId).stream()
                 .map(s -> {
                     SessionCoachDTO d = new SessionCoachDTO();
-                    d.setId(0L); // Placeholder since Session uses String ID
+                    d.setId(0L); // Placeholder
                     d.setTitre(s.getTitre());
+                    // Combine date and time for better display if needed, but keeping LocalDate for compatibility
                     d.setDateSession(s.getDate() != null ? s.getDate().toLocalDate() : null);
                     return d;
                 }).collect(Collectors.toList());
