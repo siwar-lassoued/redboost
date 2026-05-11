@@ -66,19 +66,15 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
           </div>
         </div>
 
-        <!-- ═══ Thématique Selector Card ═══ -->
-        <div class="card thematique-selector-card">
-          <div class="thematique-selector-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-            <label class="section-label" style="margin-bottom: 0;">Liste des Thématiques <span class="count-chip">{{ thematiques.length }}</span></label>
-            <button *ngIf="!showAddForm" class="btn-add-thematique" (click)="showAddForm = true">
-              <i class="pi pi-plus"></i> Ajouter Thématique
-            </button>
+        <!-- ═══ Thématique Selector Card (Selected/Editing focus) ═══ -->
+        <div class="card thematique-selector-card" *ngIf="editingThematique">
+          <div class="thematique-selector-header">
+            <label class="section-label" style="color: #F59E0B;">
+              <i class="pi pi-exclamation-triangle"></i> Thématique en cours de modification
+            </label>
           </div>
-
           <div class="th-selector-container">
-            <!-- Modification Section (if editing an existing one) -->
-            <div *ngIf="editingThematique" class="th-group-section">
-              <span class="th-group-label">Thématique en cours de modification</span>
+            <div class="th-group-section">
               <div class="th-list-item th-list-item-editing"
                    [class.th-list-item-active]="selectedThematiqueId === editingThematique.id"
                    (click)="selectedThematiqueId = editingThematique.id!; onThematiqueChange()">
@@ -93,13 +89,25 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
                 <span class="th-list-status th-status-editing">EN MODIFICATION</span>
               </div>
             </div>
+          </div>
+        </div>
 
-            <!-- Others Section -->
+        <!-- ═══ Other Thématiques List Card ═══ -->
+        <div class="card thematique-selector-card">
+          <div class="thematique-selector-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <label class="section-label" style="margin-bottom: 0;">
+              {{ editingThematique ? 'Autres Thématiques' : 'Liste des Thématiques' }}
+              <span class="count-chip">{{ editingThematique ? (thematiques.length - 1) : thematiques.length }}</span>
+            </label>
+            <button *ngIf="!showAddForm" class="btn-add-thematique" (click)="showAddForm = true">
+              <i class="pi pi-plus"></i> Ajouter Thématique
+            </button>
+          </div>
+
+          <div class="th-selector-container">
             <div class="th-group-section">
-              <span class="th-group-label" *ngIf="editingThematique">Autres thématiques</span>
-              
-              <!-- "All" option -->
-              <div class="th-list-item" [class.th-list-item-active]="selectedThematiqueId === 0" (click)="selectedThematiqueId = 0; onThematiqueChange()">
+              <!-- "All" option (only if not editing) -->
+              <div *ngIf="!editingThematique" class="th-list-item" [class.th-list-item-active]="selectedThematiqueId === 0" (click)="selectedThematiqueId = 0; onThematiqueChange()">
                 <div class="th-list-item-main">
                   <span class="th-list-nom">Toutes les thématiques</span>
                 </div>
@@ -125,6 +133,10 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
                         [class.th-status-cancelled]="t.statut === 'ANNULEE'">{{ t.statut }}</span>
                 </div>
               </ng-container>
+
+              <div *ngIf="editingThematique && thematiques.length <= 1" class="empty-state-inline" style="padding: 12px;">
+                <p>Aucune autre thématique disponible.</p>
+              </div>
             </div>
           </div>
         </div>
