@@ -86,6 +86,10 @@ public class CoachRatingController {
                 rating.setExpertise(((Number) payload.get("expertise")).doubleValue());
             if (payload.get("availability") != null)
                 rating.setAvailability(((Number) payload.get("availability")).doubleValue());
+            if (payload.get("impact") != null)
+                rating.setImpact(((Number) payload.get("impact")).doubleValue());
+            if (payload.get("tags") != null)
+                rating.setTags(payload.get("tags").toString());
             if (payload.get("commentaire") != null)
                 rating.setCommentaire(payload.get("commentaire").toString());
 

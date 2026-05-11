@@ -13,6 +13,8 @@ export interface CoachRating {
     communication: number;
     expertise: number;
     availability: number;
+    impact: number;
+    tags?: string;
     commentaire?: string;
     statut?: 'LU' | 'NON_LU' | 'ARCHIVE';
     createdAt?: string;

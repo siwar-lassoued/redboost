@@ -13,6 +13,7 @@ export interface CoachStats {
     avgComm: number;
     avgExp: number;
     avgDispo: number;
+    avgImpact: number;
     programs: string[];
 }
 
@@ -187,6 +188,7 @@ type PageTab = 'byCoach' | 'allRatings';
                       <p>COMM : <span class="text-gray-900">{{ coach.avgComm }}</span></p>
                       <p>EXP : <span class="text-gray-900">{{ coach.avgExp }}</span></p>
                       <p>DISPO : <span class="text-gray-900">{{ coach.avgDispo }}</span></p>
+                      <p>IMPACT : <span class="text-gray-900">{{ coach.avgImpact }}</span></p>
                     </td>
                     <td class="px-6 py-5 text-center">
                       @if (coach.count > 0) {
@@ -281,7 +283,8 @@ type PageTab = 'byCoach' | 'allRatings';
                   @for (c of [
                     { label: 'Communication', value: selectedCoach()?.avgComm || 0 },
                     { label: 'Expertise', value: selectedCoach()?.avgExp || 0 },
-                    { label: 'Disponibilité', value: selectedCoach()?.avgDispo || 0 }
+                    { label: 'Disponibilité', value: selectedCoach()?.avgDispo || 0 },
+                    { label: 'Impact', value: selectedCoach()?.avgImpact || 0 }
                   ]; track c.label) {
                     <div class="flex items-center gap-4">
                       <span class="text-xs font-bold text-gray-600 w-32">{{ c.label }}</span>
@@ -368,7 +371,8 @@ type PageTab = 'byCoach' | 'allRatings';
                 @for (c of [
                   { label: 'Communication', value: selectedRating()?.communication || 0 },
                   { label: 'Expertise', value: selectedRating()?.expertise || 0 },
-                  { label: 'Disponibilité', value: selectedRating()?.availability || 0 }
+                  { label: 'Disponibilité', value: selectedRating()?.availability || 0 },
+                  { label: 'Impact', value: selectedRating()?.impact || 0 }
                 ]; track c.label) {
                   <div class="bg-gray-50 rounded-2xl p-4 text-center">
                     <p class="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-2">{{ c.label }}</p>
@@ -377,6 +381,14 @@ type PageTab = 'byCoach' | 'allRatings';
                   </div>
                 }
               </div>
+
+              @if (selectedRating()?.tags) {
+                <div class="flex flex-wrap gap-2 mb-4">
+                  @for (tag of selectedRating()?.tags?.split(', '); track tag) {
+                    <span class="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-100">{{ tag }}</span>
+                  }
+                </div>
+              }
 
               @if (selectedRating()?.commentaire) {
                 <div class="bg-pink-50/30 border-l-4 border-pink-500 p-6 rounded-r-2xl shadow-sm">
@@ -501,6 +513,7 @@ export class AdminEvaluationsComponent implements OnInit {
         avgComm: n ? parseFloat((cr.reduce((acc, r) => acc + r.communication, 0) / n).toFixed(1)) : 0,
         avgExp: n ? parseFloat((cr.reduce((acc, r) => acc + r.expertise, 0) / n).toFixed(1)) : 0,
         avgDispo: n ? parseFloat((cr.reduce((acc, r) => acc + r.availability, 0) / n).toFixed(1)) : 0,
+        avgImpact: n ? parseFloat((cr.reduce((acc, r) => acc + (r.impact || 0), 0) / n).toFixed(1)) : 0,
         programs: Array.from(new Set(cr.map(r => r.programme?.nom).filter(p => p != null)))
       } as CoachStats;
     });

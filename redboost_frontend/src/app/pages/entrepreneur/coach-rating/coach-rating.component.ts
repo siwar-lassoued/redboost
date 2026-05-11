@@ -12,136 +12,188 @@ import { environment } from '../../../../environment';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="min-h-screen bg-[#F8FAFC] p-4 lg:p-8 flex justify-center">
-      <div class="w-full max-w-2xl">
+    <div class="min-h-screen bg-[#F8FAFC] p-4 lg:p-8 flex items-center justify-center font-sans" [style.--font-sans]="'var(--font-family)'">
+      <div class="w-full max-w-[600px]">
 
-        <!-- Header -->
-        <div class="mb-10 text-center">
-          <h1 class="text-3xl font-black text-[#1A1A2E] tracking-tight">Évaluer votre séance</h1>
-          <p class="text-gray-500 mt-2 font-medium">Votre avis améliore la qualité de l'accompagnement</p>
-        </div>
-
-        <!-- Session Selector (if no sessionId in route) -->
-        @if (!rating.sessionId && sessions.length > 0) {
-          <div class="bg-white rounded-3xl p-6 shadow-xl shadow-gray-200/50 border border-gray-100 mb-8">
-            <label class="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3">Sélectionner la séance à évaluer</label>
-            <select [(ngModel)]="rating.sessionId" (ngModelChange)="onSessionChange($event)"
-              class="w-full p-4 rounded-2xl border-2 border-gray-100 bg-gray-50 text-sm font-semibold text-[#1A1A2E] focus:outline-none focus:border-[#3B82A6] transition-colors cursor-pointer">
-              <option value="">-- Choisir une séance --</option>
-              @for (s of sessions; track s.id) {
-                <option [value]="s.id">{{ s.titre || 'Séance' }} - {{ s.date | date:'dd/MM/yyyy HH:mm' }}</option>
-              }
-            </select>
-          </div>
-        }
-
-        @if (!sessions.length && !isLoadingSessions) {
-          <div class="flex flex-col items-center justify-center py-16 bg-white rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100 mb-8">
-            <div class="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mb-4">
-              <i class="pi pi-calendar-times text-4xl text-amber-500"></i>
-            </div>
-            <h3 class="text-lg font-black text-gray-800">Aucune séance passée</h3>
-            <p class="text-sm text-gray-500 mt-1 font-medium">Vous devez d'abord avoir effectué une séance avec un coach.</p>
-          </div>
-        }
-
-        <!-- Rating Card -->
-        <div class="bg-white rounded-[2.5rem] p-8 shadow-xl shadow-gray-200/50 border border-gray-100">
-
-          <!-- Coach info if available -->
-          @if (selectedCoachName) {
-            <div class="flex items-center gap-4 p-4 bg-[#F0FDF4] rounded-2xl mb-8 border border-[#BBF7D0]">
-              <div class="w-12 h-12 rounded-xl bg-[#16A34A] flex items-center justify-center text-white text-xl font-black shrink-0 shadow-md">
-                {{ selectedCoachName[0] }}
+        @if (!isSuccess) {
+          <!-- RATING FORM CARD -->
+          <div class="bg-[#262626] rounded-[24px] shadow-2xl overflow-hidden border border-white/5">
+            
+            <!-- Header/Coach Info -->
+            <div class="p-8 text-center border-b border-white/5">
+              <div class="w-20 h-20 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/10 overflow-hidden">
+                @if (selectedCoachName) {
+                  <span class="text-2xl font-black text-white">{{ selectedCoachName[0] }}</span>
+                } @else {
+                  <i class="pi pi-user text-3xl text-white/30"></i>
+                }
               </div>
-              <div>
-                <p class="text-[10px] font-black text-[#15803D] uppercase tracking-widest mb-0.5">Coach évalué</p>
-                <p class="text-lg font-black text-[#1A1A2E] leading-tight">{{ selectedCoachName }}</p>
+              <h2 class="text-xl font-black text-white mb-1">{{ selectedCoachName || 'Chargement...' }}</h2>
+              <p class="text-white/40 text-[11px] font-bold uppercase tracking-[2px]">Coach — RedBoost Tunisie</p>
+            </div>
+
+            <!-- Global Rating -->
+            <div class="p-8 text-center">
+              <p class="text-white/50 text-[12px] font-bold uppercase tracking-widest mb-6">Note globale</p>
+              
+              <div class="flex justify-center gap-3 mb-4">
+                @for (s of [1,2,3,4,5]; track s) {
+                  <button 
+                    (mouseenter)="hoverGlobal = s" 
+                    (mouseleave)="hoverGlobal = 0"
+                    (click)="rating.globalRating = s"
+                    class="bg-transparent border-none p-1 cursor-pointer transition-transform hover:scale-110 active:scale-95"
+                  >
+                    <i class="pi pi-star-fill text-3xl transition-colors duration-200"
+                      [style.color]="s <= (hoverGlobal || rating.globalRating) ? '#EF9F27' : '#444444'"></i>
+                  </button>
+                }
               </div>
+              <p class="text-white/70 text-sm font-medium">{{ globalLabel }}</p>
             </div>
-          }
 
-          <!-- Global Rating -->
-          <div class="text-center mb-10">
-            <span class="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-4">Note Globale</span>
-            <div class="flex justify-center gap-2 sm:gap-4">
-              @for (s of [1,2,3,4,5]; track s) {
-                <button (click)="rating.globalRating = s"
-                  class="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center transition-all duration-300"
-                  [ngClass]="s <= rating.globalRating ? 'bg-[#FDE047] shadow-lg shadow-yellow-200 scale-110' : 'bg-gray-100 hover:bg-gray-200'">
-                  <i class="pi pi-star-fill text-xl sm:text-2xl transition-colors duration-300"
-                    [ngClass]="s <= rating.globalRating ? 'text-yellow-600' : 'text-gray-300'"></i>
-                </button>
-              }
-            </div>
-          </div>
+            <div class="px-8"><div class="h-[0.5px] bg-white/5"></div></div>
 
-          <!-- Sub-criteria -->
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-            @for (critere of criteres; track critere.id) {
-              <div class="p-4 bg-gray-50 rounded-2xl border border-gray-100 text-center">
-                <div class="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center mx-auto mb-3">
-                  <i [class]="'pi pi-' + critere.icon" class="text-[#3B82A6] text-lg"></i>
-                </div>
-                <span class="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">{{ critere.label }}</span>
-                <div class="flex justify-center gap-1.5">
-                  @for (s of [1,2,3,4,5]; track s) {
-                    <div (click)="rating[critere.id] = s" class="cursor-pointer p-1">
-                      <div class="w-2.5 h-2.5 rounded-full transition-colors duration-200"
-                        [ngClass]="s <= rating[critere.id] ? 'bg-[#3B82A6]' : 'bg-gray-200'"></div>
+            <!-- Detailed Criteria -->
+            <div class="p-8">
+              <h3 class="text-white/50 text-[12px] font-bold uppercase tracking-widest mb-6">Critères détaillés</h3>
+              
+              <div class="grid grid-cols-2 gap-x-12 gap-y-8">
+                @for (c of criteres; track c.id) {
+                  <div>
+                    <p class="text-white/80 text-[13px] font-medium mb-3">{{ c.label }}</p>
+                    <div class="flex gap-1.5">
+                      @for (s of [1,2,3,4,5]; track s) {
+                        <button 
+                          (mouseenter)="c.hover = s" 
+                          (mouseleave)="c.hover = 0"
+                          (click)="rating[c.id] = s"
+                          class="bg-transparent border-none p-0 cursor-pointer"
+                        >
+                          <i class="pi pi-star-fill text-[14px] transition-colors"
+                            [style.color]="s <= (c.hover || rating[c.id]) ? '#EF9F27' : '#444444'"></i>
+                        </button>
+                      }
                     </div>
-                  }
-                </div>
+                  </div>
+                }
               </div>
-            }
-          </div>
+            </div>
 
-          <!-- Comment -->
-          <div class="mb-8">
-            <label class="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3 pl-1">Commentaire (optionnel)</label>
-            <textarea [(ngModel)]="rating.commentaire" placeholder="Partagez votre expérience avec ce coach..."
-              class="w-full p-4 bg-gray-50 border-2 border-transparent focus:border-[#3B82A6] rounded-2xl text-sm text-gray-700 font-medium outline-none min-h-[120px] resize-y transition-colors"></textarea>
-          </div>
+            <div class="px-8"><div class="h-[0.5px] bg-white/5"></div></div>
 
-          <!-- Submit -->
-          <button (click)="submit()" [disabled]="isSubmitting || !rating.coachId || !rating.entrepreneurId"
-            class="w-full py-4 rounded-2xl font-black text-white flex items-center justify-center gap-3 transition-all duration-300 shadow-xl"
-            [ngClass]="(isSubmitting || !rating.coachId || !rating.entrepreneurId) ? 'bg-gray-300 cursor-not-allowed opacity-70 shadow-none' : 'bg-gradient-to-r from-[#2A7B8C] to-[#1A6778] hover:scale-[1.02] shadow-[#2A7B8C]/30'">
-            @if (isSubmitting) {
-              <i class="pi pi-spin pi-spinner text-xl"></i>
-              Envoi en cours...
-            } @else {
-              SOUMETTRE MON ÉVALUATION
-              <i class="pi pi-arrow-right font-bold"></i>
-            }
-          </button>
-        </div>
+            <!-- Strength Tags -->
+            <div class="p-8">
+              <h3 class="text-white/50 text-[12px] font-bold uppercase tracking-widest mb-6">Points forts</h3>
+              <div class="flex flex-wrap gap-2.5">
+                @for (tag of strengthTags; track tag) {
+                  <button 
+                    (click)="toggleTag(tag)"
+                    class="px-4 py-2 rounded-full text-[12px] font-bold transition-all duration-200 border cursor-pointer"
+                    [ngClass]="selectedTags.has(tag) ? 'bg-[#E1F5EE] border-[#5DCAA5] text-[#0F6E56]' : 'bg-transparent border-white/10 text-white/50 hover:border-white/30'"
+                  >
+                    {{ tag }}
+                  </button>
+                }
+              </div>
+            </div>
+
+            <!-- Comment -->
+            <div class="p-8 pt-0">
+              <h3 class="text-white/50 text-[12px] font-bold uppercase tracking-widest mb-4">Commentaire (optionnel)</h3>
+              <textarea 
+                [(ngModel)]="rating.commentaire"
+                placeholder="Partagez votre expérience avec ce coach..."
+                class="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white text-sm outline-none focus:border-white/20 min-h-[120px] transition-colors placeholder:text-white/20"
+              ></textarea>
+            </div>
+
+            <!-- Action -->
+            <div class="p-8 pt-0">
+              <button 
+                (click)="submit()"
+                [disabled]="isSubmitting || rating.globalRating === 0"
+                class="w-full py-4 rounded-xl font-bold text-[13px] uppercase tracking-[1px] transition-all duration-200 border flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-30 disabled:cursor-not-allowed"
+                [ngClass]="rating.globalRating === 0 ? 'bg-transparent border-white/10 text-white/20' : 'bg-white/5 border-white/20 text-white hover:bg-white/10 cursor-pointer'"
+              >
+                @if (isSubmitting) {
+                  <i class="pi pi-spinner pi-spin"></i>
+                  Envoi...
+                } @else {
+                  Envoyer l'évaluation <i class="pi pi-arrow-up-right text-[10px]"></i>
+                }
+              </button>
+            </div>
+          </div>
+        } @else {
+          <!-- SUCCESS SCREEN -->
+          <div class="bg-white rounded-[12px] shadow-2xl p-12 text-center max-w-[560px] mx-auto border border-black/[0.05] animate-in fade-in zoom-in duration-500">
+            <div class="w-20 h-20 bg-[#E1F5EE] rounded-full flex items-center justify-center mx-auto mb-8">
+              <i class="pi pi-check text-3xl text-[#0F6E56]"></i>
+            </div>
+            <h2 class="text-2xl font-black text-gray-900 mb-4">Évaluation envoyée !</h2>
+            <p class="text-gray-500 mb-10 leading-relaxed">
+              Merci d'avoir partagé votre expérience. Votre avis est essentiel pour maintenir l'excellence de notre accompagnement.
+            </p>
+            <div class="h-[0.5px] bg-black/[0.05] mb-10"></div>
+            <button 
+              (click)="router.navigate(['/entrepreneur-dashboard'])"
+              class="px-10 py-3 rounded-full border border-gray-200 bg-transparent text-gray-600 font-black text-xs uppercase tracking-widest hover:bg-gray-50 transition-all active:scale-[0.98] cursor-pointer"
+            >
+              Retour au tableau de bord
+            </button>
+          </div>
+        }
       </div>
     </div>
   `,
-  styles: [`:host { display: block; }`]
+  styles: [`
+    :host { display: block; }
+    .font-sans { font-family: var(--font-sans, 'Inter', sans-serif); }
+  `],
 })
 export class CoachRatingComponent implements OnInit {
   rating: any = {
     coachId: null,
     entrepreneurId: null,
     sessionId: null,
-    globalRating: 5,
+    globalRating: 0,
     communication: 5,
     expertise: 5,
     availability: 5,
+    impact: 5,
+    tags: '',
     commentaire: ''
   };
   isSubmitting = false;
+  isSuccess = false;
   isLoadingSessions = true;
   sessions: any[] = [];
   selectedCoachName = '';
+  hoverGlobal = 0;
 
   criteres = [
-    { id: 'communication', label: 'Communication', icon: 'comments' },
-    { id: 'expertise', label: 'Expertise', icon: 'verified' },
-    { id: 'availability', label: 'Disponibilité', icon: 'calendar' },
+    { id: 'communication', label: 'Communication', icon: 'comments', hover: 0 },
+    { id: 'expertise', label: 'Expertise', icon: 'verified', hover: 0 },
+    { id: 'availability', label: 'Disponibilité', icon: 'calendar', hover: 0 },
+    { id: 'impact', label: 'Impact sur mon projet', icon: 'bolt', hover: 0 },
   ];
+
+  strengthTags = [
+    'Écoute active', 'Feedback clair', 'Réseau utile', 
+    'Adaptabilité', 'Vision stratégique', 'Suivi régulier'
+  ];
+  selectedTags = new Set<string>();
+
+  get globalLabel(): string {
+    const val = this.hoverGlobal || this.rating.globalRating;
+    if (val === 1) return 'Décevant';
+    if (val === 2) return 'Moyen';
+    if (val === 3) return 'Bien';
+    if (val === 4) return 'Très bien';
+    if (val === 5) return 'Excellent !';
+    return 'Sélectionnez une note';
+  }
 
   constructor(
     private route: ActivatedRoute,
@@ -152,19 +204,18 @@ export class CoachRatingComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    const user = this.authService.currentUser$.value;
-    if (user?.id) {
-      this.rating.entrepreneurId = Number(user.id);
-    }
+    this.authService.currentUser$.subscribe(user => {
+      if (user?.id) {
+        this.rating.entrepreneurId = Number(user.id);
+        this.loadSessions();
+      }
+    });
 
     // If sessionId is in route, pre-fill
     const sessionIdParam = this.route.snapshot.params['sessionId'];
     if (sessionIdParam) {
       this.rating.sessionId = sessionIdParam;
     }
-
-    // Load past sessions for this entrepreneur
-    this.loadSessions();
   }
 
   loadSessions() {
@@ -173,9 +224,11 @@ export class CoachRatingComponent implements OnInit {
       .subscribe({
         next: (res) => {
           const sessions = res?.data || res || [];
-          // Only show past sessions
+          // Show past sessions OR the currently targeted session
           const now = new Date();
-          this.sessions = sessions.filter((s: any) => new Date(s.date) < now);
+          this.sessions = sessions.filter((s: any) => 
+            new Date(s.date) < now || s.id === this.rating.sessionId || s.statut === 'TERMINE' || s.statut === 'REALISEE'
+          );
           if (this.rating.sessionId) {
             this.onSessionChange(this.rating.sessionId);
           }
@@ -191,15 +244,33 @@ export class CoachRatingComponent implements OnInit {
   onSessionChange(sessionId: any) {
     const session = this.sessions.find(s => s.id == sessionId);
     if (session) {
-      this.rating.coachId = session.coach?.id;
-      this.selectedCoachName = (session.coach?.firstName || '') + ' ' + (session.coach?.lastName || '');
+      // Try multiple ways to get coachId
+      this.rating.coachId = session.coach?.id || session.coachId || (typeof session.coach === 'number' ? session.coach : null);
+      
+      // Try multiple ways to get coach name
+      if (session.coach?.firstName) {
+        this.selectedCoachName = session.coach.firstName + ' ' + (session.coach.lastName || '');
+      } else {
+        this.selectedCoachName = session.coachName || session.coachNom || 'Votre Coach';
+      }
+
       if (session.programme) {
-        this.rating.programmeId = session.programme.id;
+        this.rating.programmeId = session.programme.id || session.programme;
       }
     }
   }
 
+  toggleTag(tag: string) {
+    if (this.selectedTags.has(tag)) {
+      this.selectedTags.delete(tag);
+    } else {
+      this.selectedTags.add(tag);
+    }
+    this.rating.tags = Array.from(this.selectedTags).join(', ');
+  }
+
   submit() {
+    if (this.rating.globalRating === 0) return;
     if (!this.rating.coachId || !this.rating.entrepreneurId) {
       alert('Veuillez sélectionner une séance à évaluer.');
       return;
@@ -207,8 +278,8 @@ export class CoachRatingComponent implements OnInit {
     this.isSubmitting = true;
     this.ratingService.create(this.rating).subscribe({
       next: () => {
-        alert('Merci pour votre évaluation !');
-        this.router.navigate(['/entrepreneur-dashboard']);
+        this.isSuccess = true;
+        this.isSubmitting = false;
       },
       error: (err) => {
         alert(err.error?.error || err.error?.message || "Erreur lors de l'envoi");
