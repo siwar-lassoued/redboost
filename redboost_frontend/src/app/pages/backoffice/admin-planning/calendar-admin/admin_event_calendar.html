@@ -1,0 +1,204 @@
+<div class="calendar-page">
+  <!-- Loading Overlay -->
+  <div class="global-loader-wrap" *ngIf="isLoading">
+    <div class="premium-spinner"></div>
+  </div>
+
+  <div class="page-header">
+    <div class="header-content">
+      <div class="page-title-row">
+        <div class="header-icon-wrap">
+          <i class="pi pi-calendar"></i>
+        </div>
+        <div class="header-text">
+          <h1 class="page-title">Calendrier Global</h1>
+          <p class="page-subtitle">Tous les événements et formations du programme</p>
+        </div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <div class="scheduled-badge">
+        <div class="pulse-dot"></div>
+        <span>{{ totalEventsCount }} événement{{ totalEventsCount !== 1 ? 's' : '' }} programmé{{ totalEventsCount !== 1 ? 's' : '' }}</span>
+      </div>
+      <button class="premium-btn-primary" (click)="openAddEventDialog()">
+        <i class="pi pi-plus"></i>
+        <span>Ajouter un événement</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="main-layout">
+    <!-- Calendar Main Section -->
+    <div class="calendar-card-container">
+      <div class="premium-card calendar-card">
+        <!-- Month Navigation -->
+        <div class="month-header">
+          <h2 class="current-month">{{ getMonthYear() }}</h2>
+          <div class="month-nav-btns">
+            <button class="nav-btn-circle" (click)="previousMonth()" [disabled]="isLoading">
+              <i class="pi pi-chevron-left"></i>
+            </button>
+            <button class="nav-btn-circle" (click)="nextMonth()" [disabled]="isLoading">
+              <i class="pi pi-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Weekday Headers -->
+        <div class="day-headers">
+          <div class="day-header" *ngFor="let day of weekDays">{{ day }}</div>
+        </div>
+
+        <!-- Calendar Grid -->
+        <div class="calendar-grid">
+          <div class="calendar-cell" *ngFor="let day of calendarDays" 
+               [class.other-month]="!day.isCurrentMonth"
+               [class.has-events]="day.events.length > 0" 
+               [class.selected]="isSelectedDate(day.date)"
+               [class.today]="isToday(day.date)" 
+               (click)="onDayClick(day)">
+            <div class="cell-day-num" [class.today-circle]="isToday(day.date)">
+              {{ day.day }}
+            </div>
+            <div class="cell-events">
+              <div class="event-mini-chip" *ngFor="let event of day.events.slice(0, 3)"
+                   [style.background]="getEventGradient(event.type)" 
+                   [title]="event.title">
+                <span class="chip-title">
+                  {{ event.title }}
+                </span>
+              </div>
+              <div class="more-events-tag" *ngIf="day.events.length > 3">
+                +{{ day.events.length - 3 }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <!-- Event Details Section (Visible when a day is clicked) -->
+      <div class="sidebar-section event-details-sidebar" *ngIf="selectedDateEvents.length > 0">
+        <div class="sidebar-back-row">
+          <button class="btn-icon-back" (click)="clearSelection()"><i class="pi pi-arrow-left"></i></button>
+          <span>Retour au calendrier</span>
+        </div>
+        
+        <div class="sidebar-header-title">
+          <h3>Événements du {{ getSelectedDateFormatted() }}</h3>
+        </div>
+
+        <div class="event-details-list">
+          <div class="premium-event-card" *ngFor="let event of selectedDateEvents">
+            <div class="ev-card-header">
+              <div class="ev-icon-box" [style.background]="getEventGradient(event.type)">
+                <i class="pi" [class]="getEventTypeIconPrime(event.type)"></i>
+              </div>
+              <div class="ev-main-info">
+                <div class="ev-title-wrap">
+                  <h4>{{ event.title }}</h4>
+                  <span class="ev-prog-badge" *ngIf="event.program">
+                    <i class="pi pi-bookmark-fill"></i> {{ event.program }}
+                  </span>
+                </div>
+                <div class="ev-badges-row">
+                  <span class="ev-type-pill" [style.background-color]="getEventTypeColor(event.type) + '20'" [style.color]="getEventTypeColor(event.type)">
+                    {{ event.type }}
+                  </span>
+                </div>
+              </div>
+              <div class="ev-admin-actions">
+                <button class="btn-mini-action" (click)="openEditEventDialog(event)"><i class="pi pi-pencil"></i></button>
+                <button class="btn-mini-action delete" (click)="deleteEvent(event)"><i class="pi pi-trash"></i></button>
+              </div>
+            </div>
+
+            <div class="ev-card-body">
+              <p class="ev-desc" *ngIf="event.description">{{ event.description }}</p>
+              
+              <div class="ev-meta-grid">
+                <div class="meta-item" *ngIf="event.time">
+                  <i class="pi pi-clock"></i>
+                  <span>{{ event.time }}</span>
+                </div>
+                <div class="meta-item" *ngIf="event.location">
+                  <i class="pi" [class]="getModeIconPrime(event.mode)"></i>
+                  <span>{{ event.location }}</span>
+                </div>
+                <div class="meta-item">
+                  <i class="pi pi-users"></i>
+                  <span>{{ event.participants.length }} participant{{ event.participants.length !== 1 ? 's' : '' }}</span>
+                </div>
+              </div>
+
+              <div class="ev-external-actions">
+                <button class="btn-gcal" (click)="openGoogleCalendar(event)">
+                  <img src="https://ssl.gstatic.com/calendar/images/dynamiclogo_2020q4/calendar_31_2x.png" alt="GCal" />
+                  <span>{{ event.meetLink ? 'Voir sur GCal' : 'Ajouter à GCal' }}</span>
+                </button>
+                <button class="btn-meet" *ngIf="event.meetLink" (click)="openMeetLink(event)">
+                  <i class="pi pi-video"></i>
+                  <span>Rejoindre le Meet</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Upcoming Section (Default view) -->
+      <div class="sidebar-default-view" *ngIf="selectedDateEvents.length === 0">
+        <div class="sidebar-section upcoming-section">
+          <div class="sidebar-section-header">
+            <h3>Événements à venir</h3>
+            <span class="count-pill">{{ getUpcomingEventsCount() }}</span>
+          </div>
+
+          <div class="upcoming-list scrollable-sidebar">
+            <div class="upcoming-card-premium" *ngFor="let event of getUpcomingEvents(); let i = index"
+                 (click)="selectEventDate(event.date)">
+              <div class="up-header">
+                <div class="up-icon" [style.background]="getEventGradient(event.type)">
+                  <i class="pi" [class]="getEventTypeIconPrime(event.type)"></i>
+                </div>
+                <div class="up-info">
+                  <div class="up-title-row">
+                    <h6>{{ event.title }}</h6>
+                  </div>
+                  <div class="up-program-row" *ngIf="event.program" style="font-size: 11px; color: #6B7280; margin-bottom: 6px; display: flex; align-items: center; line-height: 1.2;">
+                    <i class="pi pi-bookmark-fill" style="font-size: 10px; margin-right: 4px; color: #DC2626;"></i>
+                    <span>{{ event.program }}</span>
+                  </div>
+                  <div class="up-badges">
+                    <span class="up-type-tag" [style.background-color]="getEventTypeColor(event.type) + '20'" [style.color]="getEventTypeColor(event.type)">
+                      {{ event.type }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="up-meta">
+                <div class="up-meta-item">
+                  <i class="pi pi-calendar"></i>
+                  <span>{{ formatEventDate(event.date) }}</span>
+                </div>
+                <div class="up-meta-item" *ngIf="event.time">
+                  <i class="pi pi-clock"></i>
+                  <span>{{ event.time.split(' - ')[0] }}</span>
+                </div>
+              </div>
+
+              <div class="up-indicator" *ngIf="i === 0">
+                <div class="pulse-dot"></div>
+                <span>Prochainement</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

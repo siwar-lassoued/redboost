@@ -46,6 +46,7 @@ import { DataFilterComponent } from './app/pages/backoffice/database_management/
 import { CalendarComponent } from './app/pages/backoffice/event_organizer/calendar/event_calendar';
 import { DashboardGlobalComponent } from './app/pages/backoffice/dashboard_global/dashboard_global';
 import { DashboardViewComponent } from './app/pages/backoffice/programmes/Gestion_sprint/SprintDashboard/dashoard/dashboard-overview';
+import { AdminCalendarComponent } from './app/pages/backoffice/admin-planning/calendar-admin/admin_event_calendar';
 
 import { AdminPlanningComponent } from './app/pages/backoffice/admin-planning/admin-planning.component';
 
@@ -134,15 +135,14 @@ export const appRoutes: Routes = [
             { path: 'workflow', component: RapportRedactionComponent },
            // { path: 'sprintdash', component: SprintDashboardComponent },
             { path: 'mes-taches', component: MesTachesActivitesComponent },
-            {
-                path: 'programme/:id/program-dashboard',
-                component: DashboardProgramComponent,
-            },
+            { path: 'programme/:id/program-dashboard', component: DashboardProgramComponent },
             { path: 'programme/:id', component: LastProgrammeKpiListComponent },
             { path: 'programme', component: ProgrammeListComponent },
 
             { path: 'backoffice_cat_kpi', component: CategoryListComponent },
             { path: 'profile', component: UserProfileComponent },
+            { path: 'admin-calendar', component: AdminCalendarComponent },
+
             {
                 path: 'all-coach-requests',
                 component: AllCoachRequestsComponent,

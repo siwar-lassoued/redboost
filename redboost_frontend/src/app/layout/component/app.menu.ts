@@ -157,7 +157,7 @@ export class AppMenu implements OnInit {
                     {
                         label: 'Événements',
                         icon: 'pi pi-fw pi-calendar-plus',
-                        routerLink: ['/calendar'],
+                        routerLink: ['/admin-calendar'],
                     }
                 ],
             },
