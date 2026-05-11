@@ -168,7 +168,7 @@ interface DateGroupView {
                     <select class="premium-input" [(ngModel)]="selectedThematiqueId" (ngModelChange)="onThematiqueSelected()">
                          <option [ngValue]="null">Sélectionner une thématique...</option>
                         <option *ngFor="let t of thematiques" [ngValue]="t.id">
-                          {{t.nom}} ({{t.dateDebut | date:'shortDate'}} - {{t.dateFin | date:'shortDate'}})
+                          {{t.nom}} 
                         </option>
                     </select>
                 </div>

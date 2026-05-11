@@ -706,6 +706,7 @@ public class CoachService {
         if (s.getDisponibilite() != null && s.getDisponibilite().getThematique() != null) {
             ThematiqueCoaching them = s.getDisponibilite().getThematique();
             dto.setThematiqueNom(them.getNom());
+            dto.setThematiqueId(them.getId());
             if (them.getDateDebut() != null) dto.setThematiqueDateDebut(them.getDateDebut().toString());
             if (them.getDateFin() != null) dto.setThematiqueDateFin(them.getDateFin().toString());
             
@@ -733,6 +734,7 @@ public class CoachService {
             }
             if (bookings.get(0).getEntrepreneur() != null) {
                 dto.setEntrepreneurName(bookings.get(0).getEntrepreneur().getFirstName() + " " + bookings.get(0).getEntrepreneur().getLastName());
+                dto.setEntrepreneurId(bookings.get(0).getEntrepreneur().getId());
             }
         } else {
             dto.setIsExceptionnelle(false);

@@ -34,6 +34,8 @@ export interface SessionCoachDTO {
   isExceptionnelle?: boolean;
   bookingStatus?: string;
   entrepreneurName?: string;
+  entrepreneurId?: number;
+  thematiqueId?: number;
 }
 
 export interface SessionGroupDTO {

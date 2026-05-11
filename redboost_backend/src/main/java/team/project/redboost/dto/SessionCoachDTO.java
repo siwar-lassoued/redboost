@@ -26,4 +26,6 @@ public class SessionCoachDTO {
     private Boolean isExceptionnelle;
     private String bookingStatus;
     private String entrepreneurName;
+    private Long entrepreneurId;
+    private Long thematiqueId;
 }

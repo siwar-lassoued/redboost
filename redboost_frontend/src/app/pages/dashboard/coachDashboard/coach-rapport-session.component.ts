@@ -36,24 +36,31 @@ import { SessionService } from '../../../core/services/session.service';
           <div class="form-grid">
             <div style="display:flex; flex-direction:column; gap:20px;">
               <div class="form-group">
-                <label>Sélectionner un entrepreneur <span class="required">*</span></label>
-                <select [(ngModel)]="selectedEntrepreneurId" (change)="onEntrepreneurSelect()" class="premium-input">
-                  <option [ngValue]="0" disabled>Choisir un entrepreneur...</option>
-                  <option *ngFor="let ent of entrepreneurs" [value]="ent.id">{{ ent.firstName }} {{ ent.lastName }} ({{ ent.entreprise }})</option>
-                </select>
-              </div>
-
-              <div class="form-group">
                 <label>Thématique de coaching <span class="required">*</span></label>
-                <select [(ngModel)]="selectedThematiqueId" (change)="onEntrepreneurSelect()" class="premium-input">
-                  <option [ngValue]="0" disabled>Choisir une thématique...</option>
+                <select [(ngModel)]="selectedThematiqueId" (change)="onThematiqueSelect()" class="premium-input">
+                  <option [ngValue]="0">Choisir une thématique...</option>
                   <option *ngFor="let t of thematiques" [value]="t.id">{{ t.nom }}</option>
                 </select>
               </div>
 
+              <div class="form-group" *ngIf="selectedThematiqueId > 0 && selectedProgrammeObj">
+                <label>Nom du programme</label>
+                <div class="premium-input" style="background: #EDF2F7; color: #4A5568; cursor: not-allowed; border-color: #E2E8F0; font-weight: 600;">
+                  {{ selectedProgrammeObj.nom }}
+                </div>
+              </div>
+
               <div class="form-group">
-                <label>Session réalisée (Optionnel pour pré-remplir)</label>
-                <select [(ngModel)]="selectedSessionId" (change)="onSessionSelect()" class="premium-input">
+                <label>Sélectionner un entrepreneur <span class="required">*</span></label>
+                <select [(ngModel)]="selectedEntrepreneurId" (change)="onEntrepreneurSelect()" class="premium-input" [disabled]="selectedThematiqueId === 0">
+                  <option [ngValue]="0">Choisir un entrepreneur...</option>
+                  <option *ngFor="let ent of filteredFormEntrepreneurs" [value]="ent.id">{{ ent.firstName }} {{ ent.lastName }} ({{ ent.entreprise }})</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Session réalisée </label>
+                <select [(ngModel)]="selectedSessionId" (change)="onSessionSelect()" class="premium-input" [disabled]="selectedEntrepreneurId === 0">
                   <option [ngValue]="0">-- Création manuelle --</option>
                   <option *ngFor="let s of realizedSessions" [value]="s.id">{{ s.titre || 'Session' }} - {{ s.date | date:'shortDate' }}</option>
                 </select>
@@ -73,9 +80,12 @@ import { SessionService } from '../../../core/services/session.service';
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1.5rem; gap: 15px;">
                 <h2 class="section-title" style="margin:0;"><i class="pi pi-history"></i> Historique des Rapports ({{ history.length }})</h2>
                 <div style="display:flex; gap:10px; align-items:center;">
-                   <label style="font-size:12px; font-weight:700; color:#64748b;">Filtrer par date :</label>
-                   <input type="date" [(ngModel)]="selectedDateFilter" class="premium-input" style="width:160px; padding:6px 12px; font-size:13px;">
-                   <button class="btn-primary" (click)="downloadConsolidatedPdf()" *ngIf="selectedEntrepreneurId > 0" style="background:#E11D48;">
+                   <label style="font-size:12px; font-weight:700; color:#64748b;">Filtrer par entrepreneur :</label>
+                   <select [(ngModel)]="selectedHistoryEntrepreneurId" (change)="filterHistory()" class="premium-input" style="width:220px; padding:6px 12px; font-size:13px;">
+                      <option [ngValue]="0">Tous les entrepreneurs</option>
+                      <option *ngFor="let e of entrepreneurs" [value]="e.id">{{ e.firstName }} {{ e.lastName }}</option>
+                   </select>
+                   <button class="btn-primary" (click)="downloadConsolidatedPdf()" *ngIf="selectedHistoryEntrepreneurId > 0" style="background:#E11D48;">
                       <i class="pi pi-file-pdf"></i> Télécharger Rapport Consolidé
                    </button>
                 </div>
@@ -85,7 +95,7 @@ import { SessionService } from '../../../core/services/session.service';
              <p>Aucun rapport de session n'a été créé.</p>
            </div>
            
-           <table *ngIf="history.length > 0" class="history-table">
+           <table *ngIf="filteredHistory.length > 0" class="history-table">
             <thead>
               <tr>
                 <th>Bénéficiaire / Entreprise</th>
@@ -95,7 +105,7 @@ import { SessionService } from '../../../core/services/session.service';
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let h of history">
+              <tr *ngFor="let h of filteredHistory">
                 <td>
                   <div style="font-weight:700; color:#1A1A2E;">{{ h.beneficiaireNom }}</div>
                   <div class="hint">{{ h.entrepriseNom }}</div>
@@ -397,7 +407,13 @@ export class CoachRapportSessionComponent implements OnInit {
   thematiques: any[] = [];
   selectedThematiqueId: number = 0;
   selectedSessionId: number = 0;
+  selectedHistoryEntrepreneurId: number = 0;
   selectedDateFilter: string = '';
+  selectedProgrammeObj: any = null;
+  groupedMatchings: any[] = [];
+  filteredFormEntrepreneurs: any[] = [];
+  filteredHistory: any[] = [];
+  programmes: any[] = [];
 
   editingReport = false;
   isSaving = false;
@@ -434,15 +450,11 @@ export class CoachRapportSessionComponent implements OnInit {
       next: ({ profile, thematiques, entrepreneurs }) => {
         this.coachProfile = profile;
         this.thematiques = thematiques;
-        if(this.thematiques.length > 0) {
-            this.selectedThematiqueId = this.thematiques[0].id;
-        }
         this.entrepreneurs = entrepreneurs;
-        if(this.entrepreneurs.length > 0) {
-            this.selectedEntrepreneurId = this.entrepreneurs[0].id;
-        }
         this.loadHistory();
         this.loadCoachSessions();
+        this.loadMatchedEntrepreneurs();
+        this.loadProgrammes();
 
         this.route.queryParams.subscribe(params => {
           if (params['action'] === 'new' && params['entrepreneurId']) {
@@ -466,6 +478,7 @@ export class CoachRapportSessionComponent implements OnInit {
       this.coachService.getRapportsSession(this.coachId).subscribe({
           next: (data) => {
               this.history = data;
+              this.filterHistory();
               this.cdr.detectChanges();
           },
           error: () => this.toastr.error('Erreur lors du chargement de l\'historique')
@@ -474,12 +487,83 @@ export class CoachRapportSessionComponent implements OnInit {
 
   loadCoachSessions() {
       if(!this.coachId) return;
-      this.sessionService.getByCoach(this.coachId.toString()).subscribe({
-          next: (sessions: any[]) => {
-              this.allCoachSessions = sessions;
+      forkJoin({
+        sessions: this.coachService.getAllSessionsByCoach(this.coachId),
+        seances: this.coachService.getSeancesExceptionnelles(this.coachId)
+      }).subscribe({
+          next: ({ sessions, seances }) => {
+              const mappedSeances: any[] = seances.map(se => ({
+                id: se.id, 
+                titre: se.titre,
+                date: se.dateSeance,
+                heureDebut: se.heureDebut,
+                heureFin: se.heureFin,
+                isExceptionnelle: true,
+                entrepreneur: { id: se.entrepreneurId, firstName: se.entrepreneurName, lastName: '' },
+                thematique: { id: se.thematiqueId },
+                statut: 'TERMINE' // We'll re-filter anyway
+              }));
+
+              // Normalize standard sessions
+              const mappedSessions = sessions.map(s => ({
+                  ...s,
+                  id: s.id,
+                  titre: s.titre,
+                  date: s.dateSession,
+                  statut: s.bookingStatus || 'CONFIRME',
+                  entrepreneur: { id: s.entrepreneurId, firstName: s.entrepreneurName, lastName: '' },
+                  thematique: { id: s.thematiqueId, nom: s.thematiqueNom }
+              }));
+
+              this.allCoachSessions = [...mappedSessions, ...mappedSeances];
               this.filterRealizedSessions();
           }
       });
+  }
+
+  loadMatchedEntrepreneurs() {
+      this.coachService.getMatchedEntrepreneursGrouped(this.coachId).subscribe({
+          next: (data) => this.groupedMatchings = data,
+          error: () => {}
+      });
+  }
+
+  loadProgrammes() {
+      this.coachService.getCoachProgrammes(this.coachId).subscribe({
+          next: (data) => this.programmes = data,
+          error: () => {}
+      });
+  }
+
+  filterHistory() {
+      if (this.selectedHistoryEntrepreneurId === 0) {
+          this.filteredHistory = [...this.history];
+      } else {
+          this.filteredHistory = this.history.filter(h => 
+              h.entrepreneurId == this.selectedHistoryEntrepreneurId || 
+              (h.entrepreneur && h.entrepreneur.id == this.selectedHistoryEntrepreneurId)
+          );
+      }
+  }
+
+  onThematiqueSelect() {
+      this.selectedEntrepreneurId = 0;
+      this.selectedSessionId = 0;
+      this.filteredFormEntrepreneurs = [];
+      this.selectedProgrammeObj = null;
+
+      if (this.selectedThematiqueId > 0) {
+          const theme = this.thematiques.find(t => t.id == this.selectedThematiqueId);
+          if (theme) {
+              this.selectedProgrammeObj = this.programmes.find(p => p.id == theme.programmeId);
+          }
+
+          const group = this.groupedMatchings.find(g => g.thematiqueId == this.selectedThematiqueId);
+          if (group) {
+              this.filteredFormEntrepreneurs = group.entrepreneurs;
+          }
+      }
+      this.filterRealizedSessions();
   }
 
   onEntrepreneurSelect() {
@@ -489,11 +573,41 @@ export class CoachRapportSessionComponent implements OnInit {
 
   filterRealizedSessions() {
       if (!this.allCoachSessions) return;
-      this.realizedSessions = this.allCoachSessions.filter(s => 
-          (s.statut === 'REALISEE' || s.statut === 'TERMINE') &&
-          (this.selectedEntrepreneurId === 0 || (s.entrepreneur && s.entrepreneur.id == this.selectedEntrepreneurId)) &&
-          (this.selectedThematiqueId === 0 || (s.thematique && s.thematique.id == this.selectedThematiqueId))
-      );
+      
+      const selectedTheme = this.thematiques.find(t => t.id == this.selectedThematiqueId);
+      const themeNom = selectedTheme ? selectedTheme.nom : null;
+
+      this.realizedSessions = this.allCoachSessions.filter(s => {
+          // Status check: if it's in the past, it's considered realized
+          let isPast = false;
+          const dateStr = s.date || s.dateSession;
+          const endStr = s.heureFin || '23:59:00';
+          
+          if (dateStr) {
+              const sessionDate = new Date(dateStr + 'T' + endStr);
+              isPast = sessionDate.getTime() < new Date().getTime();
+          }
+
+          const status = (s.statut || s.bookingStatus || '').toUpperCase();
+          const isCancelled = status === 'ANNULE' || status === 'ANNULEE';
+          
+          if (isCancelled) return false;
+          if (!isPast && status !== 'TERMINE' && status !== 'TERMINEE' && status !== 'REALISEE') return false;
+
+          // Entrepreneur check
+          const entId = s.entrepreneur ? s.entrepreneur.id : (s.entrepreneurId || null);
+          const entMatch = this.selectedEntrepreneurId === 0 || entId == this.selectedEntrepreneurId;
+
+          // Thematique check
+          const sThemeId = s.thematique ? s.thematique.id : (s.thematiqueId || null);
+          const sThemeNom = s.thematiqueName || (s.thematique ? s.thematique.nom : null) || s.thematiqueNom;
+          
+          const themeMatch = this.selectedThematiqueId === 0 || 
+                            (sThemeId && sThemeId == this.selectedThematiqueId) ||
+                            (themeNom && sThemeNom === themeNom);
+
+          return entMatch && themeMatch;
+      });
   }
 
   onSessionSelect() {
@@ -651,10 +765,10 @@ export class CoachRapportSessionComponent implements OnInit {
   }
 
   downloadConsolidatedPdf() {
-    if (this.selectedEntrepreneurId === 0) return;
+    if (this.selectedHistoryEntrepreneurId === 0) return;
     
     this.toastr.info("Génération du rapport consolidé...");
-    this.coachService.getConsolidatedPdf(this.selectedEntrepreneurId, this.coachId, this.selectedThematiqueId, this.selectedDateFilter).subscribe({
+    this.coachService.getConsolidatedPdf(this.selectedHistoryEntrepreneurId, this.coachId, this.selectedThematiqueId, this.selectedDateFilter).subscribe({
       next: (blob) => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');

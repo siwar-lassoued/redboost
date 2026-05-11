@@ -191,10 +191,10 @@ import { environment } from '../../../../environment';
                       </select>
                   </div>
 
-                  <div class="form-group" style="margin-bottom: 16px;">
-                      <label class="form-label">Programme associé</label>
-                      <div class="search-input-alt" style="background: #f1f5f9; color: #475569; border-color: #e2e8f0; font-weight: 600; min-height: 42px; display: flex; align-items: center;">
-                          {{ selectedProgrammeNom || 'Aucun programme lié' }}
+                  <div class="form-group" style="margin-bottom: 16px;" *ngIf="newLivrable.thematiqueName && selectedProgrammeObj">
+                      <label class="form-label">Nom du programme</label>
+                      <div class="search-input-alt" style="background: #EDF2F7; color: #4A5568; cursor: not-allowed; border-color: #E2E8F0; font-weight: 600; min-height: 42px; display: flex; align-items: center;">
+                        {{ selectedProgrammeObj.nom }}
                       </div>
                   </div>
 
@@ -462,7 +462,7 @@ export class CoachLivrablesComponent implements OnInit {
   selectedEntrepreneurId: number | null = null;
   selectedProgrammeId: number | null = null;
   selectedThematique: string | null = null;
-  selectedProgrammeNom: string = '';
+  selectedProgrammeObj: any = null;
 
   coachId: number | null = null;
 
@@ -517,10 +517,10 @@ export class CoachLivrablesComponent implements OnInit {
     const theme = this.formThematiques.find(t => t.nom === this.newLivrable.thematiqueName);
     if (theme) {
       this.newLivrable.programmeId = theme.programmeId;
-      this.selectedProgrammeNom = theme.programmeNom;
+      this.selectedProgrammeObj = this.programmes.find(p => p.id === theme.programmeId);
     } else {
       this.newLivrable.programmeId = null;
-      this.selectedProgrammeNom = '';
+      this.selectedProgrammeObj = null;
     }
   }
 
@@ -607,7 +607,7 @@ export class CoachLivrablesComponent implements OnInit {
     this.newLivrable = { titre: '', programmeId: null, thematiqueName: '', sessionName: '', commentaire: '', deadline: '' };
     this.selectedFile = null;
     this.entrepreneurSearch = '';
-    this.selectedProgrammeNom = '';
+    this.selectedProgrammeObj = null;
     this.showDepotModal = true;
   }
 
@@ -752,7 +752,7 @@ export class CoachLivrablesComponent implements OnInit {
         this.loadLivrables();
         this.showDepotModal = false;
         this.newLivrable = { titre: '', programmeId: null, thematiqueName: '', sessionName: '', commentaire: '', deadline: '' };
-        this.selectedProgrammeNom = '';
+        this.selectedProgrammeObj = null;
         this.selectedFile = null;
         this.entrepreneurs.forEach(e => e.selected = false);
         this.loading = false;
