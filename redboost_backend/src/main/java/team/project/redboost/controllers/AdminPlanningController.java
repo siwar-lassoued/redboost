@@ -76,7 +76,7 @@ public class AdminPlanningController {
 
         List<Map<String, Object>> result = coaches.stream().map(coach -> {
             Map<String, Object> coachData = new HashMap<>();
-            coachData.put("id", coach.getId());
+            coachData.put("id", coach.getId().toString());
             coachData.put("coachId", coach.getId());
             coachData.put("firstName", coach.getFirstName() != null ? coach.getFirstName() : "Coach");
             coachData.put("lastName", coach.getLastName() != null ? coach.getLastName() : coach.getId().toString());
@@ -115,7 +115,7 @@ public class AdminPlanningController {
 
         List<Map<String, Object>> result = entrepreneurs.stream().map(ent -> {
             Map<String, Object> entData = new HashMap<>();
-            entData.put("id", ent.getId());
+            entData.put("id", ent.getId().toString());
             entData.put("entrepreneurId", ent.getId());
             entData.put("firstName", ent.getFirstName() != null ? ent.getFirstName() : "Entrepreneur");
             entData.put("lastName", ent.getLastName() != null ? ent.getLastName() : ent.getId().toString());
@@ -275,15 +275,24 @@ public class AdminPlanningController {
         User ent = userRepository.findById(t.getResponsableId()).orElse(null);
         if (ent != null) {
             m.put("entrepreneurId", ent.getId());
-            m.put("entrepreneurName", formatName(ent));
+            m.put("entrepreneurName", ent.getFirstName() + " " + ent.getLastName());
 
             matchingRepository.findByEntrepreneurIdAndStatut(ent.getId(), Matching.StatutMatching.VALIDE).stream().findFirst().ifPresent(match -> {
                 m.put("coachId", match.getCoachId());
-                userRepository.findById(match.getCoachId()).ifPresent(c -> m.put("coachName", formatName(c)));
+                userRepository.findById(match.getCoachId()).ifPresent(c -> m.put("coachName", c.getFirstName() + " " + c.getLastName()));
                 programmeRepository.findById(match.getProgrammeId()).ifPresent(p -> m.put("programmeName", p.getNom()));
-                thematiqueRepository.findById(match.getThematiqueId()).ifPresent(them -> m.put("thematiqueNom", them.getNom()));
             });
         }
+
+        List<TacheDocument> docs = tacheDocumentRepository.findByTacheId(t.getId());
+        m.put("documents", docs.stream().map(d -> {
+            Map<String, Object> dm = new HashMap<>();
+            dm.put("id", d.getId());
+            dm.put("nom", d.getNom());
+            dm.put("url", d.getCheminFichier());
+            return dm;
+        }).collect(Collectors.toList()));
+
         return m;
     }
 
@@ -295,67 +304,40 @@ public class AdminPlanningController {
         dm.put("dateUpload", d.getDateUpload());
         dm.put("fileSize", d.getTailleFichier());
 
-        if (d.getTache() != null) {
-            tacheRepository.findById(d.getTache().getId()).ifPresent(t -> {
-                dm.put("tacheId", t.getId());
-                dm.put("tacheTitre", t.getTitre());
-                User ent = userRepository.findById(t.getResponsableId()).orElse(null);
-                if (ent != null) {
-                    dm.put("entrepreneurId", ent.getId());
-                    dm.put("entrepreneurName", formatName(ent));
-                    matchingRepository.findByEntrepreneurIdAndStatut(ent.getId(), Matching.StatutMatching.VALIDE).stream().findFirst().ifPresent(match -> {
-                        dm.put("coachId", match.getCoachId());
-                        userRepository.findById(match.getCoachId()).ifPresent(c -> dm.put("coachName", formatName(c)));
-                        programmeRepository.findById(match.getProgrammeId()).ifPresent(p -> dm.put("programmeNom", p.getNom()));
-                        thematiqueRepository.findById(match.getThematiqueId()).ifPresent(them -> dm.put("thematiqueNom", them.getNom()));
-                    });
-                }
-            });
-        }
+        tacheRepository.findById(d.getTache().getId()).ifPresent(t -> {
+            dm.put("tacheId", t.getId());
+            dm.put("tacheTitre", t.getTitre());
+            User ent = userRepository.findById(t.getResponsableId()).orElse(null);
+            if (ent != null) {
+                dm.put("entrepreneurId", ent.getId());
+                dm.put("entrepreneurName", ent.getFirstName() + " " + ent.getLastName());
+                matchingRepository.findByEntrepreneurIdAndStatut(ent.getId(), Matching.StatutMatching.VALIDE).stream().findFirst().ifPresent(match -> {
+                    dm.put("coachId", match.getCoachId());
+                    userRepository.findById(match.getCoachId()).ifPresent(c -> dm.put("coachName", c.getFirstName() + " " + c.getLastName()));
+                });
+            }
+        });
         return dm;
     }
 
     @GetMapping("/coach/{coachId}")
-    public ResponseEntity<?> getCoachPlanning(
-            @PathVariable Long coachId,
-            @RequestParam(required = false) Long programmeId,
-            @RequestParam(required = false) Long thematiqueId) {
+    public ResponseEntity<?> getCoachPlanning(@PathVariable Long coachId) {
         User coach = userRepository.findById(coachId).orElse(null);
         if (coach == null) return ResponseEntity.notFound().build();
 
-        List<Session> sessions = sessionRepository.findByCoachId(coachId).stream()
-                .filter(s -> {
-                    if (programmeId == null || programmeId == 0) return true;
-                    if (s.getProgramme() != null && s.getProgramme().getId().equals(programmeId)) return true;
-                    // For coach, we check if the entrepreneur in this session has a matching with this program
-                    if (s.getEntrepreneur() != null) {
-                        return matchingRepository.findByEntrepreneurIdAndStatut(s.getEntrepreneur().getId(), Matching.StatutMatching.VALIDE)
-                                .stream().anyMatch(m -> m.getProgrammeId().equals(programmeId));
-                    }
-                    return false;
-                })
-                .collect(Collectors.toList());
-        
+        List<Session> sessions = sessionRepository.findByCoachId(coachId);
         List<Map<String, Object>> sessionList = sessions.stream().map(this::mapSession).collect(Collectors.toList());
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("coachId", coachId);
-        result.put("coachName", formatName(coach));
+        result.put("coachName", coach.getFirstName() + " " + coach.getLastName());
         result.put("sessions", sessionList);
         return ResponseEntity.ok(result);
     }
 
     @GetMapping("/coach/{coachId}/todos")
-    public ResponseEntity<List<Map<String, Object>>> getCoachTodos(
-            @PathVariable Long coachId,
-            @RequestParam(required = false) Long programmeId,
-            @RequestParam(required = false) Long thematiqueId) {
-        
-        List<Matching> matchings = matchingRepository.findByCoachIdAndStatut(coachId, Matching.StatutMatching.VALIDE).stream()
-                .filter(m -> (programmeId == null || programmeId == 0 || m.getProgrammeId().equals(programmeId)))
-                .filter(m -> (thematiqueId == null || thematiqueId == 0 || m.getThematiqueId().equals(thematiqueId)))
-                .collect(Collectors.toList());
-                
+    public ResponseEntity<List<Map<String, Object>>> getCoachTodos(@PathVariable Long coachId) {
+        List<Matching> matchings = matchingRepository.findByCoachIdAndStatut(coachId, Matching.StatutMatching.VALIDE);
         List<Long> entrepreneurIds = matchings.stream().map(Matching::getEntrepreneurId).collect(Collectors.toList());
 
         List<Tache> tasks = entrepreneurIds.stream()
@@ -366,16 +348,8 @@ public class AdminPlanningController {
     }
 
     @GetMapping("/coach/{coachId}/livrables")
-    public ResponseEntity<List<Map<String, Object>>> getCoachLivrables(
-            @PathVariable Long coachId,
-            @RequestParam(required = false) Long programmeId,
-            @RequestParam(required = false) Long thematiqueId) {
-        
-        List<Matching> matchings = matchingRepository.findByCoachIdAndStatut(coachId, Matching.StatutMatching.VALIDE).stream()
-                .filter(m -> (programmeId == null || programmeId == 0 || m.getProgrammeId().equals(programmeId)))
-                .filter(m -> (thematiqueId == null || thematiqueId == 0 || m.getThematiqueId().equals(thematiqueId)))
-                .collect(Collectors.toList());
-                
+    public ResponseEntity<List<Map<String, Object>>> getCoachLivrables(@PathVariable Long coachId) {
+        List<Matching> matchings = matchingRepository.findByCoachIdAndStatut(coachId, Matching.StatutMatching.VALIDE);
         List<Long> entrepreneurIds = matchings.stream().map(Matching::getEntrepreneurId).collect(Collectors.toList());
 
         // 1. Documents from tasks
@@ -386,11 +360,15 @@ public class AdminPlanningController {
                 .collect(Collectors.toList());
 
         // 2. Direct Livrables
-        List<Map<String, Object>> mappedLivrables = livrableRepository.findAll().stream()
-                .filter(l -> (l.getEntrepreneur() != null && entrepreneurIds.contains(l.getEntrepreneur().getId())))
-                .filter(l -> (programmeId == null || programmeId == 0 || (l.getProgramme() != null && l.getProgramme().getId().equals(programmeId)) || (l.getProgrammeName() != null && l.getProgrammeName().contains(programmeId.toString()))))
-                .map(this::mapLivrableEntity)
+        List<Livrable> coachLivrables = livrableRepository.findAll().stream()
+                .filter(l -> {
+                    if (l.getEntrepreneur() != null && entrepreneurIds.contains(l.getEntrepreneur().getId())) return true;
+                    User coach = userRepository.findById(coachId).orElse(null);
+                    return coach != null && coach.getEmail().equals(l.getCoachEmail());
+                })
                 .collect(Collectors.toList());
+        
+        List<Map<String, Object>> mappedLivrables = coachLivrables.stream().map(this::mapLivrableEntity).collect(Collectors.toList());
 
         List<Map<String, Object>> result = new ArrayList<>(taskDocs);
         result.addAll(mappedLivrables);
@@ -405,79 +383,36 @@ public class AdminPlanningController {
     }
 
     @GetMapping("/entrepreneur/{entrepreneurId}")
-    public ResponseEntity<?> getEntrepreneurPlanning(
-            @PathVariable Long entrepreneurId,
-            @RequestParam(required = false) Long programmeId,
-            @RequestParam(required = false) Long thematiqueId) {
+    public ResponseEntity<?> getEntrepreneurPlanning(@PathVariable Long entrepreneurId) {
         User entrepreneur = userRepository.findById(entrepreneurId).orElse(null);
         if (entrepreneur == null) return ResponseEntity.notFound().build();
 
-        List<Session> sessions = sessionRepository.findByEntrepreneurId(entrepreneurId).stream()
-                .filter(s -> {
-                    if (programmeId == null || programmeId == 0) return true;
-                    if (s.getProgramme() != null && s.getProgramme().getId().equals(programmeId)) return true;
-                    // Fallback to checking active matching for this entrepreneur
-                    return matchingRepository.findByEntrepreneurIdAndStatut(entrepreneurId, Matching.StatutMatching.VALIDE)
-                            .stream().anyMatch(m -> m.getProgrammeId().equals(programmeId));
-                })
-                .collect(Collectors.toList());
-                
+        List<Session> sessions = sessionRepository.findByEntrepreneurId(entrepreneurId);
         List<Map<String, Object>> sessionList = sessions.stream().map(this::mapSession).collect(Collectors.toList());
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("entrepreneurId", entrepreneurId);
-        result.put("entrepreneurName", formatName(entrepreneur));
+        result.put("entrepreneurName", entrepreneur.getFirstName() + " " + entrepreneur.getLastName());
         result.put("sessions", sessionList);
         return ResponseEntity.ok(result);
     }
 
     @GetMapping("/entrepreneur/{entrepreneurId}/todos")
-    public ResponseEntity<List<Map<String, Object>>> getEntrepreneurTodos(
-            @PathVariable Long entrepreneurId,
-            @RequestParam(required = false) Long programmeId,
-            @RequestParam(required = false) Long thematiqueId) {
-        
-        List<Tache> tasks = tacheRepository.findByResponsableId(entrepreneurId).stream()
-                .filter(t -> {
-                    if (programmeId == null || programmeId == 0) return true;
-                    // Try to resolve programme from hierarchy
-                    if (t.getActivite() != null && t.getActivite().getSprint() != null && 
-                        t.getActivite().getSprint().getProgramme() != null) {
-                        return t.getActivite().getSprint().getProgramme().getId().equals(programmeId);
-                    }
-                    // Fallback to active matching
-                    return matchingRepository.findByEntrepreneurIdAndStatut(entrepreneurId, Matching.StatutMatching.VALIDE)
-                            .stream().anyMatch(m -> m.getProgrammeId().equals(programmeId));
-                })
-                .collect(Collectors.toList());
-        
+    public ResponseEntity<List<Map<String, Object>>> getEntrepreneurTodos(@PathVariable Long entrepreneurId) {
+        List<Tache> tasks = tacheRepository.findByResponsableId(entrepreneurId);
         return ResponseEntity.ok(tasks.stream().map(this::mapTache).collect(Collectors.toList()));
     }
 
     @GetMapping("/entrepreneur/{entrepreneurId}/livrables")
-    public ResponseEntity<List<Map<String, Object>>> getEntrepreneurLivrables(
-            @PathVariable Long entrepreneurId,
-            @RequestParam(required = false) Long programmeId,
-            @RequestParam(required = false) Long thematiqueId) {
-        
+    public ResponseEntity<List<Map<String, Object>>> getEntrepreneurLivrables(@PathVariable Long entrepreneurId) {
         // 1. Documents from tasks
         List<Map<String, Object>> taskDocs = tacheRepository.findByResponsableId(entrepreneurId).stream()
-                .filter(t -> {
-                    if (programmeId == null || programmeId == 0) return true;
-                    if (t.getActivite() != null && t.getActivite().getSprint() != null && 
-                        t.getActivite().getSprint().getProgramme() != null) {
-                        return t.getActivite().getSprint().getProgramme().getId().equals(programmeId);
-                    }
-                    return matchingRepository.findByEntrepreneurIdAndStatut(entrepreneurId, Matching.StatutMatching.VALIDE)
-                            .stream().anyMatch(m -> m.getProgrammeId().equals(programmeId));
-                })
                 .flatMap(t -> tacheDocumentRepository.findByTacheId(t.getId()).stream())
                 .map(this::mapLivrable)
                 .collect(Collectors.toList());
 
         // 2. Direct Livrables
         List<Map<String, Object>> mappedLivrables = livrableRepository.findByEntrepreneurId(entrepreneurId).stream()
-                .filter(l -> (programmeId == null || programmeId == 0 || (l.getProgramme() != null && l.getProgramme().getId().equals(programmeId)) || (l.getProgrammeName() != null && l.getProgrammeName().contains(programmeId.toString()))))
                 .map(this::mapLivrableEntity)
                 .collect(Collectors.toList());
 
