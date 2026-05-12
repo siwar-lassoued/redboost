@@ -437,16 +437,34 @@ export class AdminSupervisionDashboardComponent implements OnInit {
         error: () => { this.allUsers.set([]); this.filteredUsersData.set([]); this.loadingUsers.set(false); this.cdr.markForCheck(); }
       });
     } else {
-      // General view: use specialized planning endpoints that only return matched users
-      const endpoint = mode === 'coach' ? `${environment.apiUrl}/admin/planning/coaches` : `${environment.apiUrl}/admin/planning/entrepreneurs`;
-      this.http.get<any[]>(endpoint, { headers: this.headers }).subscribe({
-        next: (res) => {
-          const users = res.map((u: any) => ({
-            id: u.coachId || u.entrepreneurId || u.id,
-            fullName: u.coachName || u.entrepreneurName || (u.firstName + ' ' + u.lastName) || 'Utilisateur',
-            email: u.email || 'N/A',
-            programmes: u.programmes || (u.programme ? [u.programme] : [])
-          }));
+      // General view: use the global matching history to ensure we only see matched users
+      this.http.get<any[]>(`${environment.apiUrl}/matching/history`, { headers: this.headers }).subscribe({
+        next: (matchings) => {
+          const uniqueUsersMap = new Map<number, any>();
+          matchings.forEach(m => {
+            const userData = mode === 'coach' ? m.coach : m.entrepreneur;
+            const rootId = mode === 'coach' ? m.coachId : m.entrepreneurId;
+            const finalId = userData?.id || rootId;
+            
+            if (finalId) {
+              const fullName = m.coachName || m.entrepreneurName || 
+                               ((userData?.firstName || userData?.prenom || '').trim() + ' ' + 
+                                (userData?.lastName || userData?.nom || '').trim()).trim();
+
+              const existing = uniqueUsersMap.get(finalId);
+              const progName = m.programmeName || m.programme?.nom;
+              const progs = existing ? existing.programmes : [];
+              if (progName && !progs.includes(progName)) progs.push(progName);
+
+              uniqueUsersMap.set(finalId, {
+                id: finalId,
+                fullName: fullName || userData?.email?.split('@')[0] || 'Utilisateur #' + finalId,
+                email: userData?.email || 'N/A',
+                programmes: progs
+              });
+            }
+          });
+          const users = Array.from(uniqueUsersMap.values());
           this.allUsers.set(users);
           this.filteredUsersData.set(users);
           this.loadingUsers.set(false);
@@ -460,7 +478,9 @@ export class AdminSupervisionDashboardComponent implements OnInit {
   filterUsers() {
     const q = this.searchUser.toLowerCase().trim();
     if (!q) this.filteredUsersData.set(this.allUsers());
-    else this.filteredUsersData.set(this.allUsers().filter(u => `${u.firstName} ${u.lastName} ${u.email}`.toLowerCase().includes(q)));
+    else this.filteredUsersData.set(this.allUsers().filter(u => 
+      `${u.fullName} ${u.email}`.toLowerCase().includes(q)
+    ));
   }
 
   filteredUsers = computed(() => this.filteredUsersData());

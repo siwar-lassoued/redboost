@@ -40,6 +40,11 @@ public class MatchingController {
         return ResponseEntity.ok().build();
     }
 
+    @GetMapping("/history")
+    public ResponseEntity<List<Map<String, Object>>> getGlobalHistory() {
+        return ResponseEntity.ok(matchingService.getGlobalHistory());
+    }
+
     @GetMapping("/history/{programmeId}")
     public ResponseEntity<List<Map<String, Object>>> getHistory(@PathVariable Long programmeId) {
         return ResponseEntity.ok(matchingService.getHistory(programmeId));

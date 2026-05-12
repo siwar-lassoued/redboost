@@ -506,89 +506,65 @@ public class MatchingIaService {
 
     // ─── History & Stats ──────────────────────────────────────────
 
+    public List<Map<String, Object>> getGlobalHistory() {
+        List<Matching> matchings = matchingRepo.findAll().stream()
+                .filter(m -> m.getStatut() == Matching.StatutMatching.VALIDE)
+                .collect(Collectors.toList());
+        return matchings.stream().map(this::mapMatchingToView).collect(Collectors.toList());
+    }
+
+    private Map<String, Object> mapMatchingToView(Matching m) {
+        Map<String, Object> view = new LinkedHashMap<>();
+        view.put("id", m.getId());
+        view.put("matchingId", m.getId());
+        view.put("scoreIa", m.getScoreIa());
+        view.put("statut", m.getStatut());
+        view.put("dateValidation", m.getDateValidation());
+        view.put("justification", m.getJustification());
+        view.put("rankTop", m.getRankTop());
+        view.put("thematiqueId", m.getThematiqueId());
+        view.put("programmeId", m.getProgrammeId());
+
+        view.put("coachId", m.getCoachId());
+        userRepo.findById(m.getCoachId()).ifPresent(c -> {
+            Map<String, Object> coach = new LinkedHashMap<>();
+            coach.put("id", c.getId());
+            coach.put("nom", c.getLastName());
+            coach.put("prenom", c.getFirstName());
+            coach.put("email", c.getEmail());
+            coach.put("expertise", c.getExpertise());
+            view.put("coach", coach);
+            // Extra fields for supervision dashboard
+            view.put("coachName", (c.getFirstName() != null ? c.getFirstName() : "") + " " + (c.getLastName() != null ? c.getLastName() : ""));
+        });
+
+        view.put("entrepreneurId", m.getEntrepreneurId());
+        userRepo.findById(m.getEntrepreneurId()).ifPresent(u -> {
+            Map<String, Object> ent = new LinkedHashMap<>();
+            ent.put("id", u.getId());
+            ent.put("nom", (u.getFirstName() != null ? u.getFirstName() : "") + " " + (u.getLastName() != null ? u.getLastName() : ""));
+            ent.put("email", u.getEmail());
+            ent.put("entreprise", u.getEntreprise());
+            view.put("entrepreneur", ent);
+            // Extra fields for supervision dashboard
+            view.put("entrepreneurName", ent.get("nom"));
+        });
+
+        programmeRepo.findById(m.getProgrammeId()).ifPresent(p -> {
+            view.put("programmeName", p.getNom());
+        });
+
+        return view;
+    }
+
     public List<Map<String, Object>> getHistory(Long programmeId) {
         List<Matching> matchings = matchingRepo.findHistoryByProgramme(programmeId);
-        return matchings.stream().map(m -> {
-            Map<String, Object> view = new LinkedHashMap<>();
-            view.put("id", m.getId());
-            view.put("matchingId", m.getId());
-            view.put("scoreIa", m.getScoreIa());
-            view.put("statut", m.getStatut());
-            view.put("dateValidation", m.getDateValidation());
-            view.put("justification", m.getJustification());
-            view.put("rankTop", m.getRankTop());
-            view.put("thematiqueId", m.getThematiqueId());
-
-            view.put("coachId", m.getCoachId());
-            userRepo.findById(m.getCoachId()).ifPresent(c -> {
-                Map<String, Object> coach = new LinkedHashMap<>();
-                coach.put("id", c.getId());
-                coach.put("nom", c.getLastName());
-                coach.put("prenom", c.getFirstName());
-                coach.put("email", c.getEmail());
-                coach.put("expertise", c.getExpertise());
-                view.put("coach", coach);
-            });
-
-            view.put("entrepreneurId", m.getEntrepreneurId());
-            userRepo.findById(m.getEntrepreneurId()).ifPresent(u -> {
-                Map<String, Object> ent = new LinkedHashMap<>();
-                ent.put("id", u.getId());
-                ent.put("nom", (u.getFirstName() != null ? u.getFirstName() : "") + " " + (u.getLastName() != null ? u.getLastName() : ""));
-                ent.put("email", u.getEmail());
-                ent.put("entreprise", u.getEntreprise());
-                view.put("entrepreneur", ent);
-            });
-
-            return view;
-        }).collect(Collectors.toList());
+        return matchings.stream().map(this::mapMatchingToView).collect(Collectors.toList());
     }
 
     public List<Map<String, Object>> getHistoryByThematique(Long programmeId, Long thematiqueId) {
         List<Matching> matchings = matchingRepo.findByProgrammeAndThematique(programmeId, thematiqueId);
-        return matchings.stream().map(m -> {
-            Map<String, Object> view = new LinkedHashMap<>();
-            view.put("id", m.getId());
-            view.put("matchingId", m.getId());
-            view.put("scoreIa", m.getScoreIa());
-            view.put("statut", m.getStatut());
-            view.put("dateValidation", m.getDateValidation());
-            view.put("justification", m.getJustification());
-            view.put("rankTop", m.getRankTop());
-            view.put("thematiqueId", m.getThematiqueId());
-
-            userRepo.findById(m.getCoachId()).ifPresent(c -> {
-                Map<String, Object> coach = new LinkedHashMap<>();
-                coach.put("id", c.getId());
-                coach.put("nom", c.getLastName());
-                coach.put("prenom", c.getFirstName());
-                coach.put("email", c.getEmail());
-                coach.put("expertise", c.getExpertise());
-                view.put("coach", coach);
-            });
-
-            view.put("entrepreneurId", m.getEntrepreneurId());
-            Optional<CandidatureRedstarter> candOpt = candidatureRepo.findById(m.getEntrepreneurId());
-            if (candOpt.isPresent()) {
-                Map<String, Object> ent = new LinkedHashMap<>();
-                ent.put("id", candOpt.get().getId());
-                ent.put("nom", candOpt.get().getNomPrenom());
-                ent.put("email", candOpt.get().getEmail());
-                ent.put("entreprise", candOpt.get().getNomEntreprise());
-                view.put("entrepreneur", ent);
-            } else {
-                userRepo.findById(m.getEntrepreneurId()).ifPresent(u -> {
-                    Map<String, Object> ent = new LinkedHashMap<>();
-                    ent.put("id", u.getId());
-                    ent.put("nom", (u.getFirstName() != null ? u.getFirstName() : "") + " " + (u.getLastName() != null ? u.getLastName() : ""));
-                    ent.put("email", u.getEmail());
-                    ent.put("entreprise", u.getEntreprise());
-                    view.put("entrepreneur", ent);
-                });
-            }
-
-            return view;
-        }).collect(Collectors.toList());
+        return matchings.stream().map(this::mapMatchingToView).collect(Collectors.toList());
     }
 
     public Map<String, Integer> getMatchingStats(Long programmeId) {
