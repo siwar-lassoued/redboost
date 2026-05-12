@@ -526,7 +526,7 @@ public class MatchingIaService {
         view.put("thematiqueId", m.getThematiqueId());
         view.put("programmeId", m.getProgrammeId());
 
-        view.put("coachId", m.getCoachId());
+        // 1. Coach Enrichment
         userRepo.findById(m.getCoachId()).ifPresent(c -> {
             Map<String, Object> coach = new LinkedHashMap<>();
             coach.put("id", c.getId());
@@ -534,22 +534,53 @@ public class MatchingIaService {
             coach.put("prenom", c.getFirstName());
             coach.put("email", c.getEmail());
             coach.put("expertise", c.getExpertise());
+            coach.put("skills", c.getSkills());
+            coach.put("secteur", c.getSecteur());
+            coach.put("bio", c.getBio());
+            coach.put("yearsOfExperience", c.getYearsOfExperience());
+            coach.put("phoneNumber", c.getPhoneNumber());
+            
+            long activeCount = matchingRepo.findByCoachIdAndStatut(c.getId(), Matching.StatutMatching.VALIDE).size();
+            coach.put("nbEntrepreneursActifs", activeCount);
+            
+            double ratingMoyen = coachRatingRepo.findAverageRatingByCoachId(c.getId()).orElse(0.0);
+            coach.put("noteMoyenneRating", Math.round(ratingMoyen * 10.0) / 10.0);
+            
             view.put("coach", coach);
-            // Extra fields for supervision dashboard
             view.put("coachName", (c.getFirstName() != null ? c.getFirstName() : "") + " " + (c.getLastName() != null ? c.getLastName() : ""));
         });
 
-        view.put("entrepreneurId", m.getEntrepreneurId());
-        userRepo.findById(m.getEntrepreneurId()).ifPresent(u -> {
+        // 2. Entrepreneur Enrichment (Prioritize Candidature for rich details)
+        Optional<CandidatureRedstarter> candOpt = candidatureRepo.findById(m.getEntrepreneurId());
+        if (candOpt.isPresent()) {
+            CandidatureRedstarter c = candOpt.get();
             Map<String, Object> ent = new LinkedHashMap<>();
-            ent.put("id", u.getId());
-            ent.put("nom", (u.getFirstName() != null ? u.getFirstName() : "") + " " + (u.getLastName() != null ? u.getLastName() : ""));
-            ent.put("email", u.getEmail());
-            ent.put("entreprise", u.getEntreprise());
+            
+            User user = userRepo.findByEmail(c.getEmail());
+            ent.put("id", user != null ? user.getId() : c.getId());
+            ent.put("isUser", user != null);
+            ent.put("nom", c.getNomPrenom());
+            ent.put("email", c.getEmail());
+            ent.put("telephone", c.getNumeroTelephone());
+            ent.put("entreprise", c.getNomEntreprise());
+            ent.put("secteur", c.getEntrepriseEst());
+            ent.put("phaseMaturite", c.getPhaseMaturite());
+            ent.put("description", c.getBreveDescription());
+            ent.put("region", c.getRegionBasee());
+            
             view.put("entrepreneur", ent);
-            // Extra fields for supervision dashboard
-            view.put("entrepreneurName", ent.get("nom"));
-        });
+            view.put("entrepreneurName", c.getNomPrenom());
+        } else {
+            userRepo.findById(m.getEntrepreneurId()).ifPresent(u -> {
+                Map<String, Object> ent = new LinkedHashMap<>();
+                ent.put("id", u.getId());
+                ent.put("nom", (u.getFirstName() != null ? u.getFirstName() : "") + " " + (u.getLastName() != null ? u.getLastName() : ""));
+                ent.put("email", u.getEmail());
+                ent.put("entreprise", u.getEntreprise());
+                view.put("entrepreneur", ent);
+                view.put("entrepreneurName", ent.get("nom"));
+            });
+        }
 
         programmeRepo.findById(m.getProgrammeId()).ifPresent(p -> {
             view.put("programmeName", p.getNom());
