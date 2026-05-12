@@ -45,6 +45,13 @@ import { ToastrService } from 'ngx-toastr';
               <i class="pi pi-search search-icon"></i>
               <input type="text" placeholder="Rechercher une session..." [(ngModel)]="searchTerm" (ngModelChange)="filterSessions()" class="search-input" />
           </div>
+          
+          <div class="filter-wrap" style="min-width: 220px;">
+              <select [(ngModel)]="selectedEntrepreneurId" (change)="filterSessions()" class="filter-select" style="width: 100%;">
+                <option [ngValue]="0">Tous les entrepreneurs</option>
+                <option *ngFor="let ent of entrepreneurs" [value]="ent.id">{{ ent.firstName }} {{ ent.lastName }}</option>
+              </select>
+          </div>
           <label class="toggle-exceptionnelle">
             <input type="checkbox" [(ngModel)]="showExceptionnelle" (change)="filterSessions()">
             <span class="toggle-label">Sessions exceptionnelles</span>
@@ -324,6 +331,7 @@ export class SessionsComponent implements OnInit {
   loading: boolean = false;
   searchTerm: string = '';
   activeFilter: string = 'en_cours';
+  selectedEntrepreneurId: number = 0;
   showExceptionnelle: boolean = true;
   
   sessions: SessionCoachDTO[] = [];
@@ -443,6 +451,11 @@ export class SessionsComponent implements OnInit {
       rawResult = rawResult.filter(s => !this.isUpcoming(s) && !this.hasCancelled(s));
     } else if (this.activeFilter === 'annule') {
       rawResult = rawResult.filter(s => this.hasCancelled(s));
+    }
+    
+    // Entrepreneur Filter
+    if (this.selectedEntrepreneurId > 0) {
+      rawResult = rawResult.filter(s => s.entrepreneurId == this.selectedEntrepreneurId);
     }
 
     this.filteredSessions = rawResult.sort((a,b) => {

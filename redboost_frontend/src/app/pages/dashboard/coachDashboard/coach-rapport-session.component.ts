@@ -39,7 +39,7 @@ import { SessionService } from '../../../core/services/session.service';
                 <label>Thématique de coaching <span class="required">*</span></label>
                 <select [(ngModel)]="selectedThematiqueId" (change)="onThematiqueSelect()" class="premium-input">
                   <option [ngValue]="0">Choisir une thématique...</option>
-                  <option *ngFor="let t of thematiques" [value]="t.id">{{ t.nom }}</option>
+                  <option *ngFor="let t of thematiques" [ngValue]="t.id">{{ t.nom }}</option>
                 </select>
               </div>
 
@@ -54,14 +54,16 @@ import { SessionService } from '../../../core/services/session.service';
                 <label>Sélectionner un entrepreneur <span class="required">*</span></label>
                 <select [(ngModel)]="selectedEntrepreneurId" (change)="onEntrepreneurSelect()" class="premium-input" [disabled]="selectedThematiqueId === 0">
                   <option [ngValue]="0">Choisir un entrepreneur...</option>
-                  <option *ngFor="let ent of filteredFormEntrepreneurs" [value]="ent.id">{{ ent.firstName }} {{ ent.lastName }} ({{ ent.entreprise }})</option>
+                  <option *ngFor="let ent of filteredFormEntrepreneurs" [ngValue]="ent.id">
+                    {{ ent.firstName }} {{ ent.lastName }} ({{ ent.entreprise || ent.startupName || 'Entreprise non spécifiée' }})
+                  </option>
                 </select>
               </div>
 
               <div class="form-group">
                 <label>Session réalisée </label>
                 <select [(ngModel)]="selectedSessionId" (change)="onSessionSelect()" class="premium-input" [disabled]="selectedEntrepreneurId === 0">
-                  <option [ngValue]="0">-- Création manuelle --</option>
+                  <option [ngValue]="0">-- choisir une session--</option>
                   <option *ngFor="let s of realizedSessions" [value]="s.id">{{ s.titre || 'Session' }} - {{ s.date | date:'shortDate' }}</option>
                 </select>
               </div>
@@ -493,26 +495,23 @@ export class CoachRapportSessionComponent implements OnInit {
       }).subscribe({
           next: ({ sessions, seances }) => {
               const mappedSeances: any[] = seances.map(se => ({
+                ...se,
                 id: se.id, 
                 titre: se.titre,
                 date: se.dateSeance,
                 heureDebut: se.heureDebut,
                 heureFin: se.heureFin,
                 isExceptionnelle: true,
-                entrepreneur: { id: se.entrepreneurId, firstName: se.entrepreneurName, lastName: '' },
-                thematique: { id: se.thematiqueId },
-                statut: 'TERMINE' // We'll re-filter anyway
+                entrepreneurId: se.entrepreneurId,
+                thematiqueId: se.thematiqueId,
+                statut: 'TERMINE' 
               }));
 
               // Normalize standard sessions
               const mappedSessions = sessions.map(s => ({
                   ...s,
-                  id: s.id,
-                  titre: s.titre,
                   date: s.dateSession,
-                  statut: s.bookingStatus || 'CONFIRME',
-                  entrepreneur: { id: s.entrepreneurId, firstName: s.entrepreneurName, lastName: '' },
-                  thematique: { id: s.thematiqueId, nom: s.thematiqueNom }
+                  statut: s.bookingStatus || 'CONFIRME'
               }));
 
               this.allCoachSessions = [...mappedSessions, ...mappedSeances];
@@ -573,41 +572,32 @@ export class CoachRapportSessionComponent implements OnInit {
 
   filterRealizedSessions() {
       if (!this.allCoachSessions) return;
+      console.log("Filtrage sessions - Total:", this.allCoachSessions.length);
+      console.log("Filtres actifs - EntrepreneurId:", this.selectedEntrepreneurId, "ThematiqueId:", this.selectedThematiqueId);
       
-      const selectedTheme = this.thematiques.find(t => t.id == this.selectedThematiqueId);
-      const themeNom = selectedTheme ? selectedTheme.nom : null;
-
       this.realizedSessions = this.allCoachSessions.filter(s => {
-          // Status check: if it's in the past, it's considered realized
-          let isPast = false;
+          // 1. Past check (same as SessionsComponent logic)
           const dateStr = s.date || s.dateSession;
           const endStr = s.heureFin || '23:59:00';
-          
+          let isPast = false;
           if (dateStr) {
               const sessionDate = new Date(dateStr + 'T' + endStr);
               isPast = sessionDate.getTime() < new Date().getTime();
           }
 
-          const status = (s.statut || s.bookingStatus || '').toUpperCase();
-          const isCancelled = status === 'ANNULE' || status === 'ANNULEE';
+          const isCancelled = s.bookingStatus === 'ANNULE' || s.statut === 'ANNULE' || s.statut === 'ANNULEE';
           
-          if (isCancelled) return false;
-          if (!isPast && status !== 'TERMINE' && status !== 'TERMINEE' && status !== 'REALISEE') return false;
+          if (isCancelled || !isPast) return false;
 
-          // Entrepreneur check
-          const entId = s.entrepreneur ? s.entrepreneur.id : (s.entrepreneurId || null);
-          const entMatch = this.selectedEntrepreneurId === 0 || entId == this.selectedEntrepreneurId;
+          // 2. Entrepreneur filter
+          const entMatch = this.selectedEntrepreneurId === 0 || s.entrepreneurId == this.selectedEntrepreneurId;
 
-          // Thematique check
-          const sThemeId = s.thematique ? s.thematique.id : (s.thematiqueId || null);
-          const sThemeNom = s.thematiqueName || (s.thematique ? s.thematique.nom : null) || s.thematiqueNom;
-          
-          const themeMatch = this.selectedThematiqueId === 0 || 
-                            (sThemeId && sThemeId == this.selectedThematiqueId) ||
-                            (themeNom && sThemeNom === themeNom);
+          // 3. Thematique filter
+          const themeMatch = this.selectedThematiqueId === 0 || s.thematiqueId == this.selectedThematiqueId;
 
           return entMatch && themeMatch;
       });
+      console.log("Sessions après filtrage:", this.realizedSessions.length);
   }
 
   onSessionSelect() {
@@ -629,7 +619,7 @@ export class CoachRapportSessionComponent implements OnInit {
         coachId: this.coachId,
         entrepreneurId: this.selectedEntrepreneurId,
         thematiqueId: this.selectedThematiqueId,
-        entrepriseNom: ent ? ent.entreprise : '',
+        entrepriseNom: ent ? (ent.entreprise || ent.startupName || '') : '',
         secteurActivite: ent ? ent.secteur : '',
         gouvernorat: '',
         beneficiaireNom: ent ? ent.firstName + ' ' + ent.lastName : '',

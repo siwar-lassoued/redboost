@@ -348,12 +348,7 @@ export class AppMenu implements OnInit {
                         routerLink: ['/entrepreneur/mon-programme'],
                     },
                     {
-                        label: 'Mes Tâches',
-                        icon: 'pi pi-fw pi-list',
-                        routerLink: ['/entrepreneur/mes-taches'],
-                    },
-                    {
-                        label: 'Mes Livrables',
+                        label: 'Mes Tâches & Livrables',
                         icon: 'pi pi-fw pi-file-pdf',
                         routerLink: ['/entrepreneur/mes-livrables'],
                     },

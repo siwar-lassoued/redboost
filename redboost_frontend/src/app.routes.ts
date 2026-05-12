@@ -74,7 +74,6 @@ import { EntrepreneurDashboardComponent } from './app/pages/entrepreneur/dashboa
 import { MesCoachsComponent } from './app/pages/entrepreneur/mes-coachs/mes-coachs.component';
 import { EntrepreneurSessionsComponent } from './app/pages/entrepreneur/mes-sessions/entrepreneur-sessions.component';
 import { CoachRatingComponent } from './app/pages/entrepreneur/coach-rating/coach-rating.component';
-import { EntrepreneurTachesComponent } from './app/pages/entrepreneur/mes-taches/entrepreneur-taches.component';
 import { EntrepreneurLivrablesComponent } from './app/pages/entrepreneur/mes-livrables/entrepreneur-livrables.component';
 import { EntrepreneurProgrammeComponent } from './app/pages/entrepreneur/mon-programme/entrepreneur-programme.component';
 import { EntrepreneurChatComponent } from './app/pages/entrepreneur/chat/entrepreneur-chat.component';
@@ -183,7 +182,7 @@ export const appRoutes: Routes = [
             { path: 'entrepreneur-dashboard', component: EntrepreneurDashboardComponent },
             { path: 'entrepreneur/mes-coachs', component: MesCoachsComponent },
             { path: 'entrepreneur/mes-sessions', component: EntrepreneurSessionsComponent },
-            { path: 'entrepreneur/mes-taches', component: EntrepreneurTachesComponent },
+            { path: 'entrepreneur/mes-taches', redirectTo: 'entrepreneur/mes-livrables', pathMatch: 'full' },
             { path: 'entrepreneur/mes-livrables', component: EntrepreneurLivrablesComponent },
             { path: 'entrepreneur/mon-programme', component: EntrepreneurProgrammeComponent },
             { path: 'entrepreneur/chat', component: EntrepreneurChatComponent },

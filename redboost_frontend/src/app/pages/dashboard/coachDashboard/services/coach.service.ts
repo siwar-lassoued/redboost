@@ -109,6 +109,7 @@ export interface CoachEntrepreneurDTO {
   firstName: string;
   lastName: string;
   entreprise?: string;
+  startupName?: string;
   secteur?: string;
   profilePictureUrl?: string;
   completionRate?: number;
