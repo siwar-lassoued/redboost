@@ -355,7 +355,6 @@ type DetailTab = 'sessions' | 'taches' | 'livrables';
                         </div>
                       </div>
                     }
-                    }
                     @if (detail().livrables.length === 0) {
                       <div class="col-span-full py-12 flex flex-col items-center justify-center text-slate-300 bg-slate-50/50 rounded-3xl border-2 border-dashed border-slate-100">
                         <i class="pi pi-inbox text-4xl mb-3"></i>
