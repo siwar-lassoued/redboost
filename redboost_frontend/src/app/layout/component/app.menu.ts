@@ -200,11 +200,6 @@ export class AppMenu implements OnInit {
                     {
                         label: 'Planning de coaching',
                         icon: 'pi pi-fw pi-calendar-clock',
-                        routerLink: ['/admin_planning'],
-                    },
-                    {
-                        label: 'Vue 360° Supervision',
-                        icon: 'pi pi-fw pi-eye',
                         routerLink: ['/admin-supervision'],
                     },
                     {

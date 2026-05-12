@@ -147,6 +147,24 @@ public class AdminPlanningController {
         m.put("dureeMinutes", s.getDureeMinutes());
         m.put("statut", s.getStatut().name());
         m.put("meetLink", s.getMeetLink());
+
+        // Get Programme Name
+        if (s.getProgramme() != null) {
+            m.put("programmeNom", s.getProgramme().getNom());
+        }
+
+        // Resolve Thematique Name via disponibiliteId
+        if (s.getDisponibiliteId() != null) {
+            try {
+                Long slotId = Long.parseLong(s.getDisponibiliteId());
+                sessionCoachRepository.findById(slotId).ifPresent(slot -> {
+                    if (slot.getDisponibilite() != null && slot.getDisponibilite().getThematique() != null) {
+                        m.put("thematiqueNom", slot.getDisponibilite().getThematique().getNom());
+                    }
+                });
+            } catch (Exception ignored) {}
+        }
+
         if (s.getCoach() != null) {
             m.put("coachId", s.getCoach().getId());
             m.put("coachName", s.getCoach().getFirstName() + " " + s.getCoach().getLastName());
