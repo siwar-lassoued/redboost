@@ -314,6 +314,8 @@ public class AdminPlanningController {
                 matchingRepository.findByEntrepreneurIdAndStatut(ent.getId(), Matching.StatutMatching.VALIDE).stream().findFirst().ifPresent(match -> {
                     dm.put("coachId", match.getCoachId());
                     userRepository.findById(match.getCoachId()).ifPresent(c -> dm.put("coachName", c.getFirstName() + " " + c.getLastName()));
+                    programmeRepository.findById(match.getProgrammeId()).ifPresent(p -> dm.put("programmeNom", p.getNom()));
+                    thematiqueRepository.findById(match.getThematiqueId()).ifPresent(th -> dm.put("thematiqueNom", th.getNom()));
                 });
             }
         });

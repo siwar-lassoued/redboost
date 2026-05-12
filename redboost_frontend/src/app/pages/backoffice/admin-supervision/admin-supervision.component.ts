@@ -248,65 +248,121 @@ type DetailTab = 'sessions' | 'taches' | 'livrables';
                               <i class="pi pi-video text-base"></i>
                             </a>
                           }
-                          <button class="w-8 h-8 rounded-lg bg-slate-50 text-slate-300 group-hover:text-[#ea5073] transition-colors border border-slate-100">
-                            <i class="pi pi-chevron-right text-xs"></i>
-                          </button>
                         </div>
+                      </div>
+                    }
+                    @if (detail().sessions.length === 0) {
+                      <div class="py-12 flex flex-col items-center justify-center text-slate-300 bg-slate-50/50 rounded-3xl border-2 border-dashed border-slate-100">
+                        <i class="pi pi-calendar-times text-4xl mb-3"></i>
+                        <p class="text-sm font-bold uppercase tracking-widest">Aucune session planifiée</p>
                       </div>
                     }
                   </div>
                 }
 
-                <!-- OTHER TABS (TASKS/DELIVERABLES) -->
-                @if (!loadingDetail() && (activeTab() === 'taches' || activeTab() === 'livrables')) {
-                   <div class="grid grid-cols-1 gap-3">
-                     <!-- Simplified standard display for now -->
-                     @if (activeTab() === 'taches') {
-                        @for (t of detail().taches; track t.id) {
-                          <div class="flex items-center gap-4 p-4 bg-white rounded-2xl border border-[#f1f5f9] hover:shadow-md transition-all">
-                            <div class="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
-                              <i class="pi pi-check-circle"></i>
-                            </div>
-                            <div class="flex-1">
-                              <p class="text-lg font-black text-slate-800 uppercase">{{ t.titre }}</p>
-                              <p class="text-xs font-bold text-slate-400 mt-1" *ngIf="t.dateLimite">ÉCHÉANCE : {{ t.dateLimite | date:'dd/MM' }}</p>
-                            </div>
-                            <span class="text-[10px] font-black px-3 py-1.5 rounded-lg bg-slate-100 text-slate-500">{{ t.status }}</span>
+                <!-- TACHES CONTENT -->
+                @if (!loadingDetail() && activeTab() === 'taches') {
+                  <div class="space-y-3">
+                    @for (t of detail().taches; track t.id) {
+                      <div class="flex items-center gap-4 p-4 bg-white rounded-2xl border border-[#f1f5f9] hover:border-[#ea5073]/20 hover:shadow-lg transition-all group">
+                        <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
+                          <i class="pi pi-check-circle text-lg"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                          <p class="text-[14px] font-black text-[#1e293b] truncate uppercase tracking-tight">{{ t.titre }}</p>
+                          <div class="flex items-center gap-3 mt-1.5">
+                            <span class="text-[9px] font-black px-2 py-0.5 rounded bg-slate-100 text-slate-500 uppercase tracking-widest border border-slate-200">
+                              {{ t.status }}
+                            </span>
+                            @if (t.dateLimite) {
+                              <span class="flex items-center gap-1.5 text-[10px] font-bold text-slate-400">
+                                <i class="pi pi-calendar text-[9px]"></i>
+                                {{ t.dateLimite | date:'dd MMM' }}
+                              </span>
+                            }
                           </div>
-                        }
-                     }
-                                           @if (activeTab() === 'livrables') {
-                         <div class="grid grid-cols-2 gap-4">
-                         @for (l of detail().livrables; track l.id) {
-                           <div class="p-4 bg-white rounded-2xl border border-[#f1f5f9] hover:shadow-lg transition-all group">
-                             <div class="flex items-center gap-3 mb-4">
-                               <div class="w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110" 
-                                    [style.background]="getFileIconConfig(l.url).bg">
-                                 <i class="pi text-lg" [class]="getFileIconConfig(l.url).icon" [style.color]="getFileIconConfig(l.url).color"></i>
-                               </div>
-                               <div class="flex-1 min-w-0">
-                                 <p class="text-xs font-black text-slate-800 uppercase truncate" [title]="l.nom">{{ l.nom }}</p>
-                                 <p class="text-[9px] font-bold text-slate-400 mt-0.5">{{ l.dateUpload | date:'dd MMM yyyy' }}</p>
-                               </div>
-                             </div>
-                             
-                             <div class="flex items-center gap-2 mb-4">
-                                @if (l.tacheTitre) {
-                                  <span class="px-2 py-0.5 rounded bg-slate-50 text-slate-500 text-[9px] font-bold flex items-center gap-1">
-                                    <i class="pi pi-check-square text-[8px]"></i> {{ l.tacheTitre }}
-                                  </span>
-                                }
-                             </div>
+                        </div>
+                        <div class="flex flex-col items-end gap-1">
+                           <span class="text-[8px] font-black text-slate-300 uppercase tracking-widest">Priorité</span>
+                           <span class="text-[10px] font-black" [class]="t.priorite === 'HAUTE' ? 'text-rose-500' : 'text-amber-500'">{{ t.priorite }}</span>
+                        </div>
+                      </div>
+                    }
+                    @if (detail().taches.length === 0) {
+                      <div class="py-12 flex flex-col items-center justify-center text-slate-300 bg-slate-50/50 rounded-3xl border-2 border-dashed border-slate-100">
+                        <i class="pi pi-list text-4xl mb-3"></i>
+                        <p class="text-sm font-bold uppercase tracking-widest">Aucune tâche assignée</p>
+                      </div>
+                    }
+                  </div>
+                }
 
-                             <a [href]="getLivrableUrl(l.url)" target="_blank" 
-                                class="flex items-center justify-center gap-2 w-full py-2.5 bg-slate-50 rounded-xl text-[10px] font-black text-slate-600 hover:bg-[#ea5073] hover:text-white transition-all">
-                                <i class="pi pi-download"></i> CONSULTER
-                             </a>
-                           </div>
-                         }
-                         </div>
-                      }
-                   </div>
+                <!-- LIVRABLES CONTENT -->
+                @if (!loadingDetail() && activeTab() === 'livrables') {
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    @for (l of detail().livrables; track l.id) {
+                      <div class="p-4 bg-white rounded-2xl border border-[#f1f5f9] hover:border-[#ea5073]/20 hover:shadow-lg hover:shadow-pink-500/5 transition-all group relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-[#ea5073]/5 to-transparent rounded-bl-full -mr-10 -mt-10 group-hover:scale-110 transition-transform pointer-events-none"></div>
+                        <div class="flex items-start gap-4">
+                          <div class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform shadow-sm"
+                            [style.backgroundColor]="getFileIconConfig(l.nom).bg"
+                            [style.color]="getFileIconConfig(l.nom).color">
+                            <i [class]="getFileIconConfig(l.nom).icon + ' text-xl'"></i>
+                          </div>
+                          <div class="flex-1 min-w-0">
+                            <div class="flex items-start justify-between gap-2">
+                              <p class="text-[14px] font-black text-[#1e293b] truncate uppercase tracking-tight group-hover:text-[#ea5073] transition-colors leading-tight" [title]="l.nom">
+                                {{ l.nom }}
+                              </p>
+                              <a [href]="l.url" target="_blank" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-[#ea5073] hover:bg-[#fff5f7] transition-all">
+                                <i class="pi pi-download text-sm"></i>
+                              </a>
+                            </div>
+                            <div class="flex flex-wrap gap-1 mt-2">
+                              @if (l.programmeNom) {
+                                <span class="px-2 py-0.5 bg-sky-50 text-sky-600 text-[8px] font-black rounded-md uppercase border border-sky-100 tracking-tighter">{{ l.programmeNom }}</span>
+                              }
+                              @if (l.thematiqueNom) {
+                                <span class="px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[8px] font-black rounded-md uppercase border border-emerald-100 tracking-tighter">{{ l.thematiqueNom }}</span>
+                              }
+                            </div>
+                            <div class="mt-3 space-y-1.5">
+                              @if (l.tacheTitre) {
+                                <div class="flex items-center gap-2 text-[10px] font-bold text-slate-500">
+                                  <i class="pi pi-tag text-slate-300"></i>
+                                  <span class="truncate">{{ l.tacheTitre }}</span>
+                                </div>
+                              }
+                              <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-50">
+                                <div class="flex items-center gap-2 text-[10px] font-bold text-slate-400">
+                                  <i class="pi pi-clock text-[9px]"></i>
+                                  {{ l.dateUpload | date:'dd/MM/yy' }}
+                                </div>
+                                <div class="flex items-center gap-2">
+                                  <div class="flex flex-col items-end">
+                                    <span class="text-[8px] text-slate-400 uppercase font-black tracking-widest">Destinataire</span>
+                                    <span class="text-[10px] font-black text-slate-600 uppercase">
+                                      {{ viewMode() === 'coach' ? (l.entrepreneurName || 'Entrepreneur') : (l.coachName || 'Coach') }}
+                                    </span>
+                                  </div>
+                                  <div class="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px] text-slate-400">
+                                    <i class="pi pi-user"></i>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    }
+                    }
+                    @if (detail().livrables.length === 0) {
+                      <div class="col-span-full py-12 flex flex-col items-center justify-center text-slate-300 bg-slate-50/50 rounded-3xl border-2 border-dashed border-slate-100">
+                        <i class="pi pi-inbox text-4xl mb-3"></i>
+                        <p class="text-sm font-bold uppercase tracking-widest">Aucun livrable partagé</p>
+                      </div>
+                    }
+                  </div>
                 }
               </div>
             </div>
