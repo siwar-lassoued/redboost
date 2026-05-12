@@ -466,9 +466,11 @@ export class AdminSupervisionDashboardComponent implements OnInit {
             const finalId = userData?.id || rootId;
             
             if (finalId) {
-              const fullName = m.coachName || m.entrepreneurName || 
-                               ((userData?.firstName || userData?.prenom || '').trim() + ' ' + 
-                                (userData?.lastName || userData?.nom || '').trim()).trim();
+              const nameFromData = ((userData?.firstName || userData?.prenom || '').trim() + ' ' + 
+                                   (userData?.lastName || userData?.nom || '').trim()).trim();
+              
+              const fullName = (mode === 'coach' ? (m.coachName || nameFromData) : (m.entrepreneurName || nameFromData)) || 
+                               userData?.email?.split('@')[0] || 'Utilisateur #' + finalId;
 
               const existing = uniqueUsersMap.get(finalId);
               const progName = m.programmeName || m.programme?.nom;
@@ -502,9 +504,11 @@ export class AdminSupervisionDashboardComponent implements OnInit {
             const finalId = userData?.id || rootId;
             
             if (finalId) {
-              const fullName = m.coachName || m.entrepreneurName || 
-                               ((userData?.firstName || userData?.prenom || '').trim() + ' ' + 
-                                (userData?.lastName || userData?.nom || '').trim()).trim();
+              const nameFromData = ((userData?.firstName || userData?.prenom || '').trim() + ' ' + 
+                                   (userData?.lastName || userData?.nom || '').trim()).trim();
+              
+              const fullName = (mode === 'coach' ? (m.coachName || nameFromData) : (m.entrepreneurName || nameFromData)) || 
+                               userData?.email?.split('@')[0] || 'Utilisateur #' + finalId;
 
               const existing = uniqueUsersMap.get(finalId);
               const progName = m.programmeName || m.programme?.nom;

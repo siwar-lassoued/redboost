@@ -47,6 +47,7 @@ public class AdminPlanningController {
     @Autowired private ProgrammeRepository programmeRepository;
     @Autowired private ThematiqueRepository thematiqueRepository;
     @Autowired private LivrableRepository livrableRepository;
+    @Autowired private CandidatureRedstarterRepository candidatureRepository;
 
 
 
@@ -386,14 +387,14 @@ public class AdminPlanningController {
 
     @GetMapping("/entrepreneur/{entrepreneurId}")
     public ResponseEntity<?> getEntrepreneurPlanning(@PathVariable Long entrepreneurId) {
-        User entrepreneur = userRepository.findById(entrepreneurId).orElse(null);
+        User entrepreneur = resolveEntrepreneur(entrepreneurId);
         if (entrepreneur == null) return ResponseEntity.notFound().build();
 
-        List<Session> sessions = sessionRepository.findByEntrepreneurId(entrepreneurId);
+        List<Session> sessions = sessionRepository.findByEntrepreneurId(entrepreneur.getId());
         List<Map<String, Object>> sessionList = sessions.stream().map(this::mapSession).collect(Collectors.toList());
 
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("entrepreneurId", entrepreneurId);
+        result.put("entrepreneurId", entrepreneur.getId());
         result.put("entrepreneurName", entrepreneur.getFirstName() + " " + entrepreneur.getLastName());
         result.put("sessions", sessionList);
         return ResponseEntity.ok(result);
@@ -401,14 +402,20 @@ public class AdminPlanningController {
 
     @GetMapping("/entrepreneur/{entrepreneurId}/todos")
     public ResponseEntity<List<Map<String, Object>>> getEntrepreneurTodos(@PathVariable Long entrepreneurId) {
-        List<Tache> tasks = tacheRepository.findByResponsableId(entrepreneurId);
+        User entrepreneur = resolveEntrepreneur(entrepreneurId);
+        if (entrepreneur == null) return ResponseEntity.ok(new ArrayList<>());
+
+        List<Tache> tasks = tacheRepository.findByResponsableId(entrepreneur.getId());
         return ResponseEntity.ok(tasks.stream().map(this::mapTache).collect(Collectors.toList()));
     }
 
     @GetMapping("/entrepreneur/{entrepreneurId}/livrables")
     public ResponseEntity<List<Map<String, Object>>> getEntrepreneurLivrables(@PathVariable Long entrepreneurId) {
+        User entrepreneur = resolveEntrepreneur(entrepreneurId);
+        if (entrepreneur == null) return ResponseEntity.ok(new ArrayList<>());
+
         // 1. Documents from tasks
-        List<Map<String, Object>> taskDocs = tacheRepository.findByResponsableId(entrepreneurId).stream()
+        List<Map<String, Object>> taskDocs = tacheRepository.findByResponsableId(entrepreneur.getId()).stream()
                 .flatMap(t -> tacheDocumentRepository.findByTacheId(t.getId()).stream())
                 .map(this::mapLivrable)
                 .collect(Collectors.toList());
@@ -428,6 +435,17 @@ public class AdminPlanningController {
         });
 
         return ResponseEntity.ok(result);
+    }
+
+    private User resolveEntrepreneur(Long entrepreneurId) {
+        // Try direct User lookup
+        User u = userRepository.findById(entrepreneurId).orElse(null);
+        if (u != null) return u;
+
+        // Try lookup via Candidature email
+        return candidatureRepository.findById(entrepreneurId)
+                .map(c -> userRepository.findByEmail(c.getEmail()))
+                .orElse(null);
     }
 
     private Map<String, Object> mapLivrableEntity(Livrable l) {

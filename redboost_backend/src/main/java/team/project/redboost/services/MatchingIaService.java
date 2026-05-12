@@ -32,6 +32,7 @@ public class MatchingIaService {
     private final ThematiqueRepository thematiqueRepo;
     private final CandidatureRedstarterRepository candidatureRepo;
     private final CoachRatingRepository coachRatingRepo;
+    private final FormTemplateRepository formTemplateRepo;
     private final NotificationService notificationService;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final RestTemplate restTemplate = new RestTemplate();
@@ -559,12 +560,82 @@ public class MatchingIaService {
 
     public List<Map<String, Object>> getHistory(Long programmeId) {
         List<Matching> matchings = matchingRepo.findHistoryByProgramme(programmeId);
-        return matchings.stream().map(this::mapMatchingToView).collect(Collectors.toList());
+        List<Map<String, Object>> history = matchings.stream().map(this::mapMatchingToView).collect(Collectors.toList());
+        
+        // Include accepted entrepreneurs who are not yet matched
+        includeUnmatchedAcceptedEntrepreneurs(programmeId, history);
+        
+        return history;
     }
 
     public List<Map<String, Object>> getHistoryByThematique(Long programmeId, Long thematiqueId) {
         List<Matching> matchings = matchingRepo.findByProgrammeAndThematique(programmeId, thematiqueId);
-        return matchings.stream().map(this::mapMatchingToView).collect(Collectors.toList());
+        List<Map<String, Object>> history = matchings.stream().map(this::mapMatchingToView).collect(Collectors.toList());
+        
+        // For a specific thématique, we usually only see matchings. 
+        // But if we want consistency, we could potentially show unmatched ones if they requested this thématique.
+        // For now, let's keep it simple.
+        
+        return history;
+    }
+
+    private void includeUnmatchedAcceptedEntrepreneurs(Long programmeId, List<Map<String, Object>> history) {
+        programmeRepo.findById(programmeId).ifPresent(p -> {
+            String progNom = p.getNom();
+            if (progNom == null) return;
+
+            // 1. Find templates for this program
+            List<Long> templateIds = formTemplateRepo.findAll().stream()
+                    .filter(t -> progNom.equalsIgnoreCase(t.getProgram()))
+                    .map(team.project.redboost.entities.FormTemplateEntity::getId)
+                    .collect(Collectors.toList());
+
+            if (templateIds.isEmpty()) return;
+
+            // 2. Find all accepted candidatures for these templates
+            List<CandidatureRedstarter> accepted = candidatureRepo.findAll().stream()
+                    .filter(c -> c.getStatut() == CandidatureRedstarter.StatutCandidature.ACCEPTE)
+                    .filter(c -> c.getFormTemplateId() != null && templateIds.contains(c.getFormTemplateId()))
+                    .collect(Collectors.toList());
+
+            // 3. Identify which ones are not in history
+            Set<Long> matchedEntrepreneurCandidatureIds = history.stream()
+                    .filter(m -> m.get("entrepreneur") != null)
+                    .map(m -> {
+                        Object ent = m.get("entrepreneur");
+                        if (ent instanceof Map) return (Long) ((Map) ent).get("id");
+                        return null;
+                    })
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+
+            for (CandidatureRedstarter c : accepted) {
+                if (!matchedEntrepreneurCandidatureIds.contains(c.getId())) {
+                    Map<String, Object> virtual = new LinkedHashMap<>();
+                    virtual.put("id", -c.getId()); // Use negative ID for virtual entries
+                    virtual.put("entrepreneurId", c.getId());
+                    virtual.put("programmeId", programmeId);
+                    virtual.put("programmeName", progNom);
+                    virtual.put("statut", "NON_MATCHÉ");
+                    
+                    Map<String, Object> ent = new LinkedHashMap<>();
+                    
+                    // Resolve real User ID if possible
+                    User user = userRepo.findByEmail(c.getEmail());
+                    ent.put("id", user != null ? user.getId() : c.getId());
+                    ent.put("isUser", user != null);
+                    ent.put("nom", c.getNomPrenom());
+                    ent.put("email", c.getEmail());
+                    ent.put("entreprise", c.getNomEntreprise());
+                    
+                    virtual.put("entrepreneur", ent);
+                    virtual.put("entrepreneurName", ent.get("nom"));
+                    
+                    history.add(virtual);
+                    matchedEntrepreneurCandidatureIds.add(c.getId());
+                }
+            }
+        });
     }
 
     public Map<String, Integer> getMatchingStats(Long programmeId) {
@@ -632,7 +703,12 @@ public class MatchingIaService {
             if (candOpt.isPresent()) {
                 CandidatureRedstarter c = candOpt.get();
                 Map<String, Object> ent = new LinkedHashMap<>();
-                ent.put("id", c.getId());
+                
+                // CRITICAL: Resolve User ID by email to ensure planning API works in frontend
+                User user = userRepo.findByEmail(c.getEmail());
+                ent.put("id", user != null ? user.getId() : c.getId());
+                ent.put("isUser", user != null);
+                
                 ent.put("nom", c.getNomPrenom());
                 ent.put("email", c.getEmail());
                 ent.put("telephone", c.getNumeroTelephone());
