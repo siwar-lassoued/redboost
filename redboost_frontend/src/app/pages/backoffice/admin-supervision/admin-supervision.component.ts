@@ -135,55 +135,55 @@ type DetailTab = 'sessions' | 'taches' | 'livrables';
             </div>
           } @else {
             <!-- User Header Card -->
-            <div class="bg-white rounded-[32px] shadow-sm border border-[#f1f5f9] p-10 mb-8 relative overflow-hidden">
-              <div class="absolute top-0 right-0 w-64 h-64 bg-[#ea5073]/5 rounded-full -mr-32 -mt-32"></div>
-              <div class="flex items-center gap-8 relative z-10">
+            <div class="bg-white rounded-[24px] shadow-sm border border-[#f1f5f9] p-6 mb-6 relative overflow-hidden">
+              <div class="absolute top-0 right-0 w-48 h-48 bg-[#ea5073]/5 rounded-full -mr-24 -mt-24"></div>
+              <div class="flex items-center gap-6 relative z-10">
                 <div class="flex-1">
-                  <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#f1f5f9] text-[#ea5073] text-[11px] font-black uppercase tracking-widest mb-4 border border-[#e2e8f0]">
+                  <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#f1f5f9] text-[#ea5073] text-[9px] font-black uppercase tracking-widest mb-3 border border-[#e2e8f0]">
                     <i class="pi" [class.pi-user-check]="viewMode() === 'coach'" [class.pi-briefcase]="viewMode() === 'entrepreneur'"></i>
                     {{ viewMode() === 'coach' ? 'Expert Coaching' : 'Entrepreneur' }}
                   </div>
-                  <h2 class="text-4xl font-black text-[#1e293b] leading-none uppercase tracking-tighter">{{ selectedUser()!.firstName }} {{ selectedUser()!.lastName }}</h2>
-                  <p class="text-lg text-[#64748b] font-bold mt-3 opacity-80">{{ selectedUser()!.email }}</p>
+                  <h2 class="text-2xl font-black text-[#1e293b] leading-none uppercase tracking-tight">{{ selectedUser()!.firstName }} {{ selectedUser()!.lastName }}</h2>
+                  <p class="text-sm text-[#64748b] font-bold mt-2 opacity-80">{{ selectedUser()!.email }}</p>
                 </div>
-                <div class="flex items-center gap-5">
-                  <div class="text-center bg-white rounded-3xl p-6 border-2 border-[#f0f9ff] min-w-[120px] shadow-sm">
-                    <p class="text-4xl font-black text-[#0369a1] leading-none">{{ detail().sessions.length }}</p>
-                    <p class="text-[10px] font-black uppercase text-[#0ea5e9] tracking-widest mt-3">Sessions</p>
+                <div class="flex items-center gap-3">
+                  <div class="text-center bg-white rounded-2xl p-4 border border-[#f0f9ff] min-w-[90px] shadow-sm">
+                    <p class="text-2xl font-black text-[#0369a1] leading-none">{{ detail().sessions.length }}</p>
+                    <p class="text-[9px] font-black uppercase text-[#0ea5e9] tracking-widest mt-2">Sessions</p>
                   </div>
-                  <div class="text-center bg-white rounded-3xl p-6 border-2 border-[#fffbeb] min-w-[120px] shadow-sm">
-                    <p class="text-4xl font-black text-[#b45309] leading-none">{{ detail().taches.length }}</p>
-                    <p class="text-[10px] font-black uppercase text-[#d97706] tracking-widest mt-3">Tâches</p>
+                  <div class="text-center bg-white rounded-2xl p-4 border border-[#fffbeb] min-w-[90px] shadow-sm">
+                    <p class="text-2xl font-black text-[#b45309] leading-none">{{ detail().taches.length }}</p>
+                    <p class="text-[9px] font-black uppercase text-[#d97706] tracking-widest mt-2">Tâches</p>
                   </div>
-                  <div class="text-center bg-white rounded-3xl p-6 border-2 border-[#f0fdf4] min-w-[120px] shadow-sm">
-                    <p class="text-4xl font-black text-[#15803d] leading-none">{{ detail().livrables.length }}</p>
-                    <p class="text-[10px] font-black uppercase text-[#22c55e] tracking-widest mt-3">Livrables</p>
+                  <div class="text-center bg-white rounded-2xl p-4 border border-[#f0fdf4] min-w-[90px] shadow-sm">
+                    <p class="text-2xl font-black text-[#15803d] leading-none">{{ detail().livrables.length }}</p>
+                    <p class="text-[9px] font-black uppercase text-[#22c55e] tracking-widest mt-2">Livrables</p>
                   </div>
                 </div>
               </div>
             </div>
 
             <!-- Tabs Section -->
-            <div class="bg-white rounded-[32px] shadow-sm border border-[#f1f5f9] overflow-hidden">
-              <div class="flex px-6 border-b border-[#f1f5f9] bg-[#f8fafc]">
-                <button (click)="activeTab.set('sessions')" class="flex items-center gap-3 px-10 py-6 text-[15px] font-black border-b-4 transition-all cursor-pointer"
+            <div class="bg-white rounded-[24px] shadow-sm border border-[#f1f5f9] overflow-hidden">
+              <div class="flex px-4 border-b border-[#f1f5f9] bg-[#f8fafc]">
+                <button (click)="activeTab.set('sessions')" class="flex items-center gap-2 px-6 py-4 text-[13px] font-black border-b-2 transition-all cursor-pointer"
                   [class.border-[#ea5073]]="activeTab() === 'sessions'" [class.text-[#ea5073]]="activeTab() === 'sessions'"
                   [class.border-transparent]="activeTab() !== 'sessions'" [class.text-[#94a3b8]]="activeTab() !== 'sessions'">
                   <i class="pi pi-calendar"></i> SESSIONS
                 </button>
-                <button (click)="activeTab.set('taches')" class="flex items-center gap-3 px-10 py-6 text-[15px] font-black border-b-4 transition-all cursor-pointer"
+                <button (click)="activeTab.set('taches')" class="flex items-center gap-2 px-6 py-4 text-[13px] font-black border-b-2 transition-all cursor-pointer"
                   [class.border-[#ea5073]]="activeTab() === 'taches'" [class.text-[#ea5073]]="activeTab() === 'taches'"
                   [class.border-transparent]="activeTab() !== 'taches'" [class.text-[#94a3b8]]="activeTab() !== 'taches'">
                   <i class="pi pi-list"></i> TÂCHES
                 </button>
-                <button (click)="activeTab.set('livrables')" class="flex items-center gap-3 px-10 py-6 text-[15px] font-black border-b-4 transition-all cursor-pointer"
+                <button (click)="activeTab.set('livrables')" class="flex items-center gap-2 px-6 py-4 text-[13px] font-black border-b-2 transition-all cursor-pointer"
                   [class.border-[#ea5073]]="activeTab() === 'livrables'" [class.text-[#ea5073]]="activeTab() === 'livrables'"
                   [class.border-transparent]="activeTab() !== 'livrables'" [class.text-[#94a3b8]]="activeTab() !== 'livrables'">
                   <i class="pi pi-file"></i> LIVRABLES
                 </button>
               </div>
 
-              <div class="p-8 overflow-y-auto" style="max-height: 50vh;">
+              <div class="p-6 overflow-y-auto" style="max-height: 55vh;">
                 @if (loadingDetail()) {
                   <div class="flex items-center justify-center py-20">
                     <div class="w-10 h-10 border-4 border-[#f1f5f9] border-t-[#ea5073] rounded-full animate-spin"></div>
@@ -192,45 +192,55 @@ type DetailTab = 'sessions' | 'taches' | 'livrables';
 
                 <!-- SESSIONS CONTENT -->
                 @if (!loadingDetail() && activeTab() === 'sessions') {
-                  <div class="space-y-5">
+                  <div class="space-y-4">
                     @for (s of detail().sessions; track s.id) {
-                      <div class="flex items-start gap-6 p-6 bg-white rounded-3xl border border-[#f1f5f9] hover:border-[#ea5073]/20 hover:shadow-xl hover:shadow-pink-500/5 transition-all group">
-                        <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-[#ea5073] bg-[#fff5f7] flex-shrink-0 group-hover:scale-110 transition-transform">
-                          <i class="pi pi-calendar text-2xl"></i>
+                      <div class="flex items-start gap-4 p-4 bg-white rounded-2xl border border-[#f1f5f9] hover:border-[#ea5073]/20 hover:shadow-lg hover:shadow-pink-500/5 transition-all group">
+                        <div class="w-12 h-12 rounded-xl flex items-center justify-center text-[#ea5073] bg-[#fff5f7] flex-shrink-0 group-hover:scale-105 transition-transform">
+                          <i class="pi pi-calendar text-xl"></i>
                         </div>
                         <div class="flex-1 min-w-0">
-                          <p class="text-xl font-black text-[#1e293b] truncate uppercase tracking-tight">{{ s.titre || 'Session' }}</p>
-                          
-                          <p class="text-sm text-[#64748b] font-bold mt-2 flex items-center gap-4">
-                            <span class="flex items-center gap-1.5"><i class="pi pi-clock text-[#ea5073]"></i> {{ s.date | date:'dd MMM yyyy à HH:mm' }}</span>
-                            @if (viewMode() === 'coach' && s.entrepreneur) {
-                              <span class="flex items-center gap-1.5 px-2 py-0.5 bg-[#f1f5f9] rounded-md text-[#475569]"><i class="pi pi-user text-[10px]"></i> {{ s.entrepreneur?.firstName }} {{ s.entrepreneur?.lastName }}</span>
-                            }
-                            @if (viewMode() === 'entrepreneur' && s.coach) {
-                              <span class="flex items-center gap-1.5 px-2 py-0.5 bg-[#f1f5f9] rounded-md text-[#475569]"><i class="pi pi-user-check text-[10px]"></i> {{ s.coach?.firstName }} {{ s.coach?.lastName }}</span>
-                            }
-                          </p>
-
-                          <div class="flex flex-wrap items-center gap-3 mt-4">
-                            <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 text-slate-600 text-[11px] font-black border border-slate-200">
-                              <i class="pi pi-tag text-[9px] text-[#ea5073]"></i>
-                              {{ s.thematiqueNom || s.thematique?.nom || 'Thématique' }}
-                            </span>
-                            <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-sky-50 text-sky-700 text-[11px] font-black border border-sky-100">
-                              <i class="pi pi-folder text-[9px] text-sky-500"></i>
-                              {{ s.programmeNom || s.programme?.nom || 'Programme' }}
+                          <div class="flex items-center justify-between">
+                            <p class="text-lg font-black text-[#1e293b] truncate uppercase tracking-tight">{{ s.titre || 'Session' }}</p>
+                            <span class="text-[9px] font-black px-3 py-1 rounded-lg uppercase tracking-widest border" [style.background]="getSessionBadge(s.statut).bg" [style.color]="getSessionBadge(s.statut).color" [style.borderColor]="getSessionBadge(s.statut).color + '20'">
+                                {{ getSessionBadge(s.statut).label }}
                             </span>
                           </div>
+                          
+                          <div class="flex flex-col gap-1 mt-2">
+                             <div class="flex items-center gap-2 text-[11px] font-bold text-slate-400">
+                                <i class="pi pi-tag text-[#ea5073] text-[10px]"></i>
+                                <span class="uppercase">{{ s.programmeNom || 'Programme' }}</span>
+                                <span class="text-slate-200">|</span>
+                                <span class="text-slate-500">{{ s.thematiqueNom || 'Thématique' }}</span>
+                             </div>
+                             <div class="flex items-center gap-3 text-[11px] font-bold text-slate-500 mt-1">
+                                <div class="flex items-center gap-1.5"><i class="pi pi-clock text-slate-300"></i> {{ s.date | date:'dd MMM yyyy à HH:mm' }}</div>
+                                
+                                <div class="flex items-center gap-2">
+                                  @if (viewMode() === 'entrepreneur') {
+                                    <span class="flex items-center gap-1.5 px-2 py-0.5 bg-sky-50 text-sky-700 rounded-md border border-sky-100">
+                                      <i class="pi pi-user-check text-[10px]"></i>
+                                      COACH : {{ s.coachName || (s.coach?.firstName + ' ' + s.coach?.lastName) || 'N/A' }}
+                                    </span>
+                                  } @else {
+                                    <span class="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-md border border-emerald-100">
+                                      <i class="pi pi-user text-[10px]"></i>
+                                      ENTREPRENEUR : {{ s.entrepreneurName || (s.entrepreneur?.firstName + ' ' + s.entrepreneur?.lastName) || 'N/A' }}
+                                    </span>
+                                  }
+                                </div>
+                             </div>
+                          </div>
                         </div>
-                        <div class="flex flex-col items-end gap-4 flex-shrink-0">
-                          <span class="text-[10px] font-black px-4 py-2 rounded-xl uppercase tracking-widest border" [style.background]="getSessionBadge(s.statut).bg" [style.color]="getSessionBadge(s.statut).color" [style.borderColor]="getSessionBadge(s.statut).color + '20'">
-                            {{ getSessionBadge(s.statut).label }}
-                          </span>
+                        <div class="flex flex-col items-end gap-3 flex-shrink-0">
                           @if (s.meetLink) {
-                            <a [href]="s.meetLink" target="_blank" class="w-12 h-12 rounded-2xl flex items-center justify-center text-white bg-[#10b981] hover:bg-[#059669] transition-all shadow-lg shadow-emerald-200">
-                              <i class="pi pi-video text-lg"></i>
+                            <a [href]="s.meetLink" target="_blank" class="w-10 h-10 rounded-xl flex items-center justify-center text-white bg-[#10b981] hover:bg-[#059669] transition-all shadow-md shadow-emerald-200">
+                              <i class="pi pi-video text-base"></i>
                             </a>
                           }
+                          <button class="w-8 h-8 rounded-lg bg-slate-50 text-slate-300 group-hover:text-[#ea5073] transition-colors border border-slate-100">
+                            <i class="pi pi-chevron-right text-xs"></i>
+                          </button>
                         </div>
                       </div>
                     }
@@ -239,12 +249,12 @@ type DetailTab = 'sessions' | 'taches' | 'livrables';
 
                 <!-- OTHER TABS (TASKS/DELIVERABLES) -->
                 @if (!loadingDetail() && (activeTab() === 'taches' || activeTab() === 'livrables')) {
-                   <div class="grid grid-cols-1 gap-4">
+                   <div class="grid grid-cols-1 gap-3">
                      <!-- Simplified standard display for now -->
                      @if (activeTab() === 'taches') {
                         @for (t of detail().taches; track t.id) {
-                          <div class="flex items-center gap-6 p-6 bg-white rounded-3xl border border-[#f1f5f9] hover:shadow-lg transition-all">
-                            <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                          <div class="flex items-center gap-4 p-4 bg-white rounded-2xl border border-[#f1f5f9] hover:shadow-md transition-all">
+                            <div class="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
                               <i class="pi pi-check-circle"></i>
                             </div>
                             <div class="flex-1">
@@ -263,12 +273,12 @@ type DetailTab = 'sessions' | 'taches' | 'livrables';
                               <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
                                 <i class="pi pi-file-pdf text-xl"></i>
                               </div>
-                              <div>
-                                <p class="text-sm font-black text-slate-800 uppercase truncate max-w-[150px]">{{ l.nom }}</p>
+                              <div class="flex-1 min-w-0">
+                                <p class="text-sm font-black text-slate-800 uppercase truncate" [title]="l.nom">{{ l.nom }}</p>
                                 <p class="text-[10px] font-bold text-slate-400 mt-1">{{ l.dateUpload | date:'dd MMM yyyy' }}</p>
                               </div>
                             </div>
-                            <a [href]="l.url" target="_blank" class="block w-full py-3 text-center bg-slate-50 rounded-2xl text-[11px] font-black text-slate-700 hover:bg-[#ea5073] hover:text-white transition-all">CONSULTER</a>
+                            <a [href]="getLivrableUrl(l.url)" target="_blank" class="block w-full py-3 text-center bg-slate-50 rounded-2xl text-[11px] font-black text-slate-700 hover:bg-[#ea5073] hover:text-white transition-all">CONSULTER</a>
                           </div>
                         }
                         </div>
@@ -479,5 +489,11 @@ export class AdminSupervisionDashboardComponent implements OnInit {
       ANNULEE:   { label: 'Annulée', bg: '#fef2f2', color: '#dc2626' },
     };
     return map[statut] || { label: statut || '—', bg: '#f8fafc', color: '#64748b' };
+  }
+
+  getLivrableUrl(url: string): string {
+    if (!url) return '#';
+    if (url.startsWith('http')) return url;
+    return `${environment.apiUrl}/files/tache-documents/${url}`;
   }
 }

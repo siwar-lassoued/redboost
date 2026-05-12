@@ -46,6 +46,7 @@ public class AdminPlanningController {
     @Autowired private TacheDocumentRepository tacheDocumentRepository;
     @Autowired private DisponibiliteRepository disponibiliteRepository;
     @Autowired private ProgrammeRepository programmeRepository;
+    @Autowired private ThematiqueRepository thematiqueRepository;
 
 
 
@@ -151,18 +152,41 @@ public class AdminPlanningController {
         // Get Programme Name
         if (s.getProgramme() != null) {
             m.put("programmeNom", s.getProgramme().getNom());
+        } else if (s.getEntrepreneur() != null) {
+            // Fallback: search in matchings if programme is null in session
+            matchingRepository.findByEntrepreneurIdAndStatut(s.getEntrepreneur().getId(), Matching.StatutMatching.VALIDE)
+                    .stream().findFirst().ifPresent(match -> {
+                        programmeRepository.findById(match.getProgrammeId()).ifPresent(p -> m.put("programmeNom", p.getNom()));
+                    });
         }
 
-        // Resolve Thematique Name via disponibiliteId
-        if (s.getDisponibiliteId() != null) {
+        // Resolve Thematique Name
+        if (s.getThematiqueName() != null && !s.getThematiqueName().isEmpty()) {
+            m.put("thematiqueNom", s.getThematiqueName());
+        } else if (s.getDisponibiliteId() != null && !s.getDisponibiliteId().isEmpty()) {
             try {
-                Long slotId = Long.parseLong(s.getDisponibiliteId());
-                sessionCoachRepository.findById(slotId).ifPresent(slot -> {
-                    if (slot.getDisponibilite() != null && slot.getDisponibilite().getThematique() != null) {
-                        m.put("thematiqueNom", slot.getDisponibilite().getThematique().getNom());
-                    }
-                });
+                String dId = s.getDisponibiliteId();
+                if (dId.matches("\\d+")) {
+                    Long slotId = Long.parseLong(dId);
+                    sessionCoachRepository.findById(slotId).ifPresent(slot -> {
+                        if (slot.getDisponibilite() != null && slot.getDisponibilite().getThematique() != null) {
+                            m.put("thematiqueNom", slot.getDisponibilite().getThematique().getNom());
+                        }
+                    });
+                }
             } catch (Exception ignored) {}
+        }
+
+        // Final fallback for thematiqueNom if still null
+        if (m.get("thematiqueNom") == null && s.getCoach() != null) {
+            // Try to get the first valid thematic for this coach and entrepreneur matching
+            matchingRepository.findByCoachIdAndStatut(s.getCoach().getId(), Matching.StatutMatching.VALIDE)
+                .stream()
+                .filter(match -> match.getEntrepreneurId().equals(s.getEntrepreneur() != null ? s.getEntrepreneur().getId() : null))
+                .findFirst()
+                .ifPresent(match -> {
+                    thematiqueRepository.findById(match.getThematiqueId()).ifPresent(t -> m.put("thematiqueNom", t.getNom()));
+                });
         }
 
         if (s.getCoach() != null) {
