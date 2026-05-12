@@ -66,14 +66,35 @@ public class AdminPlanningController {
 
     @GetMapping("/coaches")
     public ResponseEntity<List<Map<String, Object>>> getAllCoachesPlanning() {
-        List<User> coaches = userRepository.findByRole(Role.COACH);
+        // Only get coaches that have at least one valid matching
+        List<Matching> allValidMatchings = matchingRepository.findAll().stream()
+                .filter(m -> m.getStatut() == Matching.StatutMatching.VALIDE)
+                .collect(Collectors.toList());
+
+        Set<Long> uniqueCoachIds = allValidMatchings.stream().map(Matching::getCoachId).collect(Collectors.toSet());
+        List<User> coaches = userRepository.findAllById(uniqueCoachIds);
+
         List<Map<String, Object>> result = coaches.stream().map(coach -> {
             Map<String, Object> coachData = new HashMap<>();
             coachData.put("id", coach.getId().toString());
             coachData.put("coachId", coach.getId());
-            coachData.put("coachName", coach.getFirstName() + " " + coach.getLastName());
+            coachData.put("firstName", coach.getFirstName() != null ? coach.getFirstName() : "Coach");
+            coachData.put("lastName", coach.getLastName() != null ? coach.getLastName() : coach.getId().toString());
+            coachData.put("coachName", formatName(coach));
             coachData.put("email", coach.getEmail());
             coachData.put("specialty", "Coach");
+
+            // List of unique programmes for this coach via matchings
+            List<String> coachProgrammes = allValidMatchings.stream()
+                    .filter(m -> m.getCoachId().equals(coach.getId()))
+                    .map(m -> {
+                        Programme p = programmeRepository.findById(m.getProgrammeId()).orElse(null);
+                        return p != null ? p.getNom() : null;
+                    })
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .collect(Collectors.toList());
+            coachData.put("programmes", coachProgrammes);
 
             List<Session> sessions = sessionRepository.findByCoachId(coach.getId());
             coachData.put("sessions", sessions.stream().map(this::mapSession).collect(Collectors.toList()));
@@ -84,20 +105,42 @@ public class AdminPlanningController {
 
     @GetMapping("/entrepreneurs")
     public ResponseEntity<List<Map<String, Object>>> getAllEntrepreneursPlanning() {
-        List<User> entrepreneurs = userRepository.findByRole(Role.ENTREPRENEUR);
+        // Only get entrepreneurs that have at least one valid matching
+        List<Matching> allValidMatchings = matchingRepository.findAll().stream()
+                .filter(m -> m.getStatut() == Matching.StatutMatching.VALIDE)
+                .collect(Collectors.toList());
+
+        Set<Long> uniqueEntIds = allValidMatchings.stream().map(Matching::getEntrepreneurId).collect(Collectors.toSet());
+        List<User> entrepreneurs = userRepository.findAllById(uniqueEntIds);
+
         List<Map<String, Object>> result = entrepreneurs.stream().map(ent -> {
             Map<String, Object> entData = new HashMap<>();
             entData.put("id", ent.getId().toString());
             entData.put("entrepreneurId", ent.getId());
-            entData.put("entrepreneurName", ent.getFirstName() + " " + ent.getLastName());
+            entData.put("firstName", ent.getFirstName() != null ? ent.getFirstName() : "Entrepreneur");
+            entData.put("lastName", ent.getLastName() != null ? ent.getLastName() : ent.getId().toString());
+            entData.put("entrepreneurName", formatName(ent));
             entData.put("email", ent.getEmail());
 
-            List<Matching> matchings = matchingRepository.findByEntrepreneurIdAndStatut(ent.getId(), Matching.StatutMatching.VALIDE);
-            if (!matchings.isEmpty()) {
-                Matching m = matchings.get(0);
+            List<Matching> entMatchings = allValidMatchings.stream()
+                    .filter(m -> m.getEntrepreneurId().equals(ent.getId()))
+                    .collect(Collectors.toList());
+
+            if (!entMatchings.isEmpty()) {
+                Matching m = entMatchings.get(0);
                 entData.put("coachId", m.getCoachId());
-                userRepository.findById(m.getCoachId()).ifPresent(c -> entData.put("coachName", c.getFirstName() + " " + c.getLastName()));
+                userRepository.findById(m.getCoachId()).ifPresent(c -> entData.put("coachName", formatName(c)));
                 programmeRepository.findById(m.getProgrammeId()).ifPresent(p -> entData.put("programme", p.getNom()));
+                
+                List<String> entProgrammes = entMatchings.stream()
+                        .map(match -> {
+                            Programme p = programmeRepository.findById(match.getProgrammeId()).orElse(null);
+                            return p != null ? p.getNom() : null;
+                        })
+                        .filter(Objects::nonNull)
+                        .distinct()
+                        .collect(Collectors.toList());
+                entData.put("programmes", entProgrammes);
             }
 
             List<Session> sessions = sessionRepository.findByEntrepreneurId(ent.getId());
@@ -143,17 +186,16 @@ public class AdminPlanningController {
     private Map<String, Object> mapSession(Session s) {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("id", s.getId());
-        m.put("titre", s.getTitre());
+        m.put("titre", s.getTitre() != null ? s.getTitre() : "Session");
         m.put("date", s.getDate());
         m.put("dureeMinutes", s.getDureeMinutes());
-        m.put("statut", s.getStatut().name());
+        m.put("statut", s.getStatut() != null ? s.getStatut().name() : "PLANIFIE");
         m.put("meetLink", s.getMeetLink());
 
         // Get Programme Name
         if (s.getProgramme() != null) {
             m.put("programmeNom", s.getProgramme().getNom());
         } else if (s.getEntrepreneur() != null) {
-            // Fallback: search in matchings if programme is null in session
             matchingRepository.findByEntrepreneurIdAndStatut(s.getEntrepreneur().getId(), Matching.StatutMatching.VALIDE)
                     .stream().findFirst().ifPresent(match -> {
                         programmeRepository.findById(match.getProgrammeId()).ifPresent(p -> m.put("programmeNom", p.getNom()));
@@ -161,8 +203,9 @@ public class AdminPlanningController {
         }
 
         // Resolve Thematique Name
-        if (s.getThematiqueName() != null && !s.getThematiqueName().isEmpty()) {
-            m.put("thematiqueNom", s.getThematiqueName());
+        String tName = s.getThematiqueName();
+        if (tName != null && !tName.isEmpty()) {
+            m.put("thematiqueNom", tName);
         } else if (s.getDisponibiliteId() != null && !s.getDisponibiliteId().isEmpty()) {
             try {
                 String dId = s.getDisponibiliteId();
@@ -177,27 +220,47 @@ public class AdminPlanningController {
             } catch (Exception ignored) {}
         }
 
-        // Final fallback for thematiqueNom if still null
-        if (m.get("thematiqueNom") == null && s.getCoach() != null) {
-            // Try to get the first valid thematic for this coach and entrepreneur matching
-            matchingRepository.findByCoachIdAndStatut(s.getCoach().getId(), Matching.StatutMatching.VALIDE)
-                .stream()
-                .filter(match -> match.getEntrepreneurId().equals(s.getEntrepreneur() != null ? s.getEntrepreneur().getId() : null))
-                .findFirst()
-                .ifPresent(match -> {
-                    thematiqueRepository.findById(match.getThematiqueId()).ifPresent(t -> m.put("thematiqueNom", t.getNom()));
-                });
+        // Fallback for thematiqueNom
+        if (m.get("thematiqueNom") == null) {
+            User coach = s.getCoach();
+            User ent = s.getEntrepreneur();
+            if (coach != null && ent != null) {
+                matchingRepository.findByCoachIdAndStatut(coach.getId(), Matching.StatutMatching.VALIDE)
+                    .stream()
+                    .filter(match -> match.getEntrepreneurId().equals(ent.getId()))
+                    .findFirst()
+                    .ifPresent(match -> {
+                        thematiqueRepository.findById(match.getThematiqueId()).ifPresent(t -> m.put("thematiqueNom", t.getNom()));
+                    });
+            }
         }
 
         if (s.getCoach() != null) {
             m.put("coachId", s.getCoach().getId());
-            m.put("coachName", s.getCoach().getFirstName() + " " + s.getCoach().getLastName());
+            m.put("coachName", formatName(s.getCoach()));
         }
         if (s.getEntrepreneur() != null) {
             m.put("entrepreneurId", s.getEntrepreneur().getId());
-            m.put("entrepreneurName", s.getEntrepreneur().getFirstName() + " " + s.getEntrepreneur().getLastName());
+            m.put("entrepreneurName", formatName(s.getEntrepreneur()));
         }
         return m;
+    }
+
+    private String formatName(User u) {
+        if (u == null) return "Utilisateur inconnu";
+        String f = u.getFirstName();
+        String l = u.getLastName();
+        
+        // Clean and combine
+        String full = ((f != null ? f.trim() : "") + " " + (l != null ? l.trim() : "")).trim();
+        
+        if (!full.isEmpty()) return full;
+        
+        // Fallback to email (before @) or ID
+        if (u.getEmail() != null && !u.getEmail().isEmpty()) {
+            return u.getEmail().split("@")[0];
+        }
+        return "Utilisateur #" + u.getId();
     }
 
     private Map<String, Object> mapTache(Tache t) {

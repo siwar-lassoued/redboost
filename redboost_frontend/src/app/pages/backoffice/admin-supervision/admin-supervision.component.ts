@@ -102,8 +102,17 @@ type DetailTab = 'sessions' | 'taches' | 'livrables';
                   [class.border-[#ea5073]]="selectedUser()?.id === u.id"
                   (click)="selectUser(u)">
                   <div class="flex-1 min-w-0">
-                    <p class="text-[15px] font-bold text-[#1e293b] leading-tight truncate uppercase tracking-tight group-hover:text-[#ea5073] transition-colors">{{ u.firstName }} {{ u.lastName }}</p>
-                    <p class="text-[11px] text-[#94a3b8] font-bold truncate mt-1">{{ u.email }}</p>
+                    <p class="text-[15px] font-black text-[#1e293b] leading-tight truncate uppercase tracking-tight group-hover:text-[#ea5073] transition-colors">
+                      {{ u.fullName }}
+                    </p>
+                    <div class="flex flex-wrap gap-1 mt-2">
+                      @for (p of u.programmes; track p) {
+                        <span class="px-2 py-0.5 bg-slate-100 text-[#64748b] text-[9px] font-black rounded uppercase tracking-tighter">{{ p }}</span>
+                      }
+                      @if (!u.programmes || u.programmes.length === 0) {
+                        <span class="text-[11px] text-[#94a3b8] font-bold truncate">{{ u.email }}</span>
+                      }
+                    </div>
                   </div>
                   @if (selectedUser()?.id === u.id) {
                     <i class="pi pi-chevron-right text-[#ea5073] text-sm flex-shrink-0 animate-pulse"></i>
@@ -208,9 +217,10 @@ type DetailTab = 'sessions' | 'taches' | 'livrables';
                           
                           <div class="flex flex-col gap-1 mt-2">
                              <div class="flex items-center gap-2 text-[11px] font-bold text-slate-400">
-                                <i class="pi pi-tag text-[#ea5073] text-[10px]"></i>
+                                <i class="pi pi-bookmark text-sky-500 text-[10px]"></i>
                                 <span class="uppercase">{{ s.programmeNom || 'Programme' }}</span>
                                 <span class="text-slate-200">|</span>
+                                <i class="pi pi-tag text-[#10b981] text-[10px]"></i>
                                 <span class="text-slate-500">{{ s.thematiqueNom || 'Thématique' }}</span>
                              </div>
                              <div class="flex items-center gap-3 text-[11px] font-bold text-slate-500 mt-1">
@@ -265,24 +275,37 @@ type DetailTab = 'sessions' | 'taches' | 'livrables';
                           </div>
                         }
                      }
-                     @if (activeTab() === 'livrables') {
-                        <div class="grid grid-cols-2 gap-6">
-                        @for (l of detail().livrables; track l.id) {
-                          <div class="p-6 bg-white rounded-3xl border border-[#f1f5f9] hover:shadow-xl transition-all">
-                            <div class="flex items-center gap-4 mb-5">
-                              <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                                <i class="pi pi-file-pdf text-xl"></i>
-                              </div>
-                              <div class="flex-1 min-w-0">
-                                <p class="text-sm font-black text-slate-800 uppercase truncate" [title]="l.nom">{{ l.nom }}</p>
-                                <p class="text-[10px] font-bold text-slate-400 mt-1">{{ l.dateUpload | date:'dd MMM yyyy' }}</p>
-                              </div>
-                            </div>
-                            <a [href]="getLivrableUrl(l.url)" target="_blank" class="block w-full py-3 text-center bg-slate-50 rounded-2xl text-[11px] font-black text-slate-700 hover:bg-[#ea5073] hover:text-white transition-all">CONSULTER</a>
-                          </div>
-                        }
-                        </div>
-                     }
+                                           @if (activeTab() === 'livrables') {
+                         <div class="grid grid-cols-2 gap-4">
+                         @for (l of detail().livrables; track l.id) {
+                           <div class="p-4 bg-white rounded-2xl border border-[#f1f5f9] hover:shadow-lg transition-all group">
+                             <div class="flex items-center gap-3 mb-4">
+                               <div class="w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110" 
+                                    [style.background]="getFileIconConfig(l.url).bg">
+                                 <i class="pi text-lg" [class]="getFileIconConfig(l.url).icon" [style.color]="getFileIconConfig(l.url).color"></i>
+                               </div>
+                               <div class="flex-1 min-w-0">
+                                 <p class="text-xs font-black text-slate-800 uppercase truncate" [title]="l.nom">{{ l.nom }}</p>
+                                 <p class="text-[9px] font-bold text-slate-400 mt-0.5">{{ l.dateUpload | date:'dd MMM yyyy' }}</p>
+                               </div>
+                             </div>
+                             
+                             <div class="flex items-center gap-2 mb-4">
+                                @if (l.tacheTitre) {
+                                  <span class="px-2 py-0.5 rounded bg-slate-50 text-slate-500 text-[9px] font-bold flex items-center gap-1">
+                                    <i class="pi pi-check-square text-[8px]"></i> {{ l.tacheTitre }}
+                                  </span>
+                                }
+                             </div>
+
+                             <a [href]="getLivrableUrl(l.url)" target="_blank" 
+                                class="flex items-center justify-center gap-2 w-full py-2.5 bg-slate-50 rounded-xl text-[10px] font-black text-slate-600 hover:bg-[#ea5073] hover:text-white transition-all">
+                                <i class="pi pi-download"></i> CONSULTER
+                             </a>
+                           </div>
+                         }
+                         </div>
+                      }
                    </div>
                 }
               </div>
@@ -388,21 +411,13 @@ export class AdminSupervisionDashboardComponent implements OnInit {
             const finalId = userData?.id || rootId;
             
             if (finalId) {
-              const firstName = userData?.firstName || userData?.prenom || '';
-              const lastName = userData?.lastName || userData?.nom || '';
-              
-              let fName = firstName;
-              let lName = lastName;
-              if (!fName && lName.includes(' ')) {
-                const parts = lName.split(' ');
-                fName = parts[0];
-                lName = parts.slice(1).join(' ');
-              }
+              const fullName = m.coachName || m.entrepreneurName || 
+                               ((userData?.firstName || userData?.prenom || '').trim() + ' ' + 
+                                (userData?.lastName || userData?.nom || '').trim()).trim();
 
               uniqueUsersMap.set(finalId, {
                 id: finalId,
-                firstName: fName || 'N/A',
-                lastName: lName || 'N/A',
+                fullName: fullName || userData?.email?.split('@')[0] || 'Utilisateur #' + finalId,
                 email: userData?.email || 'N/A'
               });
             }
@@ -416,13 +431,18 @@ export class AdminSupervisionDashboardComponent implements OnInit {
         error: () => { this.allUsers.set([]); this.filteredUsersData.set([]); this.loadingUsers.set(false); this.cdr.markForCheck(); }
       });
     } else {
-      const endpoint = mode === 'coach' ? `${environment.apiUrl}/users?role=COACH` : `${environment.apiUrl}/backoffice/programmes/entrepreneurs-details`;
-      this.http.get<any>(endpoint, { headers: this.headers }).subscribe({
+      // General view: use specialized planning endpoints that only return matched users
+      const endpoint = mode === 'coach' ? `${environment.apiUrl}/admin/planning/coaches` : `${environment.apiUrl}/admin/planning/entrepreneurs`;
+      this.http.get<any[]>(endpoint, { headers: this.headers }).subscribe({
         next: (res) => {
-          let rawUsers = Array.isArray(res) ? res : (res.data || res.content || []);
-          rawUsers = rawUsers.map((u: any) => ({ ...u, firstName: u.firstName || u.prenom || 'N/A', lastName: u.lastName || u.nom || 'N/A', email: u.email || 'N/A' }));
-          this.allUsers.set(rawUsers);
-          this.filteredUsersData.set(rawUsers);
+          const users = res.map((u: any) => ({
+            id: u.coachId || u.entrepreneurId || u.id,
+            fullName: u.coachName || u.entrepreneurName || (u.firstName + ' ' + u.lastName) || 'Utilisateur',
+            email: u.email || 'N/A',
+            programmes: u.programmes || (u.programme ? [u.programme] : [])
+          }));
+          this.allUsers.set(users);
+          this.filteredUsersData.set(users);
           this.loadingUsers.set(false);
           this.cdr.markForCheck();
         },
@@ -495,5 +515,13 @@ export class AdminSupervisionDashboardComponent implements OnInit {
     if (!url) return '#';
     if (url.startsWith('http')) return url;
     return `${environment.apiUrl}/files/tache-documents/${url}`;
+  }
+
+  getFileIconConfig(url: string) {
+    const ext = (url || '').split('.').pop()?.toLowerCase();
+    if (ext === 'pdf') return { icon: 'pi-file-pdf', color: '#ef4444', bg: '#fef2f2' };
+    if (['doc', 'docx'].includes(ext!)) return { icon: 'pi-file-word', color: '#3b82f6', bg: '#eff6ff' };
+    if (['xls', 'xlsx'].includes(ext!)) return { icon: 'pi-file-excel', color: '#10b981', bg: '#f0fdf4' };
+    return { icon: 'pi-file', color: '#94a3b8', bg: '#f8fafc' };
   }
 }
