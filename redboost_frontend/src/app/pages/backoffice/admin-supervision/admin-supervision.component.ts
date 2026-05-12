@@ -260,22 +260,48 @@ type DetailTab = 'sessions' | 'taches' | 'livrables';
                 <!-- OTHER TABS (TASKS/DELIVERABLES) -->
                 @if (!loadingDetail() && (activeTab() === 'taches' || activeTab() === 'livrables')) {
                    <div class="grid grid-cols-1 gap-3">
-                     <!-- Simplified standard display for now -->
-                     @if (activeTab() === 'taches') {
-                        @for (t of detail().taches; track t.id) {
-                          <div class="flex items-center gap-4 p-4 bg-white rounded-2xl border border-[#f1f5f9] hover:shadow-md transition-all">
-                            <div class="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
-                              <i class="pi pi-check-circle"></i>
-                            </div>
-                            <div class="flex-1">
-                              <p class="text-lg font-black text-slate-800 uppercase">{{ t.titre }}</p>
-                              <p class="text-xs font-bold text-slate-400 mt-1" *ngIf="t.dateLimite">ÉCHÉANCE : {{ t.dateLimite | date:'dd/MM' }}</p>
-                            </div>
-                            <span class="text-[10px] font-black px-3 py-1.5 rounded-lg bg-slate-100 text-slate-500">{{ t.status }}</span>
-                          </div>
-                        }
-                     }
-                                           @if (activeTab() === 'livrables') {
+                      @if (activeTab() === 'taches') {
+                         @for (t of detail().taches; track t.id) {
+                           <div class="flex items-start gap-4 p-4 bg-white rounded-2xl border border-[#f1f5f9] hover:shadow-lg transition-all group">
+                             <div class="w-12 h-12 rounded-xl flex items-center justify-center text-amber-600 bg-amber-50 flex-shrink-0 group-hover:scale-105 transition-transform">
+                               <i class="pi pi-check-circle text-xl"></i>
+                             </div>
+                             <div class="flex-1 min-w-0">
+                               <div class="flex items-center justify-between">
+                                 <p class="text-lg font-black text-slate-800 uppercase tracking-tight">{{ t.titre }}</p>
+                                 <span class="text-[9px] font-black px-3 py-1.5 rounded-lg bg-slate-100 text-slate-500 uppercase tracking-widest">{{ t.status }}</span>
+                               </div>
+                               
+                               <div class="flex flex-col gap-1 mt-2">
+                                 <div class="flex items-center gap-2 text-[10px] font-bold text-slate-400">
+                                    <i class="pi pi-bookmark text-sky-500 text-[10px]"></i>
+                                    <span class="uppercase">{{ t.programmeName || 'Programme' }}</span>
+                                    <span class="text-slate-200">|</span>
+                                    <i class="pi pi-tag text-[#10b981] text-[10px]"></i>
+                                    <span class="text-slate-500">{{ t.thematiqueNom || 'Thématique' }}</span>
+                                 </div>
+                                 <div class="flex items-center gap-3 text-[10px] font-bold text-slate-500 mt-1">
+                                    <div class="flex items-center gap-1.5" *ngIf="t.dateLimite"><i class="pi pi-clock text-slate-300"></i> ÉCHÉANCE : {{ t.dateLimite | date:'dd MMM yyyy' }}</div>
+                                    
+                                    <div class="flex items-center gap-2">
+                                      @if (viewMode() === 'entrepreneur') {
+                                        <span class="flex items-center gap-1.5 px-2 py-0.5 bg-sky-50 text-sky-700 rounded-md border border-sky-100">
+                                          <i class="pi pi-user-check text-[10px]"></i> COACH : {{ t.coachName || 'N/A' }}
+                                        </span>
+                                      } @else {
+                                        <span class="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-md border border-emerald-100">
+                                          <i class="pi pi-user text-[10px]"></i> ENTREPRENEUR : {{ t.entrepreneurName || 'N/A' }}
+                                        </span>
+                                      }
+                                    </div>
+                                 </div>
+                               </div>
+                             </div>
+                           </div>
+                         }
+                      }
+
+                      @if (activeTab() === 'livrables') {
                          <div class="grid grid-cols-2 gap-4">
                          @for (l of detail().livrables; track l.id) {
                            <div class="p-4 bg-white rounded-2xl border border-[#f1f5f9] hover:shadow-lg transition-all group">
@@ -289,13 +315,35 @@ type DetailTab = 'sessions' | 'taches' | 'livrables';
                                  <p class="text-[9px] font-bold text-slate-400 mt-0.5">{{ l.dateUpload | date:'dd MMM yyyy' }}</p>
                                </div>
                              </div>
-                             
-                             <div class="flex items-center gap-2 mb-4">
-                                @if (l.tacheTitre) {
-                                  <span class="px-2 py-0.5 rounded bg-slate-50 text-slate-500 text-[9px] font-bold flex items-center gap-1">
-                                    <i class="pi pi-check-square text-[8px]"></i> {{ l.tacheTitre }}
-                                  </span>
-                                }
+
+                             <div class="flex flex-col gap-2 mb-4">
+                                <div class="flex items-center gap-2 text-[8px] font-bold text-slate-400">
+                                   <i class="pi pi-bookmark text-sky-500 text-[8px]"></i>
+                                   <span class="uppercase truncate">{{ l.programmeNom || 'Programme' }}</span>
+                                </div>
+                                
+                                <div class="flex flex-wrap gap-1">
+                                   <span class="px-2 py-0.5 rounded bg-slate-50 text-slate-500 text-[8px] font-bold flex items-center gap-1">
+                                     <i class="pi pi-tag text-[8px]"></i> {{ l.thematiqueNom || 'Général' }}
+                                   </span>
+                                   @if (l.tacheTitre) {
+                                     <span class="px-2 py-0.5 rounded bg-pink-50 text-[#ea5073] text-[8px] font-bold flex items-center gap-1">
+                                       <i class="pi pi-check-square text-[8px]"></i> {{ l.tacheTitre }}
+                                     </span>
+                                   }
+                                </div>
+
+                                <div class="mt-1">
+                                   @if (viewMode() === 'entrepreneur') {
+                                     <span class="text-[8px] font-bold text-sky-600 bg-sky-50 px-2 py-0.5 rounded flex items-center gap-1">
+                                       <i class="pi pi-user-check"></i> COACH : {{ l.coachName || 'N/A' }}
+                                     </span>
+                                   } @else {
+                                     <span class="text-[8px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded flex items-center gap-1">
+                                       <i class="pi pi-user"></i> ENTREPRENEUR : {{ l.entrepreneurName || 'N/A' }}
+                                     </span>
+                                   }
+                                </div>
                              </div>
 
                              <a [href]="getLivrableUrl(l.url)" target="_blank" 
@@ -411,7 +459,7 @@ export class AdminSupervisionDashboardComponent implements OnInit {
             const finalId = userData?.id || rootId;
             
             if (finalId) {
-              const fullName = m.coachName || m.entrepreneurName || 
+              const fullName = (mode === 'coach' ? m.coachName : m.entrepreneurName) || 
                                ((userData?.firstName || userData?.prenom || '').trim() + ' ' + 
                                 (userData?.lastName || userData?.nom || '').trim()).trim();
 
@@ -442,8 +490,8 @@ export class AdminSupervisionDashboardComponent implements OnInit {
       this.http.get<any[]>(endpoint, { headers: this.headers }).subscribe({
         next: (res) => {
           const users = res.map((u: any) => ({
-            id: u.coachId || u.entrepreneurId || u.id,
-            fullName: u.coachName || u.entrepreneurName || (u.firstName + ' ' + u.lastName) || 'Utilisateur',
+            id: mode === 'coach' ? (u.coachId || u.id) : (u.entrepreneurId || u.id),
+            fullName: (mode === 'coach' ? u.coachName : u.entrepreneurName) || (u.firstName + ' ' + u.lastName) || 'Utilisateur',
             email: u.email || 'N/A',
             programmes: u.programmes || (u.programme ? [u.programme] : [])
           }));
@@ -470,19 +518,25 @@ export class AdminSupervisionDashboardComponent implements OnInit {
     this.loadingDetail.set(true);
     this.detail.set({ sessions: [], taches: [], livrables: [] });
     const mode = this.viewMode();
+    const progId = this.selectedProgId;
+    const themId = this.selectedThematiqueId;
+    
+    // Construct query params
+    let params = `?programmeId=${progId}&thematiqueId=${themId}`;
+
     if (mode === 'coach') {
       let remaining = 3;
       const merged: any = { sessions: [], taches: [], livrables: [] };
       const done = () => { remaining--; if (remaining === 0) { this.detail.set(merged); this.loadingDetail.set(false); this.cdr.markForCheck(); } };
-      this.http.get<any>(`${environment.apiUrl}/admin/planning/coach/${userId}`, { headers: this.headers }).subscribe({
+      this.http.get<any>(`${environment.apiUrl}/admin/planning/coach/${userId}${params}`, { headers: this.headers }).subscribe({
         next: (res) => { merged.sessions = res.sessions || []; done(); },
         error: () => done()
       });
-      this.http.get<any>(`${environment.apiUrl}/admin/planning/coach/${userId}/todos`, { headers: this.headers }).subscribe({
+      this.http.get<any>(`${environment.apiUrl}/admin/planning/coach/${userId}/todos${params}`, { headers: this.headers }).subscribe({
         next: (res) => { merged.taches = Array.isArray(res) ? res : []; done(); },
         error: () => done()
       });
-      this.http.get<any>(`${environment.apiUrl}/admin/planning/coach/${userId}/livrables`, { headers: this.headers }).subscribe({
+      this.http.get<any>(`${environment.apiUrl}/admin/planning/coach/${userId}/livrables${params}`, { headers: this.headers }).subscribe({
         next: (res) => { merged.livrables = Array.isArray(res) ? res : []; done(); },
         error: () => done()
       });
@@ -490,15 +544,15 @@ export class AdminSupervisionDashboardComponent implements OnInit {
       let remaining = 3;
       const merged: any = { sessions: [], taches: [], livrables: [] };
       const done = () => { remaining--; if (remaining === 0) { this.detail.set(merged); this.loadingDetail.set(false); this.cdr.markForCheck(); } };
-      this.http.get<any>(`${environment.apiUrl}/admin/planning/entrepreneur/${userId}`, { headers: this.headers }).subscribe({
+      this.http.get<any>(`${environment.apiUrl}/admin/planning/entrepreneur/${userId}${params}`, { headers: this.headers }).subscribe({
         next: (res) => { merged.sessions = res.sessions || []; done(); },
         error: () => done()
       });
-      this.http.get<any>(`${environment.apiUrl}/admin/planning/entrepreneur/${userId}/todos`, { headers: this.headers }).subscribe({
+      this.http.get<any>(`${environment.apiUrl}/admin/planning/entrepreneur/${userId}/todos${params}`, { headers: this.headers }).subscribe({
         next: (res) => { merged.taches = Array.isArray(res) ? res : []; done(); },
         error: () => done()
       });
-      this.http.get<any>(`${environment.apiUrl}/admin/planning/entrepreneur/${userId}/livrables`, { headers: this.headers }).subscribe({
+      this.http.get<any>(`${environment.apiUrl}/admin/planning/entrepreneur/${userId}/livrables${params}`, { headers: this.headers }).subscribe({
         next: (res) => { merged.livrables = Array.isArray(res) ? res : []; done(); },
         error: () => done()
       });
