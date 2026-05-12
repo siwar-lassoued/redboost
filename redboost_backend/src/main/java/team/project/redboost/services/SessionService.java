@@ -136,23 +136,46 @@ public class SessionService {
 
         List<SeanceExceptionnelle> seances = seanceExceptionnelleRepository.findByEntrepreneurId(entrepreneurId);
         for (SeanceExceptionnelle s : seances) {
-            result.add(Session.builder()
-                .id("seance-" + s.getId())
-                .titre(s.getTitre())
-                .coach(s.getCoach() != null ? User.builder()
-                    .id(s.getCoach().getId())
-                    .firstName(s.getCoach().getFirstName())
-                    .lastName(s.getCoach().getLastName())
-                    .build() : null)
-                .entrepreneur(s.getEntrepreneur())
-                .date(s.getDateSeance().atTime(s.getHeureDebut()))
-                .dureeMinutes((int) java.time.Duration.between(s.getHeureDebut(), s.getHeureFin()).toMinutes())
-                .statut(s.getDateSeance().atTime(s.getHeureDebut()).plusMinutes(
-                        (long) java.time.Duration.between(s.getHeureDebut(), s.getHeureFin()).toMinutes()
-                ).isBefore(LocalDateTime.now()) ? Session.Statut.TERMINE : Session.Statut.PLANIFIE)
-                .isExceptionnelle(true)
-                .thematiqueName(s.getThematique() != null ? s.getThematique().getNom() : null)
-                .build());
+            try {
+                if (s.getDateSeance() == null || s.getHeureDebut() == null || s.getHeureFin() == null) continue;
+
+                long dureeMins = java.time.Duration.between(s.getHeureDebut(), s.getHeureFin()).toMinutes();
+                LocalDateTime startDt = s.getDateSeance().atTime(s.getHeureDebut());
+                Session.Statut statut = startDt.plusMinutes(dureeMins).isBefore(LocalDateTime.now())
+                        ? Session.Statut.TERMINE : Session.Statut.PLANIFIE;
+
+                String thematiqueName = null;
+                try {
+                    if (s.getThematique() != null) thematiqueName = s.getThematique().getNom();
+                } catch (Exception ignored) {
+                    log.warn("Could not load thematique for seance {}", s.getId());
+                }
+
+                String coachFN = null, coachLN = null;
+                Long cId = null;
+                try {
+                    if (s.getCoach() != null) {
+                        cId = s.getCoach().getId();
+                        coachFN = s.getCoach().getFirstName();
+                        coachLN = s.getCoach().getLastName();
+                    }
+                } catch (Exception ignored) {
+                    log.warn("Could not load coach for seance {}", s.getId());
+                }
+
+                result.add(Session.builder()
+                    .id("seance-" + s.getId())
+                    .titre(s.getTitre())
+                    .date(startDt)
+                    .dureeMinutes((int) dureeMins)
+                    .statut(statut)
+                    .isExceptionnelle(true)
+                    .thematiqueName(thematiqueName)
+                    .coach(cId != null ? User.builder().id(cId).firstName(coachFN).lastName(coachLN).build() : null)
+                    .build());
+            } catch (Exception e) {
+                log.warn("Skipping seance exceptionnelle id={} due to error: {}", s.getId(), e.getMessage());
+            }
         }
 
         return result;
