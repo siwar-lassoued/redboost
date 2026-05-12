@@ -96,6 +96,7 @@ public class SessionService {
         }
     }
 
+    @Transactional(readOnly = true)
     public List<Session> getByCoach(Long coachId) {
         List<Session> sessions = sessionRepository.findByCoachId(coachId);
         autoUpdatePastSessions(sessions);
@@ -103,6 +104,7 @@ public class SessionService {
         return sessions;
     }
 
+    @Transactional(readOnly = true)
     public List<Session> getByEntrepreneur(Long entrepreneurId) {
         List<Session> sessions = sessionRepository.findByEntrepreneurId(entrepreneurId);
         autoUpdatePastSessions(sessions);

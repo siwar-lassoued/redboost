@@ -478,13 +478,15 @@ public class AdminPlanningController {
 
         try {
             String sql = "SELECT s.id, s.titre, s.date, s.duree_minutes, s.statut, s.google_meet_link, s.type_session, s.adresse, s.notes_coach, " +
-                    "s.entrepreneur_id, s.programme_id, s.thematique_id, " +
+                    "s.entrepreneur_id, s.programme_id, s.disponibilite_id, " +
                     "uc.first_name, uc.last_name, uc.email, s.coach_id, " +
                     "p.nom as prog_nom, th.nom as th_nom " +
                     "FROM sessions s " +
                     "LEFT JOIN user uc ON uc.id = s.coach_id " +
                     "LEFT JOIN programmes p ON p.id = s.programme_id " +
-                    "LEFT JOIN thematiques_coaching th ON th.id = s.thematique_id " +
+                    "LEFT JOIN session_coach sc ON sc.id = s.disponibilite_id " +
+                    "LEFT JOIN disponibilites d ON d.id = sc.disponibilite_id " +
+                    "LEFT JOIN thematiques_coaching th ON th.id = d.thematique_id " +
                     "WHERE s.entrepreneur_id = :entrepreneurId " +
                     "ORDER BY s.date DESC";
 
