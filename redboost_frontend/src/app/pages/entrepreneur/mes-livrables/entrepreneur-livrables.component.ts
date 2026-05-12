@@ -426,19 +426,23 @@ export class EntrepreneurLivrablesComponent implements OnInit {
     });
   }
 
-  // --- FILTER LIVRABLES (Re-evaluates automatically when any signal changes) ---
+  // --- FILTER LIVRABLES ---
   filteredLivrables = computed(() => {
     const term = this.searchTerm().toLowerCase().trim();
     const prog = this.selectedProgramme();
     const coach = this.selectedCoach();
     const sess = this.selectedSession();
-    const theme = this.selectedThematique();
+    const theme = this.selectedThematique().toLowerCase().trim();
+
     return this.allLivrables().filter(l => {
       const matchesSearch = !term || (l.titre || '').toLowerCase().includes(term);
       const matchesProg = !prog || l.programme?.nom === prog;
       const matchesCoach = !coach || l.coachName === coach;
       const matchesSess = !sess || l.sessionName === sess;
-      const matchesTheme = !theme || l.thematiqueName === theme;
+      
+      const livTheme = (l.thematiqueName || l.thematique?.nom || '').toLowerCase().trim();
+      const matchesTheme = !theme || livTheme === theme;
+
       return matchesSearch && matchesProg && matchesCoach && matchesSess && matchesTheme;
     });
   });
@@ -447,21 +451,31 @@ export class EntrepreneurLivrablesComponent implements OnInit {
   filteredTasks = computed(() => {
     const term = this.searchTask().toLowerCase().trim();
     const status = this.statusTask();
-    const theme = this.selectedThematique();
+    const theme = this.selectedThematique().toLowerCase().trim();
+
     return this.tasks().filter(t => {
       const matchesSearch = !term || (t.titre || t.title || '').toLowerCase().includes(term);
       const colId = this.getTaskColId(t.status);
       const matchesStatus = status === 'ALL' || colId === status;
-      const matchesTheme = !theme || (t.coach && t.coach.thematiqueName === theme);
+      
+      const taskTheme = (t.coach?.thematiqueName || t.thematiqueName || '').toLowerCase().trim();
+      const matchesTheme = !theme || taskTheme === theme;
+
       return matchesSearch && matchesStatus && matchesTheme;
     }).sort((a, b) => new Date(b.dateEcheance || 0).getTime() - new Date(a.dateEcheance || 0).getTime());
   });
 
   uniqueThematiques = computed(() => {
     const set = new Set<string>();
-    this.allMatchings().forEach(m => { if (m.thematiqueName) set.add(m.thematiqueName); });
-    this.allLivrables().forEach(l => { if (l.thematiqueName) set.add(l.thematiqueName); });
-    this.tasks().forEach(t => { if (t.coach?.thematiqueName) set.add(t.coach.thematiqueName); });
+    this.allMatchings().forEach(m => { if (m.thematiqueName) set.add(m.thematiqueName.trim()); });
+    this.allLivrables().forEach(l => { 
+      const name = l.thematiqueName || l.thematique?.nom;
+      if (name) set.add(name.trim()); 
+    });
+    this.tasks().forEach(t => { 
+      const name = t.coach?.thematiqueName || t.thematiqueName;
+      if (name) set.add(name.trim()); 
+    });
     return Array.from(set).sort();
   });
 
