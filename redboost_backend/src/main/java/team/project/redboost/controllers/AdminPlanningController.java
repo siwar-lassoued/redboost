@@ -478,10 +478,13 @@ public class AdminPlanningController {
 
         try {
             String sql = "SELECT s.id, s.titre, s.date, s.duree_minutes, s.statut, s.google_meet_link, s.type_session, s.adresse, s.notes_coach, " +
-                    "s.entrepreneur_id, s.programme_id, NULL as thematique_id, " +
-                    "uc.first_name, uc.last_name, uc.email, s.coach_id " +
+                    "s.entrepreneur_id, s.programme_id, s.thematique_id, " +
+                    "uc.first_name, uc.last_name, uc.email, s.coach_id, " +
+                    "p.nom as prog_nom, th.nom as th_nom " +
                     "FROM sessions s " +
                     "LEFT JOIN user uc ON uc.id = s.coach_id " +
+                    "LEFT JOIN programmes p ON p.id = s.programme_id " +
+                    "LEFT JOIN thematiques_coaching th ON th.id = s.thematique_id " +
                     "WHERE s.entrepreneur_id = :entrepreneurId " +
                     "ORDER BY s.date DESC";
 
@@ -502,10 +505,12 @@ public class AdminPlanningController {
                 s.put("lieu", safeStr(row[7]));
                 s.put("notesCoach", safeStr(row[8]));
                 s.put("entrepreneurId", safeStr(entrepreneurId));
+                
+                s.put("programmeNom", safeStr(row.length > 16 ? row[16] : null));
+                s.put("thematiqueNom", safeStr(row.length > 17 ? row[17] : null));
 
                 // Coach info
-                String coachId = safeStr(row.length > 15 ? row[15] : null);
-                s.put("coachId", coachId);
+                s.put("coachId", safeStr(row.length > 15 ? row[15] : null));
                 s.put("coachName", trim(safeStr(row[12])) + " " + trim(safeStr(row[13])));
                 s.put("coachEmail", safeStr(row[14]));
 
