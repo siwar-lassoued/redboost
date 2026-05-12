@@ -37,8 +37,7 @@ import java.util.stream.Collectors;
 @CrossOrigin(origins = "*")
 public class AdminPlanningController {
 
-    @Autowired
-    private SessionRepository sessionRepository;
+    @Autowired private SessionRepository sessionRepository;
     @Autowired private SessionCoachRepository sessionCoachRepository;
     @Autowired private MatchingRepository matchingRepository;
     @Autowired private UserRepository userRepository;
@@ -47,6 +46,7 @@ public class AdminPlanningController {
     @Autowired private DisponibiliteRepository disponibiliteRepository;
     @Autowired private ProgrammeRepository programmeRepository;
     @Autowired private ThematiqueRepository thematiqueRepository;
+    @Autowired private LivrableRepository livrableRepository;
 
 
 
@@ -352,12 +352,34 @@ public class AdminPlanningController {
         List<Matching> matchings = matchingRepository.findByCoachIdAndStatut(coachId, Matching.StatutMatching.VALIDE);
         List<Long> entrepreneurIds = matchings.stream().map(Matching::getEntrepreneurId).collect(Collectors.toList());
 
-        List<TacheDocument> docs = entrepreneurIds.stream()
+        // 1. Documents from tasks
+        List<Map<String, Object>> taskDocs = entrepreneurIds.stream()
                 .flatMap(id -> tacheRepository.findByResponsableId(id).stream())
                 .flatMap(t -> tacheDocumentRepository.findByTacheId(t.getId()).stream())
+                .map(this::mapLivrable)
                 .collect(Collectors.toList());
 
-        return ResponseEntity.ok(docs.stream().map(this::mapLivrable).collect(Collectors.toList()));
+        // 2. Direct Livrables
+        List<Livrable> coachLivrables = livrableRepository.findAll().stream()
+                .filter(l -> {
+                    if (l.getEntrepreneur() != null && entrepreneurIds.contains(l.getEntrepreneur().getId())) return true;
+                    User coach = userRepository.findById(coachId).orElse(null);
+                    return coach != null && coach.getEmail().equals(l.getCoachEmail());
+                })
+                .collect(Collectors.toList());
+        
+        List<Map<String, Object>> mappedLivrables = coachLivrables.stream().map(this::mapLivrableEntity).collect(Collectors.toList());
+
+        List<Map<String, Object>> result = new ArrayList<>(taskDocs);
+        result.addAll(mappedLivrables);
+        
+        result.sort((a, b) -> {
+            String d1 = a.get("dateUpload") != null ? a.get("dateUpload").toString() : "";
+            String d2 = b.get("dateUpload") != null ? b.get("dateUpload").toString() : "";
+            return d2.compareTo(d1);
+        });
+
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/entrepreneur/{entrepreneurId}")
@@ -383,11 +405,49 @@ public class AdminPlanningController {
 
     @GetMapping("/entrepreneur/{entrepreneurId}/livrables")
     public ResponseEntity<List<Map<String, Object>>> getEntrepreneurLivrables(@PathVariable Long entrepreneurId) {
-        List<TacheDocument> docs = tacheRepository.findByResponsableId(entrepreneurId).stream()
+        // 1. Documents from tasks
+        List<Map<String, Object>> taskDocs = tacheRepository.findByResponsableId(entrepreneurId).stream()
                 .flatMap(t -> tacheDocumentRepository.findByTacheId(t.getId()).stream())
+                .map(this::mapLivrable)
                 .collect(Collectors.toList());
 
-        return ResponseEntity.ok(docs.stream().map(this::mapLivrable).collect(Collectors.toList()));
+        // 2. Direct Livrables
+        List<Map<String, Object>> mappedLivrables = livrableRepository.findByEntrepreneurId(entrepreneurId).stream()
+                .map(this::mapLivrableEntity)
+                .collect(Collectors.toList());
+
+        List<Map<String, Object>> result = new ArrayList<>(taskDocs);
+        result.addAll(mappedLivrables);
+        
+        result.sort((a, b) -> {
+            String d1 = a.get("dateUpload") != null ? a.get("dateUpload").toString() : "";
+            String d2 = b.get("dateUpload") != null ? b.get("dateUpload").toString() : "";
+            return d2.compareTo(d1);
+        });
+
+        return ResponseEntity.ok(result);
+    }
+
+    private Map<String, Object> mapLivrableEntity(Livrable l) {
+        Map<String, Object> m = new HashMap<>();
+        m.put("id", "L" + l.getId());
+        m.put("nom", l.getTitre());
+        m.put("url", l.getFichierUrl());
+        m.put("dateUpload", l.getDateSoumission());
+        m.put("statut", l.getStatut());
+        m.put("type", l.getType());
+        m.put("tacheTitre", l.getTache() != null ? l.getTache().getTitre() : (l.getSessionName() != null ? "Session: " + l.getSessionName() : null));
+        
+        if (l.getEntrepreneur() != null) {
+            m.put("entrepreneurId", l.getEntrepreneur().getId());
+            m.put("entrepreneurName", formatName(l.getEntrepreneur()));
+        }
+        
+        m.put("coachName", l.getCoachName());
+        m.put("programmeNom", l.getProgrammeName() != null ? l.getProgrammeName() : (l.getProgramme() != null ? l.getProgramme().getNom() : null));
+        m.put("thematiqueNom", l.getThematiqueName());
+        
+        return m;
     }
 
     /**

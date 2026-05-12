@@ -415,10 +415,16 @@ export class AdminSupervisionDashboardComponent implements OnInit {
                                ((userData?.firstName || userData?.prenom || '').trim() + ' ' + 
                                 (userData?.lastName || userData?.nom || '').trim()).trim();
 
+              const existing = uniqueUsersMap.get(finalId);
+              const progName = m.programmeName || m.programme?.nom;
+              const progs = existing ? existing.programmes : [];
+              if (progName && !progs.includes(progName)) progs.push(progName);
+
               uniqueUsersMap.set(finalId, {
                 id: finalId,
                 fullName: fullName || userData?.email?.split('@')[0] || 'Utilisateur #' + finalId,
-                email: userData?.email || 'N/A'
+                email: userData?.email || 'N/A',
+                programmes: progs
               });
             }
           });
