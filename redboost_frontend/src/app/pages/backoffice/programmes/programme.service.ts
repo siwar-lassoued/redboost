@@ -1,5 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, signal } from '@angular/core';
+import { environment } from '../../../../environment';
 import {
     Programme,
     Secteur,
@@ -146,9 +147,9 @@ export interface SprintDetail {
 
 @Injectable({ providedIn: 'root' })
 export class ProgrammeService {
-    private api = 'https://redboost.tn/api/backoffice/programmes';
-    private apikpi = 'https://redboost.tn/api/programmeskpi';
-    private userApi = 'https://redboost.tn/api/users';
+    private api = `${environment.apiUrl}/backoffice/programmes`;
+    private apikpi = `${environment.apiUrl}/programmeskpi`;
+    private userApi = `${environment.apiUrl}/users`;
 
     programmes = signal<Programme[]>([]);
     responsables = signal<UserResponsable[]>([]);
@@ -371,7 +372,7 @@ export class ProgrammeService {
 
 
     reorderSprints(sprintIds: number[]): Observable<void> {
-    return this.http.put<void>(`https://redboost.tn/api/v1/sprints/reorder`, sprintIds);
+    return this.http.put<void>(`${environment.apiUrl}/v1/sprints/reorder`, sprintIds);
 }
     // Add to ProgrammeService class
 
