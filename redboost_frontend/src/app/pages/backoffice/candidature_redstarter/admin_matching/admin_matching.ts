@@ -22,14 +22,86 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
         </div>
       </div>
 
-      <!-- Programme Selector -->
-      <div class="card prog-card">
-        <div class="form-group" style="max-width:480px">
-          <label>Programme <span class="required">*</span></label>
-          <select [(ngModel)]="selectedProgId" (change)="onProgChange()" class="form-select">
-            <option [ngValue]="0">Tous les programmes (Filtre)</option>
-            <option *ngFor="let p of programmes" [ngValue]="p.id">{{ p.nom }}</option>
-          </select>
+      <!-- Programme & Global Filters -->
+      <div class="flex items-center gap-4 bg-white rounded-3xl border border-[#e2e8f0] p-2 shadow-sm mb-6" style="width: fit-content; max-width: 100%; flex-wrap: wrap;">
+        <!-- Programme Selector -->
+        <div class="group relative flex items-center gap-3 px-5 py-2.5 bg-[#f8fafc] rounded-2xl border border-[#f1f5f9] hover:border-[#ea5073]/30 transition-all duration-300">
+          <div class="flex flex-col">
+            <label class="text-[9px] font-black uppercase text-[#94a3b8] tracking-widest mb-0.5">Programme <span class="text-[#ea5073]">*</span></label>
+            <div class="flex items-center gap-2">
+              <i class="pi pi-briefcase text-[#ea5073] text-[10px]"></i>
+              <select [(ngModel)]="selectedProgId" (change)="onProgChange()" class="bg-transparent border-none outline-none text-sm font-bold text-[#1e293b] cursor-pointer min-w-[180px] custom-select">
+                <option [ngValue]="0">Tous les programmes</option>
+                <option *ngFor="let p of programmes" [ngValue]="p.id">{{ p.nom }}</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Entrepreneur Selector -->
+        <div class="group relative flex items-center gap-3 px-5 py-2.5 bg-[#f8fafc] rounded-2xl border border-[#f1f5f9] hover:border-[#ea5073]/30 transition-all duration-300 cursor-pointer"
+             [class.opacity-50]="!selectedProgId" [class.grayscale]="!selectedProgId"
+             (click)="selectedProgId ? entDropdownOpen = !entDropdownOpen : null; coachDropdownOpen = false;">
+          <div class="flex flex-col w-full">
+            <label class="text-[9px] font-black uppercase text-[#94a3b8] tracking-widest mb-0.5 cursor-pointer">Entrepreneur</label>
+            <div class="flex items-center gap-2 justify-between w-full">
+              <div class="flex items-center gap-2">
+                <i class="pi pi-user text-[#ea5073] text-[10px]"></i>
+                <span class="text-sm font-bold text-[#1e293b] whitespace-nowrap">{{ getSelectedEntName() }}</span>
+              </div>
+              <i class="pi pi-chevron-down text-[10px] text-[#94a3b8]" [class.rotate-180]="entDropdownOpen"></i>
+            </div>
+          </div>
+          
+          <!-- Custom Dropdown Menu -->
+          <div *ngIf="entDropdownOpen" class="absolute left-0 top-[calc(100%+8px)] w-full min-w-[220px] bg-white rounded-xl shadow-xl border border-gray-100 max-h-[250px] overflow-y-auto z-[100]" (click)="$event.stopPropagation()">
+            <div class="p-1">
+              <div class="px-4 py-2 hover:bg-gray-50 rounded-lg cursor-pointer text-sm font-medium text-gray-700 transition-colors"
+                   [class.bg-[#FFF1F3]]="selectedGlobalEntId === 0" [class.text-[#ea5073]]="selectedGlobalEntId === 0"
+                   (click)="selectGlobalEnt(0)">
+                Tous les entrepreneurs
+              </div>
+              <div *ngFor="let e of globalEntrepreneurs" 
+                   class="px-4 py-2 hover:bg-gray-50 rounded-lg cursor-pointer text-sm font-medium text-gray-700 transition-colors truncate"
+                   [class.bg-[#FFF1F3]]="selectedGlobalEntId === e.id" [class.text-[#ea5073]]="selectedGlobalEntId === e.id"
+                   (click)="selectGlobalEnt(e.id)">
+                {{ e.firstName || e.nom }} {{ e.lastName || '' }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Coach Selector -->
+        <div class="group relative flex items-center gap-3 px-5 py-2.5 bg-[#f8fafc] rounded-2xl border border-[#f1f5f9] hover:border-[#ea5073]/30 transition-all duration-300 cursor-pointer"
+             [class.opacity-50]="!selectedProgId" [class.grayscale]="!selectedProgId"
+             (click)="selectedProgId ? coachDropdownOpen = !coachDropdownOpen : null; entDropdownOpen = false;">
+          <div class="flex flex-col w-full">
+            <label class="text-[9px] font-black uppercase text-[#94a3b8] tracking-widest mb-0.5 cursor-pointer">Coach</label>
+            <div class="flex items-center gap-2 justify-between w-full">
+              <div class="flex items-center gap-2">
+                <i class="pi pi-user-check text-[#ea5073] text-[10px]"></i>
+                <span class="text-sm font-bold text-[#1e293b] whitespace-nowrap">{{ getSelectedCoachName() }}</span>
+              </div>
+              <i class="pi pi-chevron-down text-[10px] text-[#94a3b8]" [class.rotate-180]="coachDropdownOpen"></i>
+            </div>
+          </div>
+
+          <!-- Custom Dropdown Menu -->
+          <div *ngIf="coachDropdownOpen" class="absolute left-0 top-[calc(100%+8px)] w-full min-w-[220px] bg-white rounded-xl shadow-xl border border-gray-100 max-h-[250px] overflow-y-auto z-[100]" (click)="$event.stopPropagation()">
+            <div class="p-1">
+              <div class="px-4 py-2 hover:bg-gray-50 rounded-lg cursor-pointer text-sm font-medium text-gray-700 transition-colors"
+                   [class.bg-[#FFF1F3]]="selectedGlobalCoachId === 0" [class.text-[#ea5073]]="selectedGlobalCoachId === 0"
+                   (click)="selectGlobalCoach(0)">
+                Tous les coachs
+              </div>
+              <div *ngFor="let c of globalCoaches" 
+                   class="px-4 py-2 hover:bg-gray-50 rounded-lg cursor-pointer text-sm font-medium text-gray-700 transition-colors truncate"
+                   [class.bg-[#FFF1F3]]="selectedGlobalCoachId === c.id" [class.text-[#ea5073]]="selectedGlobalCoachId === c.id"
+                   (click)="selectGlobalCoach(c.id)">
+                {{ c.firstName || c.prenom }} {{ c.lastName || c.nom }}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -467,6 +539,15 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
       .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
       .form-actions { display: flex; gap: 12px; margin-top: 12px; }
 
+      .custom-select { 
+        appearance: none; 
+        -webkit-appearance: none; 
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23ea5073' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E"); 
+        background-repeat: no-repeat; 
+        background-position: right center; 
+        padding-right: 24px;
+      }
+
       /* Thematique selector */
       .thematique-selector-card { padding: 20px 24px; }
       .thematique-selector-row { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
@@ -696,6 +777,16 @@ export class AdminMatchingComponent implements OnInit {
     newThematique: Partial<ThematiqueCoaching> = { nom: '', description: '', dateDebut: '', dateFin: '', programmeId: undefined };
     editingThematique: ThematiqueCoaching | null = null;
 
+    // Global Filters Data
+    allProgrammeMatchings: any[] = [];
+    globalEntrepreneurs: any[] = [];
+    globalCoaches: any[] = [];
+    selectedGlobalEntId = 0;
+    selectedGlobalCoachId = 0;
+    
+    entDropdownOpen = false;
+    coachDropdownOpen = false;
+
     // IA Matching
     isLoading = false;
     errorMessage: string | null = null;
@@ -745,11 +836,18 @@ export class AdminMatchingComponent implements OnInit {
     ngOnInit(): void {
         this.http.get<Programme[]>(`${environment.apiUrl}/backoffice/programmes`).subscribe({
           next: (data) => this.programmes = data,
-            // next: (data) => {
-            //     this.programmes = data;
-            //     this.loadAllThematiques();
-            // },
             error: (e) => console.error('Failed to load programmes', e)
+        });
+
+        // Load all users for global filters
+        this.http.get<any[]>(`${environment.apiUrl}/users?role=ENTREPRENEUR`).subscribe({
+            next: (data) => this.globalEntrepreneurs = data.sort((a,b) => (a.firstName || '').localeCompare(b.firstName || '')),
+            error: (e) => console.error('Failed to load global entrepreneurs', e)
+        });
+        
+        this.http.get<any[]>(`${environment.apiUrl}/users?role=COACH`).subscribe({
+            next: (data) => this.globalCoaches = data.sort((a,b) => (a.firstName || '').localeCompare(b.firstName || '')),
+            error: (e) => console.error('Failed to load global coaches', e)
         });
         
         this.loadAllThematiques();
@@ -765,10 +863,55 @@ export class AdminMatchingComponent implements OnInit {
     }
 
     applyProgFilter(): void {
-        if (this.selectedProgId) {
-            this.thematiques = this.allThematiques.filter(t => t.programmeId === this.selectedProgId);
-        } else {
-            this.thematiques = this.allThematiques;
+        this.applyGlobalFilters();
+    }
+
+    getSelectedEntName(): string {
+        if (!this.selectedGlobalEntId) return 'Tous les entrepreneurs';
+        const e = this.globalEntrepreneurs.find(ent => ent.id === this.selectedGlobalEntId);
+        return e ? `${e.firstName || e.nom} ${e.lastName || ''}`.trim() : 'Tous les entrepreneurs';
+    }
+
+    getSelectedCoachName(): string {
+        if (!this.selectedGlobalCoachId) return 'Tous les coachs';
+        const c = this.globalCoaches.find(coach => coach.id === this.selectedGlobalCoachId);
+        return c ? `${c.firstName || c.prenom} ${c.lastName || c.nom}`.trim() : 'Tous les coachs';
+    }
+
+    selectGlobalEnt(id: number): void {
+        this.selectedGlobalEntId = id;
+        this.entDropdownOpen = false;
+        this.applyGlobalFilters();
+    }
+
+    selectGlobalCoach(id: number): void {
+        this.selectedGlobalCoachId = id;
+        this.coachDropdownOpen = false;
+        this.applyGlobalFilters();
+    }
+
+    applyGlobalFilters(): void {
+        let filteredTh = this.selectedProgId 
+            ? this.allThematiques.filter(t => t.programmeId === this.selectedProgId)
+            : this.allThematiques;
+
+        if (this.selectedGlobalEntId || this.selectedGlobalCoachId) {
+            const validThIds = new Set<number>();
+            this.allProgrammeMatchings.forEach(m => {
+                let matchEnt = this.selectedGlobalEntId ? m.entrepreneur?.id === this.selectedGlobalEntId : true;
+                let matchCoach = this.selectedGlobalCoachId ? m.coach?.id === this.selectedGlobalCoachId : true;
+                if (matchEnt && matchCoach && m.thematiqueId) {
+                    validThIds.add(m.thematiqueId);
+                }
+            });
+            filteredTh = filteredTh.filter(t => validThIds.has(t.id!));
+        }
+
+        this.thematiques = filteredTh;
+
+        if (this.selectedThematiqueId && !this.thematiques.find(t => t.id === this.selectedThematiqueId)) {
+            this.selectedThematiqueId = 0;
+            this.onThematiqueChange();
         }
     }
 
@@ -803,7 +946,19 @@ export class AdminMatchingComponent implements OnInit {
         this.showManualPanel = false;
         this.errorMessage = null;
 
+        this.selectedGlobalEntId = 0;
+        this.selectedGlobalCoachId = 0;
+        this.allProgrammeMatchings = [];
+
         this.applyProgFilter();
+
+        if (this.selectedProgId) {
+            this.matchingSvc.getHistory(this.selectedProgId).subscribe({
+                next: (data) => {
+                    this.allProgrammeMatchings = data;
+                }
+            });
+        }
     }
 
     // ─── Thématique change ───
