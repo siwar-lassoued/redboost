@@ -372,9 +372,9 @@ public class CandidatureRedstarterService {
                                 
                                 if (matchedProg != null) {
                                     progRef[0] = matchedProg;
-                                    log.info("Programme trouvé et associé: {}", matchedProg.getNom());
+                                    log.info("Programme trouvé et associé: {} (ID: {}) pour candidature {}", matchedProg.getNom(), matchedProg.getId(), candidature.getId());
                                 } else {
-                                    log.warn("Impossible d'associer le programme. Valeur du template: {}", progVal);
+                                    log.warn("Impossible d'associer le programme. Valeur du template: '{}' pour candidature {}. Aucun programme correspondant trouvé par nom ou ID.", progVal, candidature.getId());
                                 }
                             }
                         });

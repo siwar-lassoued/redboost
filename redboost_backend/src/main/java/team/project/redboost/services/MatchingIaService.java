@@ -550,37 +550,49 @@ public class MatchingIaService {
             view.put("coachName", (c.getFirstName() != null ? c.getFirstName() : "") + " " + (c.getLastName() != null ? c.getLastName() : ""));
         });
 
-        // 2. Entrepreneur Enrichment (Prioritize Candidature for rich details)
-        Optional<CandidatureRedstarter> candOpt = candidatureRepo.findById(m.getEntrepreneurId());
-        if (candOpt.isPresent()) {
-            CandidatureRedstarter c = candOpt.get();
+        // 2. Entrepreneur Enrichment (Consistently resolve via User ID then Candidature Email)
+        userRepo.findById(m.getEntrepreneurId()).ifPresentOrElse(u -> {
             Map<String, Object> ent = new LinkedHashMap<>();
-            
-            User user = userRepo.findByEmail(c.getEmail());
-            ent.put("id", user != null ? user.getId() : c.getId());
-            ent.put("isUser", user != null);
-            ent.put("nom", c.getNomPrenom());
-            ent.put("email", c.getEmail());
-            ent.put("telephone", c.getNumeroTelephone());
-            ent.put("entreprise", c.getNomEntreprise());
-            ent.put("secteur", c.getEntrepriseEst());
-            ent.put("phaseMaturite", c.getPhaseMaturite());
-            ent.put("description", c.getBreveDescription());
-            ent.put("region", c.getRegionBasee());
+            ent.put("id", u.getId());
+            ent.put("nom", (u.getFirstName() != null ? u.getFirstName() : "") + " " + (u.getLastName() != null ? u.getLastName() : ""));
+            ent.put("email", u.getEmail());
+            ent.put("telephone", u.getPhoneNumber());
+            ent.put("entreprise", u.getEntreprise() != null ? u.getEntreprise() : u.getStartupName());
+            ent.put("phaseMaturite", u.getStadeProjet());
+            ent.put("description", u.getDescriptionProjet());
+            ent.put("region", u.getRegion());
+            ent.put("isUser", true);
+
+            // Enrich with latest accepted candidature by email if available
+            if (u.getEmail() != null) {
+                candidatureRepo.findByEmail(u.getEmail()).stream()
+                    .filter(c -> c.getStatut() == CandidatureRedstarter.StatutCandidature.ACCEPTE)
+                    .findFirst()
+                    .ifPresent(c -> {
+                        if (ent.get("entreprise") == null || "Non spécifié".equals(ent.get("entreprise"))) ent.put("entreprise", c.getNomEntreprise());
+                        ent.put("secteur", c.getEntrepriseEst());
+                        ent.put("phaseMaturite", c.getPhaseMaturite());
+                        ent.put("description", c.getBreveDescription());
+                        ent.put("region", c.getRegionBasee());
+                        ent.put("telephone", c.getNumeroTelephone());
+                    });
+            }
             
             view.put("entrepreneur", ent);
-            view.put("entrepreneurName", c.getNomPrenom());
-        } else {
-            userRepo.findById(m.getEntrepreneurId()).ifPresent(u -> {
+            view.put("entrepreneurName", ent.get("nom"));
+        }, () -> {
+            // Fallback to direct candidature search if User record is missing (legacy support)
+            candidatureRepo.findById(m.getEntrepreneurId()).ifPresent(c -> {
                 Map<String, Object> ent = new LinkedHashMap<>();
-                ent.put("id", u.getId());
-                ent.put("nom", (u.getFirstName() != null ? u.getFirstName() : "") + " " + (u.getLastName() != null ? u.getLastName() : ""));
-                ent.put("email", u.getEmail());
-                ent.put("entreprise", u.getEntreprise());
+                ent.put("id", c.getId());
+                ent.put("nom", c.getNomPrenom());
+                ent.put("email", c.getEmail());
+                ent.put("entreprise", c.getNomEntreprise());
+                ent.put("isUser", false);
                 view.put("entrepreneur", ent);
-                view.put("entrepreneurName", ent.get("nom"));
+                view.put("entrepreneurName", c.getNomPrenom());
             });
-        }
+        });
 
         programmeRepo.findById(m.getProgrammeId()).ifPresent(p -> {
             view.put("programmeName", p.getNom());
@@ -729,65 +741,72 @@ public class MatchingIaService {
                 view.put("coach", coach);
             });
 
-            // Entrepreneur full profile (from candidature or fallback to user)
-            Optional<CandidatureRedstarter> candOpt = candidatureRepo.findById(m.getEntrepreneurId());
-            if (candOpt.isPresent()) {
-                CandidatureRedstarter c = candOpt.get();
+            // Entrepreneur full profile (Consistently resolve via User ID then Candidature Email)
+            userRepo.findById(m.getEntrepreneurId()).ifPresentOrElse(u -> {
                 Map<String, Object> ent = new LinkedHashMap<>();
-                
-                // CRITICAL: Resolve User ID by email to ensure planning API works in frontend
-                User user = userRepo.findByEmail(c.getEmail());
-                ent.put("id", user != null ? user.getId() : c.getId());
-                ent.put("isUser", user != null);
-                
-                ent.put("nom", c.getNomPrenom());
-                ent.put("email", c.getEmail());
-                ent.put("telephone", c.getNumeroTelephone());
-                ent.put("entreprise", c.getNomEntreprise());
-                ent.put("secteur", c.getEntrepriseEst());
-                ent.put("phaseMaturite", c.getPhaseMaturite());
-                ent.put("description", c.getBreveDescription());
-                ent.put("region", c.getRegionBasee());
-                ent.put("innovation", c.getComposanteInnovation());
-                ent.put("besoinsAccompagnement", c.getBesoinsAccompagnement());
-                ent.put("besoinsFormation", c.getBesoinsFormation());
-                ent.put("roleEntreprise", c.getRoleEntreprise());
-                ent.put("viabiliteCommerciale", c.getViabiliteCommerciale());
-                ent.put("impactEnvironnemental", c.getImpactEnvironnemental());
-                ent.put("impactSocial", c.getImpactSocial());
-                ent.put("experienceEquipe", c.getExperienceEquipeFondatrice());
-                ent.put("marchePersonnasCibles", c.getMarchePersonnasCibles());
-                // Dynamic form answers
-                if (c.getDynamicAnswers() != null && !c.getDynamicAnswers().isEmpty()) {
-                    try {
-                        Map<String, Object> dynRoot = objectMapper.readValue(c.getDynamicAnswers(), Map.class);
-                        Object answers = dynRoot.get("answers");
-                        ent.put("reponsesFormulaire", (answers instanceof Map) ? answers : dynRoot);
-                    } catch (Exception e) {
-                        log.warn("Could not parse dynamicAnswers for candidature {}", c.getId());
-                    }
-                }
-                // Documents list (filenames only — frontend will build download links)
-                if (c.getDocuments() != null && !c.getDocuments().isEmpty()) {
-                    ent.put("documents", c.getDocuments());
+                ent.put("id", u.getId());
+                ent.put("isUser", true);
+                ent.put("nom", (u.getFirstName() != null ? u.getFirstName() : "") + " " + (u.getLastName() != null ? u.getLastName() : ""));
+                ent.put("email", u.getEmail());
+                ent.put("telephone", u.getPhoneNumber());
+                ent.put("entreprise", u.getEntreprise() != null ? u.getEntreprise() : u.getStartupName());
+                ent.put("secteur", u.getSecteur());
+                ent.put("phaseMaturite", u.getStadeProjet());
+                ent.put("description", u.getDescriptionProjet());
+                ent.put("region", u.getRegion());
+                ent.put("besoinsAccompagnement", u.getBesoinsCoaching());
+
+                // Enrich with latest accepted candidature by email for full metadata
+                if (u.getEmail() != null) {
+                    candidatureRepo.findByEmail(u.getEmail()).stream()
+                        .filter(c -> c.getStatut() == CandidatureRedstarter.StatutCandidature.ACCEPTE)
+                        .findFirst()
+                        .ifPresent(c -> {
+                            if (ent.get("entreprise") == null || "Non spécifié".equals(ent.get("entreprise"))) ent.put("entreprise", c.getNomEntreprise());
+                            ent.put("secteur", c.getEntrepriseEst());
+                            ent.put("phaseMaturite", c.getPhaseMaturite());
+                            ent.put("description", c.getBreveDescription());
+                            ent.put("region", c.getRegionBasee());
+                            ent.put("innovation", c.getComposanteInnovation());
+                            ent.put("besoinsAccompagnement", c.getBesoinsAccompagnement());
+                            ent.put("besoinsFormation", c.getBesoinsFormation());
+                            ent.put("roleEntreprise", c.getRoleEntreprise());
+                            ent.put("viabiliteCommerciale", c.getViabiliteCommerciale());
+                            ent.put("impactEnvironnemental", c.getImpactEnvironnemental());
+                            ent.put("impactSocial", c.getImpactSocial());
+                            ent.put("experienceEquipe", c.getExperienceEquipeFondatrice());
+                            ent.put("marchePersonnasCibles", c.getMarchePersonnasCibles());
+                            
+                            // Dynamic form answers
+                            if (c.getDynamicAnswers() != null && !c.getDynamicAnswers().isEmpty()) {
+                                try {
+                                    Map<String, Object> dynRoot = objectMapper.readValue(c.getDynamicAnswers(), Map.class);
+                                    Object answers = dynRoot.get("answers");
+                                    ent.put("reponsesFormulaire", (answers instanceof Map) ? answers : dynRoot);
+                                } catch (Exception e) {
+                                    log.warn("Could not parse dynamicAnswers for candidature {}", c.getId());
+                                }
+                            }
+                            // Documents list
+                            if (c.getDocuments() != null && !c.getDocuments().isEmpty()) {
+                                ent.put("documents", c.getDocuments());
+                            }
+                        });
                 }
                 view.put("entrepreneur", ent);
-            } else {
-                userRepo.findById(m.getEntrepreneurId()).ifPresent(u -> {
+            }, () -> {
+                // Fallback to direct candidature search
+                candidatureRepo.findById(m.getEntrepreneurId()).ifPresent(c -> {
                     Map<String, Object> ent = new LinkedHashMap<>();
-                    ent.put("id", u.getId());
-                    ent.put("nom", (u.getFirstName() != null ? u.getFirstName() : "") + " " + (u.getLastName() != null ? u.getLastName() : ""));
-                    ent.put("email", u.getEmail());
-                    ent.put("telephone", u.getPhoneNumber());
-                    ent.put("entreprise", u.getEntreprise());
-                    ent.put("secteur", u.getSecteur());
-                    ent.put("phaseMaturite", u.getStadeProjet());
-                    ent.put("description", u.getDescriptionProjet());
-                    ent.put("region", u.getRegion());
-                    ent.put("besoinsAccompagnement", u.getBesoinsCoaching());
+                    ent.put("id", c.getId());
+                    ent.put("isUser", false);
+                    ent.put("nom", c.getNomPrenom());
+                    ent.put("email", c.getEmail());
+                    ent.put("entreprise", c.getNomEntreprise());
+                    ent.put("description", c.getBreveDescription());
                     view.put("entrepreneur", ent);
                 });
-            }
+            });
 
             return view;
         }).collect(Collectors.toList());
@@ -811,18 +830,31 @@ public class MatchingIaService {
             throw new RuntimeException("La thématique n'appartient pas à ce programme.");
         }
 
-        // ── Entrepreneurs du programme sans matching VALIDE pour ce programme ──
+        // ── Entrepreneurs du programme ──
+        // On récupère les utilisateurs avec le rôle ENTREPRENEUR
         List<User> entrepreneursUtilisateurs = userRepo.findAll().stream()
                 .filter(u -> u.getRole() == Role.ENTREPRENEUR)
-                .filter(u -> u.getProgrammes().stream().anyMatch(p -> p.getId().equals(programmeId)))
+                .filter(u -> {
+                    // 1. Déjà lié explicitement au programme
+                    boolean isLinked = u.getProgrammes().stream().anyMatch(p -> p.getId().equals(programmeId));
+                    if (isLinked) return true;
+
+                    // 2. Fallback: A une candidature acceptée pour ce programme
+                    if (u.getEmail() != null) {
+                        return candidatureRepo.findByEmail(u.getEmail()).stream()
+                                .filter(c -> c.getStatut() == CandidatureRedstarter.StatutCandidature.ACCEPTE)
+                                .anyMatch(c -> {
+                                    if (c.getFormTemplateId() == null) return false;
+                                    return formTemplateRepo.findById(c.getFormTemplateId())
+                                            .map(t -> programme.getNom().equalsIgnoreCase(t.getProgram()))
+                                            .orElse(false);
+                                });
+                    }
+                    return false;
+                })
                 .collect(Collectors.toList());
 
-        Set<Long> coachCandidatureIds = candidatureRepo
-                .findAcceptedCoaches(CandidatureRedstarter.StatutCandidature.ACCEPTE)
-                .stream().map(CandidatureRedstarter::getId).collect(Collectors.toSet());
-
         List<Map<String, Object>> entrepreneursList = entrepreneursUtilisateurs.stream()
-                .filter(u -> !coachCandidatureIds.contains(u.getId()))
                 .filter(u -> !matchingRepo.isEntrepreneurActivelyMatchedForThematique(u.getId(), thematiqueId))
                 .map(u -> {
                     Map<String, Object> e = new LinkedHashMap<>();
@@ -830,26 +862,29 @@ public class MatchingIaService {
                     e.put("nom", (u.getFirstName() != null ? u.getFirstName() : "") + " " + (u.getLastName() != null ? u.getLastName() : ""));
                     e.put("email", u.getEmail());
                     e.put("telephone", u.getPhoneNumber());
-                    e.put("entreprise", u.getEntreprise());
+                    e.put("entreprise", u.getEntreprise() != null ? u.getEntreprise() : u.getStartupName());
                     e.put("secteur", u.getSecteur());
                     e.put("region", u.getRegion());
 
                     // Try to enrich with Candidature data if available
-                    CandidatureRedstarter cand = null;
                     if (u.getEmail() != null) {
-                        cand = candidatureRepo.findAll().stream()
-                                .filter(c -> c.getEmail() != null && c.getEmail().equalsIgnoreCase(u.getEmail()))
-                                .findFirst().orElse(null);
+                        candidatureRepo.findByEmail(u.getEmail()).stream()
+                                .filter(c -> c.getStatut() == CandidatureRedstarter.StatutCandidature.ACCEPTE)
+                                .findFirst()
+                                .ifPresent(cand -> {
+                                    e.put("phaseMaturite", cand.getPhaseMaturite());
+                                    e.put("description", cand.getBreveDescription());
+                                    e.put("besoinsAccompagnement", cand.getBesoinsAccompagnement());
+                                    if (e.get("entreprise") == null || "Non spécifié".equals(e.get("entreprise"))) {
+                                        e.put("entreprise", cand.getNomEntreprise());
+                                    }
+                                });
                     }
-                    if (cand != null) {
-                        e.put("phaseMaturite", cand.getPhaseMaturite());
-                        e.put("description", cand.getBreveDescription());
-                        e.put("besoinsAccompagnement", cand.getBesoinsAccompagnement());
-                    } else {
-                        e.put("phaseMaturite", u.getStadeProjet());
-                        e.put("description", u.getDescriptionProjet());
-                        e.put("besoinsAccompagnement", u.getBesoinsCoaching());
-                    }
+                    
+                    if (e.get("phaseMaturite") == null) e.put("phaseMaturite", u.getStadeProjet());
+                    if (e.get("description") == null) e.put("description", u.getDescriptionProjet());
+                    if (e.get("besoinsAccompagnement") == null) e.put("besoinsAccompagnement", u.getBesoinsCoaching());
+                    
                     return e;
                 }).collect(Collectors.toList());
 
@@ -937,19 +972,20 @@ public class MatchingIaService {
         // ── Notifications ──
         sendMatchingNotifications(matching);
 
-        // Résumé retourné au frontend
+        // Résumé retourné au frontend (Consistently resolve via User ID)
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("matchingId", matching.getId());
         result.put("sessionId", session.getId());
         result.put("entrepreneurId", entrepreneurId);
         result.put("coachId", coachId);
         result.put("statut", "VALIDE");
-        candidatureRepo.findById(entrepreneurId).ifPresentOrElse(
-            c -> result.put("entrepreneurNom", c.getNomPrenom()),
-            () -> userRepo.findById(entrepreneurId).ifPresent(u -> 
-                result.put("entrepreneurNom", (u.getFirstName() != null ? u.getFirstName() : "") + " " + (u.getLastName() != null ? u.getLastName() : ""))
-            )
-        );
+
+        userRepo.findById(entrepreneurId).ifPresentOrElse(u -> {
+            result.put("entrepreneurNom", (u.getFirstName() != null ? u.getFirstName() : "") + " " + (u.getLastName() != null ? u.getLastName() : ""));
+        }, () -> {
+            // Fallback for legacy data
+            candidatureRepo.findById(entrepreneurId).ifPresent(c -> result.put("entrepreneurNom", c.getNomPrenom()));
+        });
         userRepo.findById(coachId).ifPresent(c -> result.put("coachNom", c.getFirstName() + " " + c.getLastName()));
         return result;
     }
