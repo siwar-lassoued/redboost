@@ -124,6 +124,7 @@ public class SessionService {
                     .id(s.getCoach().getId())
                     .firstName(s.getCoach().getFirstName())
                     .lastName(s.getCoach().getLastName())
+                    .role(team.project.redboost.entities.Role.COACH)
                     .build() : null)
                 .programme(s.getProgramme() != null ? team.project.redboost.entities.Programme.builder()
                     .id(s.getProgramme().getId())
@@ -171,7 +172,12 @@ public class SessionService {
                     .statut(statut)
                     .isExceptionnelle(true)
                     .thematiqueName(thematiqueName)
-                    .coach(cId != null ? User.builder().id(cId).firstName(coachFN).lastName(coachLN).build() : null)
+                    .coach(cId != null ? User.builder()
+                        .id(cId)
+                        .firstName(coachFN)
+                        .lastName(coachLN)
+                        .role(team.project.redboost.entities.Role.COACH)
+                        .build() : null)
                     .build());
             } catch (Exception e) {
                 log.warn("Skipping seance exceptionnelle id={} due to error: {}", s.getId(), e.getMessage());
