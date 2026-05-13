@@ -192,7 +192,33 @@ export class AppMenu implements OnInit {
                     },
                 ],
             },
-            
+            {
+                label: 'CANDIDATURES',
+                icon: 'pi pi-fw pi-id-card',
+                items: [
+                    {
+                        label: 'Gestion',
+                        icon: 'pi pi-fw pi-list',
+                        routerLink: ['/admin_redstarter'],
+                    },
+                    {
+                        label: 'Historique',
+                        icon: 'pi pi-fw pi-history',
+                        routerLink: ['/admin_historique'],
+                    },
+                ],
+            },
+            {
+                label: 'MATCHING',
+                icon: 'pi pi-fw pi-bolt',
+                items: [
+                    {
+                        label: 'Matching',
+                        icon: 'pi pi-fw pi-link',
+                        routerLink: ['/admin_matching'],
+                    }
+                ]
+            },
             {
                 label: 'SUIVI ACCOMPAGNEMENT',
                 icon: 'pi pi-fw pi-star',
@@ -221,6 +247,11 @@ export class AppMenu implements OnInit {
                         label: 'Réclamations',
                         icon: 'pi pi-fw pi-exclamation-triangle',
                         routerLink: ['/admin-reclamations'],
+                    },
+                    {
+                        label: 'Rapports IA',
+                        icon: 'pi pi-fw pi-sparkles',
+                        routerLink: ['/admin_reporting_ia'],
                     },
                 ],
             },
@@ -254,43 +285,7 @@ export class AppMenu implements OnInit {
                         icon: 'pi pi-fw pi-user-edit',
                         routerLink: ['/all-users'],
                     },
-                    /* {
-                        label: 'Liste',
-                        icon: 'pi pi-fw pi-list',
-                        routerLink: ['/all-coach-requests'],
-                    },
-                    {
-                        label: 'Affecter coach',
-                        icon: 'pi pi-fw pi-user-plus',
-                        routerLink: ['/Assign-coach'],
-                    }, */
                 ],
-            },
-            {
-                label: 'CANDIDATURES',
-                icon: 'pi pi-fw pi-id-card',
-                items: [
-                    {
-                        label: 'Gestion',
-                        icon: 'pi pi-fw pi-list',
-                        routerLink: ['/admin_redstarter'],
-                    },
-                    {
-                        label: 'Historique',
-                        icon: 'pi pi-fw pi-history',
-                        routerLink: ['/admin_historique'],
-                    },
-                ],
-            },
-            {
-                label: 'MATCHING',
-                icon: 'pi pi-fw pi-bolt',
-                routerLink: ['/admin_matching'],
-            },
-            {
-                label: 'RAPPORTS IA',
-                icon: 'pi pi-fw pi-sparkles',
-                routerLink: ['/admin_reporting_ia'],
             },
         ];
     }
