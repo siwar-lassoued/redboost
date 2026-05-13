@@ -118,28 +118,77 @@
                 <!-- Info Section Mimicking Coach Request -->
                 <div class="info-section hidden lg:block flex-none w-[320px] bg-white/70 backdrop-blur-md border border-red-50 rounded-2xl p-8 shadow-[0_6px_25px_rgba(0,0,0,0.1)] relative overflow-hidden self-start sticky top-24">
                     <div class="absolute -top-1/2 -left-1/2 w-[200%] h-[200%] bg-[radial-gradient(circle,rgba(219,30,55,0.1),transparent_70%)] animate-[glow_10s_infinite]"></div>
-                    <div class="relative z-10">
-                        <h3 class="text-2xl font-bold text-[#0a4955] mb-6 text-center">Postulez maintenant avec RedBoost</h3>
-                        <p class="text-lg text-gray-600 mb-6 text-center">Rejoignez notre programme pour accélérer et structurer votre croissance.</p>
-                        <ul class="space-y-4 mb-6">
-                            <li class="relative pl-8 text-gray-700 text-md">
-                                <span class="absolute left-0 text-[#db1e37] font-bold text-lg">✓</span>
-                                Accompagnement opérationnel et personnalisé par des experts
-                            </li>
-                            <li class="relative pl-8 text-gray-700 text-md">
-                                <span class="absolute left-0 text-[#db1e37] font-bold text-lg">✓</span>
-                                Accès à un vaste réseau mondial d'entrepreneurs
-                            </li>
-                            <li class="relative pl-8 text-gray-700 text-md">
-                                <span class="absolute left-0 text-[#db1e37] font-bold text-lg">✓</span>
-                                Opportunités de levée de fonds et de financement
-                            </li>
-                            <li class="relative pl-8 text-gray-700 text-md">
-                                <span class="absolute left-0 text-[#db1e37] font-bold text-lg">✓</span>
-                                Visibilité améliorée de votre entreprise
-                            </li>
-                        </ul>
-                        <p class="text-lg text-center text-gray-600 font-semibold italic">Nous avons hâte de découvrir votre projet !</p>
+                    <div class="relative z-10" [ngSwitch]="template.profileType">
+                        <!-- Entrepreneur Profile -->
+                        <ng-container *ngSwitchCase="'entrepreneur'">
+                            <h3 class="text-2xl font-bold text-[#0a4955] mb-6 text-center">Rejoignez le programme RedBoost</h3>
+                            <p class="text-lg text-gray-600 mb-6 text-center">Accélérez et structurez la croissance de votre startup.</p>
+                            <ul class="space-y-4 mb-6">
+                                <li class="relative pl-8 text-gray-700 text-md">
+                                    <span class="absolute left-0 text-[#db1e37] font-bold text-lg">✓</span>
+                                    Accompagnement opérationnel et personnalisé par des experts
+                                </li>
+                                <li class="relative pl-8 text-gray-700 text-md">
+                                    <span class="absolute left-0 text-[#db1e37] font-bold text-lg">✓</span>
+                                    Accès à un vaste réseau mondial d'entrepreneurs
+                                </li>
+                                <li class="relative pl-8 text-gray-700 text-md">
+                                    <span class="absolute left-0 text-[#db1e37] font-bold text-lg">✓</span>
+                                    Opportunités de levée de fonds et financement
+                                </li>
+                                <li class="relative pl-8 text-gray-700 text-md">
+                                    <span class="absolute left-0 text-[#db1e37] font-bold text-lg">✓</span>
+                                    Visibilité améliorée de votre entreprise
+                                </li>
+                            </ul>
+                            <p class="text-lg text-center text-gray-600 font-semibold italic">Nous avons hâte de découvrir votre projet !</p>
+                        </ng-container>
+
+                        <!-- Coach Profile -->
+                        <ng-container *ngSwitchCase="'coach'">
+                            <h3 class="text-2xl font-bold text-[#0a4955] mb-6 text-center">Devenez Coach RedBoost</h3>
+                            <p class="text-lg text-gray-600 mb-6 text-center">Partagez votre expertise et accompagnez des startups innovantes.</p>
+                            <ul class="space-y-4 mb-6">
+                                <li class="relative pl-8 text-gray-700 text-md">
+                                    <span class="absolute left-0 text-[#db1e37] font-bold text-lg">✓</span>
+                                    Mettez votre expérience au service des entrepreneurs
+                                </li>
+                                <li class="relative pl-8 text-gray-700 text-md">
+                                    <span class="absolute left-0 text-[#db1e37] font-bold text-lg">✓</span>
+                                    Intégrez un réseau prestigieux d'experts
+                                </li>
+                                <li class="relative pl-8 text-gray-700 text-md">
+                                    <span class="absolute left-0 text-[#db1e37] font-bold text-lg">✓</span>
+                                    Participez à des événements exclusifs
+                                </li>
+                                <li class="relative pl-8 text-gray-700 text-md">
+                                    <span class="absolute left-0 text-[#db1e37] font-bold text-lg">✓</span>
+                                    Valorisez votre profil professionnel
+                                </li>
+                            </ul>
+                            <p class="text-lg text-center text-gray-600 font-semibold italic">Prêt à avoir un impact positif ?</p>
+                        </ng-container>
+
+                        <!-- Spontanée Profile & Default -->
+                        <ng-container *ngSwitchDefault>
+                            <h3 class="text-2xl font-bold text-[#0a4955] mb-6 text-center">Candidature Spontanée</h3>
+                            <p class="text-lg text-gray-600 mb-6 text-center">Proposez-nous votre profil ou vos idées novatrices.</p>
+                            <ul class="space-y-4 mb-6">
+                                <li class="relative pl-8 text-gray-700 text-md">
+                                    <span class="absolute left-0 text-[#db1e37] font-bold text-lg">✓</span>
+                                    Montrez-nous votre talent et votre motivation
+                                </li>
+                                <li class="relative pl-8 text-gray-700 text-md">
+                                    <span class="absolute left-0 text-[#db1e37] font-bold text-lg">✓</span>
+                                    Une occasion de créer votre propre opportunité
+                                </li>
+                                <li class="relative pl-8 text-gray-700 text-md">
+                                    <span class="absolute left-0 text-[#db1e37] font-bold text-lg">✓</span>
+                                    Rejoignez un écosystème dynamique
+                                </li>
+                            </ul>
+                            <p class="text-lg text-center text-gray-600 font-semibold italic">Surprenez-nous !</p>
+                        </ng-container>
                     </div>
                 </div>
             </div>
