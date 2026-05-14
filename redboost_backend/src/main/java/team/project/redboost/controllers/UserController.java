@@ -157,7 +157,7 @@ public class UserController {
     }
 
     @GetMapping
-    public ResponseEntity<List<User>> getAllUsers(@RequestParam(required = false) String role) {
+    public ResponseEntity<List<Map<String, Object>>> getAllUsers(@RequestParam(required = false) String role) {
         List<User> users;
         if (role != null && !role.isEmpty()) {
             try {
@@ -169,8 +169,87 @@ public class UserController {
         } else {
             users = userRepository.findAll();
         }
-        return ResponseEntity.ok(users);
+
+        List<Map<String, Object>> result = users.stream().map(u -> {
+            Map<String, Object> dto = new LinkedHashMap<>();
+            dto.put("id", u.getId());
+            dto.put("firstName", u.getFirstName());
+            dto.put("lastName", u.getLastName());
+            dto.put("email", u.getEmail());
+            dto.put("role", u.getRole() != null ? u.getRole().name() : null);
+            dto.put("phoneNumber", u.getPhoneNumber());
+            dto.put("profilePicture", u.getProfilePictureUrl());
+            dto.put("active", u.isActive());
+
+            // Clean up "Non spécifié" sentinel values stored in DB
+            String secteur = clean(u.getSecteur());
+            String region = clean(u.getRegion());
+            String entreprise = clean(u.getEntreprise() != null ? u.getEntreprise() : u.getStartupName());
+
+            // Entrepreneur-specific
+            if (u.getRole() == Role.ENTREPRENEUR) {
+                String phaseMaturite = clean(u.getStadeProjet());
+                String description = clean(u.getDescriptionProjet());
+                String besoins = clean(u.getBesoinsCoaching());
+
+                // Enrich from accepted candidature if fields are missing
+                if (u.getEmail() != null) {
+                    Optional<team.project.redboost.entities.CandidatureRedstarter> acceptedCand =
+                        candidatureRedstarterRepository.findByEmail(u.getEmail()).stream()
+                            .filter(c -> c.getStatut() == team.project.redboost.entities.CandidatureRedstarter.StatutCandidature.ACCEPTE)
+                            .findFirst();
+                    if (acceptedCand.isEmpty()) {
+                        // Fallback: any candidature for this entrepreneur
+                        acceptedCand = candidatureRedstarterRepository.findByEmail(u.getEmail()).stream().findFirst();
+                    }
+                    if (acceptedCand.isPresent()) {
+                        team.project.redboost.entities.CandidatureRedstarter cand = acceptedCand.get();
+                        // CandidatureRedstarter has: nomEntreprise, regionBasee, phaseMaturite, breveDescription
+                        if (secteur == null) secteur = null; // no secteur field on candidature
+                        if (region == null) region = clean(cand.getRegionBasee());
+                        if (entreprise == null) entreprise = clean(cand.getNomEntreprise());
+                        if (phaseMaturite == null) phaseMaturite = clean(cand.getPhaseMaturite());
+                        if (description == null) description = clean(cand.getBreveDescription());
+                        if (besoins == null && cand.getBesoinsAccompagnement() != null && !cand.getBesoinsAccompagnement().isEmpty()) {
+                            besoins = String.join(", ", cand.getBesoinsAccompagnement());
+                        }
+                    }
+                }
+                dto.put("secteur", secteur);
+                dto.put("region", region);
+                dto.put("entreprise", entreprise);
+                dto.put("phaseMaturite", phaseMaturite);
+                dto.put("description", description);
+                dto.put("besoinsCoaching", besoins);
+            } else if (u.getRole() == Role.COACH) {
+                // Coach-specific
+                dto.put("secteur", secteur);
+                dto.put("expertise", clean(u.getExpertise()));
+                dto.put("skills", u.getSkills());
+                dto.put("bio", clean(u.getBio()));
+                dto.put("yearsOfExperience", u.getYearsOfExperience());
+                dto.put("disponible", true);
+            } else {
+                dto.put("secteur", secteur);
+                dto.put("region", region);
+                dto.put("entreprise", entreprise);
+            }
+            return dto;
+        }).collect(Collectors.toList());
+
+        return ResponseEntity.ok(result);
     }
+
+    /** Returns null if value is null, empty, or the sentinel "Non spécifié" */
+    private String clean(String val) {
+        if (val == null || val.isBlank() || "Non spécifié".equalsIgnoreCase(val.trim())
+                || "Non specifi".equalsIgnoreCase(val.trim()) || "N/A".equalsIgnoreCase(val.trim())) {
+            return null;
+        }
+        return val.trim();
+    }
+
+
 
     @GetMapping("/all")
     public ResponseEntity<List<User>> getAllUsers() {

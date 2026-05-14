@@ -1,9 +1,9 @@
-import { Component, OnInit, signal, computed, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, signal, computed, inject, effect, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ToastrService } from 'ngx-toastr';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
-import { CandidatureService } from '../services/candidature.service';
+import { CandidatureService, HistoricalCandidatureResult } from '../services/candidature.service';
 import { Candidature, CandidatureStatus } from '../models/candidature.model';
 import { CandidatureLog } from '../services/candidature.service';
 import { STATUS_CONFIG } from '../constants/colors.constants';
@@ -18,6 +18,7 @@ import { STATUS_CONFIG } from '../constants/colors.constants';
 })
 export class AdminHistoriqueComponent implements OnInit {
   private svc = inject(CandidatureService);
+  private cdr = inject(ChangeDetectorRef);
 
   searchTerm    = signal('');
   filterStatus  = signal('all');
@@ -26,6 +27,11 @@ export class AdminHistoriqueComponent implements OnInit {
   programmes    = signal<string[]>([]);
 
   allCandidatures = signal<Candidature[]>([]);
+  // Holds results when filtering by historical status
+  historicalResults = signal<HistoricalCandidatureResult[]>([]);
+  isHistoricalMode = signal(false);
+  historicalLoading = signal(false);
+
   selected        = signal<Candidature|null>(null);
   showRejectModal = signal(false);
   motifRejet      = '';
@@ -52,10 +58,25 @@ export class AdminHistoriqueComponent implements OnInit {
   kpiRejected    = signal(0);
 
   filtered = computed(() => {
+    if (this.isHistoricalMode()) {
+      // In historical mode, display the mapped historical results with extra search/type/programme filters
+      const q = this.searchTerm().toLowerCase();
+      return this.historicalResults()
+        .map(r => this.mapHistoricalToCandidature(r))
+        .filter(c => {
+          if (q && !c.nom.toLowerCase().includes(q) && !c.email.toLowerCase().includes(q)) return false;
+          if (this.filterType() !== 'all') {
+            if (this.filterType() === 'coaches' && !this.isCoach(c)) return false;
+            if (this.filterType() === 'entrepreneurs' && this.isCoach(c)) return false;
+          }
+          if (this.filterProgramme() !== 'all' && c.programme !== this.filterProgramme()) return false;
+          return true;
+        });
+    }
+    // Normal mode: filter on current status
     return this.allCandidatures().filter(c => {
       const q = this.searchTerm().toLowerCase();
       if (q && !c.nom.toLowerCase().includes(q) && !c.email.toLowerCase().includes(q)) return false;
-      if (this.filterStatus() !== 'all' && c.statut !== this.filterStatus()) return false;
       if (this.filterType() !== 'all') {
           if (this.filterType() === 'coaches' && !this.isCoach(c)) return false;
           if (this.filterType() === 'entrepreneurs' && this.isCoach(c)) return false;
@@ -67,6 +88,72 @@ export class AdminHistoriqueComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadCandidatures();
+  }
+
+  onFilterStatusChange(value: string): void {
+    this.filterStatus.set(value);
+    this.selected.set(null);
+    if (value === 'all') {
+      this.isHistoricalMode.set(false);
+      this.historicalResults.set([]);
+    } else {
+      this.isHistoricalMode.set(true);
+      this.historicalLoading.set(true);
+      this.svc.getByHistoricalStatus(value).subscribe({
+        next: (results) => {
+          this.historicalResults.set(results);
+          this.historicalLoading.set(false);
+          this.cdr.markForCheck();
+        },
+        error: () => {
+          this.historicalResults.set([]);
+          this.historicalLoading.set(false);
+          this.cdr.markForCheck();
+        }
+      });
+    }
+  }
+
+  /** Maps a HistoricalCandidatureResult back to a Candidature for display, preserving all existing profile logic */
+  mapHistoricalToCandidature(r: HistoricalCandidatureResult): Candidature & { _historical: HistoricalCandidatureResult } {
+    const c = r.candidature;
+    // Reuse service mapping logic — build a minimal Candidature from the DTO
+    let resolvedType: 'coaches' | 'entrepreneurs' | 'spontanees' = 'spontanees';
+    let deductedProfile: 'coaches' | 'entrepreneurs' | 'spontanees' = 'spontanees';
+
+    const progStr = (c.programme || '').toLowerCase();
+    const isProgSpontanee = progStr.includes('spontanée') || progStr.includes('spontanee') || progStr.includes('spontanné');
+
+    if (c.profileType && !isProgSpontanee) {
+      const pt = c.profileType.toLowerCase();
+      if (pt === 'coach' || pt === 'coaches') { resolvedType = 'coaches'; deductedProfile = 'coaches'; }
+      else if (pt === 'entrepreneur' || pt === 'entrepreneurs') { resolvedType = 'entrepreneurs'; deductedProfile = 'entrepreneurs'; }
+    }
+
+    return {
+      id: c.id,
+      type: resolvedType,
+      deductedProfile,
+      nom: c.nomPrenom || 'Inconnu',
+      email: c.email || 'N/A',
+      phone: c.numeroTelephone || '—',
+      statut: c.statut,
+      submittedAt: c.dateCreationCandidature || null,
+      programme: c.programme || null,
+      round: '—',
+      history: [],
+      documents: [],
+      formAnswers: [],
+      noteInterne: c.commentairesAdmin || null,
+      motifRejet: c.motifRejet || null,
+      cvUrl: c.cvUrl || null,
+      _historical: r
+    } as any;
+  }
+
+  /** Returns the historical passage info for a candidature currently in historical mode */
+  getHistoricalInfo(c: any): HistoricalCandidatureResult | null {
+    return c._historical || null;
   }
 
   loadCandidatures(): void {

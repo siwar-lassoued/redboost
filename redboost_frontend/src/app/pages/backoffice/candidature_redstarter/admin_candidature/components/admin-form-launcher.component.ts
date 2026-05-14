@@ -382,7 +382,10 @@ export class AdminFormLauncherComponent implements OnChanges {
         { id: Math.random(), text: 'Nom et Prénom', type: 'text-court', required: true, isLocked: true },
         { id: Math.random(), text: 'Email', type: 'text-court', required: true, isLocked: true },
         { id: Math.random(), text: 'Numéro de téléphone', type: 'text-court', required: true, isLocked: true },
-        { id: Math.random(), text: 'Nom de la startup (si applicable)', type: 'text-court', required: false, isLocked: true },
+        { id: Math.random(), text: 'Région', type: 'text-court', required: true, isLocked: true },
+        { id: Math.random(), text: 'Secteur d\'activité', type: 'text-court', required: true, isLocked: true },
+        { id: Math.random(), text: 'Nom de la startup ou entreprise', type: 'text-court', required: true, isLocked: true },
+        { id: Math.random(), text: 'Phase de maturité', type: 'qcu', options: ['Idéation', 'Prototypage', 'Go to market', 'Croissance', 'Autre'], required: true, isLocked: true },
         { id: Math.random(), text: 'Êtes-vous un Coach ou un Entrepreneur ?', type: 'qcu', options: ['Coach', 'Entrepreneur'], required: true, isLocked: true }
       ];
       this.step.set('form');
@@ -391,7 +394,10 @@ export class AdminFormLauncherComponent implements OnChanges {
         { id: Math.random(), text: 'Nom et Prénom', type: 'text-court', required: true, isLocked: true },
         { id: Math.random(), text: 'Email', type: 'text-court', required: true, isLocked: true },
         { id: Math.random(), text: 'Numéro de téléphone', type: 'text-court', required: true, isLocked: true },
-        { id: Math.random(), text: 'Nom de la startup (si applicable)', type: 'text-court', required: false, isLocked: true }
+        { id: Math.random(), text: 'Région', type: 'text-court', required: true, isLocked: true },
+        { id: Math.random(), text: 'Secteur d\'activité', type: 'text-court', required: true, isLocked: true },
+        { id: Math.random(), text: 'Nom de la startup ou entreprise', type: 'text-court', required: true, isLocked: true },
+        { id: Math.random(), text: 'Phase de maturité', type: 'qcu', options: ['Idéation', 'Prototypage', 'Go to market', 'Croissance', 'Autre'], required: true, isLocked: true }
       ];
       this.step.set('form');
     }

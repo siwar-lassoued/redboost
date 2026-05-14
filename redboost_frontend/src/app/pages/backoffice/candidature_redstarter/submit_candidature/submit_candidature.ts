@@ -143,9 +143,17 @@ export class SubmitCandidatureComponent implements OnInit {
             // Let's guess the name and email from questions if defined, else fallback to placeholders.
             const emailKeys = Object.keys(answersObj).filter(k => k.toLowerCase().includes('email'));
             const nameKeys = Object.keys(answersObj).filter(k => k.toLowerCase().includes('nom') || k.toLowerCase().includes('prenom'));
+            const regionKeys = Object.keys(answersObj).filter(k => k.toLowerCase().includes('région') || k.toLowerCase().includes('region'));
+            const secteurKeys = Object.keys(answersObj).filter(k => k.toLowerCase().includes('secteur'));
+            const entrepriseKeys = Object.keys(answersObj).filter(k => k.toLowerCase().includes('entreprise') || k.toLowerCase().includes('startup'));
+            const phaseKeys = Object.keys(answersObj).filter(k => k.toLowerCase().includes('phase') || k.toLowerCase().includes('maturité') || k.toLowerCase().includes('maturite'));
 
             const derivedEmail = emailKeys.length ? answersObj[emailKeys[0]] : 'non-specifie@redboost.tn';
             const derivedName = nameKeys.length ? answersObj[nameKeys[0]] : 'Candidat Anonyme';
+            const derivedRegion = regionKeys.length ? answersObj[regionKeys[0]] : 'Non spécifié';
+            const derivedSecteur = secteurKeys.length ? answersObj[secteurKeys[0]] : 'Non spécifié';
+            const derivedEntreprise = entrepriseKeys.length ? answersObj[entrepriseKeys[0]] : 'Non spécifié';
+            const derivedPhase = phaseKeys.length ? answersObj[phaseKeys[0]] : 'Non spécifié';
 
             const candidature: CandidatureRedstarter = {
                 formTemplateId: Number(this.templateId!),
@@ -157,13 +165,13 @@ export class SubmitCandidatureComponent implements OnInit {
                 genre: 'Non spécifié',
                 numeroTelephone: '00000000',
                 roleEntreprise: 'Non spécifié',
-                nomEntreprise: 'Non spécifié',
+                nomEntreprise: derivedEntreprise,
                 entrepriseEst: 'Non spécifié',
                 dateCreation: new Date(),
-                regionBasee: 'Non spécifié',
-                breveDescription: 'Non spécifié',
+                regionBasee: derivedRegion,
+                breveDescription: derivedSecteur !== 'Non spécifié' ? 'Secteur : ' + derivedSecteur : 'Non spécifié',
                 labelStartupAct: false,
-                phaseMaturite: 'Non spécifié',
+                phaseMaturite: derivedPhase,
                 marchePersonnasCibles: 'Non spécifié',
                 composanteInnovation: 'Non spécifié',
                 impactEnvironnemental: 'Non spécifié',

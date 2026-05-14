@@ -557,6 +557,49 @@ public class CandidatureRedstarterService {
     public List<CandidatureLog> getHistorique(Long candidatureId) {
         return logRepository.findByCandidatureIdOrderByCreatedAtDesc(candidatureId);
     }
+
+    /**
+     * Returns candidatures that have EVER passed through the given status,
+     * even if their current status is different.
+     * Each result is enriched with the date of the passage and log context.
+     */
+    @Transactional
+    public List<Map<String, Object>> getCandidaturesByHistoricalStatus(String statut) {
+        // 1. Get all logs where the status transition TARGET matches the requested status
+        List<CandidatureLog> matchingLogs = logRepository.findByStatutApresOrderByCreatedAtAsc(statut);
+
+        // 2. De-duplicate: keep the FIRST log per candidature (earliest passage through this status)
+        Map<Long, CandidatureLog> firstLogPerCandidature = new java.util.LinkedHashMap<>();
+        for (CandidatureLog logEntry : matchingLogs) {
+            firstLogPerCandidature.putIfAbsent(logEntry.getCandidatureId(), logEntry);
+        }
+
+        // 3. For each candidature, load the full entity and build the enriched response
+        List<Map<String, Object>> results = new ArrayList<>();
+        for (Map.Entry<Long, CandidatureLog> entry : firstLogPerCandidature.entrySet()) {
+            Long candidatureId = entry.getKey();
+            CandidatureLog logEntry = entry.getValue();
+
+            candidatureRepository.findById(candidatureId).ifPresent(c -> {
+                try {
+                    team.project.redboost.dto.CandidatureRedstarterResponseDTO dto = mapToResponseDto(c);
+
+                    Map<String, Object> enriched = new java.util.LinkedHashMap<>();
+                    enriched.put("candidature", dto);
+                    // Historical status info
+                    enriched.put("historicalStatut", logEntry.getStatutApres());
+                    enriched.put("historicalDate", logEntry.getCreatedAt());
+                    enriched.put("historicalFaitPar", logEntry.getFaitParNom());
+                    enriched.put("historicalNote", logEntry.getNote());
+                    enriched.put("historicalStatutAvant", logEntry.getStatutAvant());
+                    results.add(enriched);
+                } catch (Exception e) {
+                    log.warn("Could not map candidature {} for historical filter: {}", candidatureId, e.getMessage());
+                }
+            });
+        }
+        return results;
+    }
     
     private team.project.redboost.dto.CandidatureRedstarterResponseDTO mapToResponseDto(CandidatureRedstarter entity) {
         // Explicitly initialize lazy collections while in transaction

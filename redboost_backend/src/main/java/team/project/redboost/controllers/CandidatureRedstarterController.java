@@ -301,6 +301,22 @@ public class CandidatureRedstarterController {
     }
     
 
+    /**
+     * Get candidatures that have EVER been in a given status (historical filter)
+     * GET /api/candidatures/admin/history-by-status?statut=PRE_SELECTIONNE
+     */
+    @GetMapping("/admin/history-by-status")
+    public ResponseEntity<?> getCandidaturesByHistoricalStatus(@RequestParam String statut) {
+        try {
+            List<Map<String, Object>> results = candidatureService.getCandidaturesByHistoricalStatus(statut.toUpperCase());
+            return ResponseEntity.ok(results);
+        } catch (Exception e) {
+            log.error("Error fetching candidatures by historical status: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Erreur lors du filtrage historique", "message", e.getMessage()));
+        }
+    }
+
     @GetMapping("/{id}/historique")
     public ResponseEntity<List<CandidatureLog>> getHistorique(@PathVariable Long id) {
         try {

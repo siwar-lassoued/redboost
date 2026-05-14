@@ -9,4 +9,7 @@ import java.util.List;
 @Repository
 public interface CandidatureLogRepository extends JpaRepository<CandidatureLog, Long> {
     List<CandidatureLog> findByCandidatureIdOrderByCreatedAtDesc(Long candidatureId);
+
+    // Find all logs where any candidature passed through a given status
+    List<CandidatureLog> findByStatutApresOrderByCreatedAtAsc(String statutApres);
 }

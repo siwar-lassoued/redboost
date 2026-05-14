@@ -26,6 +26,15 @@ export interface CandidatureLog {
     createdAt: string;
 }
 
+export interface HistoricalCandidatureResult {
+    candidature: any;
+    historicalStatut: string;
+    historicalDate: string;
+    historicalFaitPar: string | null;
+    historicalNote: string | null;
+    historicalStatutAvant: string | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class CandidatureService {
     private readonly http = inject(HttpClient);
@@ -231,6 +240,13 @@ export class CandidatureService {
 
     getHistorique(id: string): Observable<CandidatureLog[]> {
         return this.http.get<CandidatureLog[]>(`${this.baseUrl}/${id}/historique`);
+    }
+
+    getByHistoricalStatus(statut: string): Observable<HistoricalCandidatureResult[]> {
+        return this.http.get<HistoricalCandidatureResult[]>(
+            `${this.baseUrl}/admin/history-by-status`,
+            { params: { statut } }
+        );
     }
 
     getStatistics(): Observable<Record<string, number>> {

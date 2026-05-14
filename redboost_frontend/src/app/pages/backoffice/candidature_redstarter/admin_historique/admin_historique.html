@@ -77,7 +77,7 @@
       @for (p of programmes(); track p) { <option [value]="p">{{ p }}</option> }
     </select>
 
-    <select [value]="filterStatus()" (change)="filterStatus.set($any($event.target).value)" class="filter-select">
+    <select [value]="filterStatus()" (change)="onFilterStatusChange($any($event.target).value)" class="filter-select">
       <option value="all">Tous les statuts</option>
       <option value="EN_ATTENTE">En attente</option>
       <option value="EN_COURS_EVALUATION">En évaluation</option>
@@ -90,6 +90,29 @@
   <!-- COUNT -->
   <p class="hist-count">{{ filtered().length }} candidature{{ filtered().length > 1 ? 's' : '' }}</p>
 
+  <!-- HISTORICAL MODE BANNER -->
+  @if (isHistoricalMode()) {
+    <div class="historical-banner">
+      <lucide-icon name="history" [size]="16"></lucide-icon>
+      <span>
+        Mode <strong>historique</strong> — candidatures ayant atteint le statut
+        <strong>{{ getStatusCfg(filterStatus()).label }}</strong>
+        {{ historicalLoading() ? '— chargement...' : '(' + filtered().length + ' résultat(s))' }}
+      </span>
+      <button class="btn-clear-hist" (click)="onFilterStatusChange('all')">
+        <lucide-icon name="x" [size]="13"></lucide-icon> Réinitialiser
+      </button>
+    </div>
+  }
+
+  <!-- LOADING SPINNER for historical -->
+  @if (historicalLoading()) {
+    <div class="hist-loading">
+      <lucide-icon name="loader" [size]="24" style="animation: spin 1s linear infinite;"></lucide-icon>
+      <span>Recherche dans l'historique...</span>
+    </div>
+  }
+
   <!-- SPLIT LAYOUT -->
   <div class="split-layout">
     <!-- LEFT: Table -->
@@ -98,7 +121,9 @@
         <div class="table-card">
           <table class="hist-table">
             <thead>
-              <tr><th>Candidat</th><th>Profil</th><th>Programme</th><th>Statut</th><th>Parcours</th><th>Date</th><th style="width: 40px;"></th></tr>
+              <tr><th>Candidat</th><th>Profil</th><th>Programme</th><th>Statut actuel</th>
+                @if (isHistoricalMode()) { <th>Date du passage</th><th>Fait par</th> } @else { <th>Parcours</th> }
+                <th>Date soumission</th><th style="width: 40px;"></th></tr>
             </thead>
             <tbody>
               @for (c of filtered(); track c.id) {
@@ -118,24 +143,40 @@
                   </td>
                   <td><span class="prog-text">{{ c.programme || '—' }}</span></td>
                   <td>
+                    <!-- Current status always shown -->
                     <span class="status-pill" [style.background]="getStatusCfg(c.statut).bg" [style.color]="getStatusCfg(c.statut).color">
                       {{ getStatusCfg(c.statut).label }}
                     </span>
+                    @if (isHistoricalMode() && c.statut !== filterStatus()) {
+                      <!-- Historical status badge: shows the filtered status is different from current -->
+                      <span class="hist-status-badge" [style.background]="getStatusCfg(filterStatus()).bg" [style.color]="getStatusCfg(filterStatus()).color">
+                        ↩ {{ getStatusCfg(filterStatus()).label }}
+                      </span>
+                    }
                   </td>
-                  <td>
-                    <div class="step-dots">
-                      @for (step of orderedSteps; track step; let i=$index) {
-                        <div class="step-dot-sm" [style.background]="isStepReached(c,step)?getStepColor(step):'#E5E7EB'" [title]="getStatusCfg(step).label"></div>
-                        @if (i < orderedSteps.length-1) {
-                          <div class="step-line-sm" [style.background]="isStepReached(c,step)&&isStepReached(c,orderedSteps[i+1])?getStepColor(step):'#E5E7EB'"></div>
+                  @if (isHistoricalMode()) {
+                    <td class="date-txt">
+                      {{ getHistoricalInfo(c) ? formatDate(getHistoricalInfo(c)!.historicalDate) : '—' }}
+                    </td>
+                    <td class="date-txt">
+                      {{ getHistoricalInfo(c)?.historicalFaitPar || '—' }}
+                    </td>
+                  } @else {
+                    <td>
+                      <div class="step-dots">
+                        @for (step of orderedSteps; track step; let i=$index) {
+                          <div class="step-dot-sm" [style.background]="isStepReached(c,step)?getStepColor(step):'#E5E7EB'" [title]="getStatusCfg(step).label"></div>
+                          @if (i < orderedSteps.length-1) {
+                            <div class="step-line-sm" [style.background]="isStepReached(c,step)&&isStepReached(c,orderedSteps[i+1])?getStepColor(step):'#E5E7EB'"></div>
+                          }
                         }
-                      }
-                      @if (c.statut==='REJETE') {
-                        <div class="step-line-sm" style="background:#E5E7EB"></div>
-                        <div class="step-dot-sm" style="background:#C0392B" title="Rejeté"></div>
-                      }
-                    </div>
-                  </td>
+                        @if (c.statut==='REJETE') {
+                          <div class="step-line-sm" style="background:#E5E7EB"></div>
+                          <div class="step-dot-sm" style="background:#C0392B" title="Rejeté"></div>
+                        }
+                      </div>
+                    </td>
+                  }
                   <td class="date-txt">{{ formatDate(c.submittedAt) }}</td>
                   <td>
                     <button class="btn-icon-danger" (click)="$event.stopPropagation(); deleteCandidature(c.id)" title="Supprimer" style="background: none; border: none; color: #EF4444; cursor: pointer; opacity: 0.7; transition: opacity 0.2s;">

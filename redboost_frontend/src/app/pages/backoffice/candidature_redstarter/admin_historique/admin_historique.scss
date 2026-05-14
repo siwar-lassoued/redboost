@@ -197,6 +197,36 @@
 .log-note { font-size: 12px; color: #6B7280; font-style: italic; margin-top: 4px; }
 .log-meta { font-size: 12px; color: #9CA3AF; margin-top: 4px; }
 
+/* ── Historical Mode ── */
+.historical-banner {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 16px; border-radius: 12px;
+  background: linear-gradient(135deg, #fff3e0, #fff8e1);
+  border: 1px solid #ffe082;
+  font-size: 13px; color: #795548;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.historical-banner strong { color: #e65100; }
+.btn-clear-hist {
+  margin-left: auto; display: flex; align-items: center; gap: 4px;
+  padding: 5px 10px; border-radius: 8px; border: 1px solid #ffb74d;
+  background: #fff; color: #e65100; font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all .2s;
+}
+.btn-clear-hist:hover { background: #fff3e0; }
+.hist-loading {
+  display: flex; align-items: center; gap: 12px;
+  padding: 20px; color: #6B7280; font-size: 14px;
+  justify-content: center;
+}
+.hist-status-badge {
+  display: inline-block; padding: 2px 8px;
+  border-radius: 10px; font-size: 10px; font-weight: 600;
+  margin-top: 4px; margin-left: 6px; opacity: 0.85;
+}
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
 /* ══════════════════════════════════════════════════
    RESPONSIVE — Tablet (≤1280px)
    ══════════════════════════════════════════════════ */
