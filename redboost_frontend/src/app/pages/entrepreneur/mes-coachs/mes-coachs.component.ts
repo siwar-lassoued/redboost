@@ -8,6 +8,8 @@ import { SessionService } from '../../../core/services/session.service';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { CalendarComponent } from '../../backoffice/event_organizer/calendar/event_calendar';
+
 
 interface ProgramGroup {
   name: string;
@@ -38,16 +40,36 @@ import { MatSnackBar } from '@angular/material/snack-bar';
   selector: 'rb-mes-coachs',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, MatTooltipModule],
+  imports: [CommonModule, FormsModule, MatTooltipModule, CalendarComponent],
   template: `
     <div class="p-8 bg-[#F8FAFC] min-h-screen font-sans">
       
-      <div class="mb-8">
-        <h1 class="text-[28px] font-extrabold text-[#1A1A2E] leading-tight">Mon Coach</h1>
-        <p class="text-[#8a8a8a] text-sm mt-1">Profil et historique avec votre coach</p>
+      <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+        <div>
+          <h1 class="text-[28px] font-extrabold text-[#1A1A2E] leading-tight">Réservation</h1>
+          <p class="text-[#8a8a8a] text-sm mt-1">Gérez vos rendez-vous et votre planning</p>
+        </div>
+
+        <!-- Premium Tab Switcher -->
+        <div class="flex bg-gray-100 p-1.5 rounded-2xl border border-gray-200/50 w-fit">
+          <button (click)="selectedTab = 'mes-coachs'"
+            [class]="selectedTab === 'mes-coachs' ? 'bg-white shadow-sm text-[#1A1A2E]' : 'text-gray-500 hover:text-gray-700'"
+            class="px-6 py-2 rounded-xl text-sm font-bold transition-all duration-300 flex items-center gap-2">
+            <i class="pi pi-user-check" [class.text-[#3aafff]]="selectedTab === 'mes-coachs'"></i>
+            Mes Coachs
+          </button>
+          <button (click)="selectedTab = 'calendar'"
+            [class]="selectedTab === 'calendar' ? 'bg-white shadow-sm text-[#1A1A2E]' : 'text-gray-500 hover:text-gray-700'"
+            class="px-6 py-2 rounded-xl text-sm font-bold transition-all duration-300 flex items-center gap-2">
+            <i class="pi pi-calendar" [class.text-[#3aafff]]="selectedTab === 'calendar'"></i>
+            Calendrier
+          </button>
+        </div>
       </div>
 
-      @if (extendedMatchings().length > 0) {
+      @if (selectedTab === 'mes-coachs') {
+        @if (extendedMatchings().length > 0) {
+
         @for (coach of extendedMatchings(); track coach.id) {
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
             
@@ -128,7 +150,6 @@ import { MatSnackBar } from '@angular/material/snack-bar';
                     <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full" style="background: #ea580c"></span><span class="text-[9px] font-bold text-gray-400">À venir (Moi)</span></div>
                     <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full" style="background: #7c3aed"></span><span class="text-[9px] font-bold text-gray-400">Exceptionnelle</span></div>
                     <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full" style="background: #2563eb"></span><span class="text-[9px] font-bold text-gray-400">Disponible</span></div>
-                    <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full" style="background: #cbd5e1"></span><span class="text-[9px] font-bold text-gray-400">Indisponible</span></div>
                   </div>
                 </div>
 
@@ -181,35 +202,37 @@ import { MatSnackBar } from '@angular/material/snack-bar';
                                   
                                   <div class="space-y-2 mt-auto">
                                     @for (slot of session.slots; track slot.id) {
-                                      <div class="slot-pill"
-                                        [class.past-me]="slot.isBookedByMe && (slot.bookingStatus === 'TERMINE' || slot.bookingStatus === 'REALISEE' || slot.bookingStatus === 'TERMINEE')"
-                                        [class.future-me]="slot.isBookedByMe && slot.bookingStatus !== 'TERMINE' && slot.bookingStatus !== 'REALISEE' && slot.bookingStatus !== 'TERMINEE' && !session.isExceptionnelle"
-                                        [class.exceptionnelle-me]="session.isExceptionnelle"
-                                        [class.available-blue]="!isSlotPast(slot) && !slot.isBooked && !session.reservedByMe && !session.isExceptionnelle"
-                                        [class.disabled-gray]="!session.isExceptionnelle && ((isSlotPast(slot) && !slot.isBookedByMe) || (!isSlotPast(slot) && slot.isBooked && !slot.isBookedByMe) || (!isSlotPast(slot) && session.reservedByMe && !slot.isBookedByMe))"
-                                        [matTooltip]="session.isExceptionnelle ? 'Séance exceptionnelle planifiée par votre coach' : getSlotTooltip(slot, session.reservedByMe)"
-                                        (click)="(!session.isExceptionnelle && !isSlotPast(slot) && !slot.isBooked && !session.reservedByMe) ? selectSlot(slot, session.sessionTitle, coach) : (slot.isBookedByMe && canModifySession(session) && !session.isExceptionnelle) ? cancelAndRebook(session) : null"
-                                        [class.cursor-pointer]="!session.isExceptionnelle && ((!isSlotPast(slot) && !slot.isBooked && !session.reservedByMe) || (slot.isBookedByMe && canModifySession(session)))">
-                                        <div class="flex items-center justify-between px-3 py-2">
-                                          <div class="flex flex-col">
-                                            <span class="text-[9px] font-bold uppercase opacity-60">{{ formatSlotDayName(slot.dateSession) }}</span>
-                                            <span class="text-[11px] font-bold">{{ formatSlotDate(slot.dateSession) }}</span>
+                                      @if (session.isExceptionnelle || slot.isBookedByMe || (!isSlotPast(slot) && !slot.isBooked && !session.reservedByMe)) {
+                                        <div class="slot-pill"
+                                          [class.past-me]="slot.isBookedByMe && (slot.bookingStatus === 'TERMINE' || slot.bookingStatus === 'REALISEE' || slot.bookingStatus === 'TERMINEE')"
+                                          [class.future-me]="slot.isBookedByMe && slot.bookingStatus !== 'TERMINE' && slot.bookingStatus !== 'REALISEE' && slot.bookingStatus !== 'TERMINEE' && !session.isExceptionnelle"
+                                          [class.exceptionnelle-me]="session.isExceptionnelle"
+                                          [class.available-blue]="!isSlotPast(slot) && !slot.isBooked && !session.reservedByMe && !session.isExceptionnelle"
+                                          [class.disabled-gray]="!session.isExceptionnelle && ((isSlotPast(slot) && !slot.isBookedByMe) || (!isSlotPast(slot) && slot.isBooked && !slot.isBookedByMe) || (!isSlotPast(slot) && session.reservedByMe && !slot.isBookedByMe))"
+                                          [matTooltip]="session.isExceptionnelle ? 'Séance exceptionnelle planifiée par votre coach' : getSlotTooltip(slot, session.reservedByMe)"
+                                          (click)="(!session.isExceptionnelle && !isSlotPast(slot) && !slot.isBooked && !session.reservedByMe) ? selectSlot(slot, session.sessionTitle, coach) : (slot.isBookedByMe && canModifySession(session) && !session.isExceptionnelle) ? cancelAndRebook(session) : null"
+                                          [class.cursor-pointer]="!session.isExceptionnelle && ((!isSlotPast(slot) && !slot.isBooked && !session.reservedByMe) || (slot.isBookedByMe && canModifySession(session)))">
+                                          <div class="flex items-center justify-between px-3 py-2">
+                                            <div class="flex flex-col">
+                                              <span class="text-[9px] font-bold uppercase opacity-60">{{ formatSlotDayName(slot.dateSession) }}</span>
+                                              <span class="text-[11px] font-bold">{{ formatSlotDate(slot.dateSession) }}</span>
+                                            </div>
+                                            <div class="text-xs font-black">{{ slot.heureDebut }}</div>
                                           </div>
-                                          <div class="text-xs font-black">{{ slot.heureDebut }}</div>
                                         </div>
-                                      </div>
+                                      }
                                     }
                                   </div>
+                                </div>
+                              } @empty {
+                                <div class="text-center py-20 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                                  <i class="pi pi-calendar-times text-5xl text-gray-200 mb-4"></i>
+                                  <p class="text-sm text-gray-400 font-bold uppercase tracking-widest">Aucune session enregistrée</p>
                                 </div>
                               }
                             </div>
                           </div>
                         }
-                      </div>
-                    } @empty {
-                      <div class="text-center py-20 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-                        <i class="pi pi-calendar-times text-5xl text-gray-200 mb-4"></i>
-                        <p class="text-sm text-gray-400 font-bold uppercase tracking-widest">Aucune session enregistrée</p>
                       </div>
                     }
 
@@ -296,6 +319,11 @@ import { MatSnackBar } from '@angular/material/snack-bar';
            <p class="text-sm text-gray-400 mt-2">Nous préparons les profils de vos coachs.</p>
         </div>
       }
+    } @else {
+      <div class="p-4 bg-white rounded-2xl shadow-sm border border-gray-100 min-h-[600px]">
+        <app-calendar></app-calendar>
+      </div>
+    }
     </div>
 
     <!-- Booking Confirmation Modal -->
@@ -425,6 +453,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
   `]
 })
 export class MesCoachsComponent implements OnInit {
+  selectedTab: 'mes-coachs' | 'calendar' = 'mes-coachs';
   private readonly matchSvc = inject(MatchingService);
   private readonly authSvc = inject(AuthService);
   private readonly coachSvc = inject(CoachService);
@@ -500,7 +529,7 @@ loadAllData(userId: any) {
             const coveredSlotIds = new Set<string>();
             slotGroups.forEach(g => {
               if (g.slots) {
-                g.slots.forEach(s => {
+                g.slots.forEach((s: SessionCoachDTO) => {
                   if (s.id) coveredSlotIds.add(String(s.id));
                 });
               }
@@ -533,9 +562,19 @@ loadAllData(userId: any) {
               });
 
             const allGroups = [...slotGroups, ...supplementaryGroups];
+            
+            // Filter out groups that have no valid slots for the entrepreneur
+            const validGroups = allGroups.filter(group => {
+              if (group.reservedByMe) return true;
+              return group.slots && group.slots.some(slot => {
+                const isPast = this.isSlotPast(slot);
+                return !isPast && !slot.isBooked;
+              });
+            });
+
             const programGroups: ProgramGroup[] = [];
             
-            allGroups.forEach(group => {
+            validGroups.forEach(group => {
               const firstSlot = group.slots[0];
               const progName = firstSlot?.programmeNom || 'Autres Programmes';
               const themName = firstSlot?.thematiqueNom || 'Autres Thématiques';
@@ -557,7 +596,6 @@ loadAllData(userId: any) {
                 progGroup.thematiques.push(themGroup);
               }
               
-              // Deduplicate groups by ID if necessary (though supplementary should be unique)
               if (!themGroup.sessions.find(s => s.sessionGroupId === group.sessionGroupId)) {
                 themGroup.sessions.push(group);
               }
@@ -723,7 +761,7 @@ loadAllData(userId: any) {
         this.selectedSession = null;
         this.loadAllData(user.id);
       },
-      error: (err) => {
+      error: (err: any) => {
         this.isBooking = false;
         console.error('Erreur réservation:', err);
         const msg = err.error?.error || err.error?.message || err.message || 'Erreur lors de la réservation';
@@ -752,7 +790,12 @@ loadAllData(userId: any) {
     if (!user || !bookingId) return;
 
     this.isCancellingBooking = true;
-    this.coachSvc.cancelBooking(Number(bookingId), Number(user.id)).subscribe({
+    
+    const obs = (typeof bookingId === 'string' && bookingId.includes('-')) 
+      ? this.coachSvc.cancelSessionById(bookingId, Number(user.id))
+      : this.coachSvc.cancelBooking(Number(bookingId), Number(user.id));
+
+    obs.subscribe({
       next: () => {
         this.isCancellingBooking = false;
         this.snackBar.open('Réservation annulée. Choisissez un nouveau créneau.', 'OK', {

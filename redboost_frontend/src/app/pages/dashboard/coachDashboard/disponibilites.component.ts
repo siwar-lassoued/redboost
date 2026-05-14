@@ -391,8 +391,9 @@ interface DateGroupView {
                     <i class="pi pi-exclamation-triangle"></i> {{ editValidationError }}
                   </div>
               </div>
-              <div class="modal-actions">
-                  <button class="btn-outline" (click)="showEditDispoModal = false">Fermer</button>
+              <div class="modal-actions" style="justify-content: space-between; align-items: center;">
+                  <span style="font-size: 0.85rem; font-style: italic; color: #718096;"><i class="pi pi-info-circle"></i> Les modifications sont enregistrées via les boutons de chaque créneau.</span>
+                  <button class="btn-outline" (click)="showEditDispoModal = false">Terminer</button>
               </div>
           </div>
       </div>
@@ -917,7 +918,10 @@ dispoIdsForActiveTheme: number[] = [];
           }
         }
       },
-      error: () => { this.loading = false; }
+      error: (err) => { 
+        this.dispoValidationError = err.error?.message || err.error?.error || 'Échec de la création de la disponibilité.';
+        this.loading = false; 
+      }
     });
   }
 
@@ -979,8 +983,8 @@ dispoIdsForActiveTheme: number[] = [];
         this.loading = false;
         this.loadData();
       },
-      error: () => {
-        this.editValidationError = 'Échec de la mise à jour du créneau.';
+      error: (err) => {
+        this.editValidationError = err.error?.message || err.error?.error || 'Échec de la mise à jour du créneau.';
         this.loading = false;
       }
     });
@@ -998,8 +1002,8 @@ dispoIdsForActiveTheme: number[] = [];
           this.loading = false;
           this.loadData();
         },
-        error: () => {
-          this.editValidationError = 'Échec de la suppression du créneau.';
+        error: (err) => {
+          this.editValidationError = err.error?.message || err.error?.error || 'Échec de la suppression du créneau.';
           this.loading = false;
         }
       });
@@ -1067,8 +1071,8 @@ dispoIdsForActiveTheme: number[] = [];
         this.loading = false;
         this.loadData();
       },
-      error: () => {
-        this.editValidationError = 'Échec de la création du créneau.';
+      error: (err) => {
+        this.editValidationError = err.error?.message || err.error?.error || 'Échec de la création du créneau.';
         this.loading = false;
       }
     });

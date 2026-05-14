@@ -312,7 +312,7 @@ export class AppMenu implements OnInit {
                 icon: 'pi pi-fw pi-users',
                 items: [
                     {
-                        label: 'Mes Coachs',
+                        label: 'Réservation',
                         icon: 'pi pi-fw pi-user-check',
                         routerLink: ['/entrepreneur/mes-coachs'],
                     },
@@ -322,11 +322,6 @@ export class AppMenu implements OnInit {
                         routerLink: ['/entrepreneur/mes-sessions'],
                     },
                 ],
-            },
-            {
-                label: 'CALENDRIER',
-                icon: 'pi pi-fw pi-calendar',
-                routerLink: ['/calendar'],
             },
             {
                 label: 'PROGRAMME & TÂCHES',

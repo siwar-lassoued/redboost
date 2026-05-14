@@ -344,6 +344,10 @@ export class CoachService {
     return this.http.delete(`${this.apiUrl}/sessions/${sessionCoachId}/book?entrepreneurId=${entrepreneurId}`);
   }
 
+  cancelSessionById(sessionId: string, entrepreneurId: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/sessions/cancel/${sessionId}?entrepreneurId=${entrepreneurId}`);
+  }
+
   rescheduleSession(sessionId: string, newDate: string, entrepreneurId: number): Observable<any> {
     return this.http.put(`${this.apiUrl}/sessions/${sessionId}/reschedule?newDate=${newDate}&entrepreneurId=${entrepreneurId}`, {});
   }

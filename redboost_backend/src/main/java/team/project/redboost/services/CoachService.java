@@ -1424,6 +1424,27 @@ public class CoachService {
         }
     }
 
+    public void cancelSessionById(String sessionId, Long entrepreneurId) {
+        Session session = sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new ValidationException("Session non trouvée"));
+
+        if (!session.getEntrepreneur().getId().equals(entrepreneurId)) {
+            throw new ValidationException("Vous n'êtes pas autorisé à annuler cette session.");
+        }
+
+        // Cancel GCal
+        if (session.getGoogleEventId() != null) {
+            try {
+                googleCalendarService.cancelCalendarEvent(session.getGoogleEventId());
+            } catch (Exception e) {
+                log.warn("Échec annulation GCal pour session {}: {}", sessionId, e.getMessage());
+            }
+        }
+
+        sessionRepository.delete(session);
+    }
+
+
     public List<java.util.Map<String, Object>> getThematiquesAssignedToCoach(Long coachId)
     {
         return matchingRepository.findByCoachIdAndStatut(coachId, Matching.StatutMatching.VALIDE).stream()

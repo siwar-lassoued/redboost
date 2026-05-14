@@ -16,12 +16,12 @@
         </div>
       </div>
     </div>
-    <div class="header-actions">
+    <div class="header-actions" *ngIf="!isEntrepreneur">
       <div class="scheduled-badge">
         <div class="pulse-dot"></div>
         <span>{{ totalEventsCount }} événement{{ totalEventsCount !== 1 ? 's' : '' }} programmé{{ totalEventsCount !== 1 ? 's' : '' }}</span>
       </div>
-      <button class="premium-btn-primary" *ngIf="!isEntrepreneur" (click)="openAddEventDialog()">
+      <button class="premium-btn-primary" (click)="openAddEventDialog()">
         <i class="pi pi-plus"></i>
         <span>Ajouter un événement</span>
       </button>
@@ -82,8 +82,8 @@
       </div>
     </div>
 
-    <!-- Sidebar -->
-    <div class="sidebar">
+    <!-- Sidebar (Hidden for Entrepreneurs) -->
+    <div class="sidebar" *ngIf="!isEntrepreneur">
       <!-- Event Details Section (Visible when a day is clicked) -->
       <div class="sidebar-section event-details-sidebar" *ngIf="selectedDateEvents.length > 0">
         <div class="sidebar-back-row">
@@ -120,7 +120,7 @@
                   </span>
                 </div>
               </div>
-              <div class="ev-admin-actions" *ngIf="!isEntrepreneur">
+              <div class="ev-admin-actions">
                 <button class="btn-mini-action" (click)="openEditEventDialog(event)"><i class="pi pi-pencil"></i></button>
                 <button class="btn-mini-action delete" (click)="deleteEvent(event)"><i class="pi pi-trash"></i></button>
               </div>
@@ -161,103 +161,56 @@
 
       <!-- Reservation / Upcoming Section (Default view) -->
       <div class="sidebar-default-view" *ngIf="selectedDateEvents.length === 0">
-        <ng-container *ngIf="isEntrepreneur">
-          <div class="sidebar-section reservation-section">
-            <div class="sidebar-section-header">
-              <h3>Événements à venir</h3>
-              <i class="pi pi-question-circle" title="Visualisez les événements à venir. Pour réserver un créneau de coaching, rendez-vous dans la page 'Mes Coachs'."></i>
-            </div>
-            
-            <div class="upcoming-list scrollable-sidebar">
-              <div class="upcoming-card-premium" *ngFor="let event of getUpcomingEvents(); let i = index"
-                   (click)="selectEventDate(event.date)"
-                   style="cursor: default;">
-                <div class="up-header">
-                  <div class="up-icon" [style.background]="getEventGradient(event)">
-                    <i class="pi" [class]="getEventTypeIconPrime(event.type)"></i>
-                  </div>
-                  <div class="up-info">
-                    <div class="up-title-row">
-                      <h6>{{ event.title }}</h6>
-                    </div>
-                    <div class="up-program-row" *ngIf="event.program" style="font-size: 11px; color: #6B7280; margin-bottom: 6px; display: flex; align-items: center; line-height: 1.2;">
-                      <i class="pi pi-bookmark-fill" style="font-size: 10px; margin-right: 4px; color: #DC2626;"></i>
-                      <span>{{ event.program }}</span>
-                    </div>
-                  </div>
-                </div>
+        <div class="sidebar-section upcoming-section">
+          <div class="sidebar-section-header">
+            <h3>Événements à venir</h3>
+            <span class="count-pill">{{ getUpcomingEventsCount() }}</span>
+          </div>
 
-                <div class="up-meta">
-                  <div class="up-meta-item">
-                    <i class="pi pi-calendar"></i>
-                    <span>{{ formatEventDate(event.date) }}</span>
+          <div class="upcoming-list scrollable-sidebar">
+            <div class="upcoming-card-premium" *ngFor="let event of getUpcomingEvents(); let i = index"
+                  (click)="selectEventDate(event.date)">
+              <div class="up-header">
+                <div class="up-icon" [style.background]="getEventGradient(event)">
+                  <i class="pi" [class]="getEventTypeIconPrime(event.type)"></i>
+                </div>
+                <div class="up-info">
+                  <div class="up-title-row">
+                    <h6>{{ event.title }}</h6>
                   </div>
-                  <div class="up-meta-item" *ngIf="event.time">
-                    <i class="pi pi-clock"></i>
-                    <span>{{ event.time.split(' - ')[0] }}</span>
+                  <div class="up-program-row" *ngIf="event.program" style="font-size: 11px; color: #6B7280; margin-bottom: 6px; display: flex; align-items: center; line-height: 1.2;">
+                    <i class="pi pi-bookmark-fill" style="font-size: 10px; margin-right: 4px; color: #DC2626;"></i>
+                    <span>{{ event.program }}</span>
+                  </div>
+                  <div class="up-badges">
+                    <span class="up-type-tag" [style.background-color]="getEventTypeColor(event.type) + '20'" [style.color]="getEventTypeColor(event.type)">
+                      {{ event.type }}
+                    </span>
+                    <span class="up-exc-badge" *ngIf="event.isExceptionnelle">
+                      <i class="pi pi-star-fill"></i>
+                    </span>
                   </div>
                 </div>
               </div>
-              <div *ngIf="getUpcomingEvents().length === 0" class="empty-sidebar-msg">
-                <i class="pi pi-calendar-times"></i>
-                <p>Aucun événement prévu prochainement.</p>
+
+              <div class="up-meta">
+                <div class="up-meta-item">
+                  <i class="pi pi-calendar"></i>
+                  <span>{{ formatEventDate(event.date) }}</span>
+                </div>
+                <div class="up-meta-item" *ngIf="event.time">
+                  <i class="pi pi-clock"></i>
+                  <span>{{ event.time.split(' - ')[0] }}</span>
+                </div>
+              </div>
+
+              <div class="up-indicator" *ngIf="i === 0">
+                <div class="pulse-dot"></div>
+                <span>Prochainement</span>
               </div>
             </div>
           </div>
-        </ng-container>
-
-        <ng-container *ngIf="!isEntrepreneur">
-          <div class="sidebar-section upcoming-section">
-            <div class="sidebar-section-header">
-              <h3>Événements à venir</h3>
-              <span class="count-pill">{{ getUpcomingEventsCount() }}</span>
-            </div>
-
-            <div class="upcoming-list scrollable-sidebar">
-              <div class="upcoming-card-premium" *ngFor="let event of getUpcomingEvents(); let i = index"
-                   (click)="selectEventDate(event.date)">
-                <div class="up-header">
-                  <div class="up-icon" [style.background]="getEventGradient(event)">
-                    <i class="pi" [class]="getEventTypeIconPrime(event.type)"></i>
-                  </div>
-                  <div class="up-info">
-                    <div class="up-title-row">
-                      <h6>{{ event.title }}</h6>
-                    </div>
-                    <div class="up-program-row" *ngIf="event.program" style="font-size: 11px; color: #6B7280; margin-bottom: 6px; display: flex; align-items: center; line-height: 1.2;">
-                      <i class="pi pi-bookmark-fill" style="font-size: 10px; margin-right: 4px; color: #DC2626;"></i>
-                      <span>{{ event.program }}</span>
-                    </div>
-                    <div class="up-badges">
-                      <span class="up-type-tag" [style.background-color]="getEventTypeColor(event.type) + '20'" [style.color]="getEventTypeColor(event.type)">
-                        {{ event.type }}
-                      </span>
-                      <span class="up-exc-badge" *ngIf="event.isExceptionnelle">
-                        <i class="pi pi-star-fill"></i>
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="up-meta">
-                  <div class="up-meta-item">
-                    <i class="pi pi-calendar"></i>
-                    <span>{{ formatEventDate(event.date) }}</span>
-                  </div>
-                  <div class="up-meta-item" *ngIf="event.time">
-                    <i class="pi pi-clock"></i>
-                    <span>{{ event.time.split(' - ')[0] }}</span>
-                  </div>
-                </div>
-
-                <div class="up-indicator" *ngIf="i === 0">
-                  <div class="pulse-dot"></div>
-                  <span>Prochainement</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </ng-container>
+        </div>
       </div>
     </div>
   </div>
