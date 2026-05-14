@@ -183,7 +183,8 @@ public class CoachController {
         try {
             return ResponseEntity.ok(coachService.bookSession(sessionCoachId, entrepreneurId, notes));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
+            String msg = e.getMessage() != null ? e.getMessage() : "Erreur interne lors de la réservation";
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", msg));
         }
     }
 
@@ -196,7 +197,8 @@ public class CoachController {
             java.time.LocalDateTime dt = java.time.LocalDateTime.parse(newDate);
             return ResponseEntity.ok(coachService.rescheduleSession(sessionId, dt, entrepreneurId));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
+            String msg = e.getMessage() != null ? e.getMessage() : "Erreur interne";
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", msg));
         }
     }
 

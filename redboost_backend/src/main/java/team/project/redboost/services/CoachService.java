@@ -880,16 +880,18 @@ public class CoachService {
             }
         }
 
+        String sessionTitle = sc.getTitre() != null ? sc.getTitre() : "Session de Coaching RedBoost";
+
         // Create the Session entity
         Session session = Session.builder()
-                .titre(sc.getTitre())
-                .description("Réservation pour session : " + sc.getTitre())
+                .titre(sessionTitle)
+                .description("Réservation pour session : " + sessionTitle)
                 .coach(coach)
                 .entrepreneur(entrepreneur)
                 .date(sc.getDateSession().atTime(sc.getHeureDebut()))
                 .dureeMinutes((int) java.time.Duration.between(sc.getHeureDebut(), sc.getHeureFin()).toMinutes())
                 .statut(Session.Statut.PLANIFIE)
-                .bookingStatut(Session.BookingStatut.EN_ATTENTE)
+                .bookingStatut(Session.BookingStatut.CONFIRME)
                 .bookePar(entrepreneur)
                 .dateBooking(LocalDateTime.now())
                 .disponibiliteId(String.valueOf(sc.getId()))
@@ -902,7 +904,7 @@ public class CoachService {
             LocalDateTime start = sc.getDateSession().atTime(sc.getHeureDebut());
             LocalDateTime end   = sc.getDateSession().atTime(sc.getHeureFin());
             GoogleCalendarService.GoogleEventResult meetResult =
-                    googleCalendarService.createMeetEvent(sc.getTitre(), start, end,
+                    googleCalendarService.createMeetEvent(sessionTitle, start, end,
                             coach.getEmail(), entrepreneur.getEmail());
             if (meetResult != null) {
                 saved.setGoogleEventId(meetResult.getEventId());
@@ -918,11 +920,11 @@ public class CoachService {
         try {
             notificationService.createAndSendNotification(
                     coach.getId(),
-                    entrepreneur.getFirstName() + " " + entrepreneur.getLastName() + " a réservé la session \"" + sc.getTitre() + "\"",
+                    entrepreneur.getFirstName() + " " + entrepreneur.getLastName() + " a réservé la session \"" + sessionTitle + "\"",
                     "SESSION_BOOKING", null);
             notificationService.createAndSendNotification(
                     entrepreneurId,
-                    "Réservation confirmée pour \"" + sc.getTitre() + "\" avec " + coach.getFirstName() + " " + coach.getLastName(),
+                    "Réservation confirmée pour \"" + sessionTitle + "\" avec " + coach.getFirstName() + " " + coach.getLastName(),
                     "SESSION_BOOKING", null);
         } catch (Exception e) {
             log.warn("Notification sending failed (non-blocking): {}", e.getMessage());
@@ -935,7 +937,7 @@ public class CoachService {
             emailService.sendEmail(entrepreneur.getEmail(),
                     "Réservation de session confirmée",
                     "Bonjour " + entrepreneur.getFirstName() + ",\n\n" +
-                    "Votre réservation pour la session \"" + sc.getTitre() + "\" le " + sc.getDateSession() +
+                    "Votre réservation pour la session \"" + sessionTitle + "\" le " + sc.getDateSession() +
                     " de " + sc.getHeureDebut() + " à " + sc.getHeureFin() + " est confirmée.\n\n" +
                     "Coach : " + coach.getFirstName() + " " + coach.getLastName() +
                     meetLinkText + "\n\nCordialement,\nRedBoost");
