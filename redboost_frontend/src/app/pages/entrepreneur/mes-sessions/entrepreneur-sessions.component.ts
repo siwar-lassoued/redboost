@@ -4,6 +4,10 @@ import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { SessionService } from '../../../core/services/session.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { CoachService } from '../../dashboard/coachDashboard/services/coach.service';
+import { MatchingService } from '../../../core/services/matching.service';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 
@@ -20,35 +24,36 @@ type Tab = 'PLANIFIEE' | 'REALISEE' | 'ANNULEE';
       <div class="cand-header">
         <div>
           <h1 class="cand-title">Mes Sessions</h1>
-          <p class="cand-subtitle">Suivez votre parcours d'accompagnement</p>
+          <p class="cand-subtitle">Suivez votre parcours d'accompagnement et vos rendez-vous de coaching</p>
         </div>
         <div class="cand-header-actions">
-           <span class="cand-count-badge">{{ allSessions().length }} sessions au total</span>
+           <p class="cand-count-badge">{{ allSessions().length }} Session{{ allSessions().length > 1 ? 's' : '' }} au total</p>
         </div>
       </div>
 
-      <!-- TABS -->
-      <div class="cand-tabs">
-        <button (click)="activeTab.set('PLANIFIEE')" class="cand-tab" [class.active]="activeTab() === 'PLANIFIEE'">
-          Sessions Planifiées ({{ getCount('PLANIFIEE') }})
-        </button>
-        <button (click)="activeTab.set('REALISEE')" class="cand-tab" [class.active]="activeTab() === 'REALISEE'">
-          Sessions Terminées ({{ getCount('REALISEE') }})
-        </button>
-        <button (click)="activeTab.set('ANNULEE')" class="cand-tab" [class.active]="activeTab() === 'ANNULEE'">
-          Sessions Annulées ({{ getCount('ANNULEE') }})
-        </button>
-      </div>
+      <!-- TABS & FILTERS -->
+      <div class="sessions-nav-header">
+        <div class="status-tabs">
+          <button (click)="activeTab.set('PLANIFIEE')" [class.active]="activeTab() === 'PLANIFIEE'" class="tab-btn">
+            <i class="pi pi-calendar"></i> En cours
+          </button>
+          <button (click)="activeTab.set('REALISEE')" [class.active]="activeTab() === 'REALISEE'" class="tab-btn">
+            <i class="pi pi-check-circle"></i> Terminées
+          </button>
+          <button (click)="activeTab.set('ANNULEE')" [class.active]="activeTab() === 'ANNULEE'" class="tab-btn">
+            <i class="pi pi-times-circle"></i> Annulées
+          </button>
+        </div>
 
-      <!-- FILTERS -->
-      <div class="cand-filters">
-        <div class="search-wrap">
-          <i class="pi pi-search search-icon"></i>
-          <input type="text" 
-            [ngModel]="searchText()"
-            (ngModelChange)="searchText.set($event)"
-            placeholder="Rechercher par titre ou coach..." 
-            class="search-input">
+        <div class="filters-secondary">
+          <div class="search-wrap">
+            <i class="pi pi-search search-icon"></i>
+            <input type="text" 
+              [ngModel]="searchText()"
+              (ngModelChange)="searchText.set($event)"
+              placeholder="Rechercher une session..." 
+              class="search-input">
+          </div>
         </div>
       </div>
 
@@ -59,12 +64,11 @@ type Tab = 'PLANIFIEE' | 'REALISEE' | 'ANNULEE';
             <table class="cand-table">
               <thead>
                 <tr>
-                  <th>Session</th>
-                  <th>Coach</th>
-                  <th>Date & Heure</th>
+                  <th>Titre de la Session</th>
+                  <th>Dates & Horaires</th>
+                  <th>Nom du Coach</th>
                   <th>Type</th>
                   <th>Statut</th>
-                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -72,34 +76,51 @@ type Tab = 'PLANIFIEE' | 'REALISEE' | 'ANNULEE';
                   <tr class="table-row">
                     <td>
                       <div class="name-cell">
-                        <span class="name-text">{{ s.titre || 'Session de coaching' }}</span>
-                        <span class="email-text">ID: #{{ s.id.substring(0,8) }}</span>
+                        <div class="flex items-center gap-2">
+                          <span class="name-text">{{ s.titre || 'Session de coaching' }}</span>
+                          <span *ngIf="s.isExceptionnelle" class="exception-badge">Exceptionnelle</span>
+                        </div>
+                        <span class="email-text" *ngIf="s.programme?.nom">{{ s.programme?.nom }}</span>
+                        <span class="email-text" *ngIf="!s.programme?.nom && s.thematiqueName">{{ s.thematiqueName }}</span>
                       </div>
                     </td>
                     <td>
-                      <div class="coach-cell" *ngIf="s.coach">
+                      <div class="date-cell-custom">
+                        <div class="mini-date-badge">
+                          {{ s.date | date:'dd/MM/yyyy' }} de {{ s.date | date:'HH:mm' }} à {{ getEndTime(s) | date:'HH:mm' }}
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="name-cell" *ngIf="s.coach">
                         <span class="name-text">{{ s.coach.firstName || s.coach.prenom }} {{ s.coach.lastName || s.coach.nom }}</span>
-                      </div>
-                    </td>
-                    <td class="date-cell">
-                      <div class="flex flex-col">
-                        <span>{{ s.date | date:'dd/MM/yyyy' }}</span>
-                        <span class="text-[10px] text-gray-400">{{ s.date | date:'HH:mm' }}</span>
+                        <span class="email-text" *ngIf="s.coach.specialite || s.coach.email">{{ s.coach.specialite || s.coach.email }}</span>
                       </div>
                     </td>
                     <td>
-                      <span class="type-badge" [class.presentiel]="s.lieu" [class.online]="!s.lieu">
-                        {{ s.lieu ? 'Présentiel' : 'À distance' }}
+                      <ng-container *ngIf="!s.lieu">
+                        <a *ngIf="s.meetLink || s.lienVisio" [href]="s.meetLink || s.lienVisio" target="_blank" class="type-badge online" style="text-decoration:none; cursor:pointer;" title="Rejoindre le Meet">
+                          <i class="pi pi-video"></i> Rejoindre Meet
+                        </a>
+                        <span *ngIf="!s.meetLink && !s.lienVisio" class="type-badge online">
+                          <i class="pi pi-video"></i> En ligne
+                        </span>
+                      </ng-container>
+                      <span *ngIf="s.lieu" class="type-badge presentiel">
+                        <i class="pi pi-building"></i> Présentiel
                       </span>
                     </td>
                     <td>
-                      <div class="status-badge" [style.background]="getBadge(s.statut).bg" [style.color]="getBadge(s.statut).color">
-                        <i class="pi" [class.pi-calendar-clock]="s.statut === 'PLANIFIEE'" [class.pi-check-circle]="s.statut === 'REALISEE' || s.statut === 'TERMINE'" [class.pi-times-circle]="s.statut === 'ANNULEE'" style="font-size: 10px;"></i>
-                        {{ getBadge(s.statut).label }}
+                      <div class="status-badge" 
+                        [class.upcoming]="activeTab() === 'PLANIFIEE'" 
+                        [class.past]="activeTab() === 'REALISEE'"
+                        [class.cancelled]="activeTab() === 'ANNULEE'">
+                        <i class="pi" 
+                          [class.pi-calendar-clock]="activeTab() === 'PLANIFIEE'" 
+                          [class.pi-check-circle]="activeTab() === 'REALISEE'"
+                          [class.pi-times-circle]="activeTab() === 'ANNULEE'"></i>
+                        {{ activeTab() === 'ANNULEE' ? 'Annulée' : (activeTab() === 'PLANIFIEE' ? 'À venir' : 'Terminée') }}
                       </div>
-                    </td>
-                    <td>
-                      <button (click)="onViewDetail(s)" class="btn-detail">Voir détails</button>
                     </td>
                   </tr>
                 }
@@ -234,55 +255,55 @@ type Tab = 'PLANIFIEE' | 'REALISEE' | 'ANNULEE';
     .cand-subtitle { color: #8a8a8a; font-size: 14px; margin-top: 4px; }
     .cand-count-badge { background: #E2E8F0; color: #4A5568; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; }
     
-    .cand-tabs { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 4px; }
-    .cand-tab {
-      padding: 10px 20px; border-radius: 12px; font-size: 14px; font-weight: 600;
-      border: none; cursor: pointer; transition: all .2s; background: #F3F4F6; color: #6B7280; white-space: nowrap;
+    .sessions-nav-header { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 24px; flex-wrap: wrap; }
+    .status-tabs { display: flex; background: #fff; padding: 6px; border-radius: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+    .tab-btn {
+      padding: 10px 20px; border: none; background: transparent; border-radius: 12px;
+      font-size: 14px; font-weight: 700; color: #64748B; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px;
     }
-    .cand-tab.active { background: #ea5073; color: #fff; }
-
-    .cand-filters { display: flex; align-items: stretch; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
-    .search-wrap { position: relative; flex: 1; min-width: 200px; }
+    .tab-btn:hover { background: #F8FAFC; color: #334155; }
+    .tab-btn.active { background: #ea5073; color: white; box-shadow: 0 4px 12px rgba(234, 80, 115, 0.3); }
+    
+    .filters-secondary { display: flex; align-items: center; gap: 20px; flex: 1; justify-content: flex-end; }
+    .search-wrap { position: relative; flex: 1; min-width: 200px; max-width: 400px; }
     .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #9CA3AF; }
     .search-input {
-      width: 100%; padding: 12px 16px 12px 40px; border: 1px solid #E5E7EB;
-      border-radius: 12px; font-size: 14px; outline: none; color: #333; transition: all .2s; background: #fff; box-sizing: border-box;
+      width: 100%; padding: 10px 16px 10px 40px; border: 1px solid #E5E7EB;
+      border-radius: 12px; font-size: 14px; outline: none; color: #333; transition: border-color .2s; background: #fff; box-sizing: border-box;
     }
-    .search-input:focus { border-color: #3B82A6; box-shadow: 0 0 0 3px rgba(59, 130, 166, 0.1); }
+    .search-input:focus { border-color: #3B82A6; }
 
-    .table-card { background: #fff; border-radius: 20px; overflow: hidden; box-shadow: 0 2px 16px rgba(0,0,0,0.07); border: 1px solid #F1F5F9; }
-    .table-scroll { overflow-x: auto; min-width: 100%; }
+    .table-card { background: #fff; border-radius: 20px; overflow: hidden; box-shadow: 0 2px 16px rgba(0,0,0,0.07); }
     .cand-table { width: 100%; border-collapse: collapse; text-align: left; }
-    .cand-table th {
-      padding: 12px 16px; font-size: 11px; font-weight: 700; color: #6B7280;
-      text-transform: uppercase; letter-spacing: 0.05em; background: #F9FAFB; border-bottom: 1px solid #F3F4F6;
-    }
+    .cand-table th { padding: 12px 16px; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; background: #F9FAFB; border-bottom: 1px solid #F3F4F6; }
     .cand-table td { padding: 14px 16px; border-bottom: 1px solid #F3F4F6; }
-    .table-row { transition: background 0.2s; }
-    .table-row:hover { background: transparent; }
-    .table-row td:not(:last-child) { pointer-events: none; }
+    .table-row:hover { background: #FFF5F8; }
 
     .name-cell { display: flex; flex-direction: column; }
     .name-text { font-weight: 700; font-size: 14px; color: #1A1A2E; }
-    .email-text { font-size: 11px; color: #9CA3AF; margin-top: 2px; }
+    .email-text { font-size: 11px; color: #9CA3AF; }
     
-    .type-badge { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; }
+    .mini-date-badge { display: inline-block; background: #F3F4F6; color: #4A5568; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; margin-right: 4px; margin-bottom: 4px; }
+    
+    .type-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
     .type-badge.online { background: #E0F2FE; color: #0369A1; }
     .type-badge.presentiel { background: #FEF3C7; color: #92400E; }
+
+    .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; text-transform: uppercase; }
+    .status-badge.upcoming { background: #D1FAE5; color: #065F46; }
+    .status-badge.past { background: #F3F4F6; color: #9CA3AF; }
+    .status-badge.cancelled { background: #FEE2E2; color: #B91C1C; }
     
-    .date-cell { font-size: 13px; color: #1A1A2E; font-weight: 500; }
-    .status-badge {
-      padding: 5px 12px; border-radius: 20px; font-size: 10px; font-weight: 800;
-      display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; text-transform: uppercase;
-    }
-    .btn-detail { padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; color: #3B82A6; background: none; border: none; cursor: pointer; transition: all .2s; }
-    .btn-detail:hover { background: #EBF5FF; }
+    .exception-badge { background: #F3E8FF; color: #7C3AED; padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
+    
+    .btn-detail { padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; color: #3B82A6; border: 1px solid #3B82A6; background: transparent; cursor: pointer; transition: all .2s; }
+    .btn-detail:hover { background: #3B82A6; color: white; }
 
-    .empty-state { text-align: center; padding: 60px 20px; background: #fff; border-radius: 20px; border: 2px dashed #E5E7EB; }
-    .empty-text { color: #6B7280; font-weight: 700; font-size: 16px; margin-top: 8px; }
-    .empty-sub { color: #9CA3AF; font-size: 13px; margin-top: 4px; }
+    .empty-state { text-align: center; padding: 60px 20px; background: #fff; border-radius: 20px; }
+    .empty-text { font-weight: 700; font-size: 16px; color: #4A5568; }
+    .empty-sub { font-size: 13px; color: #9CA3AF; }
 
-    /* Modal Style (Admin) */
+    /* Modal Style */
     .modal-overlay { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(8px); }
     .modal-box {
       background: #fff; border-radius: 32px; width: 100%; max-width: 700px; max-height: 90vh;
@@ -325,11 +346,13 @@ type Tab = 'PLANIFIEE' | 'REALISEE' | 'ANNULEE';
     .btn-amber { background: #F59E0B; box-shadow: 0 10px 15px -3px rgba(245, 158, 11, 0.3); }
     .btn-gray { background: #6B7280; box-shadow: 0 10px 15px -3px rgba(107, 114, 128, 0.3); }
     .btn-close-modal { margin-left: auto; font-size: 14px; font-weight: 700; color: #64748B; background: none; border: none; cursor: pointer; }
-  `]
+  `],
 })
 export class EntrepreneurSessionsComponent implements OnInit {
   private sessionSvc = inject(SessionService);
   private authSvc = inject(AuthService);
+  private coachSvc = inject(CoachService);
+  private matchSvc = inject(MatchingService);
   private router = inject(Router);
   private toastr = inject(ToastrService);
 
@@ -364,16 +387,25 @@ export class EntrepreneurSessionsComponent implements OnInit {
   loadSessions() {
     const user = this.authSvc.currentUser$.value;
     if (!user) return;
+    const userId = String(user.id);
 
-    this.sessionSvc.getByEntrepreneur(user.id).subscribe({
+    this.sessionSvc.getByEntrepreneur(userId).subscribe({
       next: (sessions) => {
-        this.allSessions.set(Array.isArray(sessions) ? sessions : []);
+        const allSessions = Array.isArray(sessions) ? sessions : [];
+        this.allSessions.set(allSessions);
       },
-      error: (err: any) => {
-        console.error('Error loading sessions:', err);
+      error: () => {
         this.allSessions.set([]);
       }
     });
+  }
+
+  getEndTime(s: any): Date | null {
+    if (!s.date) return null;
+    const d = new Date(s.date);
+    const duree = s.dureeMinutes || s.duree || 60;
+    d.setMinutes(d.getMinutes() + duree);
+    return d;
   }
 
   getCount(statut: Tab): number {

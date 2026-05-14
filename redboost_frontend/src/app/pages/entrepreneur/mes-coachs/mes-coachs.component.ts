@@ -14,16 +14,21 @@ interface ProgramGroup {
   thematiques: ThematiqueGroup[];
 }
 
+interface ExtendedSessionGroupDTO extends SessionGroupDTO {
+  isExceptionnelle?: boolean;
+}
+
 interface ThematiqueGroup {
   name: string;
   dateDebut?: string;
   dateFin?: string;
-  sessions: SessionGroupDTO[];
+  sessions: ExtendedSessionGroupDTO[];
 }
 
 interface ExtendedMatching extends MatchingView {
   coachDetails?: any | null;
   groupedByProgram?: ProgramGroup[];
+  exceptionalGroup?: ProgramGroup;
   stats?: DashboardStatsDTO | null;
 }
 
@@ -121,6 +126,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
                   <div class="flex flex-wrap gap-3">
                     <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full" style="background: #16a34a"></span><span class="text-[9px] font-bold text-gray-400">Passé (Moi)</span></div>
                     <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full" style="background: #ea580c"></span><span class="text-[9px] font-bold text-gray-400">À venir (Moi)</span></div>
+                    <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full" style="background: #7c3aed"></span><span class="text-[9px] font-bold text-gray-400">Exceptionnelle</span></div>
                     <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full" style="background: #2563eb"></span><span class="text-[9px] font-bold text-gray-400">Disponible</span></div>
                     <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full" style="background: #cbd5e1"></span><span class="text-[9px] font-bold text-gray-400">Indisponible</span></div>
                   </div>
@@ -154,29 +160,36 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 
                             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                               @for (session of them.sessions; track session.sessionGroupId) {
-                                <div class="p-4 bg-gray-50 rounded-xl border border-gray-100 flex flex-col h-full hover:bg-white transition-colors duration-300">
+                                <div class="p-4 bg-gray-50 rounded-xl border border-gray-100 flex flex-col h-full hover:bg-white transition-colors duration-300"
+                                     [class.border-purple-200]="session.isExceptionnelle">
                                   <div class="flex items-center justify-between mb-3 pb-2 border-b border-gray-200/50">
                                     <p class="text-[11px] font-bold text-[#1A1A2E] truncate pr-2" [matTooltip]="session.sessionTitle">
                                       {{ session.sessionTitle }}
                                     </p>
-                                    @if (canModifySession(session)) {
-                                      <span class="flex-shrink-0 w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center cursor-pointer"
-                                            (click)="cancelAndRebook(session)" matTooltip="Modifier / Annuler">
-                                        <i class="pi pi-pencil text-[10px]"></i>
-                                      </span>
-                                    }
+                                    <div class="flex items-center gap-1">
+                                      @if (session.isExceptionnelle) {
+                                        <span class="flex-shrink-0 text-[8px] font-black px-1.5 py-0.5 rounded-full" style="background:#f3e8ff;color:#7c3aed">EXC</span>
+                                      }
+                                      @if (canModifySession(session)) {
+                                        <span class="flex-shrink-0 w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center cursor-pointer"
+                                              (click)="cancelAndRebook(session)" matTooltip="Modifier / Annuler">
+                                          <i class="pi pi-pencil text-[10px]"></i>
+                                        </span>
+                                      }
+                                    </div>
                                   </div>
                                   
                                   <div class="space-y-2 mt-auto">
                                     @for (slot of session.slots; track slot.id) {
                                       <div class="slot-pill"
                                         [class.past-me]="slot.isBookedByMe && (slot.bookingStatus === 'TERMINE' || slot.bookingStatus === 'REALISEE' || slot.bookingStatus === 'TERMINEE')"
-                                        [class.future-me]="slot.isBookedByMe && slot.bookingStatus !== 'TERMINE' && slot.bookingStatus !== 'REALISEE' && slot.bookingStatus !== 'TERMINEE'"
-                                        [class.available-blue]="!isSlotPast(slot) && !slot.isBooked && !session.reservedByMe"
-                                        [class.disabled-gray]="(isSlotPast(slot) && !slot.isBookedByMe) || (!isSlotPast(slot) && slot.isBooked && !slot.isBookedByMe) || (!isSlotPast(slot) && session.reservedByMe && !slot.isBookedByMe)"
-                                        [matTooltip]="getSlotTooltip(slot, session.reservedByMe)"
-                                        (click)="(!isSlotPast(slot) && !slot.isBooked && !session.reservedByMe) ? selectSlot(slot, session.sessionTitle, coach) : (slot.isBookedByMe && canModifySession(session)) ? cancelAndRebook(session) : null"
-                                        [class.cursor-pointer]="(!isSlotPast(slot) && !slot.isBooked && !session.reservedByMe) || (slot.isBookedByMe && canModifySession(session))">
+                                        [class.future-me]="slot.isBookedByMe && slot.bookingStatus !== 'TERMINE' && slot.bookingStatus !== 'REALISEE' && slot.bookingStatus !== 'TERMINEE' && !session.isExceptionnelle"
+                                        [class.exceptionnelle-me]="session.isExceptionnelle"
+                                        [class.available-blue]="!isSlotPast(slot) && !slot.isBooked && !session.reservedByMe && !session.isExceptionnelle"
+                                        [class.disabled-gray]="!session.isExceptionnelle && ((isSlotPast(slot) && !slot.isBookedByMe) || (!isSlotPast(slot) && slot.isBooked && !slot.isBookedByMe) || (!isSlotPast(slot) && session.reservedByMe && !slot.isBookedByMe))"
+                                        [matTooltip]="session.isExceptionnelle ? 'Séance exceptionnelle planifiée par votre coach' : getSlotTooltip(slot, session.reservedByMe)"
+                                        (click)="(!session.isExceptionnelle && !isSlotPast(slot) && !slot.isBooked && !session.reservedByMe) ? selectSlot(slot, session.sessionTitle, coach) : (slot.isBookedByMe && canModifySession(session) && !session.isExceptionnelle) ? cancelAndRebook(session) : null"
+                                        [class.cursor-pointer]="!session.isExceptionnelle && ((!isSlotPast(slot) && !slot.isBooked && !session.reservedByMe) || (slot.isBookedByMe && canModifySession(session)))">
                                         <div class="flex items-center justify-between px-3 py-2">
                                           <div class="flex flex-col">
                                             <span class="text-[9px] font-bold uppercase opacity-60">{{ formatSlotDayName(slot.dateSession) }}</span>
@@ -197,6 +210,57 @@ import { MatSnackBar } from '@angular/material/snack-bar';
                       <div class="text-center py-20 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
                         <i class="pi pi-calendar-times text-5xl text-gray-200 mb-4"></i>
                         <p class="text-sm text-gray-400 font-bold uppercase tracking-widest">Aucune session enregistrée</p>
+                      </div>
+                    }
+
+                    <!-- Séances Exceptionnelles Section (Strictly below everything) -->
+                    @if (coach.exceptionalGroup) {
+                      <div class="program-section mb-10 mt-8 pt-8 border-t border-dashed border-gray-200">
+                        <div class="flex items-center gap-3 mb-6">
+                          <span class="text-[10px] font-black text-purple-600 uppercase tracking-[0.3em] px-3 py-1 bg-purple-50 rounded-full">{{ coach.exceptionalGroup.name }}</span>
+                          <div class="h-px flex-1 bg-gradient-to-r from-purple-100 to-transparent"></div>
+                        </div>
+
+                        @for (them of coach.exceptionalGroup.thematiques; track them.name) {
+                          <div class="thematique-section mb-8 pl-4 border-l-2 border-purple-50">
+                            <div class="flex items-center justify-between mb-4">
+                              <h4 class="text-sm font-bold text-[#1A1A2E] flex items-center gap-2">
+                                <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+                                {{ them.name }}
+                              </h4>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                              @for (session of them.sessions; track session.sessionGroupId) {
+                                <div class="p-4 bg-purple-50/30 rounded-xl border border-purple-100 flex flex-col h-full hover:bg-white transition-colors duration-300">
+                                  <div class="flex items-center justify-between mb-3 pb-2 border-b border-purple-100/50">
+                                    <p class="text-[11px] font-bold text-[#1A1A2E] truncate pr-2" [matTooltip]="session.sessionTitle">
+                                      {{ session.sessionTitle }}
+                                    </p>
+                                    <div class="flex items-center gap-1">
+                                      <span class="flex-shrink-0 text-[8px] font-black px-1.5 py-0.5 rounded-full" style="background:#f3e8ff;color:#7c3aed">EXC</span>
+                                    </div>
+                                  </div>
+                                  
+                                  <div class="space-y-2 mt-auto">
+                                    @for (slot of session.slots; track slot.id) {
+                                      <div class="slot-pill exceptionnelle-me"
+                                        [matTooltip]="'Séance exceptionnelle planifiée par votre coach'">
+                                        <div class="flex items-center justify-between px-3 py-2">
+                                          <div class="flex flex-col">
+                                            <span class="text-[9px] font-bold uppercase opacity-60">{{ formatSlotDayName(slot.dateSession) }}</span>
+                                            <span class="text-[11px] font-bold">{{ formatSlotDate(slot.dateSession) }}</span>
+                                          </div>
+                                          <div class="text-xs font-black">{{ slot.heureDebut }}</div>
+                                        </div>
+                                      </div>
+                                    }
+                                  </div>
+                                </div>
+                              }
+                            </div>
+                          </div>
+                        }
                       </div>
                     }
                   </div>
@@ -344,6 +408,16 @@ import { MatSnackBar } from '@angular/material/snack-bar';
       color: #cbd5e1;
       opacity: 0.8;
       filter: grayscale(1);
+    }
+    .slot-pill.exceptionnelle-me {
+      background: #faf5ff;
+      border-color: #d8b4fe;
+      color: #7c3aed;
+      box-shadow: 0 4px 6px -1px rgba(124, 58, 237, 0.15);
+    }
+    .slot-pill.exceptionnelle-me:hover {
+      background: #f3e8ff;
+      transform: translateY(-1px);
     }
     .program-section:not(:last-child) {
       margin-bottom: 3rem;
@@ -499,8 +573,52 @@ loadAllData(userId: any) {
               stats: results[i].stats
             };
           });
-          
+
+          // First set the base extended matchings
           this.extendedMatchings.set(extended);
+
+          // Then asynchronously enrich with exceptional sessions per coach
+          uniqueMatchings.forEach((m, i) => {
+            const coachId = m.id;
+            const entId = Number(userId);
+            this.coachSvc.getSeancesExceptionnelles(Number(coachId))
+              .pipe(catchError(() => of([])))
+              .subscribe((seances: any[]) => {
+                const mySeances = seances.filter((se: any) => String(se.entrepreneurId) === String(entId));
+                if (mySeances.length === 0) return;
+
+                const excProgGroup: any = {
+                  name: 'Séances Exceptionnelles',
+                  thematiques: [{
+                    name: 'Planifiées par votre coach',
+                    sessions: mySeances.map((se: any) => ({
+                      sessionGroupId: `exc-${se.id}`,
+                      sessionTitle: se.titre,
+                      reservedByMe: true,
+                      isExceptionnelle: true,
+                      slots: [{
+                        id: `exc-slot-${se.id}`,
+                        dateSession: se.dateSeance,
+                        heureDebut: se.heureDebut?.substring(0, 5) || '',
+                        heureFin: se.heureFin?.substring(0, 5) || '',
+                        isBookedByMe: true,
+                        isBooked: true,
+                        bookingStatus: 'PLANIFIE'
+                      }]
+                    }))
+                  }]
+                };
+
+                const current = this.extendedMatchings();
+                const updated = current.map(em => {
+                  if (String(em.id) === String(coachId)) {
+                    return { ...em, exceptionalGroup: excProgGroup };
+                  }
+                  return em;
+                });
+                this.extendedMatchings.set(updated);
+              });
+          });
         });
       });
     });

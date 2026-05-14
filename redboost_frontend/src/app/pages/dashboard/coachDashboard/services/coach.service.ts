@@ -43,6 +43,7 @@ export interface SessionGroupDTO {
   sessionTitle: string;
   reservedByMe: boolean;
   slots: SessionCoachDTO[];
+  isExceptionnelle?: boolean;
 }
 
 export interface SeanceExceptionnelleDTO {

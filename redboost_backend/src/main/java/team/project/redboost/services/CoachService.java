@@ -617,6 +617,37 @@ public class CoachService {
                 .build();
 
         SeanceExceptionnelle saved = seanceExceptionnelleRepository.save(seance);
+
+        // Notifications
+        try {
+            notificationService.createAndSendNotification(
+                    coach.getId(),
+                    "Vous avez planifié une séance exceptionnelle \"" + dto.getTitre() + "\" pour " + entrepreneur.getFirstName() + " " + entrepreneur.getLastName(),
+                    "SESSION_EXCEPTIONNELLE_CREATED", null);
+            notificationService.createAndSendNotification(
+                    entrepreneur.getId(),
+                    coach.getFirstName() + " " + coach.getLastName() + " a planifié une séance exceptionnelle : \"" + dto.getTitre() + "\"",
+                    "SESSION_EXCEPTIONNELLE_CREATED", null);
+        } catch (Exception e) {
+            log.warn("Notification sending failed (non-blocking): {}", e.getMessage());
+        }
+
+        // Email
+        try {
+            emailService.sendEmail(entrepreneur.getEmail(),
+                    "Nouvelle séance exceptionnelle planifiée",
+                    "Bonjour " + entrepreneur.getFirstName() + ",\n\n" +
+                    "Votre coach " + coach.getFirstName() + " " + coach.getLastName() +
+                    " a planifié une séance exceptionnelle avec vous.\n\n" +
+                    "Titre : " + dto.getTitre() + "\n" +
+                    "Date : " + dto.getDateSeance() + "\n" +
+                    "Horaire : " + dto.getHeureDebut() + " à " + dto.getHeureFin() + "\n\n" +
+                    "Vous retrouverez les détails dans votre espace.\n\n" +
+                    "Cordialement,\nRedBoost");
+        } catch (Exception e) {
+            log.warn("Email exceptional session confirmation failed: {}", e.getMessage());
+        }
+
         return mapToDTO(saved);
     }
 

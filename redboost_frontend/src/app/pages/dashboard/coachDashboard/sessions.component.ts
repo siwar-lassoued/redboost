@@ -431,7 +431,8 @@ export class SessionsComponent implements OnInit {
   }
 
   filterSessions() {
-    let rawResult = [...this.sessions];
+    // Only keep reserved sessions (isBooked === true)
+    let rawResult = this.sessions.filter(s => s.isBooked);
     
     // Search
     if (this.searchTerm.trim()) {

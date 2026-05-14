@@ -306,7 +306,28 @@ export class CalendarComponent implements OnInit {
             this.isLoading = false;
             this.cdr.detectChanges();
           });
-        } else {
+            // Load exceptional sessions for entrepreneur from matched coaches
+            if (this.isEntrepreneur && response.coaches && response.coaches.length > 0) {
+              const entId = Number(currentUser?.id);
+              const uniqueCoachIds = [...new Set<number>(response.coaches.map((c: any) => Number(c.id)))];
+              const excRequests = uniqueCoachIds.map((cId: number) =>
+                this.coachService.getSeancesExceptionnelles(cId).pipe(catchError(() => of([])))
+              );
+              forkJoin(excRequests).subscribe((excResults: any[]) => {
+                const allExc = excResults.flat().filter((se: any) => Number(se.entrepreneurId) === entId);
+                if (allExc.length > 0) {
+                  const excMapped = this.mapExceptionnellesToCalendarEvents(allExc);
+                  const existingIds = new Set(this.events.map(e => e.id));
+                  const newExc = excMapped.filter(e => !existingIds.has(e.id));
+                  this.events = [...this.events, ...newExc];
+                  this.totalEventsCount = this.events.length;
+                  this.generateCalendar();
+                  this.cdr.detectChanges();
+                }
+              });
+            }
+
+          } else {
           this.events = allCalendarEvents;
           this.totalEventsCount = this.events.length;
           this.generateCalendar();
@@ -384,6 +405,25 @@ export class CalendarComponent implements OnInit {
         couleur: this.getThematicColor(themName)
       };
     });
+  }
+
+  /** Map séances exceptionnelles to purple CalendarEvents */
+  mapExceptionnellesToCalendarEvents(seances: any[]): CalendarEvent[] {
+    return seances.map(se => ({
+      id: 'exc-' + se.id,
+      title: se.titre || 'Séance exceptionnelle',
+      date: new Date(`${se.dateSeance}T${se.heureDebut || '00:00'}`),
+      time: `${(se.heureDebut || '').substring(0, 5)} - ${(se.heureFin || '').substring(0, 5)}`,
+      type: 'Séance Exceptionnelle',
+      location: 'En ligne',
+      mode: 'virtuel' as 'en-personne' | 'virtuel' | 'hybrid',
+      program: 'Séance planifiée par votre coach',
+      description: `Séance exceptionnelle planifiée spécialement pour vous par votre coach.`,
+      participants: [],
+      isDisabled: true,
+      isExceptionnelle: true,
+      couleur: '#8B5CF6'
+    }));
   }
 
   /** Map MyCalendarEvent[] (from /api/sessions/my-calendar) to CalendarEvent[] */
@@ -857,7 +897,7 @@ getUpcomingEvents(): CalendarEvent[] {
   let upcoming = this.events.filter(event => event.date >= now);
   
   if (this.isEntrepreneur) {
-    upcoming = upcoming.filter(event => event.id.startsWith('booked-'));
+    upcoming = upcoming.filter(event => event.id.startsWith('booked-') || event.id.startsWith('exc-'));
   }
 
   return upcoming
