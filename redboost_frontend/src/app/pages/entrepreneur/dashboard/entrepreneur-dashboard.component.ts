@@ -6,6 +6,7 @@ import { SessionService } from '../../../core/services/session.service';
 import { TacheService } from '../../../core/services/tache.service';
 import { MatchingService, MatchingView } from '../../../core/services/matching.service';
 import { UserService } from '../../../core/services/user.service';
+import { CoachService } from '../../dashboard/coachDashboard/services/coach.service';
 import { OnInit, computed } from '@angular/core';
 
 @Component({
@@ -57,58 +58,49 @@ import { OnInit, computed } from '@angular/core';
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
         
+        <!-- Sessions à réserver -->
         <div class="bg-white rounded-3xl p-6 shadow-xl shadow-gray-200/50 border border-gray-100">
-          <h3 class="text-lg font-black text-[#1A1A2E] mb-5 flex items-center gap-2">
-            <i class="pi pi-user-edit text-[#ff3d91]"></i>
-            Mon Coach
-          </h3>
+          <div class="flex items-center justify-between mb-5">
+            <h3 class="text-lg font-black text-[#1A1A2E] flex items-center gap-2">
+              <i class="pi pi-calendar-plus text-[#10B981]"></i>
+              Sessions à réserver
+            </h3>
+            <button routerLink="/entrepreneur/mes-coachs" class="text-xs font-black text-gray-400 hover:text-[#10B981] transition-colors uppercase tracking-widest">Voir coachs</button>
+          </div>
           
-          @if (assignedCoach()) {
-            <div class="flex items-center gap-4 mb-4">
-              <div class="w-16 h-16 rounded-2xl flex items-center justify-center text-white text-xl font-black shadow-lg"
-                style="background-color: #3B82A6">
-                {{ assignedCoach()!.nom ? assignedCoach()!.nom[0] : 'C' }}
+          <div class="space-y-3 max-h-[320px] overflow-y-auto pr-1 custom-scrollbar">
+            @for (session of sessionsToBook(); track session.sessionGroupId) {
+              <div class="p-4 rounded-2xl border border-gray-100 bg-[#F8FAFC] hover:border-[#10B981]/30 transition-all">
+                <div class="flex items-start justify-between gap-3 mb-2">
+                  <div class="min-w-0">
+                    <p class="text-sm font-black text-[#1A1A2E] truncate">{{ session.sessionTitle }}</p>
+                    <p class="text-[11px] text-gray-400 font-medium truncate">{{ session.coachName }}</p>
+                  </div>
+                  <div class="flex-shrink-0 bg-white px-2 py-1 rounded-lg border border-gray-100 shadow-sm text-center">
+                    <p class="text-[10px] font-black text-[#10B981] leading-none">{{ session.slotsCount }}</p>
+                    <p class="text-[8px] font-bold text-gray-400 uppercase">créneaux</p>
+                  </div>
+                </div>
+                
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="text-[10px] px-2 py-0.5 rounded-full font-black uppercase tracking-widest"
+                      style="background: #FFF0F5; color: #ea5073">{{ session.thematiqueName }}</span>
+                  </div>
+                  <button routerLink="/entrepreneur/mes-coachs" 
+                    class="text-[11px] font-black text-[#10B981] hover:underline uppercase tracking-tighter flex items-center gap-1">
+                    Réserver <i class="pi pi-chevron-right text-[9px]"></i>
+                  </button>
+                </div>
               </div>
-              <div>
-                <p class="font-black text-[#1A1A2E]">{{ assignedCoach()!.nom }}</p>
-                <p class="text-xs text-gray-400 font-medium">{{ assignedCoach()!.specialite || 'Coach Expert' }}</p>
-              </div>
-            </div>
-
-            
-            <div class="flex items-center gap-1 mb-4">
-              @for (star of [1,2,3,4,5]; track star) {
-                <span class="text-sm" [class]="star <= (assignedCoach()!.scoreMatching > 80 ? 5 : 4) ? 'text-amber-400' : 'text-gray-200'">★</span>
-              }
-              <span class="text-xs text-gray-400 ml-1 font-bold">{{ assignedCoach()!.scoreMatching > 80 ? '4.9' : '4.5' }}</span>
-            </div>
-
-            
-            <div class="flex flex-wrap gap-1.5 mb-5">
-              @for (tag of coachTags(); track tag) {
-                <span class="text-[10px] px-2.5 py-1 rounded-full font-black uppercase tracking-widest"
-                  style="background: #F0FDF4; color: #10B981">{{ tag }}</span>
-              }
-            </div>
-
-              <div class="flex gap-2">
-                <button routerLink="/calendar"
-                  class="flex-1 py-3 rounded-2xl text-sm font-black text-white transition-all hover:opacity-90 shadow-lg"
-                  style="background-color: #3B82A6">
-                  Profil complet
-                </button>
-                <button [routerLink]="['/entrepreneur/chat']" [queryParams]="{with: assignedCoach()!.id}"
-                  class="w-14 py-3 rounded-2xl flex items-center justify-center text-white transition-all hover:opacity-90 shadow-lg"
-                  style="background-color: #F97316">
-                  <i class="pi pi-comments"></i>
-                </button>
-              </div>
-            } @else {
+            } @empty {
               <div class="py-12 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-                <i class="pi pi-search text-3xl mx-auto text-gray-300 mb-2"></i>
-                <p class="text-xs font-bold text-gray-400">Aucun coach assigné</p>
+                <i class="pi pi-check-circle text-3xl mx-auto text-emerald-300 mb-2"></i>
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Tout est à jour !</p>
+                <p class="text-[10px] text-gray-400 px-4 mt-1">Vous avez réservé toutes vos sessions thématiques.</p>
               </div>
             }
+          </div>
         </div>
 
         
@@ -211,10 +203,12 @@ export class EntrepreneurDashboardComponent implements OnInit {
   private sessionSvc = inject(SessionService);
   private tacheSvc = inject(TacheService);
   private matchSvc = inject(MatchingService);
+  private coachSvc = inject(CoachService);
   private userSvc = inject(UserService);
 
   urgentTasks = signal<any[]>([]);
   nextSession = signal<{ date: string; time: string; duration: number; meetLink?: string; coachName?: string; thematiqueName?: string } | null>(null);
+  sessionsToBook = signal<any[]>([]);
   assignedCoach = signal<MatchingView | null>(null);
   coachTags = signal<string[]>([]);
   currentUserProfile: any = null;
@@ -243,6 +237,22 @@ export class EntrepreneurDashboardComponent implements OnInit {
         } catch(e) {
           this.coachTags.set(['Coaching', 'Stratégie', 'Expertise']);
         }
+
+        // Fetch available sessions for each matched coach
+        const allSessionsToBook: any[] = [];
+        matches.forEach(match => {
+          this.coachSvc.getAvailableSessionsGrouped(Number(match.id), Number(userSnapshot.id), match.thematiqueId ? Number(match.thematiqueId) : undefined).subscribe(groups => {
+            const available = groups.filter(g => !g.reservedByMe).map(g => ({
+              sessionGroupId: g.sessionGroupId,
+              sessionTitle: g.sessionTitle,
+              coachName: match.nom,
+              thematiqueName: match.thematiqueName || 'Général',
+              slotsCount: g.slots.length
+            }));
+            allSessionsToBook.push(...available);
+            this.sessionsToBook.set([...allSessionsToBook]);
+          });
+        });
       }
     });
 

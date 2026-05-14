@@ -57,6 +57,7 @@
                [class.has-events]="day.events.length > 0" 
                [class.selected]="isSelectedDate(day.date)"
                [class.today]="isToday(day.date)" 
+               [style.cursor]="isEntrepreneur ? 'default' : 'pointer'"
                (click)="onDayClick(day)">
             <div class="cell-day-num" [class.today-circle]="isToday(day.date)">
               {{ day.day }}
@@ -163,90 +164,43 @@
         <ng-container *ngIf="isEntrepreneur">
           <div class="sidebar-section reservation-section">
             <div class="sidebar-section-header">
-              <h3>Réserver une session</h3>
-              <i class="pi pi-question-circle" title="Centralisez vos réservations ici"></i>
+              <h3>Événements à venir</h3>
+              <i class="pi pi-question-circle" title="Visualisez les événements à venir. Pour réserver un créneau de coaching, rendez-vous dans la page 'Mes Coachs'."></i>
             </div>
+            
+            <div class="upcoming-list scrollable-sidebar">
+              <div class="upcoming-card-premium" *ngFor="let event of getUpcomingEvents(); let i = index"
+                   (click)="selectEventDate(event.date)"
+                   style="cursor: default;">
+                <div class="up-header">
+                  <div class="up-icon" [style.background]="getEventGradient(event)">
+                    <i class="pi" [class]="getEventTypeIconPrime(event.type)"></i>
+                  </div>
+                  <div class="up-info">
+                    <div class="up-title-row">
+                      <h6>{{ event.title }}</h6>
+                    </div>
+                    <div class="up-program-row" *ngIf="event.program" style="font-size: 11px; color: #6B7280; margin-bottom: 6px; display: flex; align-items: center; line-height: 1.2;">
+                      <i class="pi pi-bookmark-fill" style="font-size: 10px; margin-right: 4px; color: #DC2626;"></i>
+                      <span>{{ event.program }}</span>
+                    </div>
+                  </div>
+                </div>
 
-            <div class="coach-entries-list scrollable-sidebar">
-              <!-- Empty state -->
-              <div *ngIf="coachEntriesList.length === 0" class="empty-sidebar-msg">
-                <i class="pi pi-calendar-times"></i>
-                <p>Aucun créneau disponible pour le moment.</p>
+                <div class="up-meta">
+                  <div class="up-meta-item">
+                    <i class="pi pi-calendar"></i>
+                    <span>{{ formatEventDate(event.date) }}</span>
+                  </div>
+                  <div class="up-meta-item" *ngIf="event.time">
+                    <i class="pi pi-clock"></i>
+                    <span>{{ event.time.split(' - ')[0] }}</span>
+                  </div>
+                </div>
               </div>
-
-              <!-- COACH LEVEL -->
-              <div *ngFor="let coachEntry of coachEntriesList" class="coach-top-card">
-                <!-- Coach Header -->
-                <div class="coach-top-header">
-                  <div class="coach-avatar-circle" [style.background]="getCoachColor(coachEntry.coach.id)">
-                    {{ coachEntry.coach.nom ? coachEntry.coach.nom[0].toUpperCase() : 'C' }}
-                  </div>
-                  <div class="coach-top-info">
-                    <h5>{{ coachEntry.coach.nom }}</h5>
-                    <p>{{ coachEntry.coach.specialite || 'Coach Expert' }}</p>
-                  </div>
-                </div>
-
-                <!-- PROGRAMME LEVEL -->
-                <div *ngFor="let prog of coachEntry.programmes" class="prog-section">
-                  <div class="prog-badge">
-                    <i class="pi pi-folder"></i>
-                    <span>{{ prog.programmeName }}</span>
-                  </div>
-
-                  <!-- THEMATIQUE LEVEL -->
-                  <div *ngFor="let them of prog.thematiques" class="them-section">
-                    <div class="them-header">
-                      <i class="pi pi-tag"></i>
-                      <span>{{ them.thematiqueName }}</span>
-                    </div>
-
-                    <!-- SESSION LEVEL -->
-                    <div *ngFor="let session of them.sessions" class="session-card-ent"
-                         [class.is-reserved]="session.reservedByMe">
-
-                      <div class="session-card-header">
-                        <div class="session-title-row">
-                          <i class="pi pi-bookmark-fill"></i>
-                          <span>{{ session.sessionTitle }}</span>
-                        </div>
-                        <div class="session-badges-row">
-                          <span class="slots-count-badge">{{ session.slots.length }} créneau{{ session.slots.length > 1 ? 'x' : '' }}</span>
-                          <span *ngIf="session.reservedByMe" class="reserved-badge">
-                            <i class="pi pi-check-circle"></i> Réservée
-                          </span>
-                        </div>
-                      </div>
-
-                      <!-- If already reserved: show booked slot info + Modifier button -->
-                      <div *ngIf="session.reservedByMe && session.myBookedSlot" class="booked-slot-info">
-                        <div class="booked-slot-detail">
-                          <i class="pi pi-calendar"></i>
-                          <span>{{ session.myBookedSlot.dateSession | date:'dd MMM yyyy' }}</span>
-                          <i class="pi pi-clock" style="margin-left:8px"></i>
-                          <span>{{ formatSlotTime(session.myBookedSlot.heureDebut) }}</span>
-                        </div>
-                        <button class="btn-modify-slot" (click)="cancelAndRebook(session)" [disabled]="isCancellingBooking">
-                          <i class="pi pi-pencil"></i>
-                          {{ isCancellingBooking ? 'Annulation...' : 'Modifier' }}
-                        </button>
-                      </div>
-
-                      <div *ngIf="!session.reservedByMe" class="slots-mini-grid">
-                        <button *ngFor="let slot of session.slots" class="btn-slot-premium"
-                                [class.active]="selectedSlot?.id === slot.id"
-                                [class.past-slot]="isSlotPast(slot)"
-                                [disabled]="slot.isBooked || isSlotPast(slot)"
-                                (click)="selectSlot(slot, session.sessionTitle, session.coachRef); selectedSession = session">
-                          <div class="slot-d">{{ slot.dateSession | date:'dd MMM' }}</div>
-                          <div class="slot-t">{{ formatSlotTime(slot.heureDebut) }}</div>
-                          <div class="slot-booked-label" *ngIf="slot.isBooked">Pris</div>
-                          <div class="slot-booked-label" *ngIf="isSlotPast(slot) && !slot.isBooked">Passé</div>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              <div *ngIf="getUpcomingEvents().length === 0" class="empty-sidebar-msg">
+                <i class="pi pi-calendar-times"></i>
+                <p>Aucun événement prévu prochainement.</p>
               </div>
             </div>
           </div>
@@ -309,59 +263,4 @@
   </div>
 </div>
 
-<!-- Booking Confirmation Modal -->
-<div class="premium-modal-overlay" *ngIf="selectedSlot" (click)="selectedSlot = null">
-  <div class="premium-modal-card" (click)="$event.stopPropagation()">
-    <div class="p-modal-header">
-      <div class="p-modal-icon-wrap">
-        <i class="pi pi-calendar-check"></i>
-      </div>
-      <div class="p-modal-text">
-        <h3>Confirmer la réservation</h3>
-        <p>{{ selectedGroupTitle }} <span *ngIf="selectedCoachForBooking"> &bull; {{ selectedCoachForBooking.nom }}</span></p>
-      </div>
-      <button class="p-modal-close" (click)="selectedSlot = null"><i class="pi pi-times"></i></button>
-    </div>
-
-    <div class="p-modal-body">
-      <div class="booking-summary-grid">
-        <div class="summary-item">
-          <div class="s-icon date"><i class="pi pi-calendar"></i></div>
-          <div class="s-text">
-            <span class="s-label">Date</span>
-            <span class="s-val">{{ selectedSlot.dateSession | date:'dd MMMM yyyy' }}</span>
-          </div>
-        </div>
-        <div class="summary-item">
-          <div class="s-icon time"><i class="pi pi-clock"></i></div>
-          <div class="s-text">
-            <span class="s-label">Horaire</span>
-            <span class="s-val">{{ formatSlotTime(selectedSlot.heureDebut) }} → {{ formatSlotTime(selectedSlot.heureFin) }}</span>
-          </div>
-        </div>
-        <div class="summary-item" *ngIf="selectedSlot.typeSession">
-          <div class="s-icon mode"><i class="pi" [class]="selectedSlot.typeSession === 'EN_LIGNE' ? 'pi-video' : 'pi-map-marker'"></i></div>
-          <div class="s-text">
-            <span class="s-label">Mode</span>
-            <span class="s-val">{{ selectedSlot.typeSession === 'EN_LIGNE' ? 'En ligne' : 'Présentiel' }}</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="notes-field-wrap">
-        <label class="p-modal-label"><i class="pi pi-pencil"></i> Notes pour le coach (optionnel)</label>
-        <textarea class="p-modal-textarea" [(ngModel)]="bookingNotes" placeholder="Précisez vos besoins ou questions..."></textarea>
-      </div>
-
-      <div class="p-modal-footer">
-        <button class="p-btn-cancel" (click)="selectedSlot = null">Annuler</button>
-        <button class="p-btn-confirm" (click)="confirmBooking()" [disabled]="isBooking">
-          <i class="pi pi-spin pi-spinner" *ngIf="isBooking"></i>
-          <i class="pi pi-check-circle" *ngIf="!isBooking"></i>
-          <span>{{ isBooking ? 'Réservation...' : 'Confirmer la réservation' }}</span>
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
 

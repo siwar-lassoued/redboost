@@ -27,6 +27,8 @@ interface ExtendedMatching extends MatchingView {
   stats?: DashboardStatsDTO | null;
 }
 
+import { MatSnackBar } from '@angular/material/snack-bar';
+
 @Component({
   selector: 'rb-mes-coachs',
   standalone: true,
@@ -157,9 +159,10 @@ interface ExtendedMatching extends MatchingView {
                                     <p class="text-[11px] font-bold text-[#1A1A2E] truncate pr-2" [matTooltip]="session.sessionTitle">
                                       {{ session.sessionTitle }}
                                     </p>
-                                    @if (session.reservedByMe) {
-                                      <span class="flex-shrink-0 w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
-                                        <i class="pi pi-check text-[10px]"></i>
+                                    @if (canModifySession(session)) {
+                                      <span class="flex-shrink-0 w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center cursor-pointer"
+                                            (click)="cancelAndRebook(session)" matTooltip="Modifier / Annuler">
+                                        <i class="pi pi-pencil text-[10px]"></i>
                                       </span>
                                     }
                                   </div>
@@ -171,7 +174,9 @@ interface ExtendedMatching extends MatchingView {
                                         [class.future-me]="slot.isBookedByMe && slot.bookingStatus !== 'TERMINE' && slot.bookingStatus !== 'REALISEE' && slot.bookingStatus !== 'TERMINEE'"
                                         [class.available-blue]="!isSlotPast(slot) && !slot.isBooked && !session.reservedByMe"
                                         [class.disabled-gray]="(isSlotPast(slot) && !slot.isBookedByMe) || (!isSlotPast(slot) && slot.isBooked && !slot.isBookedByMe) || (!isSlotPast(slot) && session.reservedByMe && !slot.isBookedByMe)"
-                                        [matTooltip]="getSlotTooltip(slot, session.reservedByMe)">
+                                        [matTooltip]="getSlotTooltip(slot, session.reservedByMe)"
+                                        (click)="(!isSlotPast(slot) && !slot.isBooked && !session.reservedByMe) ? selectSlot(slot, session.sessionTitle, coach) : (slot.isBookedByMe && canModifySession(session)) ? cancelAndRebook(session) : null"
+                                        [class.cursor-pointer]="(!isSlotPast(slot) && !slot.isBooked && !session.reservedByMe) || (slot.isBookedByMe && canModifySession(session))">
                                         <div class="flex items-center justify-between px-3 py-2">
                                           <div class="flex flex-col">
                                             <span class="text-[9px] font-bold uppercase opacity-60">{{ formatSlotDayName(slot.dateSession) }}</span>
@@ -228,6 +233,74 @@ interface ExtendedMatching extends MatchingView {
         </div>
       }
     </div>
+
+    <!-- Booking Confirmation Modal -->
+    <div class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm" *ngIf="selectedSlot" (click)="selectedSlot = null">
+      <div class="bg-white rounded-xl shadow-2xl w-full max-w-[600px] flex flex-col overflow-hidden transform transition-all" (click)="$event.stopPropagation()">
+        
+        <!-- Header -->
+        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-white">
+          <h3 class="m-0 text-xl font-semibold text-gray-900" style="color: #000000ff;">
+            Confirmer la réservation
+          </h3>
+          <button (click)="selectedSlot = null" class="text-gray-400 hover:text-gray-600 transition-colors outline-none bg-transparent border-none cursor-pointer">
+            <i class="pi pi-times text-lg"></i>
+          </button>
+        </div>
+
+        <!-- Body -->
+        <div class="p-6 flex flex-col gap-5">
+          <p class="text-sm text-gray-600 m-0">
+            Vérifiez les détails et confirmez la réservation avec le coach.
+            <br>
+            <strong class="text-gray-900">{{ selectedGroupTitle }}</strong> <span *ngIf="selectedCoachForBooking"> &bull; {{ selectedCoachForBooking.nom }}</span>
+          </p>
+
+          <div class="flex flex-col gap-2">
+            <label class="text-sm font-semibold text-gray-700 m-0">Détails du créneau</label>
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <span class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</span>
+                <span class="block text-sm font-semibold text-gray-900 mt-1">{{ selectedSlot.dateSession | date:'dd MMMM yyyy' }}</span>
+              </div>
+              <div>
+                <span class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Horaire</span>
+                <span class="block text-sm font-semibold text-gray-900 mt-1">{{ formatSlotTime(selectedSlot.heureDebut) }} &rarr; {{ formatSlotTime(selectedSlot.heureFin) }}</span>
+              </div>
+              <div *ngIf="selectedSlot.typeSession">
+                <span class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Mode</span>
+                <span class="block text-sm font-semibold text-gray-900 mt-1 flex items-center gap-1.5">
+                  <i class="pi" [class]="selectedSlot.typeSession === 'EN_LIGNE' ? 'pi-video text-blue-500' : 'pi-map-marker text-emerald-500'"></i>
+                  {{ selectedSlot.typeSession === 'EN_LIGNE' ? 'En ligne' : 'Présentiel' }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-2">
+            <label class="text-sm font-semibold text-gray-700 m-0 flex items-center gap-2">
+              Notes pour le coach <span class="text-xs font-normal text-gray-400">(Optionnel)</span>
+            </label>
+            <textarea class="w-full p-3 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#10B981] focus:border-[#10B981] transition-all resize-y min-h-[100px]" 
+                      [(ngModel)]="bookingNotes" 
+                      placeholder="Précisez vos attentes ou questions éventuelles..."></textarea>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="px-6 py-4 border-t border-gray-200 flex justify-end gap-3 bg-gray-50">
+          <button class="px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-700 font-medium hover:bg-gray-50 transition-colors outline-none cursor-pointer" 
+                  (click)="selectedSlot = null" [disabled]="isBooking">
+            Annuler
+          </button>
+          <button class="px-4 py-2 border-none rounded-md text-white font-medium bg-[#EF4444] hover:bg-[#059669] transition-colors flex items-center gap-2 outline-none cursor-pointer" 
+                  (click)="confirmBooking()" [disabled]="isBooking">
+            <i class="pi" [class]="isBooking ? 'pi-spin pi-spinner' : 'pi-check'"></i>
+            {{ isBooking ? 'Réservation en cours...' : 'Confirmer la réservation' }}
+          </button>
+        </div>
+      </div>
+    </div>
   `,
   styles: [`
     :host { display: block; }
@@ -282,8 +355,18 @@ export class MesCoachsComponent implements OnInit {
   private readonly authSvc = inject(AuthService);
   private readonly coachSvc = inject(CoachService);
   private readonly sessionSvc = inject(SessionService);
+  private readonly snackBar = inject(MatSnackBar);
 
   extendedMatchings = signal<ExtendedMatching[]>([]);
+
+  // Booking states
+  selectedSlot: any | null = null;
+  selectedCoachForBooking: any | null = null;
+  selectedGroupTitle: string = '';
+  selectedSession: any | null = null;
+  bookingNotes: string = '';
+  isBooking: boolean = false;
+  isCancellingBooking: boolean = false;
 
   ngOnInit(): void {
     const user = this.authSvc.currentUser$.value;
@@ -429,7 +512,7 @@ loadAllData(userId: any) {
     return expertiseStr.split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0);
   }
 
-  isSlotPast(slot: SessionCoachDTO): boolean {
+  isSlotPast(slot: any): boolean {
     if (!slot.dateSession) return false;
     const now = new Date();
     const slotDate = new Date(slot.dateSession);
@@ -438,6 +521,24 @@ loadAllData(userId: any) {
       slotDate.setHours(Number(h), Number(m));
     }
     return slotDate < now;
+  }
+
+  canModifySession(session: any): boolean {
+    if (!session.reservedByMe) return false;
+    const bookedSlot = session.slots?.find((s: any) => s.isBookedByMe);
+    if (!bookedSlot) return true; // Allows fallback cancellation if slot is hidden or missing
+    
+    // Check if it's completed by status
+    if (bookedSlot.bookingStatus === 'TERMINE' || bookedSlot.bookingStatus === 'REALISEE' || bookedSlot.bookingStatus === 'TERMINEE') {
+      return false;
+    }
+    
+    // Check if it's past
+    if (this.isSlotPast(bookedSlot)) {
+      return false;
+    }
+    
+    return true;
   }
 
   formatSlotDate(date: string): string {
@@ -461,10 +562,91 @@ loadAllData(userId: any) {
   }
 
   getSlotTooltip(slot: SessionCoachDTO, groupReserved: boolean): string {
-    if (slot.isBookedByMe) return this.isSlotPast(slot) ? 'Votre séance passée' : 'Votre réservation à venir';
+    if (slot.isBookedByMe) return this.isSlotPast(slot) ? 'Votre séance passée' : 'Votre réservation à venir (Cliquez pour modifier)';
     if (slot.isBooked) return 'Créneau déjà réservé par un autre entrepreneur';
     if (this.isSlotPast(slot)) return 'Ce créneau est passé';
-    if (groupReserved) return 'Vous avez déjà réservé un autre créneau pour cette session';
-    return 'Disponible pour réservation';
+    if (groupReserved) return 'Vous avez déjà réservé un créneau pour cette session';
+    return 'Disponible pour réservation (Cliquez pour réserver)';
+  }
+
+  formatSlotTime(timeStr: string | undefined): string {
+    if (!timeStr) return '';
+    return timeStr.substring(0, 5).replace(':', 'h');
+  }
+
+  selectSlot(slot: any, groupTitle: string, coach: any): void {
+    this.selectedSlot = slot;
+    this.selectedGroupTitle = groupTitle;
+    this.selectedCoachForBooking = coach;
+    this.bookingNotes = '';
+  }
+
+  confirmBooking(): void {
+    const user = this.authSvc.currentUser$.value;
+    if (!this.selectedSlot || !user) return;
+
+    this.isBooking = true;
+    this.coachSvc.bookSession(Number(this.selectedSlot.id), Number(user.id), this.bookingNotes).subscribe({
+      next: (res: any) => {
+        this.isBooking = false;
+        const meetLink = res?.meetLink;
+        if (meetLink) {
+          this.snackBar.open(
+            'Session réservée ! Lien Meet disponible.',
+            'Ouvrir Meet',
+            { duration: 8000, panelClass: ['success-snackbar'] }
+          ).onAction().subscribe(() => window.open(meetLink, '_blank'));
+        } else {
+          this.snackBar.open('Session réservée avec succès !', 'Fermer', {
+            duration: 5000, panelClass: ['success-snackbar']
+          });
+        }
+        this.selectedSlot = null;
+        this.selectedSession = null;
+        this.loadAllData(user.id);
+      },
+      error: (err) => {
+        this.isBooking = false;
+        console.error('Erreur réservation:', err);
+        const msg = err.error?.error || err.error?.message || err.message || 'Erreur lors de la réservation';
+        this.snackBar.open(msg, 'Fermer', { duration: 5000, panelClass: ['error-snackbar'] });
+      }
+    });
+  }
+
+  cancelAndRebook(session: any): void {
+    if (!confirm('Voulez-vous vraiment annuler votre réservation pour cette session ? Vous pourrez ensuite choisir un autre créneau.')) {
+      return;
+    }
+    const user = this.authSvc.currentUser$.value;
+    
+    // session in thematique groups doesn't have myBookedSlot directly mapped as easily as in the calendar, but we have reservedByMe
+    // We need to find the booked slot id inside session.slots
+    let bookedSlot = session.slots.find((s: any) => s.isBookedByMe);
+    
+    // Fallback if the slot was generated as a supplementary group and hasn't full details
+    let bookingId = bookedSlot?.id;
+    if (!bookingId && session.slots[0]?.bookingStatus) {
+      // It's a supplementary group mapped from allMySessions
+      bookingId = session.sessionGroupId; // The session ID in the DB
+    }
+
+    if (!user || !bookingId) return;
+
+    this.isCancellingBooking = true;
+    this.coachSvc.cancelBooking(Number(bookingId), Number(user.id)).subscribe({
+      next: () => {
+        this.isCancellingBooking = false;
+        this.snackBar.open('Réservation annulée. Choisissez un nouveau créneau.', 'OK', {
+          duration: 4000, panelClass: ['success-snackbar']
+        });
+        this.loadAllData(user.id);
+      },
+      error: (err: any) => {
+        this.isCancellingBooking = false;
+        const msg = err.error?.message || 'Erreur lors de l\'annulation';
+        this.snackBar.open(msg, 'Fermer', { duration: 4000, panelClass: ['error-snackbar'] });
+      }
+    });
   }
 }

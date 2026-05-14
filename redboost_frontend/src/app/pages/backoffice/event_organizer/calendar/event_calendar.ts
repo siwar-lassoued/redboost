@@ -357,78 +357,7 @@ export class CalendarComponent implements OnInit {
     return this.colorPalette[index % this.colorPalette.length];
   }
 
-  selectSlot(slot: any, groupTitle: string, coach: any): void {
-    this.selectedSlot = slot;
-    this.selectedGroupTitle = groupTitle;
-    this.selectedCoachForBooking = coach;
-    this.bookingNotes = '';
-  }
 
-  confirmBooking(): void {
-    const currentUser = this.authService.currentUser$.value;
-    if (!this.selectedSlot || !currentUser) return;
-
-    this.isBooking = true;
-    this.coachService.bookSession(Number(this.selectedSlot.id), Number(currentUser.id), this.bookingNotes).subscribe({
-      next: (res: any) => {
-        this.isBooking = false;
-        const meetLink = res?.meetLink;
-        if (meetLink) {
-          this.snackBar.open(
-            ' Session réservée ! Lien Meet disponible dans votre espace.',
-            'Ouvrir Meet',
-            { duration: 8000, panelClass: ['success-snackbar'] }
-          ).onAction().subscribe(() => window.open(meetLink, '_blank'));
-        } else {
-          this.snackBar.open(' Session réservée avec succès !', 'Fermer', {
-            duration: 5000, panelClass: ['success-snackbar']
-          });
-        }
-        this.selectedSlot = null;
-        this.selectedSession = null;
-        this.loadEventTypesAndEvents();
-      },
-      error: (err) => {
-        this.isBooking = false;
-        console.error('ERREUR BACKEND DÉTAILLÉE:', err);
-        const msg = err.error?.error || err.error?.message || err.message || 'Erreur lors de la réservation';
-        alert("ERREUR DU SERVEUR : " + msg);
-        this.snackBar.open(msg, 'Fermer', { duration: 5000 });
-      }
-    });
-  }
-
-  isSlotPast(slot: any): boolean {
-    if (!slot.dateSession) return false;
-    const now = new Date();
-    const slotDate = new Date(slot.dateSession);
-    if (slot.heureDebut) {
-      const [h, m] = slot.heureDebut.split(':');
-      slotDate.setHours(Number(h), Number(m));
-    }
-    return slotDate < now;
-  }
-
-  cancelAndRebook(session: any): void {
-    const currentUser = this.authService.currentUser$.value;
-    if (!currentUser || !session.myBookedSlot) return;
-
-    this.isCancellingBooking = true;
-    this.coachService.cancelBooking(Number(session.myBookedSlot.id), Number(currentUser.id)).subscribe({
-      next: () => {
-        this.isCancellingBooking = false;
-        this.snackBar.open('Réservation annulée. Choisissez un nouveau créneau.', 'OK', {
-          duration: 4000, panelClass: ['success-snackbar']
-        });
-        this.loadEventTypesAndEvents();
-      },
-      error: (err: any) => {
-        this.isCancellingBooking = false;
-        const msg = err.error?.message || 'Erreur lors de l\'annulation';
-        this.snackBar.open(msg, 'Fermer', { duration: 4000 });
-      }
-    });
-  }
 
   mapBookedSessionsToCalendarEvents(sessions: any[]): CalendarEvent[] {
     return sessions.map(s => {
@@ -648,6 +577,7 @@ export class CalendarComponent implements OnInit {
   }
 
   onDayClick(day: any): void {
+    if (this.isEntrepreneur) return;
     if (day.events.length > 0) {
       if (this.selectedDate && this.selectedDate.getTime() === day.date.getTime()) {
         this.clearSelection();
@@ -946,6 +876,7 @@ formatEventDate(date: Date): string {
 
 
 selectEventDate(date: Date): void {
+  if (this.isEntrepreneur) return;
   this.selectedDate = date;
   this.selectedDateEvents = this.events.filter(event => 
     event.date.getDate() === date.getDate() &&
