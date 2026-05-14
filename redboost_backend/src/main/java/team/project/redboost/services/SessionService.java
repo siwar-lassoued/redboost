@@ -112,6 +112,20 @@ public class SessionService {
 
         List<Session> result = new ArrayList<>();
         for (Session s : sessions) {
+            String sgId = null;
+            Long tId = null;
+            if (s.getDisponibiliteId() != null) {
+                try {
+                    SessionCoach sc = sessionCoachRepository.findById(Long.parseLong(s.getDisponibiliteId())).orElse(null);
+                    if (sc != null) {
+                        sgId = sc.getSessionGroupId();
+                        if (sc.getDisponibilite() != null && sc.getDisponibilite().getThematique() != null) {
+                            tId = sc.getDisponibilite().getThematique().getId();
+                        }
+                    }
+                } catch (Exception e) {}
+            }
+
             result.add(Session.builder()
                 .id(s.getId())
                 .titre(s.getTitre())
@@ -132,6 +146,8 @@ public class SessionService {
                     .build() : null)
                 .isExceptionnelle(false)
                 .thematiqueName(s.getThematiqueName())
+                .sessionGroupId(sgId)
+                .thematiqueId(tId)
                 .build());
         }
 

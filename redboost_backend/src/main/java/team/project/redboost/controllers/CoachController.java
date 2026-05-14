@@ -202,6 +202,19 @@ public class CoachController {
         }
     }
 
+    @PutMapping("/sessions/{sessionId}/rebook")
+    public ResponseEntity<?> rebookSession(
+            @PathVariable String sessionId,
+            @RequestParam Long newSlotId,
+            @RequestParam Long entrepreneurId) {
+        try {
+            return ResponseEntity.ok(coachService.rebookSession(sessionId, newSlotId, entrepreneurId));
+        } catch (Exception e) {
+            String msg = e.getMessage() != null ? e.getMessage() : "Erreur interne lors de la reprogrammation";
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", msg));
+        }
+    }
+
     @GetMapping("/sessions/{sessionCoachId}/bookings")
     public ResponseEntity<?> getSessionBookings(@PathVariable Long sessionCoachId) {
         return ResponseEntity.ok(coachService.getSessionBookings(sessionCoachId));

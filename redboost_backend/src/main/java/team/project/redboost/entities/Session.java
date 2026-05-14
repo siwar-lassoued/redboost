@@ -60,6 +60,12 @@ public class Session {
     @Column(name = "type_session")
     private TypeSession typeSession = TypeSession.EN_LIGNE;
 
+    @Transient
+    private String sessionGroupId;
+
+    @Transient
+    private Long thematiqueId;
+
     @Column(name = "notes_coach", columnDefinition = "TEXT")
     private String notesCoach;
 

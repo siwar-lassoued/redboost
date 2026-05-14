@@ -34,5 +34,7 @@ public interface SessionRepository extends JpaRepository<Session, String> {
 
     /** Sessions by coach and a specific disponibiliteId */
     List<Session> findByCoachIdAndDisponibiliteId(Long coachId, String disponibiliteId);
+
+    long countByDisponibiliteId(String disponibiliteId);
 }
 

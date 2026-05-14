@@ -82,7 +82,8 @@ import { ToastrService } from 'ngx-toastr';
                           <span class="name-text">{{ s.titre }}</span>
                           <span *ngIf="s.isExceptionnelle" class="exception-badge">Exceptionnelle</span>
                         </div>
-                        <span class="email-text" *ngIf="s.programmeNom">{{ s.programmeNom }}</span>
+                        <span class="email-text" *ngIf="s.programmeNom">{{ s.programmeNom }} <span *ngIf="s.thematiqueNom">- {{ s.thematiqueNom }}</span></span>
+                        <span class="email-text" *ngIf="!s.programmeNom && s.thematiqueNom">{{ s.thematiqueNom }}</span>
                       </div>
                     </td>
                     <td>
@@ -420,9 +421,28 @@ export class SessionsComponent implements OnInit {
     this.filterSessions();
   }
 
+  formatDateString(dateObj: any): string {
+    if (!dateObj) return '';
+    if (Array.isArray(dateObj)) {
+        return `${dateObj[0]}-${String(dateObj[1]).padStart(2, '0')}-${String(dateObj[2]).padStart(2, '0')}`;
+    }
+    return String(dateObj);
+  }
+
+  formatTimeString(timeObj: any): string {
+    if (!timeObj) return '23:59:00';
+    if (Array.isArray(timeObj)) {
+        return `${String(timeObj[0]).padStart(2, '0')}:${String(timeObj[1]).padStart(2, '0')}:00`;
+    }
+    const str = String(timeObj);
+    return str.length === 5 ? str + ':00' : str;
+  }
+
   isUpcoming(s: any): boolean {
     if (!s.dateSession || !s.heureFin) return false;
-    const sessionDate = new Date(s.dateSession + 'T' + s.heureFin);
+    const dateStr = this.formatDateString(s.dateSession);
+    const timeStr = this.formatTimeString(s.heureFin);
+    const sessionDate = new Date(dateStr + 'T' + timeStr);
     return sessionDate.getTime() > new Date().getTime();
   }
 

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../environment';
 
@@ -220,6 +220,12 @@ export class CoachService {
   }
   updateSession(sessionId: number, session: SessionCoachDTO): Observable<SessionCoachDTO> {
     return this.http.put<SessionCoachDTO>(`${this.apiUrl}/sessions/${sessionId}`, session);
+  }
+  rebookSession(sessionId: string, newSlotId: number, entrepreneurId: number): Observable<any> {
+    let params = new HttpParams()
+      .set('newSlotId', newSlotId.toString())
+      .set('entrepreneurId', entrepreneurId.toString());
+    return this.http.put<any>(`${this.apiUrl}/sessions/${sessionId}/rebook`, {}, { params });
   }
 
   // SEANCE EXCEPTIONNELLE

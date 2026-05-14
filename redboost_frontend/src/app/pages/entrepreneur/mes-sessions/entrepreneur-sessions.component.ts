@@ -17,7 +17,7 @@ type Tab = 'PLANIFIEE' | 'REALISEE' | 'ANNULEE';
   selector: 'rb-entrepreneur-sessions',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, RouterLink, FormsModule],
+  imports: [CommonModule, FormsModule],
   template: `
     <div class="cand-page">
       <!-- PAGE HEADER -->
@@ -69,6 +69,7 @@ type Tab = 'PLANIFIEE' | 'REALISEE' | 'ANNULEE';
                   <th>Nom du Coach</th>
                   <th>Type</th>
                   <th>Statut</th>
+                  <th *ngIf="activeTab() === 'PLANIFIEE'">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -121,6 +122,11 @@ type Tab = 'PLANIFIEE' | 'REALISEE' | 'ANNULEE';
                           [class.pi-times-circle]="activeTab() === 'ANNULEE'"></i>
                         {{ activeTab() === 'ANNULEE' ? 'Annulée' : (activeTab() === 'PLANIFIEE' ? 'À venir' : 'Terminée') }}
                       </div>
+                    </td>
+                    <td *ngIf="activeTab() === 'PLANIFIEE'">
+                      <button (click)="openRescheduleModal(s)" class="btn-detail" style="display:flex; align-items:center; gap:4px;">
+                        <i class="pi pi-calendar-plus"></i> Reprogrammer
+                      </button>
                     </td>
                   </tr>
                 }
@@ -229,19 +235,92 @@ type Tab = 'PLANIFIEE' | 'REALISEE' | 'ANNULEE';
               </a>
             }
             @if (selected()!.statut === 'PLANIFIEE' || selected()!.statut === 'CONFIRME') {
-              <button (click)="onModifierSession(selected()!)" class="btn-action btn-blue">
+              <button (click)="openRescheduleModal(selected()!); showDetail.set(false)" class="btn-action btn-blue">
                 <i class="pi pi-pencil"></i> Modifier la date
               </button>
               <button (click)="openGoogleCalendar(selected()!)" class="btn-action btn-gray">
                 <i class="pi pi-calendar-plus"></i> Ajouter à mon agenda
               </button>
             }
-            @if (selected()!.statut === 'REALISEE' || selected()!.statut === 'TERMINE') {
-              <button [routerLink]="['/coach-rating', selected()!.id]" (click)="showDetail.set(false)" class="btn-action btn-amber">
-                <i class="pi pi-star"></i> Laisser une évaluation
-              </button>
-            }
             <button (click)="showDetail.set(false)" class="btn-close-modal">Fermer</button>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- RESCHEDULE MODAL -->
+    @if (showRescheduleModal() && reschedulingSession()) {
+      <div class="modal-overlay" (click)="closeRescheduleModal()">
+        <div class="modal-box" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <div class="modal-header-left">
+              <div class="modal-header-info">
+                <h3 class="modal-name">Reprogrammer la session</h3>
+                <p class="modal-meta" style="margin-top: 8px;">
+                  Veuillez choisir un nouveau créneau pour la session <strong>{{ reschedulingSession()!.titre }}</strong>.
+                </p>
+              </div>
+            </div>
+            <button (click)="closeRescheduleModal()" class="modal-close">
+              <i class="pi pi-times"></i>
+            </button>
+          </div>
+
+          <div class="modal-body" style="background: #F8FAFC; padding: 24px;">
+            @if (isLoadingSlots()) {
+              <div style="text-align: center; padding: 40px;">
+                <i class="pi pi-spin pi-spinner" style="font-size: 2rem; color: #3B82A6;"></i>
+                <p style="margin-top: 10px; color: #64748B;">Recherche des créneaux disponibles...</p>
+              </div>
+            } @else if (availableRescheduleSlots().length > 0) {
+              <div class="slots-container" style="display: flex; flex-direction: column; gap: 12px;">
+                @for (slot of availableRescheduleSlots(); track slot.id) {
+                  <div class="slot-card" 
+                       [class.selected]="selectedRescheduleSlot()?.id === slot.id"
+                       (click)="selectedRescheduleSlot.set(slot)"
+                       style="background: #fff; padding: 16px; border-radius: 12px; border: 2px solid transparent; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: space-between;">
+                    
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                      <span style="font-weight: 700; color: #1E293B;">
+                        {{ slot.dateSession | date:'EEEE dd MMMM yyyy' }}
+                      </span>
+                      <span style="color: #64748B; font-size: 14px;">
+                        De {{ slot.heureDebut.substring(0,5) }} à {{ slot.heureFin.substring(0,5) }}
+                      </span>
+                    </div>
+
+                    <div class="check-circle" 
+                         [style.background]="selectedRescheduleSlot()?.id === slot.id ? '#3B82A6' : '#E2E8F0'"
+                         style="width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white;">
+                      <i class="pi pi-check" *ngIf="selectedRescheduleSlot()?.id === slot.id" style="font-size: 12px;"></i>
+                    </div>
+
+                  </div>
+                }
+              </div>
+            } @else {
+              <div style="text-align: center; padding: 40px; background: #fff; border-radius: 16px;">
+                <i class="pi pi-calendar-times" style="font-size: 2rem; color: #EF4444;"></i>
+                <p style="margin-top: 10px; font-weight: 600; color: #1E293B;">Aucun créneau disponible</p>
+                <p style="font-size: 13px; color: #64748B;">Il n'y a actuellement aucun autre créneau disponible pour cette session.</p>
+              </div>
+            }
+          </div>
+
+          <div class="modal-footer" style="background: #fff;">
+            <button (click)="closeRescheduleModal()" class="btn-close-modal">Annuler</button>
+            <button 
+              [disabled]="!selectedRescheduleSlot() || isRebooking()"
+              (click)="confirmReschedule()" 
+              class="btn-action btn-blue"
+              [style.opacity]="(!selectedRescheduleSlot() || isRebooking()) ? '0.5' : '1'"
+              [style.cursor]="(!selectedRescheduleSlot() || isRebooking()) ? 'not-allowed' : 'pointer'">
+              @if (isRebooking()) {
+                <i class="pi pi-spin pi-spinner"></i> Validation...
+              } @else {
+                <i class="pi pi-check"></i> Confirmer la reprogrammation
+              }
+            </button>
           </div>
         </div>
       </div>
@@ -364,13 +443,21 @@ export class EntrepreneurSessionsComponent implements OnInit {
   selected = signal<any | null>(null);
   modalTab = signal<'detail'>('detail');
 
+  // Reschedule State
+  showRescheduleModal = signal<boolean>(false);
+  reschedulingSession = signal<any | null>(null);
+  availableRescheduleSlots = signal<any[]>([]);
+  selectedRescheduleSlot = signal<any | null>(null);
+  isLoadingSlots = signal<boolean>(false);
+  isRebooking = signal<boolean>(false);
+
   filteredSessions = computed(() => {
     const tab = this.activeTab();
     const search = this.searchText().toLowerCase().trim();
     
     return this.allSessions().filter(s => {
       let statut = (s.statut === 'TERMINE' || s.statut === 'REALISEE') ? 'REALISEE' : s.statut;
-      if (statut === 'PLANIFIE') statut = 'PLANIFIEE';
+      if (statut === 'PLANIFIE' || statut === 'CONFIRME') statut = 'PLANIFIEE';
       if (statut !== tab) return false;
       
       if (!search) return true;
@@ -422,12 +509,6 @@ export class EntrepreneurSessionsComponent implements OnInit {
     this.showDetail.set(true);
   }
 
-  onModifierSession(session: any) {
-    this.showDetail.set(false);
-    this.toastr.info('Pour modifier votre session, veuillez choisir un nouveau créneau disponible sur le profil de votre coach.', 'Modification de session');
-    this.router.navigate(['/entrepreneur/mes-coachs']);
-  }
-
   openGoogleCalendar(session: any): void {
     let url: string;
     if (session.googleEventId) {
@@ -459,5 +540,67 @@ export class EntrepreneurSessionsComponent implements OnInit {
       ANNULE:    { label: 'Annulée',  bg: '#FEF2F2', color: '#EF4444' },
     };
     return config[statut] || { label: statut, bg: '#F1F5F9', color: '#475569' };
+  }
+
+  openRescheduleModal(session: any) {
+    this.reschedulingSession.set(session);
+    this.selectedRescheduleSlot.set(null);
+    this.availableRescheduleSlots.set([]);
+    this.showRescheduleModal.set(true);
+    this.isLoadingSlots.set(true);
+
+    const user = this.authSvc.currentUser$.value;
+    if (!user || !session.coach || !session.sessionGroupId) {
+      this.isLoadingSlots.set(false);
+      this.toastr.error('Impossible de récupérer les créneaux pour cette session (sessionGroupId manquant).');
+      return;
+    }
+
+    this.coachSvc.getAvailableSessionsGrouped(Number(session.coach.id), Number(user.id), session.thematiqueId ? Number(session.thematiqueId) : undefined)
+      .subscribe({
+        next: (groups) => {
+          this.isLoadingSlots.set(false);
+          // Find the group that matches the session's group ID
+          const matchingGroup = groups.find(g => g.sessionGroupId === session.sessionGroupId);
+          if (matchingGroup && matchingGroup.slots) {
+            // Exclude the currently booked slot if necessary, though it shouldn't be in available anyway
+            this.availableRescheduleSlots.set(matchingGroup.slots);
+          } else {
+            this.availableRescheduleSlots.set([]);
+          }
+        },
+        error: () => {
+          this.isLoadingSlots.set(false);
+          this.toastr.error('Erreur lors du chargement des créneaux.');
+        }
+      });
+  }
+
+  closeRescheduleModal() {
+    this.showRescheduleModal.set(false);
+    this.reschedulingSession.set(null);
+    this.selectedRescheduleSlot.set(null);
+  }
+
+  confirmReschedule() {
+    const slot = this.selectedRescheduleSlot();
+    const session = this.reschedulingSession();
+    const user = this.authSvc.currentUser$.value;
+
+    if (!slot || !session || !user) return;
+
+    this.isRebooking.set(true);
+    this.coachSvc.rebookSession(session.id, Number(slot.id), Number(user.id)).subscribe({
+      next: (res) => {
+        this.isRebooking.set(false);
+        this.toastr.success('Session reprogrammée avec succès !');
+        this.closeRescheduleModal();
+        this.loadSessions(); // Reload to see updated date/slot
+      },
+      error: (err) => {
+        this.isRebooking.set(false);
+        this.toastr.error(err.error?.error || 'Erreur lors de la reprogrammation.');
+      }
+    });
   }
 }

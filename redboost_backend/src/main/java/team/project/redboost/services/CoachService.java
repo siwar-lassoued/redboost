@@ -1000,6 +1000,113 @@ public class CoachService {
         return result;
     }
 
+    @Transactional
+    public Map<String, Object> rebookSession(String oldSessionId, Long newSlotId, Long entrepreneurId) {
+        Session session = sessionRepository.findById(oldSessionId)
+                .orElseThrow(() -> new ValidationException("Session non trouvée"));
+
+        if (!session.getEntrepreneur().getId().equals(entrepreneurId)) {
+            throw new ValidationException("Vous ne pouvez pas reprogrammer cette session.");
+        }
+
+        SessionCoach newSlot = sessionCoachRepository.findById(newSlotId)
+                .orElseThrow(() -> new ValidationException("Le créneau sélectionné n'existe pas"));
+
+        // Verify slot is available
+        long existingBookings = sessionRepository.countByDisponibiliteId(String.valueOf(newSlotId));
+        if (existingBookings > 0) {
+            throw new ValidationException("Ce créneau n'est plus disponible.");
+        }
+
+        // Cancel old Google Event
+        if (session.getGoogleEventId() != null) {
+            try {
+                googleCalendarService.cancelCalendarEvent(session.getGoogleEventId());
+            } catch (Exception e) {
+                log.warn("Failed to cancel old google event during rebook: {}", e.getMessage());
+            }
+        }
+
+        // Update Session with new slot details
+        session.setDisponibiliteId(String.valueOf(newSlotId));
+        session.setTitre(newSlot.getTitre());
+        LocalDateTime newStartDt = newSlot.getDateSession().atTime(newSlot.getHeureDebut());
+        session.setDate(newStartDt);
+        session.setDureeMinutes((int) java.time.Duration.between(newSlot.getHeureDebut(), newSlot.getHeureFin()).toMinutes());
+        session.setStatut(Session.Statut.CONFIRME);
+
+        // Generate new Google Event
+        try {
+            LocalDateTime end = newStartDt.plusMinutes(session.getDureeMinutes());
+            GoogleCalendarService.GoogleEventResult newEvent = googleCalendarService.createMeetEvent(
+                    session.getTitre(),
+                    newStartDt,
+                    end,
+                    session.getCoach().getEmail(),
+                    session.getEntrepreneur().getEmail());
+            if (newEvent != null) {
+                session.setMeetLink(newEvent.getMeetLink());
+                session.setGoogleEventId(newEvent.getEventId());
+            }
+        } catch (Exception e) {
+            log.warn("Google Calendar rebook failed for session {}: {}", oldSessionId, e.getMessage());
+        }
+
+        sessionRepository.save(session);
+
+        final String coachName = session.getCoach().getFirstName() + " " + session.getCoach().getLastName();
+        final String entName = session.getEntrepreneur().getFirstName() + " " + session.getEntrepreneur().getLastName();
+        final String sessionTitle = session.getTitre();
+        final String newDateStr = newSlot.getDateSession().toString();
+        final String heureDebut = newSlot.getHeureDebut().toString().substring(0, 5);
+        final String heureFin = newSlot.getHeureFin().toString().substring(0, 5);
+        final String meetLinkText = session.getMeetLink() != null
+                ? "\n\nNouveau lien Google Meet : " + session.getMeetLink()
+                : "";
+
+        // ── Notification + Email Coach ──────────────────────────────────────────
+        notificationService.createAndSendNotification(
+                session.getCoach().getId(),
+                entName + " a reprogrammé la session \"" + sessionTitle + "\" au " + newDateStr + " de " + heureDebut + " à " + heureFin,
+                "SESSION_RESCHEDULE", null);
+
+        try {
+            emailService.sendEmail(session.getCoach().getEmail(),
+                    "[RedBoost] Session reprogrammée par un entrepreneur",
+                    "Bonjour " + session.getCoach().getFirstName() + ",\n\n" +
+                    "L'entrepreneur " + entName + " a reprogrammé la session \"" + sessionTitle + "\".\n\n" +
+                    "Nouvelle date : " + newDateStr + " de " + heureDebut + " à " + heureFin + "." +
+                    meetLinkText + "\n\nCordialement,\nRedBoost");
+        } catch (Exception e) {
+            log.warn("Email to coach failed after rebook: {}", e.getMessage());
+        }
+
+        // ── Notification + Email Entrepreneur ───────────────────────────────────
+        notificationService.createAndSendNotification(
+                session.getEntrepreneur().getId(),
+                "Votre session \"" + sessionTitle + "\" a été reprogrammée au " + newDateStr + " de " + heureDebut + " à " + heureFin,
+                "SESSION_RESCHEDULE", null);
+
+        try {
+            emailService.sendEmail(session.getEntrepreneur().getEmail(),
+                    "[RedBoost] Reprogrammation confirmée",
+                    "Bonjour " + session.getEntrepreneur().getFirstName() + ",\n\n" +
+                    "Votre reprogrammation pour la session \"" + sessionTitle + "\" est confirmée.\n\n" +
+                    "Nouvelle date : " + newDateStr + " de " + heureDebut + " à " + heureFin + ".\n" +
+                    "Coach : " + coachName +
+                    meetLinkText +
+                    "\n\n\u26a0\ufe0f Rappel : Vous recevrez un rappel 24h avant la session.\n\nCordialement,\nRedBoost");
+        } catch (Exception e) {
+            log.warn("Email rebooking confirmation to entrepreneur failed: {}", e.getMessage());
+        }
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("sessionId", session.getId());
+        result.put("status", "CONFIRME");
+        result.put("meetLink", session.getMeetLink());
+        return result;
+    }
+
     public List<Map<String, Object>> getSessionBookings(Long sessionCoachId) {
         List<Session> sessions = sessionRepository.findByCoachIdAndDisponibiliteId(
                 null, String.valueOf(sessionCoachId));

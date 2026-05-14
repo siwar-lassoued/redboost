@@ -570,15 +570,32 @@ export class CoachRapportSessionComponent implements OnInit {
       this.filterRealizedSessions();
   }
 
+  formatDateString(dateObj: any): string {
+      if (!dateObj) return '';
+      if (Array.isArray(dateObj)) {
+          return `${dateObj[0]}-${String(dateObj[1]).padStart(2, '0')}-${String(dateObj[2]).padStart(2, '0')}`;
+      }
+      return String(dateObj);
+  }
+
+  formatTimeString(timeObj: any): string {
+      if (!timeObj) return '23:59:00';
+      if (Array.isArray(timeObj)) {
+          return `${String(timeObj[0]).padStart(2, '0')}:${String(timeObj[1]).padStart(2, '0')}:00`;
+      }
+      const str = String(timeObj);
+      return str.length === 5 ? str + ':00' : str;
+  }
+
   filterRealizedSessions() {
       if (!this.allCoachSessions) return;
-      console.log("Filtrage sessions - Total:", this.allCoachSessions.length);
-      console.log("Filtres actifs - EntrepreneurId:", this.selectedEntrepreneurId, "ThematiqueId:", this.selectedThematiqueId);
+      console.log("DEBUG: Filtering sessions. Total:", this.allCoachSessions.length);
+      console.log("DEBUG: Active filters - EntrepreneurId:", this.selectedEntrepreneurId, "(type:", typeof this.selectedEntrepreneurId, ") ThematiqueId:", this.selectedThematiqueId, "(type:", typeof this.selectedThematiqueId, ")");
       
       this.realizedSessions = this.allCoachSessions.filter(s => {
-          // 1. Past check (same as SessionsComponent logic)
-          const dateStr = s.date || s.dateSession;
-          const endStr = s.heureFin || '23:59:00';
+          const dateStr = this.formatDateString(s.date || s.dateSession);
+          const endStr = this.formatTimeString(s.heureFin);
+          
           let isPast = false;
           if (dateStr) {
               const sessionDate = new Date(dateStr + 'T' + endStr);
@@ -587,17 +604,16 @@ export class CoachRapportSessionComponent implements OnInit {
 
           const isCancelled = s.bookingStatus === 'ANNULE' || s.statut === 'ANNULE' || s.statut === 'ANNULEE';
           
-          if (isCancelled || !isPast) return false;
-
-          // 2. Entrepreneur filter
           const entMatch = this.selectedEntrepreneurId === 0 || s.entrepreneurId == this.selectedEntrepreneurId;
-
-          // 3. Thematique filter
           const themeMatch = this.selectedThematiqueId === 0 || s.thematiqueId == this.selectedThematiqueId;
 
-          return entMatch && themeMatch;
+          if (s.thematiqueId == this.selectedThematiqueId) {
+             console.log(`DEBUG: Found session with matching theme! Session ${s.id} (${s.titre}), s.entId=${s.entrepreneurId}, s.themeId=${s.thematiqueId}, isPast=${isPast}, isCancelled=${isCancelled}, entMatch=${entMatch}`);
+          }
+
+          return !isCancelled && isPast && entMatch && themeMatch;
       });
-      console.log("Sessions après filtrage:", this.realizedSessions.length);
+      console.log("DEBUG: Final realizedSessions count:", this.realizedSessions.length);
   }
 
   onSessionSelect() {
@@ -615,6 +631,8 @@ export class CoachRapportSessionComponent implements OnInit {
     const ent = this.entrepreneurs.find(e => e.id == this.selectedEntrepreneurId);
     const session = this.allCoachSessions.find(x => x.id == this.selectedSessionId);
     
+    const sessionDateStr = session ? this.formatDateString(session.date || session.dateSession) : '';
+    
     this.currentReport = {
         coachId: this.coachId,
         entrepreneurId: this.selectedEntrepreneurId,
@@ -626,7 +644,7 @@ export class CoachRapportSessionComponent implements OnInit {
         coachNom: this.coachProfile ? this.coachProfile.firstName + ' ' + this.coachProfile.lastName : '',
         typeSession: session && session.meetLink ? 'En ligne' : 'Terrain',
         numeroSession: session ? (session.titre || '1') : '1',
-        dateSession: session ? new Date(session.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        dateSession: sessionDateStr ? new Date(sessionDateStr).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
         
         objectifSession: session ? (session.titre || '') : '',
         deroulement: session ? (session.description || '') : '',
