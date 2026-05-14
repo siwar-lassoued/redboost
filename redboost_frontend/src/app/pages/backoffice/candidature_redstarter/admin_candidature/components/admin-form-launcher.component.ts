@@ -53,8 +53,27 @@ type Step = 'choice' | 'templates' | 'form';
 
         <!-- STEP 2: Templates -->
         <div *ngIf="step() === 'templates'" class="fl-body">
+          <!-- Template Filters -->
+          <div class="fl-template-filters" style="display:flex; gap:12px; margin-bottom:20px;">
+            <div style="flex:1;">
+              <label style="display:block; font-size:0.75rem; font-weight:700; color:#475569; margin-bottom:4px;">Filtrer par Programme</label>
+              <select [ngModel]="templateFilterProgram()" (ngModelChange)="templateFilterProgram.set($event)" class="fl-select" style="width:100%; padding:10px; border-radius:10px; border:1px solid #e2e8f0; font-size:0.875rem;">
+                <option value="all">Tous les programmes</option>
+                <option *ngFor="let p of activeProgrammes()" [value]="p.nom">{{ p.nom }}</option>
+              </select>
+            </div>
+            <div style="flex:1;">
+              <label style="display:block; font-size:0.75rem; font-weight:700; color:#475569; margin-bottom:4px;">Filtrer par Type</label>
+              <select [ngModel]="templateFilterType()" (ngModelChange)="templateFilterType.set($event)" class="fl-select" style="width:100%; padding:10px; border-radius:10px; border:1px solid #e2e8f0; font-size:0.875rem;">
+                <option value="all">Tous les types</option>
+                <option value="coach">Coachs</option>
+                <option value="entrepreneur">Entrepreneurs</option>
+              </select>
+            </div>
+          </div>
+
           <div class="fl-templates-grid">
-            <div *ngFor="let template of templates" class="fl-template-card">
+            <div *ngFor="let template of filteredTemplates()" class="fl-template-card">
               <div class="fl-template-header">
                 <div class="fl-template-icon"
                   [style.background]="template.profileType === 'coach' ? 'linear-gradient(to right, #2a7b8c, #1a4d5c)' : 'linear-gradient(to right, #ea5073, #6d3345)'">
@@ -343,6 +362,18 @@ export class AdminFormLauncherComponent implements OnChanges {
   deadline = '';
   program = '';
   questions: FormQuestion[] = [];
+  
+  // Template Filtering
+  templateFilterProgram = signal<string>('all');
+  templateFilterType = signal<string>('all');
+
+  filteredTemplates(): FormTemplate[] {
+    return this.templates.filter(t => {
+      const matchProgram = this.templateFilterProgram() === 'all' || t.program === this.templateFilterProgram();
+      const matchType = this.templateFilterType() === 'all' || t.profileType === this.templateFilterType();
+      return matchProgram && matchType;
+    });
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['open']?.currentValue === true) {

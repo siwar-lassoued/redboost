@@ -2,6 +2,7 @@ import { Component, OnInit, signal, computed, inject, ChangeDetectionStrategy } 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { KpiFormService, KpiForm, KpiFormQuestion, User, ThematiqueCoaching } from './kpi-form.service';
+import { ActivatedRoute } from '@angular/router';
 import { ProgrammeService } from '../programmes/programme.service';
 
 @Component({
@@ -14,8 +15,8 @@ import { ProgrammeService } from '../programmes/programme.service';
       <!-- Header -->
       <div class="cand-header">
         <div>
-          <h1 class="cand-title">Formulaires KPI & Évaluation</h1>
-          <p class="cand-subtitle">Créez et envoyez des formulaires pour automatiser la collecte des KPIs et des évaluations</p>
+          <h1 class="cand-title">Formulaires KPI</h1>
+          <p class="cand-subtitle">Créez et envoyez des formulaires pour automatiser la collecte des KPIs</p>
         </div>
         <div class="cand-header-actions">
           <button (click)="openFormModal()" class="btn-gradient">
@@ -44,8 +45,7 @@ import { ProgrammeService } from '../programmes/programme.service';
             <thead>
               <tr>
                 <th>Titre</th>
-                <th>Type</th>
-                <th>Lien</th>
+                <th>Programme</th>
                 <th>Créé le</th>
                 <th>Deadline</th>
                 <th>Questions</th>
@@ -63,23 +63,10 @@ import { ProgrammeService } from '../programmes/programme.service';
                     </div>
                   </td>
                   <td>
-                    <span class="status-badge" [ngClass]="{'bg-blue-100 text-blue-600': f.formType === 'EVALUATION', 'bg-purple-100 text-purple-600': f.formType !== 'EVALUATION'}">
-                      {{ f.formType === 'EVALUATION' ? 'Évaluation' : 'KPI' }}
+                    <span class="prog-badge">
+                      <i class="pi pi-book" style="font-size: 10px;"></i>
+                      {{ getProgrammeName(f.programmeId) }}
                     </span>
-                  </td>
-                  <td>
-                    @if (f.formType === 'KPI') {
-                      <span class="prog-badge">
-                        <i class="pi pi-book" style="font-size: 10px;"></i>
-                        {{ getProgrammeName(f.programmeId) }}
-                      </span>
-                    }
-                    @if (f.formType === 'EVALUATION') {
-                      <span class="prog-badge" style="background: #FFF0F5; color: #ea5073;">
-                        <i class="pi pi-users" style="font-size: 10px;"></i>
-                        Thém: {{ f.thematiqueId || '—' }}
-                      </span>
-                    }
                   </td>
                   <td class="date-cell">{{ f.createdAt | date:'dd/MM/yyyy' }}</td>
                   <td class="date-cell" style="color: #ea5073; font-weight: 700;">{{ f.deadline | date:'dd/MM/yyyy' }}</td>
@@ -142,67 +129,29 @@ import { ProgrammeService } from '../programmes/programme.service';
                    <label style="display: block; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Description</label>
                    <textarea [(ngModel)]="editingForm.description" rows="2" class="search-input" style="padding: 12px 16px; resize: vertical;"></textarea>
                  </div>
-                 <div>
-                   <label style="display: block; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Type de formulaire *</label>
-                   <select [(ngModel)]="editingForm.formType" class="filter-select" style="width: 100%; padding: 12px 16px;">
-                     <option value="KPI">KPI (Tableau de bord)</option>
-                     <option value="EVALUATION">Évaluation (Feedback)</option>
-                   </select>
-                 </div>
+                 
                  <div>
                    <label style="display: block; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Date limite</label>
                    <input type="datetime-local" [(ngModel)]="editingForm.deadline" class="search-input" style="padding: 11px 16px;">
                  </div>
 
-                 @if (editingForm.formType === 'KPI') {
-                   <div style="grid-column: span 2;">
-                     <label style="display: block; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Programme *</label>
-                     <select [(ngModel)]="editingForm.programmeId" class="filter-select" style="width: 100%; padding: 12px 16px;">
-                       <option [value]="null">-- Sélectionner un programme --</option>
-                       @for (p of programmes(); track p.id) {
-                         <option [value]="p.id">{{ p.nom }}</option>
-                       }
-                     </select>
-                   </div>
-                 }
-
-                 @if (editingForm.formType === 'EVALUATION') {
-                   <div style="grid-column: span 2;">
-                     <label style="display: block; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Programme *</label>
-                     <select [(ngModel)]="editingForm.programmeId" (change)="onProgrammeChange()" class="filter-select" style="width: 100%; padding: 12px 16px;">
-                       <option [value]="null">-- Sélectionner un programme --</option>
-                       @for (p of programmes(); track p.id) {
-                         <option [value]="p.id">{{ p.nom }}</option>
-                       }
-                     </select>
-                   </div>
-                   <div>
-                     <label style="display: block; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Thématique *</label>
-                     <select [(ngModel)]="editingForm.thematiqueId" (change)="onThematiqueChange()" class="filter-select" style="width: 100%; padding: 12px 16px;">
-                       <option [value]="null">-- Sélectionner une thématique --</option>
-                       @for (t of thematiques(); track t.id) {
-                         <option [value]="t.id">{{ t.nom || t.titre }}</option>
-                       }
-                     </select>
-                   </div>
-                   <div>
-                     <label style="display: block; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Coach *</label>
-                     <select [(ngModel)]="editingForm.coachId" class="filter-select" style="width: 100%; padding: 12px 16px;">
-                       <option [value]="null">-- Sélectionner un coach --</option>
-                       @for (c of coaches(); track c.id) {
-                         <option [value]="c.id">{{ c.firstName }} {{ c.lastName }}</option>
-                       }
-                     </select>
-                   </div>
+                 <div>
+                   <label style="display: block; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Programme *</label>
+                   <select [(ngModel)]="editingForm.programmeId" class="filter-select" style="width: 100%; padding: 12px 16px;">
+                     <option [value]="null">-- Sélectionner un programme --</option>
+                     @for (p of programmes(); track p.id) {
+                       <option [value]="p.id">{{ p.nom }}</option>
+                     }
+                   </select>
+                 </div>
                    @if (entrepreneurs().length > 0) {
-                     <div style="grid-column: span 3; background: #F0F9FF; padding: 12px 16px; border-radius: 12px; border: 1px solid #e0f2fe;">
+                     <div style="grid-column: span 2; background: #F0F9FF; padding: 12px 16px; border-radius: 12px; border: 1px solid #e0f2fe;">
                        <p style="font-size: 12px; font-weight: 600; color: #0369a1; margin: 0; margin-bottom: 8px;">
                          <i class="pi pi-info-circle" style="margin-right: 6px;"></i>
                          {{ entrepreneurs().length }} entrepreneur(s) sélectionné(s) recevront ce formulaire automatiquement
                        </p>
                      </div>
                    }
-                 }
                </div>
 
                <div>
@@ -245,7 +194,6 @@ import { ProgrammeService } from '../programmes/programme.service';
                               <label style="display: block; font-size: 10px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Options (séparées par virgule)</label>
                               <input type="text" [(ngModel)]="q.options" placeholder="Option 1, Option 2, Option 3..." class="search-input" style="padding: 10px 14px;">
                            </div>
-                           @if (editingForm.formType !== 'EVALUATION') {
                             <div style="grid-column: span 3; background: #FFF0F5; padding: 12px 16px; border-radius: 12px; border: 1px solid #fad2e1; display: flex; align-items: center; gap: 16px; margin-top: 8px;">
                               <div style="flex: 1;">
                                 <label style="display: flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 800; color: #C0392B; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">
@@ -264,7 +212,6 @@ import { ProgrammeService } from '../programmes/programme.service';
                                 </div>
                               </div>
                             </div>
-                          }
                          }
 
                        </div>
@@ -435,6 +382,7 @@ import { ProgrammeService } from '../programmes/programme.service';
 export class AdminKpiFormsComponent implements OnInit {
   private svc = inject(KpiFormService);
   private programmeSvc = inject(ProgrammeService); 
+  private route = inject(ActivatedRoute);
   programmes = signal<{id: number, nom: string}[]>([]);
   forms = signal<KpiForm[]>([]);
   
@@ -459,6 +407,16 @@ export class AdminKpiFormsComponent implements OnInit {
     this.programmeSvc.getAllProgrammesBasic().subscribe(p => 
       this.programmes.set(p.filter(prog => prog.id !== undefined) as {id: number, nom: string}[])
     );
+
+    this.route.queryParams.subscribe(params => {
+      if (params['openModal'] === 'true') {
+        const type = params['type'] || 'KPI';
+        this.openFormModal();
+        if (type === 'EVALUATION') {
+          this.editingForm.formType = 'EVALUATION';
+        }
+      }
+    });
   }
 
   loadForms() {

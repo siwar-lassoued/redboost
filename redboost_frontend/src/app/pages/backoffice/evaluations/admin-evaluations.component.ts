@@ -1,7 +1,10 @@
 import { Component, OnInit, signal, computed, inject, ChangeDetectionStrategy, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router, ActivatedRoute } from '@angular/router';
 import { EvaluationService, CoachRating } from './evaluation.service';
+import { KpiFormService, KpiForm, ThematiqueCoaching, User as FormUser } from '../kpi_forms/kpi-form.service';
+import { ProgrammeService } from '../programmes/programme.service';
 
 export interface CoachStats {
     id: number;
@@ -54,9 +57,16 @@ type PageTab = 'byCoach' | 'allRatings';
           <h1 class="text-3xl font-black text-gray-900 tracking-tight">Évaluations Coach</h1>
           <p class="text-gray-500 mt-1">Vue d'ensemble des notes reçues par les coaches · Confidentiel</p>
         </div>
-        <div class="flex items-center gap-2 px-4 py-2 bg-pink-50 text-pink-600 rounded-full text-xs font-black shadow-sm">
-          <div class="w-2 h-2 rounded-full bg-pink-600 animate-pulse"></div>
-          {{ kpis().unread }} NON LUES
+        <div class="flex items-center gap-4">
+          <button (click)="openFormModal()" 
+                  class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-[#ea5073] border-none cursor-pointer transition-all shadow-[0_4px_12px_rgba(234,80,115,0.3)] hover:bg-[#d4476a] hover:-translate-y-px">
+            <i class="pi pi-plus text-xs"></i>
+            Nouveau Formulaire
+          </button>
+          <div class="flex items-center gap-2 px-4 py-2 bg-pink-50 text-pink-600 rounded-full text-xs font-black shadow-sm">
+            <div class="w-2 h-2 rounded-full bg-pink-600 animate-pulse"></div>
+            {{ kpis().unread }} NON LUES
+          </div>
         </div>
       </div>
 
@@ -432,14 +442,179 @@ type PageTab = 'byCoach' | 'allRatings';
           </div>
         </div>
       }
+      <!-- FORM BUILDER MODAL (EXACT COPY FROM KPI PAGE) -->
+      @if (showFormModal) {
+        <div class="modal-overlay" (click)="closeModals()">
+          <div class="modal-box" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+              <div class="modal-header-info">
+                <h2 class="modal-name">{{ editingForm.id ? 'Modifier' : 'Nouveau' }} Formulaire Évaluation</h2>
+              </div>
+              <button (click)="closeModals()" class="modal-close"><i class="pi pi-times"></i></button>
+            </div>
+            
+            <div class="modal-body" style="background: #F9FAFB;">
+               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+                 <div style="grid-column: span 2;">
+                   <label style="display: block; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Titre du formulaire *</label>
+                   <input type="text" [(ngModel)]="editingForm.title" class="search-input-kpi" style="padding: 12px 16px;">
+                 </div>
+                 <div style="grid-column: span 2;">
+                   <label style="display: block; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Description</label>
+                   <textarea [(ngModel)]="editingForm.description" rows="2" class="search-input-kpi" style="padding: 12px 16px; resize: vertical;"></textarea>
+                 </div>
+                 <div>
+                   <label style="display: block; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Date limite</label>
+                   <input type="datetime-local" [(ngModel)]="editingForm.deadline" class="search-input-kpi" style="padding: 11px 16px;">
+                 </div>
+
+                 <div style="grid-column: span 2;">
+                   <label style="display: block; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Programme *</label>
+                   <select [(ngModel)]="editingForm.programmeId" (change)="onProgrammeChange()" class="filter-select-kpi" style="width: 100%; padding: 12px 16px;">
+                     <option [value]="null">-- Sélectionner un programme --</option>
+                     @for (p of programmesList(); track p.id) {
+                       <option [value]="p.id">{{ p.nom }}</option>
+                     }
+                   </select>
+                 </div>
+
+                 @if (editingForm.formType === 'EVALUATION') {
+                   <div>
+                     <label style="display: block; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Thématique *</label>
+                     <select [(ngModel)]="editingForm.thematiqueId" (change)="onThematiqueChange()" class="filter-select-kpi" style="width: 100%; padding: 12px 16px;">
+                       <option [value]="null">-- Sélectionner une thématique --</option>
+                       @for (t of thematiques(); track t.id) {
+                         <option [value]="t.id">{{ t.nom || t.titre }}</option>
+                       }
+                     </select>
+                   </div>
+                   <div>
+                     <label style="display: block; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Coach *</label>
+                     <select [(ngModel)]="editingForm.coachId" class="filter-select-kpi" style="width: 100%; padding: 12px 16px;">
+                       <option [value]="null">-- Sélectionner un coach --</option>
+                       @for (c of coachesList(); track c.id) {
+                         <option [value]="c.id">{{ c.firstName }} {{ c.lastName }}</option>
+                       }
+                     </select>
+                   </div>
+                 }
+               </div>
+
+               <div>
+                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #E5E7EB;">
+                   <h3 style="font-size: 16px; font-weight: 800; color: #1A1A2E; margin: 0;">Questions</h3>
+                   <button (click)="addQuestion()" class="btn-outline-sm-kpi" style="color: #ea5073; border-color: #ea5073;">
+                     <i class="pi pi-plus"></i> Ajouter
+                   </button>
+                 </div>
+
+                 <div style="display: flex; flex-direction: column; gap: 16px;">
+                   @for (q of editingForm.questions; track $index) {
+                     <div style="background: white; padding: 20px; border-radius: 16px; border: 1px solid #E5E7EB; box-shadow: 0 2px 8px rgba(0,0,0,0.02); position: relative;">
+                       <button (click)="removeQuestion($index)" style="position: absolute; top: 16px; right: 16px; padding: 8px; background: #FFF0F5; color: #C0392B; border: none; border-radius: 8px; cursor: pointer; transition: all .2s;">
+                         <i class="pi pi-trash"></i>
+                       </button>
+                       
+                       <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; padding-right: 40px;">
+                         <div style="grid-column: span 3;">
+                           <label style="display: block; font-size: 10px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Texte de la question</label>
+                           <input type="text" [(ngModel)]="q.text" placeholder="Poser la question..." class="search-input-kpi" style="padding: 10px 14px;">
+                         </div>
+                         <div style="grid-column: span 1;">
+                           <label style="display: block; font-size: 10px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Type de réponse</label>
+                           <select [(ngModel)]="q.type" class="filter-select-kpi" style="width: 100%; padding: 10px 14px;">
+                             <option value="TEXT">Texte Court</option>
+                             <option value="TEXTAREA">Multi-lignes</option>
+                             <option value="NUMBER">Nombre / Montant</option>
+                             <option value="SELECT">Choix Unique</option>
+                           </select>
+                         </div>
+                         <div style="grid-column: span 2; display: flex; align-items: flex-end; padding-bottom: 10px;">
+                           <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; cursor: pointer;">
+                             <input type="checkbox" [(ngModel)]="q.required" style="width: 16px; height: 16px; accent-color: #ea5073;"> Obligatoire
+                           </label>
+                         </div>
+
+                         @if (q.type === 'SELECT') {
+                           <div style="grid-column: span 3;">
+                              <label style="display: block; font-size: 10px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Options (séparées par virgule)</label>
+                              <input type="text" [(ngModel)]="q.options" placeholder="Option 1, Option 2, Option 3..." class="search-input-kpi" style="padding: 10px 14px;">
+                           </div>
+                         }
+                       </div>
+                     </div>
+                   }
+                   @if (!editingForm.questions.length) {
+                     <div class="py-12 text-center border-2 border-dashed border-gray-200 rounded-3xl bg-white/50" style="text-align: center; padding: 30px 20px; border: 2px dashed #E5E7EB; background: white;">
+                       <p style="color: #9CA3AF; font-weight: 700; font-size: 16px; margin: 0;">Aucune question ajoutée. Cliquez sur "Ajouter".</p>
+                     </div>
+                   }
+                 </div>
+               </div>
+            </div>
+
+            <div class="modal-footer">
+               <button (click)="closeModals()" class="btn-close-modal-kpi">Annuler</button>
+               <button (click)="saveForm()" [disabled]="!editingForm.title" class="btn-gradient-kpi" [style.opacity]="!editingForm.title ? '0.5' : '1'">Sauvegarder</button>
+            </div>
+          </div>
+        </div>
+      }
     </div>
   `,
   styles: [`
     :host { display: block; }
+    .modal-overlay { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
+    .modal-box { background: #fff; border-radius: 24px; width: 100%; max-width: 800px; max-height: 90vh; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.15); display: flex; flex-direction: column; }
+    .modal-header { padding: 20px 24px; border-bottom: 1px solid #F3F4F6; background: #fff; display: flex; align-items: center; justify-content: space-between; }
+    .modal-header-info { flex: 1; }
+    .modal-name { font-weight: 800; font-size: 20px; color: #1A1A2E; margin: 0; }
+    .modal-close { width: 36px; height: 36px; border-radius: 12px; border: none; background: #F3F4F6; cursor: pointer; color: #6B7280; transition: all .2s; display: flex; align-items: center; justify-content: center; }
+    .modal-close:hover { background: #E5E7EB; color: #1A1A2E; }
+    .modal-body { padding: 24px; overflow-y: auto; flex: 1; }
+    .modal-footer { padding: 20px 24px; border-top: 1px solid #F3F4F6; background: #fff; display: flex; align-items: center; justify-content: flex-end; gap: 12px; }
+    .btn-close-modal-kpi { padding: 10px 20px; border-radius: 12px; font-size: 14px; font-weight: 600; color: #6B7280; background: #F3F4F6; border: none; cursor: pointer; transition: all .2s; }
+    .btn-close-modal-kpi:hover { background: #E5E7EB; color: #1A1A2E; }
+    .btn-gradient-kpi {
+      display: flex; align-items: center; gap: 8px; padding: 10px 20px;
+      border-radius: 12px; font-size: 14px; font-weight: 600; color: #fff;
+      background: #ea5073; border: none; cursor: pointer;
+      transition: all .2s; box-shadow: 0 4px 12px rgba(234, 80, 115, 0.3);
+    }
+    .btn-gradient-kpi:hover:not(:disabled) { background: #d4476a; transform: translateY(-1px); }
+    .search-input-kpi {
+      width: 100%; border: 1px solid #E5E7EB; border-radius: 12px; font-size: 14px; 
+      outline: none; color: #333; transition: border-color .2s; background: #fff; box-sizing: border-box;
+    }
+    .search-input-kpi:focus { border-color: #ea5073; }
+    .filter-select-kpi {
+      border: 1px solid #E5E7EB; border-radius: 12px; font-size: 14px; 
+      outline: none; color: #333; cursor: pointer; background: #fff; transition: border-color .2s;
+    }
+    .filter-select-kpi:focus { border-color: #ea5073; }
+    .btn-outline-sm-kpi {
+      display: flex; align-items: center; gap: 8px; padding: 8px 16px;
+      border-radius: 10px; font-size: 13px; font-weight: 700;
+      background: #fff; color: #333; border: 1px solid #E5E7EB; cursor: pointer; transition: all .2s;
+    }
+    .btn-outline-sm-kpi:hover { background: #F3F4F6; }
   `],
 })
 export class AdminEvaluationsComponent implements OnInit {
   private svc = inject(EvaluationService);
+  private kpiFormSvc = inject(KpiFormService);
+  private programmeSvc = inject(ProgrammeService);
+  router = inject(Router);
+  private route = inject(ActivatedRoute);
+
+  // Form Builder state
+  showFormModal = false;
+  editingForm: KpiForm = this.getEmptyForm();
+  programmesList = signal<{id: number, nom: string}[]>([]);
+  thematiques = signal<ThematiqueCoaching[]>([]);
+  coachesList = signal<FormUser[]>([]);
+  availableKpis = signal<any[]>([]);
+  entrepreneurs = signal<FormUser[]>([]);
 
   pageTab = signal<PageTab>('byCoach');
   ratings = signal<CoachRating[]>([]);
@@ -458,6 +633,69 @@ export class AdminEvaluationsComponent implements OnInit {
         return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
       });
       this.ratings.set(sorted);
+    });
+
+    // Load programmes for form builder
+    this.programmeSvc.getAllProgrammesBasic().subscribe(p => 
+      this.programmesList.set(p.filter(prog => prog.id !== undefined) as {id: number, nom: string}[])
+    );
+  }
+
+  // --- Form Builder Methods ---
+  getEmptyForm(): KpiForm {
+    return {
+      title: '',
+      description: '',
+      questions: [],
+      formType: 'EVALUATION',
+      status: 'DRAFT'
+    };
+  }
+
+  openFormModal() {
+    this.editingForm = this.getEmptyForm();
+    this.showFormModal = true;
+  }
+
+  closeModals() {
+    this.showFormModal = false;
+  }
+
+  onProgrammeChange() {
+    const pId = this.editingForm.programmeId;
+    if (!pId) {
+      this.thematiques.set([]);
+      this.coachesList.set([]);
+      return;
+    }
+    this.kpiFormSvc.getThematiquesByProgramme(pId).subscribe(t => this.thematiques.set(t || []));
+    this.kpiFormSvc.getCoachesByProgramme(pId).subscribe(c => this.coachesList.set(c || []));
+    this.editingForm.thematiqueId = undefined;
+  }
+
+  onThematiqueChange() {
+    const pId = this.editingForm.programmeId;
+    const tId = this.editingForm.thematiqueId;
+    if (pId && tId) {
+      this.kpiFormSvc.getEntrepreneursForEvaluation(pId, tId).subscribe(e => this.entrepreneurs.set(e || []));
+    }
+  }
+
+  addQuestion() {
+    this.editingForm.questions.push({ text: '', type: 'TEXT', required: false });
+  }
+
+  removeQuestion(idx: number) {
+    this.editingForm.questions.splice(idx, 1);
+  }
+
+  saveForm() {
+    this.kpiFormSvc.createForm(this.editingForm).subscribe({
+      next: () => {
+        this.closeModals();
+        // Optionnel: show success toast
+      },
+      error: (e) => console.error('Failed to create form', e)
     });
   }
 

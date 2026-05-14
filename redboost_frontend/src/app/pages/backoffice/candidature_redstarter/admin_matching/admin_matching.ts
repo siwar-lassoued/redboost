@@ -5,6 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../../environment';
 import { MatchingService, MatchingSession } from '../services/matching.service';
 import { ThematiqueService, ThematiqueCoaching } from '../services/thematique.service';
+import { ActivatedRoute, Router } from '@angular/router';
 
 interface Programme { id: number; nom: string; typeProgramme: string; dateDebut: string; dateFin: string; }
 
@@ -23,7 +24,7 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
       </div>
 
       <!-- Programme & Global Filters -->
-      <div class="flex items-center gap-4 bg-white rounded-3xl border border-[#e2e8f0] p-2 shadow-sm mb-6" style="width: fit-content; max-width: 100%; flex-wrap: wrap;">
+      <div *ngIf="!selectedThematiqueId" class="flex items-center gap-4 bg-white rounded-3xl border border-[#e2e8f0] p-2 shadow-sm mb-6" style="width: fit-content; max-width: 100%; flex-wrap: wrap;">
         <!-- Programme Selector -->
         <div class="group relative flex items-center gap-3 px-5 py-2.5 bg-[#f8fafc] rounded-2xl border border-[#f1f5f9] hover:border-[#ea5073]/30 transition-all duration-300">
           <div class="flex flex-col">
@@ -138,34 +139,8 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
           </div>
         </div>
 
-        <!-- ═══ Thématique Selector Card (Selected/Editing focus) ═══ -->
-        <div class="card thematique-selector-card" *ngIf="editingThematique">
-          <div class="thematique-selector-header">
-            <label class="section-label" style="color: #F59E0B;">
-              <i class="pi pi-exclamation-triangle"></i> Thématique en cours de modification
-            </label>
-          </div>
-          <div class="th-selector-container">
-            <div class="th-group-section">
-              <div class="th-list-item th-list-item-editing"
-                   [class.th-list-item-active]="selectedThematiqueId === editingThematique.id"
-                   (click)="selectedThematiqueId = editingThematique.id!; onThematiqueChange()">
-                <div class="th-list-item-main">
-                  <span class="th-list-nom">{{ editingThematique.nom }}</span>
-                  <span class="th-list-dates">{{ editingThematique.dateDebut }} → {{ editingThematique.dateFin }}</span>
-                </div>
-                <div class="th-list-prog">
-                  <i class="pi pi-folder-open" style="font-size:11px;margin-right:4px;opacity:.7"></i>
-                  {{ getProgrammeName(editingThematique.programmeId) }}
-                </div>
-                <span class="th-list-status th-status-editing">EN MODIFICATION</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <!-- ═══ Other Thématiques List Card ═══ -->
-        <div class="card thematique-selector-card">
+        <div class="card thematique-selector-card" *ngIf="!selectedThematiqueId">
           <div class="thematique-selector-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
             <label class="section-label" style="margin-bottom: 0;">
               {{ editingThematique ? 'Autres Thématiques' : 'Liste des Thématiques' }}
@@ -179,7 +154,7 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
           <div class="th-selector-container">
             <div class="th-group-section">
               <!-- "All" option (only if not editing) -->
-              <div *ngIf="!editingThematique" class="th-list-item" [class.th-list-item-active]="selectedThematiqueId === 0" (click)="selectedThematiqueId = 0; onThematiqueChange()">
+              <div *ngIf="!editingThematique" class="th-list-item" [class.th-list-item-active]="selectedThematiqueId === 0" (click)="goToDetail(0)">
                 <div class="th-list-item-main">
                   <span class="th-list-nom">Toutes les thématiques</span>
                 </div>
@@ -190,7 +165,7 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
                 <div *ngIf="!editingThematique || t.id !== editingThematique.id"
                      class="th-list-item"
                      [class.th-list-item-active]="selectedThematiqueId === t.id"
-                     (click)="selectedThematiqueId = t.id!; onThematiqueChange()">
+                     (click)="goToDetail(t.id!)">
                   <div class="th-list-item-main">
                     <span class="th-list-nom">{{ t.nom }}</span>
                     <span class="th-list-dates">{{ t.dateDebut }} → {{ t.dateFin }}</span>
@@ -215,7 +190,10 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
 
         <!-- ═══ Selected Thématique content (when a specific one is chosen) ═══ -->
         <ng-container *ngIf="selectedThematiqueId">
-          <div class="thematique-section">
+          <div class="thematique-section" style="animation: slideInDown 0.3s ease-out;">
+            <button class="btn-back-to-list" (click)="goToDetail(0)" style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px; background: none; border: none; color: #ea5073; font-weight: 700; cursor: pointer;">
+              <i class="pi pi-arrow-left"></i> Retour à la liste
+            </button>
             <!-- Header -->
             <div class="th-card-header" *ngIf="selectedThematiqueObj">
               <div class="th-card-title-row">
@@ -830,7 +808,9 @@ export class AdminMatchingComponent implements OnInit {
     constructor(
         private http: HttpClient,
         private matchingSvc: MatchingService,
-        private thematiqueSvc: ThematiqueService
+        private thematiqueSvc: ThematiqueService,
+        private route: ActivatedRoute,
+        private router: Router
     ) {}
 
     ngOnInit(): void {
@@ -851,6 +831,19 @@ export class AdminMatchingComponent implements OnInit {
         });
         
         this.loadAllThematiques();
+
+        this.route.params.subscribe(params => {
+            const id = params['id'];
+            if (id) {
+                this.selectedThematiqueId = +id;
+                if (this.allThematiques.length > 0) {
+                    this.onThematiqueChange();
+                }
+            } else {
+                this.selectedThematiqueId = 0;
+                this.onThematiqueChange();
+            }
+        });
     }
 
     loadAllThematiques(): void {
@@ -858,8 +851,23 @@ export class AdminMatchingComponent implements OnInit {
             next: (t) => {
                 this.allThematiques = t;
                 this.applyProgFilter();
+
+                // Handle initial ID from route
+                const routeId = this.route.snapshot.params['id'];
+                if (routeId) {
+                    this.selectedThematiqueId = +routeId;
+                    this.onThematiqueChange();
+                }
             }
         });
+    }
+
+    goToDetail(id: number): void {
+        if (id === 0) {
+            this.router.navigate(['/admin_matching']);
+        } else {
+            this.router.navigate(['/admin_matching', id]);
+        }
     }
 
     applyProgFilter(): void {

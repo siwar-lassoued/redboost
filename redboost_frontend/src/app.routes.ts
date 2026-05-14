@@ -126,6 +126,7 @@ export const appRoutes: Routes = [
             { path: 'admin_redstarter', component: AdminCandidaturesComponent },
             { path: 'admin_historique', component: AdminHistoriqueComponent },
             { path: 'admin_matching', component: AdminMatchingComponent },
+            { path: 'admin_matching/:id', component: AdminMatchingComponent },
             { path: 'admin_reporting_ia', component: AdminReportingIaComponent },
             {path: 'gestion-entrepreneur',component: EntrepreneursManagementComponent},
             { path: 'workflow', component: RapportRedactionComponent },
