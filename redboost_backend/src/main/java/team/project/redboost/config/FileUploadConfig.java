@@ -6,11 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.unit.DataSize;
 
-/**
- * Configuration programmatique pour le téléchargement de fichiers.
- * Cette classe garantit que les limites de taille (50MB) sont appliquées
- * même si le fichier application.properties sur le serveur n'est pas mis à jour.
- */
+
 @Configuration
 public class FileUploadConfig {
 

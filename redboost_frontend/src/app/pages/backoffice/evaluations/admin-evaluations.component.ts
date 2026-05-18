@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { EvaluationService, CoachRating } from './evaluation.service';
-import { KpiFormService, KpiForm, ThematiqueCoaching, User as FormUser } from '../kpi_forms/kpi-form.service';
+import { KpiFormService, KpiForm, ThematiqueCoaching, User as FormUser, KpiFormResponse } from '../kpi_forms/kpi-form.service';
 import { ProgrammeService } from '../programmes/programme.service';
 
 export interface CoachStats {
@@ -42,7 +42,7 @@ export class StarsComponent {
   round = Math.round;
 }
 
-type PageTab = 'byCoach' | 'allRatings';
+type PageTab = 'byCoach' | 'allRatings' | 'forms';
 
 @Component({
   selector: 'rb-admin-evaluations',
@@ -134,6 +134,12 @@ type PageTab = 'byCoach' | 'allRatings';
           <i class="pi pi-list text-sm"></i>
           Toutes les évaluations
         </button>
+        <button (click)="pageTab.set('forms')" 
+          [class]="pageTab() === 'forms' ? 'bg-pink-500 text-white shadow-lg shadow-pink-500/20 border-transparent' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'"
+          class="border flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-black transition-all cursor-pointer">
+          <i class="pi pi-file text-sm"></i>
+          Formulaires d'évaluation
+        </button>
       </div>
 
       <!-- TABLES SECTION -->
@@ -212,7 +218,7 @@ type PageTab = 'byCoach' | 'allRatings';
                 }
               </tbody>
             </table>
-          } @else {
+          } @else if (pageTab() === 'allRatings') {
             <!-- Tab 2: Individual Ratings -->
             <table class="w-full text-left border-collapse">
               <thead>
@@ -257,12 +263,135 @@ type PageTab = 'byCoach' | 'allRatings';
                 }
               </tbody>
             </table>
+          } @else if (pageTab() === 'forms') {
+            <!-- Tab 3: Forms -->
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-gray-50 border-b border-gray-100">
+                  <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500">Formulaire</th>
+                  <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500">Programme</th>
+                  <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500">Date limite</th>
+                  <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500">Questions</th>
+                  <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500">Statut</th>
+                  <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500 text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100">
+                @for (f of formsList(); track f.id) {
+                  <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="px-6 py-5">
+                      <p class="text-sm font-black text-gray-900">{{ f.title }}</p>
+                      <p class="text-[11px] text-gray-500 font-medium truncate max-w-[200px]">{{ f.description }}</p>
+                    </td>
+                    <td class="px-6 py-5 text-xs font-bold text-[#3B82A6]">
+                      {{ getProgrammeName(f.programmeId) }}
+                    </td>
+                    <td class="px-6 py-5 text-xs font-black text-pink-500">
+                      {{ f.deadline | date:'dd/MM/yyyy' }}
+                    </td>
+                    <td class="px-6 py-5 text-sm font-black text-gray-900">
+                      {{ f.questions.length || 0 }}
+                    </td>
+                    <td class="px-6 py-5">
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-tighter"
+                        [ngClass]="{
+                          'bg-gray-100 text-gray-600': f.status === 'DRAFT',
+                          'bg-emerald-100 text-emerald-600': f.status === 'SENT',
+                          'bg-red-100 text-red-600': f.status === 'CLOSED'
+                        }">
+                        {{ f.status }}
+                      </span>
+                    </td>
+                    <td class="px-6 py-5 text-center flex items-center justify-center gap-2">
+                       <button (click)="openFormModalForEdit(f)" class="p-2 hover:bg-gray-100 rounded-xl text-gray-500 hover:text-sky-500 transition-all border-none bg-transparent cursor-pointer"><i class="pi pi-pencil text-sm"></i></button>
+                       <button (click)="viewResponses(f)" class="p-2 hover:bg-gray-100 rounded-xl text-gray-500 hover:text-pink-500 transition-all border-none bg-transparent cursor-pointer" title="Voir les réponses"><i class="pi pi-users text-sm"></i></button>
+                    </td>
+                  </tr>
+                }
+                @if (formsList().length === 0) {
+                  <tr>
+                    <td colspan="6" class="px-6 py-8 text-center text-sm font-medium text-gray-400">Aucun formulaire d'évaluation trouvé.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
           }
         </div>
       </div>
 
       <!-- MODALS IMPLEMENTATION -->
       <!-- Custom modal wrappers to avoid missing ModalComponent dependency -->
+
+      <!-- RESPONSES MODAL -->
+      @if (showResponsesModal && viewingForm()) {
+        <div class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4" (click)="closeModals()">
+          <div class="bg-white rounded-3xl shadow-2xl w-full max-w-[800px] max-h-[90vh] overflow-hidden flex flex-col" (click)="$event.stopPropagation()">
+            <div class="p-6 bg-gray-900 flex items-center justify-between rounded-t-3xl">
+              <div>
+                <h2 class="text-xl font-black text-white">Réponses — {{ viewingForm()?.title }}</h2>
+                <p class="text-white/60 text-xs font-medium mt-1">{{ formResponses().length }} réponse(s) reçue(s)</p>
+              </div>
+              <button (click)="closeModals()" class="text-white/60 hover:text-white bg-transparent border-none cursor-pointer"><i class="pi pi-times text-xl"></i></button>
+            </div>
+            <div class="p-6 overflow-y-auto flex-1 bg-gray-50">
+              @if (isLoadingResponses) {
+                <div class="flex flex-col items-center justify-center py-16 gap-4">
+                  <i class="pi pi-spin pi-spinner text-4xl text-pink-500"></i>
+                  <p class="text-gray-500 text-sm font-medium">Chargement des réponses...</p>
+                </div>
+              } @else if (formResponses().length === 0) {
+                <div class="flex flex-col items-center justify-center py-16 gap-4 text-center">
+                  <i class="pi pi-inbox text-5xl text-gray-300"></i>
+                  <p class="text-gray-700 font-black text-lg">Aucune réponse reçue</p>
+                  <p class="text-gray-400 text-sm">Les entrepreneurs n'ont pas encore soumis leurs réponses.</p>
+                </div>
+              } @else {
+                <div class="flex flex-col gap-4">
+                  @for (resp of formResponses(); track resp.id) {
+                    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                      <div class="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                          <div class="w-9 h-9 rounded-xl flex items-center justify-center text-white font-black text-sm shadow" style="background: linear-gradient(135deg, #ea5073, #d4476a);">
+                            {{ (resp.entrepreneurName || 'E').charAt(0).toUpperCase() }}
+                          </div>
+                          <div>
+                            <p class="font-black text-sm text-gray-900">{{ resp.entrepreneurName || 'Entrepreneur' }}</p>
+                            <p class="text-[11px] text-gray-400">ID: {{ resp.entrepreneurId }}</p>
+                          </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                          <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-tighter"
+                            [ngClass]="{'bg-amber-100 text-amber-700': resp.status==='PENDING', 'bg-emerald-100 text-emerald-700': resp.status==='SUBMITTED', 'bg-blue-100 text-blue-700': resp.status==='VALIDATED'}">
+                            {{ resp.status === 'PENDING' ? 'En attente' : resp.status === 'SUBMITTED' ? 'Soumis' : 'Validé' }}
+                          </span>
+                          @if (resp.submittedAt) {
+                            <span class="text-[11px] text-gray-400">{{ resp.submittedAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                          }
+                        </div>
+                      </div>
+                      @if (resp.answers && resp.answers.length > 0) {
+                        <div class="p-5 flex flex-col gap-3">
+                          @for (ans of resp.answers; track ans.questionId) {
+                            <div class="bg-gray-50 rounded-xl p-4 border-l-4 border-pink-400">
+                              <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">{{ ans.questionText }}</p>
+                              <p class="text-sm font-semibold text-gray-900">{{ ans.answerValue || '—' }}</p>
+                            </div>
+                          }
+                        </div>
+                      } @else {
+                        <p class="px-5 py-4 text-sm text-gray-400 italic">Aucune réponse fournie.</p>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+            <div class="px-6 py-4 border-t border-gray-100 bg-white flex justify-end">
+              <button (click)="closeModals()" class="px-6 py-2.5 rounded-xl bg-gray-100 text-gray-600 font-bold text-sm hover:bg-gray-200 border-none cursor-pointer transition-all">Fermer</button>
+            </div>
+          </div>
+        </div>
+      }
 
       <!-- COACH DETAIL MODAL -->
       @if (selectedCoach()) {
@@ -468,36 +597,39 @@ type PageTab = 'byCoach' | 'allRatings';
                    <input type="datetime-local" [(ngModel)]="editingForm.deadline" class="search-input-kpi" style="padding: 11px 16px;">
                  </div>
 
-                 <div style="grid-column: span 2;">
-                   <label style="display: block; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Programme *</label>
-                   <select [(ngModel)]="editingForm.programmeId" (change)="onProgrammeChange()" class="filter-select-kpi" style="width: 100%; padding: 12px 16px;">
-                     <option [value]="null">-- Sélectionner un programme --</option>
-                     @for (p of programmesList(); track p.id) {
-                       <option [value]="p.id">{{ p.nom }}</option>
+                 <div>
+                   <label style="display: block; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Coach</label>
+                   <select [(ngModel)]="editingForm.coachId" (change)="onCoachChange()" class="filter-select-kpi" style="width: 100%; padding: 12px 16px;">
+                     <option [value]="null">-- Sélectionner un coach --</option>
+                     @for (c of allCoaches(); track c.id) {
+                       <option [value]="c.id">{{ c.firstName }} {{ c.lastName }}</option>
                      }
                    </select>
                  </div>
 
-                 @if (editingForm.formType === 'EVALUATION') {
-                   <div>
-                     <label style="display: block; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Thématique *</label>
-                     <select [(ngModel)]="editingForm.thematiqueId" (change)="onThematiqueChange()" class="filter-select-kpi" style="width: 100%; padding: 12px 16px;">
-                       <option [value]="null">-- Sélectionner une thématique --</option>
-                       @for (t of thematiques(); track t.id) {
-                         <option [value]="t.id">{{ t.nom || t.titre }}</option>
-                       }
-                     </select>
-                   </div>
-                   <div>
-                     <label style="display: block; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Coach *</label>
-                     <select [(ngModel)]="editingForm.coachId" class="filter-select-kpi" style="width: 100%; padding: 12px 16px;">
-                       <option [value]="null">-- Sélectionner un coach --</option>
-                       @for (c of coachesList(); track c.id) {
-                         <option [value]="c.id">{{ c.firstName }} {{ c.lastName }}</option>
-                       }
-                     </select>
-                   </div>
-                 }
+                 <div>
+                   <label style="display: block; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Thématique</label>
+                   <select [(ngModel)]="editingForm.thematiqueId" (change)="onThematiqueChange()" class="filter-select-kpi" style="width: 100%; padding: 12px 16px;">
+                     <option [value]="null">-- Sélectionner une thématique --</option>
+                     @for (t of allThematiques(); track t.id) {
+                       <option [value]="t.id">{{ t.nom }}</option>
+                     }
+                   </select>
+                 </div>
+
+                 <div style="grid-column: span 2;">
+                   <label style="display: block; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Programme (auto-rempli selon la thématique)</label>
+                   @if (editingForm.programmeId) {
+                     <div style="padding: 11px 16px; border: 1px solid #D1FAE5; border-radius: 12px; background: #ECFDF5; font-size: 14px; font-weight: 700; color: #065F46; display: flex; align-items: center; gap: 8px;">
+                       <i class="pi pi-check-circle" style="color: #059669;"></i>
+                       {{ getProgrammeName(editingForm.programmeId) }}
+                     </div>
+                   } @else {
+                     <div style="padding: 11px 16px; border: 1px solid #E5E7EB; border-radius: 12px; background: #F9FAFB; font-size: 14px; color: #9CA3AF;">
+                       Sélectionnez d'abord une thématique
+                     </div>
+                   }
+                 </div>
                </div>
 
                <div>
@@ -615,9 +747,18 @@ export class AdminEvaluationsComponent implements OnInit {
   coachesList = signal<FormUser[]>([]);
   availableKpis = signal<any[]>([]);
   entrepreneurs = signal<FormUser[]>([]);
+  allThematiques = signal<ThematiqueCoaching[]>([]);
+  allCoaches = signal<FormUser[]>([]);
+
+  // Responses modal
+  showResponsesModal = false;
+  viewingForm = signal<KpiForm | null>(null);
+  formResponses = signal<any[]>([]);
+  isLoadingResponses = false;
 
   pageTab = signal<PageTab>('byCoach');
   ratings = signal<CoachRating[]>([]);
+  formsList = signal<KpiForm[]>([]);
   selectedCoach = signal<CoachStats | null>(null);
   selectedRating = signal<CoachRating | null>(null);
 
@@ -639,6 +780,31 @@ export class AdminEvaluationsComponent implements OnInit {
     this.programmeSvc.getAllProgrammesBasic().subscribe(p => 
       this.programmesList.set(p.filter(prog => prog.id !== undefined) as {id: number, nom: string}[])
     );
+    
+    this.loadForms();
+
+    // Load all thematiques and coaches for dropdowns
+    this.kpiFormSvc.getAllThematiques().subscribe(t => this.allThematiques.set(t || []));
+    // Load all coaches (users with role COACH)
+    this.kpiFormSvc.getCoachesByProgramme(0).subscribe({
+      next: c => this.allCoaches.set(c || []),
+      error: () => {
+        // fallback: load coaches per programme is not needed for the dropdown
+        // The dropdown will populate as user selects thematique first
+      }
+    });
+  }
+
+  loadForms() {
+    this.kpiFormSvc.getEvaluationForms().subscribe(f => {
+      this.formsList.set(f || []);
+    });
+  }
+
+  getProgrammeName(id: number | undefined): string {
+    if (!id) return 'Non assigné';
+    const prog = this.programmesList().find(p => p.id === id);
+    return prog ? prog.nom : 'Programme inconnu';
   }
 
   // --- Form Builder Methods ---
@@ -657,8 +823,14 @@ export class AdminEvaluationsComponent implements OnInit {
     this.showFormModal = true;
   }
 
+  openFormModalForEdit(form: KpiForm) {
+    this.editingForm = JSON.parse(JSON.stringify(form));
+    this.showFormModal = true;
+  }
+
   closeModals() {
     this.showFormModal = false;
+    this.showResponsesModal = false;
   }
 
   onProgrammeChange() {
@@ -674,11 +846,20 @@ export class AdminEvaluationsComponent implements OnInit {
   }
 
   onThematiqueChange() {
-    const pId = this.editingForm.programmeId;
     const tId = this.editingForm.thematiqueId;
-    if (pId && tId) {
-      this.kpiFormSvc.getEntrepreneursForEvaluation(pId, tId).subscribe(e => this.entrepreneurs.set(e || []));
+    // Auto-fill programmeId from selected thematique
+    if (tId) {
+      const theme = this.allThematiques().find(t => t.id === Number(tId));
+      if (theme?.programmeId) {
+        this.editingForm.programmeId = theme.programmeId;
+        // Also load coaches for that programme
+        this.kpiFormSvc.getCoachesByProgramme(theme.programmeId).subscribe(c => this.allCoaches.set(c || []));
+      }
     }
+  }
+
+  onCoachChange() {
+    // Store the coach selection - coachId is already bound via ngModel to editingForm.coachId
   }
 
   addQuestion() {
@@ -690,12 +871,16 @@ export class AdminEvaluationsComponent implements OnInit {
   }
 
   saveForm() {
-    this.kpiFormSvc.createForm(this.editingForm).subscribe({
-      next: () => {
+    const request = this.editingForm.id 
+      ? this.kpiFormSvc.updateForm(this.editingForm.id, this.editingForm) 
+      : this.kpiFormSvc.createForm(this.editingForm);
+      
+    request.subscribe({
+      next: (form) => {
+        this.loadForms();
         this.closeModals();
-        // Optionnel: show success toast
       },
-      error: (e) => console.error('Failed to create form', e)
+      error: (e) => console.error('Failed to save form', e)
     });
   }
 
@@ -804,6 +989,22 @@ export class AdminEvaluationsComponent implements OnInit {
     this.svc.updateStatus(id, 'ARCHIVE').subscribe(() => {
       this.ratings.update(all => all.map(r => r.id === id ? { ...r, statut: 'ARCHIVE' } : r));
       if (this.selectedRating()?.id === id) this.selectedRating.set(null);
+    });
+  }
+
+  viewResponses(form: KpiForm) {
+    this.viewingForm.set(form);
+    this.formResponses.set([]);
+    this.isLoadingResponses = true;
+    this.showResponsesModal = true;
+    this.kpiFormSvc.getResponsesForForm(form.id!).subscribe({
+      next: (responses) => {
+        this.formResponses.set(responses || []);
+        this.isLoadingResponses = false;
+      },
+      error: () => {
+        this.isLoadingResponses = false;
+      }
     });
   }
 }

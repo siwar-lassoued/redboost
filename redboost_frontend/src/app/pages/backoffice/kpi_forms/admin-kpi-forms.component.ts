@@ -1,7 +1,7 @@
 import { Component, OnInit, signal, computed, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { KpiFormService, KpiForm, KpiFormQuestion, User, ThematiqueCoaching } from './kpi-form.service';
+import { KpiFormService, KpiForm, KpiFormQuestion, KpiFormResponse, User, ThematiqueCoaching } from './kpi-form.service';
 import { ActivatedRoute } from '@angular/router';
 import { ProgrammeService } from '../programmes/programme.service';
 
@@ -136,13 +136,27 @@ import { ProgrammeService } from '../programmes/programme.service';
                  </div>
 
                  <div>
-                   <label style="display: block; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Programme *</label>
-                   <select [(ngModel)]="editingForm.programmeId" class="filter-select" style="width: 100%; padding: 12px 16px;">
-                     <option [value]="null">-- Sélectionner un programme --</option>
-                     @for (p of programmes(); track p.id) {
-                       <option [value]="p.id">{{ p.nom }}</option>
+                   <label style="display: block; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Thématique</label>
+                   <select [(ngModel)]="editingForm.thematiqueId" (change)="onThematiqueChange()" class="filter-select" style="width: 100%; padding: 12px 16px;">
+                     <option [value]="null">-- Sélectionner une thématique --</option>
+                     @for (t of allThematiques(); track t.id) {
+                       <option [value]="t.id">{{ t.nom }}</option>
                      }
                    </select>
+                 </div>
+
+                 <div style="grid-column: span 2;">
+                   <label style="display: block; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Programme (auto-rempli selon la thématique)</label>
+                   @if (editingForm.programmeId) {
+                     <div style="padding: 11px 16px; border: 1px solid #D1FAE5; border-radius: 12px; background: #ECFDF5; font-size: 14px; font-weight: 700; color: #065F46; display: flex; align-items: center; gap: 8px;">
+                       <i class="pi pi-check-circle" style="color: #059669;"></i>
+                       {{ getProgrammeName(editingForm.programmeId) }}
+                     </div>
+                   } @else {
+                     <div style="padding: 11px 16px; border: 1px solid #E5E7EB; border-radius: 12px; background: #F9FAFB; font-size: 14px; color: #9CA3AF;">
+                       Sélectionnez d'abord une thématique
+                     </div>
+                   }
                  </div>
                    @if (entrepreneurs().length > 0) {
                      <div style="grid-column: span 2; background: #F0F9FF; padding: 12px 16px; border-radius: 12px; border: 1px solid #e0f2fe;">
@@ -295,6 +309,78 @@ import { ProgrammeService } from '../programmes/programme.service';
           </div>
         </div>
       }
+
+      <!-- RESPONSES MODAL -->
+      @if (showResponsesModal && viewingForm()) {
+        <div class="modal-overlay" (click)="closeModals()">
+          <div class="modal-box" style="max-width: 850px;" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+              <div class="modal-header-info">
+                <h2 class="modal-name">Réponses — {{ viewingForm()?.title }}</h2>
+                <p style="font-size:12px;color:#6B7280;margin:4px 0 0;">{{ formResponses().length }} réponse(s) reçue(s)</p>
+              </div>
+              <button (click)="closeModals()" class="modal-close"><i class="pi pi-times"></i></button>
+            </div>
+            <div class="modal-body" style="background: #F9FAFB; max-height: 70vh; overflow-y: auto;">
+              @if (isLoadingResponses) {
+                <div style="text-align:center;padding:40px;">
+                  <i class="pi pi-spin pi-spinner" style="font-size:2rem;color:#ea5073;"></i>
+                  <p style="margin-top:10px;color:#6B7280;">Chargement des réponses...</p>
+                </div>
+              } @else if (formResponses().length === 0) {
+                <div class="empty-state">
+                  <i class="pi pi-inbox" style="font-size: 3rem; color: #D1D5DB; margin-bottom: 1rem; display: block;"></i>
+                  <p class="empty-text">Aucune réponse reçue</p>
+                  <p class="empty-sub">Les entrepreneurs n'ont pas encore soumis leurs réponses.</p>
+                </div>
+              } @else {
+                <div style="display:flex;flex-direction:column;gap:16px;">
+                  @for (resp of formResponses(); track resp.id) {
+                    <div style="background:#fff;border-radius:16px;padding:20px;border:1px solid #E5E7EB;box-shadow:0 2px 8px rgba(0,0,0,0.03);">
+                      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                        <div style="display:flex;align-items:center;gap:10px;">
+                          <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#ea5073,#d4476a);display:flex;align-items:center;justify-content:center;color:white;font-weight:900;font-size:14px;">
+                            {{ (resp.entrepreneurName || 'E').charAt(0).toUpperCase() }}
+                          </div>
+                          <div>
+                            <p style="font-weight:800;font-size:14px;color:#1A1A2E;margin:0;">{{ resp.entrepreneurName || 'Entrepreneur' }}</p>
+                            <p style="font-size:11px;color:#9CA3AF;margin:0;">ID: {{ resp.entrepreneurId }}</p>
+                          </div>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:10px;">
+                          <span style="font-size:10px;font-weight:900;padding:4px 12px;border-radius:20px;text-transform:uppercase;letter-spacing:0.05em;"
+                            [ngClass]="{'bg-amber-100 text-amber-700': resp.status==='PENDING', 'bg-emerald-100 text-emerald-700': resp.status==='SUBMITTED', 'bg-blue-100 text-blue-700': resp.status==='VALIDATED'}">
+                            {{ resp.status === 'PENDING' ? 'En attente' : resp.status === 'SUBMITTED' ? 'Soumis' : 'Validé' }}
+                          </span>
+                          @if (resp.submittedAt) {
+                            <span style="font-size:11px;color:#6B7280;">{{ resp.submittedAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                          }
+                        </div>
+                      </div>
+
+                      @if (resp.answers && resp.answers.length > 0) {
+                        <div style="display:flex;flex-direction:column;gap:10px;">
+                          @for (ans of resp.answers; track ans.questionId) {
+                            <div style="background:#F8FAFC;border-radius:12px;padding:14px;border-left:4px solid #ea5073;">
+                              <p style="font-size:10px;font-weight:800;color:#6B7280;text-transform:uppercase;letter-spacing:0.08em;margin:0 0 6px;">{{ ans.questionText }}</p>
+                              <p style="font-size:14px;font-weight:600;color:#1A1A2E;margin:0;">{{ ans.answerValue || '—' }}</p>
+                            </div>
+                          }
+                        </div>
+                      } @else {
+                        <p style="font-size:13px;color:#9CA3AF;font-style:italic;margin:0;">Aucune réponse fournie.</p>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+            <div class="modal-footer">
+              <button (click)="closeModals()" class="btn-close-modal">Fermer</button>
+            </div>
+          </div>
+        </div>
+      }
     </div>
   `,
   styles: [`
@@ -401,12 +487,21 @@ export class AdminKpiFormsComponent implements OnInit {
   availableEntrepreneurs = signal<User[]>([]);
   selectedEntIds = signal<number[]>([]);
   parsedEntrepreneurIds = signal<number[]>([]);
+  allThematiques = signal<ThematiqueCoaching[]>([]);
+
+  // Responses modal
+  showResponsesModal = false;
+  viewingForm = signal<KpiForm | null>(null);
+  formResponses = signal<KpiFormResponse[]>([]);
+  isLoadingResponses = false;
 
   ngOnInit() {
     this.loadForms();
     this.programmeSvc.getAllProgrammesBasic().subscribe(p => 
       this.programmes.set(p.filter(prog => prog.id !== undefined) as {id: number, nom: string}[])
     );
+    // Load all thematiques for the dropdown
+    this.svc.getAllThematiques().subscribe(t => this.allThematiques.set(t || []));
 
     this.route.queryParams.subscribe(params => {
       if (params['openModal'] === 'true') {
@@ -420,7 +515,7 @@ export class AdminKpiFormsComponent implements OnInit {
   }
 
   loadForms() {
-    this.svc.getAllForms().subscribe(r => this.forms.set(r || []));
+    this.svc.getKpiForms().subscribe(r => this.forms.set(r || []));
   }
 
   getProgrammeName(id: number | undefined): string {
@@ -529,9 +624,17 @@ export class AdminKpiFormsComponent implements OnInit {
   }
 
   onThematiqueChange() {
-    const programmeId = this.editingForm.programmeId;
     const thematiqueId = this.editingForm.thematiqueId;
-    this.loadEntrepreneursForEvaluation(programmeId, thematiqueId);
+    // Auto-fill programmeId based on selected thematique
+    if (thematiqueId) {
+      const theme = this.allThematiques().find(t => t.id === Number(thematiqueId));
+      if (theme?.programmeId) {
+        this.editingForm.programmeId = theme.programmeId;
+        this.loadThematiquesForProgramme(theme.programmeId);
+        this.loadCoachesForProgramme(theme.programmeId);
+        this.loadAvailableKpis(theme.programmeId);
+      }
+    }
   }
 
   parseEntrepreneurIds() {
@@ -622,11 +725,12 @@ export class AdminKpiFormsComponent implements OnInit {
   }
 
   saveForm() {
+    const isNew = !this.editingForm.id;
     const ob$ = this.editingForm.id 
       ? this.svc.updateForm(this.editingForm.id, this.editingForm)
       : this.svc.createForm(this.editingForm);
 
-    ob$.subscribe(() => {
+    ob$.subscribe((form: KpiForm) => {
       this.loadForms();
       this.closeModals();
     });
@@ -652,11 +756,24 @@ export class AdminKpiFormsComponent implements OnInit {
   }
 
   viewResponses(form: KpiForm) {
-    console.log("View responses for", form.id);
+    this.viewingForm.set(form);
+    this.formResponses.set([]);
+    this.isLoadingResponses = true;
+    this.showResponsesModal = true;
+    this.svc.getResponsesForForm(form.id!).subscribe({
+      next: (responses) => {
+        this.formResponses.set(responses || []);
+        this.isLoadingResponses = false;
+      },
+      error: () => {
+        this.isLoadingResponses = false;
+      }
+    });
   }
 
   closeModals() {
     this.showFormModal = false;
     this.showSendModal = false;
+    this.showResponsesModal = false;
   }
 }

@@ -384,7 +384,6 @@ export class AppMenu implements OnInit {
                         icon: 'pi pi-fw pi-users',
                         routerLink: ['/mes-sessions'],
                     },
-
                     {
                         label: 'Livrables',
                         icon: 'pi pi-fw pi-file-export',
@@ -419,6 +418,16 @@ export class AppMenu implements OnInit {
                         label: 'Rapport de missions',
                         icon: 'pi pi-fw pi-file-pdf',
                         routerLink: ['/rapport-missions'],
+                    },
+                ],
+            },
+            {
+                label: 'FORMULAIRES',
+                items: [
+                    {
+                        label: 'Mes Formulaires',
+                        icon: 'pi pi-fw pi-file-edit',
+                        routerLink: ['/coach-kpi-forms'],
                     },
                 ],
             },

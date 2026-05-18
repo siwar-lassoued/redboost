@@ -20,6 +20,7 @@ import { Calendar } from '@fullcalendar/core';
 import { Router } from '@angular/router';
 import { environment } from '../../../../environment';
 import { CoachService, CoachEntrepreneurDTO, UpcomingSessionDTO } from './services/coach.service';
+import { KpiFormService, KpiFormResponse } from '../../backoffice/kpi_forms/kpi-form.service';
 
 interface Kpi {
     label: string;
@@ -255,6 +256,45 @@ interface NoteDeSynthese {
                     </div>
                 </div>
             </div>
+
+        <!-- URGENT FORMS POPUP -->
+        <div *ngIf="showFormsPopup && pendingForms.length > 0"
+             style="position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(0,0,0,0.55); backdrop-filter: blur(4px);">
+          <div style="background: white; border-radius: 24px; width: 100%; max-width: 560px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.2); border-top: 5px solid #ea5073;">
+            <!-- Header -->
+            <div style="padding: 24px 28px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #F3F4F6;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 40px; height: 40px; background: #FFF0F5; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                  <i class="pi pi-exclamation-triangle" style="color: #ea5073; font-size: 18px;"></i>
+                </div>
+                <div>
+                  <h2 style="font-size: 18px; font-weight: 800; color: #1A1A2E; margin: 0;">Formulaires en attente</h2>
+                  <p style="font-size: 12px; color: #6B7280; margin: 2px 0 0 0;">{{ pendingForms.length }} formulaire(s) nécessitent votre attention</p>
+                </div>
+              </div>
+              <button (click)="dismissPopup()" style="width: 32px; height: 32px; border-radius: 10px; border: none; background: #F3F4F6; cursor: pointer; color: #6B7280; display: flex; align-items: center; justify-content: center;">
+                <i class="pi pi-times"></i>
+              </button>
+            </div>
+            <!-- Forms List -->
+            <div style="padding: 20px 28px; max-height: 320px; overflow-y: auto;">
+              <div *ngFor="let f of pendingForms" style="border: 1px solid #fad2e1; border-radius: 16px; padding: 16px; margin-bottom: 12px; background: #FFF9FB;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                  <span style="width: 8px; height: 8px; background: #ea5073; border-radius: 50%; flex-shrink: 0; animation: pulse-dot 1.5s infinite;"></span>
+                  <span style="font-size: 14px; font-weight: 700; color: #1A1A2E;">{{ f.formTitle }}</span>
+                </div>
+                <p style="font-size: 12px; color: #6B7280; margin: 0;">Statut : <strong style="color: #ea5073;">À remplir</strong></p>
+              </div>
+            </div>
+            <!-- Footer -->
+            <div style="padding: 16px 28px 24px; display: flex; gap: 12px; justify-content: flex-end; border-top: 1px solid #F3F4F6;">
+              <button (click)="dismissPopup()" style="padding: 10px 20px; border-radius: 12px; border: none; background: #F3F4F6; color: #6B7280; font-weight: 600; font-size: 14px; cursor: pointer;">Plus tard</button>
+              <button (click)="goToForms()" style="padding: 10px 24px; border-radius: 12px; border: none; background: #ea5073; color: white; font-weight: 700; font-size: 14px; cursor: pointer; box-shadow: 0 4px 12px rgba(234,80,115,0.3); display: flex; align-items: center; gap: 8px;">
+                <i class="pi pi-file-edit"></i> Remplir maintenant
+              </button>
+            </div>
+          </div>
+        </div>
         </div>
     `,
     styles: [
@@ -295,6 +335,10 @@ interface NoteDeSynthese {
                 50% { transform: rotate(10.0deg) }
                 60% { transform: rotate( 0.0deg) }  
                 100% { transform: rotate( 0.0deg) }
+            }
+            @keyframes pulse-dot {
+                0%, 100% { opacity: 1; transform: scale(1); }
+                50% { opacity: 0.4; transform: scale(0.8); }
             }
             .dashboard-header p {
                 color: #718096;
@@ -666,6 +710,8 @@ export class CoachDashboardComponent implements OnInit, OnDestroy {
     isLoadingEntrepreneurs = false;
     isLoadingSessions = false;
     averageCompletionRate = 0;
+    pendingForms: KpiFormResponse[] = [];
+    showFormsPopup = false;
     
     startups: Startup[] = [
         {
@@ -759,6 +805,7 @@ export class CoachDashboardComponent implements OnInit, OnDestroy {
         private cdr: ChangeDetectorRef,
         public router: Router,
         private coachService: CoachService,
+        private kpiFormService: KpiFormService,
     ) {}
 
     ngOnInit() {
@@ -795,6 +842,7 @@ export class CoachDashboardComponent implements OnInit, OnDestroy {
             // Load dynamic entrepreneurs and upcoming sessions from backend
             this.loadCoachEntrepreneurs();
             this.loadUpcomingSessions();
+            this.loadPendingForms();
         } else {
             console.error(
                 'Coach ID not found. Please ensure you are logged in.',
@@ -808,6 +856,29 @@ export class CoachDashboardComponent implements OnInit, OnDestroy {
      */
     goToEntrepreneurDetail(entrepreneurId: number): void {
         this.router.navigate(['/coach-entrepreneurs', entrepreneurId]);
+    }
+
+    loadPendingForms(): void {
+        if (!this.coachId) return;
+        this.kpiFormService.getPendingFormsForCoach(this.coachId).subscribe({
+            next: (forms) => {
+                this.pendingForms = (forms || []).filter(f => f.status === 'PENDING');
+                if (this.pendingForms.length > 0) {
+                    this.showFormsPopup = true;
+                    this.cdr.detectChanges();
+                }
+            },
+            error: () => { /* silent fail */ }
+        });
+    }
+
+    dismissPopup(): void {
+        this.showFormsPopup = false;
+    }
+
+    goToForms(): void {
+        this.showFormsPopup = false;
+        this.router.navigate(['/coach-kpi-forms']);
     }
 
     ngAfterViewInit(): void {

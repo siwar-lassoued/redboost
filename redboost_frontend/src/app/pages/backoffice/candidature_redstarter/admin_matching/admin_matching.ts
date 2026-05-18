@@ -194,27 +194,81 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
             <button class="btn-back-to-list" (click)="goToDetail(0)" style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px; background: none; border: none; color: #ea5073; font-weight: 700; cursor: pointer;">
               <i class="pi pi-arrow-left"></i> Retour à la liste
             </button>
-            <!-- Header -->
-            <div class="th-card-header" *ngIf="selectedThematiqueObj">
-              <div class="th-card-title-row">
-                <div class="th-card-info">
-                  <h3 class="th-name">{{ selectedThematiqueObj.nom }}</h3>
-                  <p class="th-dates">{{ selectedThematiqueObj.dateDebut }} → {{ selectedThematiqueObj.dateFin }}</p>
+            <!-- Premium Header -->
+            <div class="bg-white rounded-[24px] p-6 shadow-sm border border-[#e2e8f0]/60 mb-6 relative overflow-hidden" *ngIf="selectedThematiqueObj">
+              <!-- Decorative background gradient -->
+              <div class="absolute top-0 right-0 -mt-20 -mr-20 w-64 h-64 bg-gradient-to-br from-[#ea5073]/10 to-transparent rounded-full blur-3xl pointer-events-none"></div>
+              
+              <div class="flex items-center gap-5 relative z-10">
+                <!-- Icon Block -->
+                <div class="w-14 h-14 rounded-[16px] bg-gradient-to-br from-[#ea5073] to-[#8E2D4A] flex items-center justify-center text-white shadow-lg shadow-[#ea5073]/20 flex-shrink-0">
+                  <i class="pi pi-star text-2xl"></i>
                 </div>
-                <span class="status-badge" [class.active]="selectedThematiqueObj.statut === 'ACTIVE'" [class.expired]="selectedThematiqueObj.statut === 'TERMINEE'">{{ selectedThematiqueObj.statut }}</span>
-                <div class="th-card-actions-top">
-                  <button class="btn-sm" (click)="editThematique(selectedThematiqueObj)"><i class="pi pi-pencil"></i></button>
-                  <button class="btn-sm btn-sm-danger" (click)="deleteThematique(selectedThematiqueObj.id!)"><i class="pi pi-trash"></i></button>
+                
+                <!-- Main Info -->
+                <div class="flex-1">
+                  <h3 class="text-[22px] font-extrabold text-[#0f172a] tracking-tight m-0 leading-none mb-2">{{ selectedThematiqueObj.nom }}</h3>
+                  <div class="flex flex-wrap items-center gap-3">
+                    <span class="inline-flex items-center gap-1.5 text-xs font-bold text-[#64748b] bg-[#f8fafc] px-3 py-1.5 rounded-lg border border-[#f1f5f9]">
+                      <i class="pi pi-calendar text-[11px] text-[#ea5073]"></i>
+                      {{ selectedThematiqueObj.dateDebut }} <span class="text-[#cbd5e1] mx-0.5">→</span> {{ selectedThematiqueObj.dateFin }}
+                    </span>
+                    <span class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-bold" 
+                          [ngClass]="selectedThematiqueObj.statut === 'ACTIVE' ? 'bg-[#ecfdf5] text-[#059669] border border-[#d1fae5]' : 'bg-[#fef2f2] text-[#dc2626] border border-[#fee2e2]'">
+                      <span class="w-1.5 h-1.5 rounded-full inline-block mr-1.5" [ngClass]="selectedThematiqueObj.statut === 'ACTIVE' ? 'bg-[#10b981]' : 'bg-[#ef4444]'"></span>
+                      {{ selectedThematiqueObj.statut }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex gap-2">
+                  <button class="w-10 h-10 rounded-[12px] flex items-center justify-center bg-white border border-[#e2e8f0] text-[#64748b] hover:border-[#ea5073] hover:text-[#ea5073] hover:bg-[#fff1f3] hover:shadow-sm transition-all" (click)="editThematique(selectedThematiqueObj)" title="Modifier">
+                    <i class="pi pi-pencil"></i>
+                  </button>
+                  <button class="w-10 h-10 rounded-[12px] flex items-center justify-center bg-white border border-[#e2e8f0] text-[#64748b] hover:border-red-500 hover:text-red-600 hover:bg-red-50 hover:shadow-sm transition-all" (click)="deleteThematique(selectedThematiqueObj.id!)" title="Supprimer">
+                    <i class="pi pi-trash"></i>
+                  </button>
                 </div>
               </div>
-              <p class="th-desc" *ngIf="selectedThematiqueObj.description">{{ selectedThematiqueObj.description }}</p>
+              
+              <!-- Description Box -->
+              <div class="mt-6 p-4 rounded-2xl bg-gradient-to-r from-[#f8fafc] to-white border border-[#f1f5f9] relative z-10">
+                <p class="text-[13px] font-medium text-[#475569] leading-relaxed m-0 flex items-start gap-3">
+                  <i class="pi pi-info-circle text-[#ea5073] mt-0.5 opacity-80"></i>
+                  {{ selectedThematiqueObj.description || 'Aucune description détaillée n\\'a été fournie pour cette thématique d\\'accompagnement.' }}
+                </p>
+              </div>
 
-              <!-- KPIs -->
-              <div class="th-kpis" *ngIf="thematiqueMatchings.length > 0">
-                <span class="stat-badge stat-success">Validés : {{ countByStatut('VALIDE') }}</span>
-                <span class="stat-badge stat-warning">En attente : {{ countByStatut('PROPOSE') }}</span>
-                <span class="stat-badge stat-info">Terminés : {{ countByStatut('TERMINE') }}</span>
-                <span class="stat-badge stat-neutral">Libérés : {{ countByStatut('LIBERE') }}</span>
+              <!-- KPIs Grid -->
+              <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4 relative z-10" *ngIf="thematiqueMatchings.length > 0">
+                <!-- KPI: Validés -->
+                <div class="p-4 rounded-[16px] bg-white border border-[#d1fae5] shadow-sm relative overflow-hidden group hover:-translate-y-1 transition-all duration-300">
+                  <div class="absolute right-0 top-0 w-24 h-24 bg-gradient-to-br from-[#ecfdf5] to-transparent rounded-bl-full -mr-8 -mt-8 transition-transform duration-500 group-hover:scale-150"></div>
+                  <div class="text-[#059669] font-black text-3xl mb-1 relative z-10">{{ countByStatut('VALIDE') }}</div>
+                  <div class="text-[10px] font-bold uppercase tracking-widest text-[#059669]/60 relative z-10">Validés</div>
+                </div>
+                
+                <!-- KPI: En attente -->
+                <div class="p-4 rounded-[16px] bg-white border border-[#fef3c7] shadow-sm relative overflow-hidden group hover:-translate-y-1 transition-all duration-300">
+                  <div class="absolute right-0 top-0 w-24 h-24 bg-gradient-to-br from-[#fffbeb] to-transparent rounded-bl-full -mr-8 -mt-8 transition-transform duration-500 group-hover:scale-150"></div>
+                  <div class="text-[#d97706] font-black text-3xl mb-1 relative z-10">{{ countByStatut('PROPOSE') }}</div>
+                  <div class="text-[10px] font-bold uppercase tracking-widest text-[#d97706]/60 relative z-10">En attente</div>
+                </div>
+                
+                <!-- KPI: Terminés -->
+                <div class="p-4 rounded-[16px] bg-white border border-[#dbeafe] shadow-sm relative overflow-hidden group hover:-translate-y-1 transition-all duration-300">
+                  <div class="absolute right-0 top-0 w-24 h-24 bg-gradient-to-br from-[#eff6ff] to-transparent rounded-bl-full -mr-8 -mt-8 transition-transform duration-500 group-hover:scale-150"></div>
+                  <div class="text-[#2563eb] font-black text-3xl mb-1 relative z-10">{{ countByStatut('TERMINE') }}</div>
+                  <div class="text-[10px] font-bold uppercase tracking-widest text-[#2563eb]/60 relative z-10">Terminés</div>
+                </div>
+                
+                <!-- KPI: Libérés -->
+                <div class="p-4 rounded-[16px] bg-white border border-[#e2e8f0] shadow-sm relative overflow-hidden group hover:-translate-y-1 transition-all duration-300">
+                  <div class="absolute right-0 top-0 w-24 h-24 bg-gradient-to-br from-[#f8fafc] to-transparent rounded-bl-full -mr-8 -mt-8 transition-transform duration-500 group-hover:scale-150"></div>
+                  <div class="text-[#64748b] font-black text-3xl mb-1 relative z-10">{{ countByStatut('LIBERE') }}</div>
+                  <div class="text-[10px] font-bold uppercase tracking-widest text-[#64748b]/60 relative z-10">Libérés</div>
+                </div>
               </div>
             </div>
 

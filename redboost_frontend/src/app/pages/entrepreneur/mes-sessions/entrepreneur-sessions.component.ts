@@ -143,6 +143,47 @@ type Tab = 'PLANIFIEE' | 'REALISEE' | 'ANNULEE';
       }
     </div>
 
+    <!-- ALERT MODAL (pas de reprogrammation possible) -->
+    @if (showAlertModal()) {
+      <div class="modal-overlay" (click)="showAlertModal.set(false)">
+        <div class="modal-box" style="max-width: 500px;" (click)="$event.stopPropagation()">
+          <div class="modal-header" style="background: linear-gradient(135deg, #fff3cd, #fff8e1); border-bottom: 1px solid #fde68a;">
+            <div class="modal-header-left">
+              <div class="modal-header-info">
+                <div style="display:flex; align-items:center; gap:12px;">
+                  <div style="width:48px;height:48px;border-radius:16px;background:#FEF3C7;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <i class="pi pi-exclamation-triangle" style="font-size:22px;color:#D97706;"></i>
+                  </div>
+                  <div>
+                    <h3 class="modal-name" style="font-size:18px;color:#92400E;">Reprogrammation impossible</h3>
+                    <p style="font-size:13px;color:#B45309;margin:4px 0 0;">Action non disponible</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <button (click)="showAlertModal.set(false)" class="modal-close">
+              <i class="pi pi-times"></i>
+            </button>
+          </div>
+
+          <div class="modal-body" style="padding: 28px 32px; background: #fff;">
+            <p style="font-size:14px;color:#374151;line-height:1.7;margin:0;">{{ alertMessage() }}</p>
+            <div style="margin-top:20px;padding:16px;background:#FFF8F0;border-radius:12px;border:1px solid #FDE68A;display:flex;align-items:center;gap:12px;">
+              <i class="pi pi-phone" style="color:#D97706;font-size:18px;flex-shrink:0;"></i>
+              <div>
+                <p style="font-size:12px;font-weight:800;color:#92400E;margin:0 0 2px;text-transform:uppercase;letter-spacing:0.05em;">Contacter votre coach</p>
+                <p style="font-size:12px;color:#B45309;margin:0;">Votre coach pourra planifier une nouvelle session pour vous.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer" style="background:#fff;">
+            <button (click)="showAlertModal.set(false)" class="btn-action btn-blue" style="margin-left:auto;">Compris</button>
+          </div>
+        </div>
+      </div>
+    }
+
     <!-- DETAIL MODAL (Admin Style) -->
     @if (showDetail() && selected()) {
       <div class="modal-overlay" (click)="showDetail.set(false)">
@@ -451,6 +492,10 @@ export class EntrepreneurSessionsComponent implements OnInit {
   isLoadingSlots = signal<boolean>(false);
   isRebooking = signal<boolean>(false);
 
+  // Alert modal
+  showAlertModal = signal<boolean>(false);
+  alertMessage = signal<string>('');
+
   filteredSessions = computed(() => {
     const tab = this.activeTab();
     const search = this.searchText().toLowerCase().trim();
@@ -543,6 +588,24 @@ export class EntrepreneurSessionsComponent implements OnInit {
   }
 
   openRescheduleModal(session: any) {
+    // Block immediately if session is exceptional
+    if (session.isExceptionnelle) {
+      this.alertMessage.set(
+        `La session "${session.titre || 'cette session'}" est une session exceptionnelle. Il n'est pas possible de la reprogrammer de façon autonome. Veuillez contacter votre coach directement pour organiser une nouvelle date.`
+      );
+      this.showAlertModal.set(true);
+      return;
+    }
+
+    // Block if no sessionGroupId (no group of sessions to switch within)
+    if (!session.sessionGroupId) {
+      this.alertMessage.set(
+        `Aucun autre créneau n'est disponible pour la session "${session.titre || 'cette session'}". Veuillez contacter votre coach afin qu'il vous propose une nouvelle date.`
+      );
+      this.showAlertModal.set(true);
+      return;
+    }
+
     this.reschedulingSession.set(session);
     this.selectedRescheduleSlot.set(null);
     this.availableRescheduleSlots.set([]);
@@ -550,9 +613,9 @@ export class EntrepreneurSessionsComponent implements OnInit {
     this.isLoadingSlots.set(true);
 
     const user = this.authSvc.currentUser$.value;
-    if (!user || !session.coach || !session.sessionGroupId) {
+    if (!user || !session.coach) {
       this.isLoadingSlots.set(false);
-      this.toastr.error('Impossible de récupérer les créneaux pour cette session (sessionGroupId manquant).');
+      this.toastr.error('Impossible de récupérer les créneaux pour cette session.');
       return;
     }
 
@@ -560,10 +623,8 @@ export class EntrepreneurSessionsComponent implements OnInit {
       .subscribe({
         next: (groups) => {
           this.isLoadingSlots.set(false);
-          // Find the group that matches the session's group ID
           const matchingGroup = groups.find(g => g.sessionGroupId === session.sessionGroupId);
           if (matchingGroup && matchingGroup.slots) {
-            // Exclude the currently booked slot if necessary, though it shouldn't be in available anyway
             this.availableRescheduleSlots.set(matchingGroup.slots);
           } else {
             this.availableRescheduleSlots.set([]);

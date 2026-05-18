@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,11 +29,17 @@ public class KpiFormResponse {
     @Column(name = "form_title")
     private String formTitle;
 
-    @Column(name = "entrepreneur_id", nullable = false)
+    @Column(name = "entrepreneur_id")
     private Long entrepreneurId;
 
     @Column(name = "entrepreneur_name")
     private String entrepreneurName;
+
+    @Column(name = "coach_id")
+    private Long coachId;
+
+    @Column(name = "coach_name")
+    private String coachName;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -47,6 +54,13 @@ public class KpiFormResponse {
     @OneToMany(mappedBy = "response", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonManagedReference("response-answers")
     private List<KpiFormAnswer> answers = new ArrayList<>();
+
+    // Transient fields enriched at query time (not stored in DB)
+    @Transient
+    private String formType;
+
+    @Transient
+    private LocalDate deadline;
 
     @PrePersist
     protected void onCreate() {
@@ -87,6 +101,18 @@ public class KpiFormResponse {
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
+    public Long getCoachId() { return coachId; }
+    public void setCoachId(Long coachId) { this.coachId = coachId; }
+
+    public String getCoachName() { return coachName; }
+    public void setCoachName(String coachName) { this.coachName = coachName; }
+
     public List<KpiFormAnswer> getAnswers() { return answers; }
     public void setAnswers(List<KpiFormAnswer> answers) { this.answers = answers; }
+
+    public String getFormType() { return formType; }
+    public void setFormType(String formType) { this.formType = formType; }
+
+    public LocalDate getDeadline() { return deadline; }
+    public void setDeadline(LocalDate deadline) { this.deadline = deadline; }
 }

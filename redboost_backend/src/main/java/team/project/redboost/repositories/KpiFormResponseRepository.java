@@ -10,4 +10,5 @@ import java.util.List;
 public interface KpiFormResponseRepository extends JpaRepository<KpiFormResponse, Long> {
     List<KpiFormResponse> findByFormId(Long formId);
     List<KpiFormResponse> findByEntrepreneurId(Long entrepreneurId);
+    List<KpiFormResponse> findByCoachId(Long coachId);
 }

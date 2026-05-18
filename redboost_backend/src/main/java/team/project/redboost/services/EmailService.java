@@ -19,7 +19,8 @@ import java.util.Properties;
 @Service
 public class EmailService {
 
-    private static final String USER_ID = "me";
+    private static final String USER_EMAIL = "redboost.tn@gmail.com";
+
     private static final Logger logger = LoggerFactory.getLogger(EmailService.class);
 
     private final Gmail gmail;
@@ -37,9 +38,10 @@ public class EmailService {
     public void sendEmail(String to, String subject, String body) throws MessagingException, IOException {
         ensureValidCredential(); // Proactively refresh token
         try {
-            MimeMessage mimeMessage = createEmail(to, subject, body);
+            MimeMessage mimeMessage = createEmail(to, USER_EMAIL, subject, body);
             Message message = createMessageWithEmail(mimeMessage);
-            gmail.users().messages().send(USER_ID, message).execute();
+            gmail.users().messages().send(USER_EMAIL, message).execute();
+
             logger.info("Email sent successfully to {}", to);
         } catch (IOException e) {
             logger.error("Failed to send email to {}: {}", to, e.getMessage());
@@ -49,9 +51,11 @@ public class EmailService {
             }
             // Retry once for transient errors
             ensureValidCredential();
-            MimeMessage mimeMessage = createEmail(to, subject, body);
+             MimeMessage mimeMessage = createEmail(to, USER_EMAIL, subject, body);
+
             Message message = createMessageWithEmail(mimeMessage);
-            gmail.users().messages().send(USER_ID, message).execute();
+            gmail.users().messages().send(USER_EMAIL, message).execute();
+
             logger.info("Email sent successfully to {} after retry", to);
         }
     }
@@ -76,11 +80,13 @@ public class EmailService {
     /**
      * Creates a formatted MIME email
      */
-    private MimeMessage createEmail(String to, String subject, String bodyText) throws MessagingException {
+       private MimeMessage createEmail(String to, String from, String subject, String bodyText) throws MessagingException {
+
         Properties props = new Properties();
         Session session = Session.getDefaultInstance(props, null);
         MimeMessage email = new MimeMessage(session);
-        // "me" user is used for sender by Gmail API automatically
+        email.setFrom(new InternetAddress(from));
+
         email.addRecipient(jakarta.mail.Message.RecipientType.TO, new InternetAddress(to));
         email.setSubject(subject);
         email.setText(bodyText);

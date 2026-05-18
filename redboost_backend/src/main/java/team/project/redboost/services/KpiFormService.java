@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import team.project.redboost.entities.*;
 import team.project.redboost.repositories.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -63,13 +64,10 @@ public class KpiFormService {
         return thematiqueRepository.findByProgrammeId(programmeId);
     }
 
-    // Get unique coaches for a programme's thématiques
     public List<User> getCoachesByProgramme(Long programmeId) {
-        List<ThematiqueCoaching> thematiques = thematiqueRepository.findByProgrammeId(programmeId);
-        return thematiques.stream()
-                .flatMap(thematique -> disponibiliteRepository.findByThematiqueId(thematique.getId()).stream())
-                .map(Disponibilite::getCoach)
-                .distinct()
+        return userRepository.findAll().stream()
+                .filter(u -> u.getRole() != null && u.getRole().name().equals("COACH"))
+                .filter(u -> u.getProgrammes() != null && u.getProgrammes().stream().anyMatch(p -> p.getId().equals(programmeId)))
                 .collect(Collectors.toList());
     }
 
@@ -111,15 +109,33 @@ public class KpiFormService {
 
         KpiForm savedForm = kpiFormRepository.save(form);
 
-        // Auto-send evaluation forms to relevant entrepreneurs
-        if (form.getFormType() == KpiForm.FormType.EVALUATION && form.getProgrammeId() != null && form.getThematiqueId() != null) {
-            List<User> entrepreneurs = getEntrepreneursForEvaluation(form.getProgrammeId(), form.getThematiqueId());
-            List<Long> entrepreneurIds = entrepreneurs.stream()
-                    .map(User::getId)
-                    .collect(Collectors.toList());
+        if (savedForm.getProgrammeId() != null) {
+            if (form.getFormType() == KpiForm.FormType.EVALUATION) {
+                // EVALUATION: send to entrepreneurs only
+                List<User> entrepreneurs = getEntrepreneursForProgramme(form.getProgrammeId());
+                List<Long> entrepreneurIds = entrepreneurs.stream()
+                        .map(User::getId)
+                        .collect(Collectors.toList());
+                if (!entrepreneurIds.isEmpty()) {
+                    sendFormToEntrepreneurs(savedForm.getId(), entrepreneurIds);
+                }
+            } else if (form.getFormType() == KpiForm.FormType.KPI) {
+                // KPI: send to BOTH entrepreneurs AND coaches
+                List<User> entrepreneurs = getEntrepreneursForProgramme(form.getProgrammeId());
+                List<Long> entrepreneurIds = entrepreneurs.stream()
+                        .map(User::getId)
+                        .collect(Collectors.toList());
+                if (!entrepreneurIds.isEmpty()) {
+                    sendFormToEntrepreneurs(savedForm.getId(), entrepreneurIds);
+                }
 
-            if (!entrepreneurIds.isEmpty()) {
-                sendFormToEntrepreneurs(savedForm.getId(), entrepreneurIds);
+                List<User> coaches = getCoachesByProgramme(form.getProgrammeId());
+                List<Long> coachIds = coaches.stream()
+                        .map(User::getId)
+                        .collect(Collectors.toList());
+                if (!coachIds.isEmpty()) {
+                    sendFormToCoaches(savedForm.getId(), coachIds);
+                }
             }
         }
 
@@ -184,10 +200,58 @@ public class KpiFormService {
     public List<KpiFormResponse> getResponsesForForm(Long formId) {
         return kpiFormResponseRepository.findByFormId(formId);
     }
+    @Transactional
+    public void sendFormToCoaches(Long formId, List<Long> coachIds) {
+        KpiForm form = getFormById(formId);
+        List<User> coaches = userRepository.findAllById(coachIds);
 
+        for (User coach : coaches) {
+            boolean alreadySent = form.getResponses().stream()
+                    .anyMatch(r -> r.getCoachId() != null && r.getCoachId().equals(coach.getId()));
+
+            if (!alreadySent) {
+                KpiFormResponse response = new KpiFormResponse();
+                response.setForm(form);
+                response.setCoachId(coach.getId());
+                response.setCoachName(coach.getFirstName() + " " + coach.getLastName());
+                response.setStatus(KpiFormResponse.ResponseStatus.PENDING);
+                kpiFormResponseRepository.save(response);
+            }
+        }
+
+        form.setStatus(KpiForm.KpiFormStatus.SENT);
+        kpiFormRepository.save(form);
+    }
+
+    public List<KpiFormResponse> getPendingFormsForCoach(Long coachId) {
+        return kpiFormResponseRepository.findByCoachId(coachId).stream()
+                .filter(r -> r.getStatus() == KpiFormResponse.ResponseStatus.PENDING
+                          || r.getStatus() == KpiFormResponse.ResponseStatus.SUBMITTED)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
     public List<KpiFormResponse> getPendingFormsForEntrepreneur(Long entrepreneurId) {
         return kpiFormResponseRepository.findByEntrepreneurId(entrepreneurId).stream()
-                .filter(r -> r.getStatus() == KpiFormResponse.ResponseStatus.PENDING)
+                .peek(r -> {
+                    // Enrich with form metadata
+                    KpiForm form = r.getForm();
+                    if (form != null) {
+                        r.setFormType(form.getFormType() != null ? form.getFormType().name() : "KPI");
+                        r.setDeadline(form.getDeadline());
+                    }
+                })
+                .filter(r -> {
+                    // Filter out PENDING forms whose deadline has passed
+                    if (r.getStatus() == KpiFormResponse.ResponseStatus.PENDING
+                            && r.getDeadline() != null
+                            && r.getDeadline().isBefore(LocalDate.now())) {
+                        return false;
+                    }
+                    // Keep PENDING and SUBMITTED
+                    return r.getStatus() == KpiFormResponse.ResponseStatus.PENDING
+                            || r.getStatus() == KpiFormResponse.ResponseStatus.SUBMITTED;
+                })
                 .collect(Collectors.toList());
     }
 

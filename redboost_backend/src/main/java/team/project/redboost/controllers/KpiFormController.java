@@ -100,6 +100,10 @@ public class KpiFormController {
         if (entrepreneurIds != null && !entrepreneurIds.isEmpty()) {
             kpiFormService.sendFormToEntrepreneurs(id, entrepreneurIds);
         }
+        List<Long> coachIds = payload.get("coachIds");
+        if (coachIds != null && !coachIds.isEmpty()) {
+            kpiFormService.sendFormToCoaches(id, coachIds);
+        }
         return ResponseEntity.ok().build();
     }
 
@@ -111,6 +115,11 @@ public class KpiFormController {
     @GetMapping("/entrepreneur/{entrepreneurId}")
     public ResponseEntity<List<KpiFormResponse>> getPendingFormsForEntrepreneur(@PathVariable Long entrepreneurId) {
         return ResponseEntity.ok(kpiFormService.getPendingFormsForEntrepreneur(entrepreneurId));
+    }
+
+    @GetMapping("/coach/{coachId}")
+    public ResponseEntity<List<KpiFormResponse>> getPendingFormsForCoach(@PathVariable Long coachId) {
+        return ResponseEntity.ok(kpiFormService.getPendingFormsForCoach(coachId));
     }
 
     @PostMapping("/responses/{responseId}/submit")

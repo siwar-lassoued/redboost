@@ -47,6 +47,8 @@ export interface KpiFormResponse {
     status: 'PENDING' | 'SUBMITTED' | 'VALIDATED';
     submittedAt?: string;
     answers: KpiFormAnswer[];
+    formType?: 'KPI' | 'EVALUATION';
+    deadline?: string;
 }
 
 export interface User {
@@ -79,6 +81,10 @@ export class KpiFormService {
 
     getAllForms(): Observable<KpiForm[]> {
         return this.http.get<KpiForm[]>(this.apiUrl);
+    }
+
+    getAllThematiques(): Observable<ThematiqueCoaching[]> {
+        return this.http.get<ThematiqueCoaching[]>(this.thematiquesUrl);
     }
 
     getFormsByProgramme(programmeId: string | number): Observable<KpiForm[]> {
@@ -162,6 +168,10 @@ export class KpiFormService {
 
     getPendingFormsForEntrepreneur(entrepreneurId: string | number): Observable<KpiFormResponse[]> {
         return this.http.get<KpiFormResponse[]>(`${this.apiUrl}/entrepreneur/${entrepreneurId}`);
+    }
+
+    getPendingFormsForCoach(coachId: string | number): Observable<KpiFormResponse[]> {
+        return this.http.get<KpiFormResponse[]>(`${this.apiUrl}/coach/${coachId}`);
     }
 
     submitResponse(responseId: string | number, answers: KpiFormAnswer[]): Observable<KpiFormResponse> {
