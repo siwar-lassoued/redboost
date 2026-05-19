@@ -13,7 +13,7 @@ import { LivrableAdminService, RapportSessionAdmin, RapportMissionAdmin } from '
       <!-- Header -->
       <div class="flex items-center justify-between mb-8">
         <div>
-          <h1 class="text-3xl font-black text-gray-900 tracking-tight">Livrables Coach</h1>
+          <h1 class="text-3xl font-black text-gray-900 tracking-tight">Rapports Coach</h1>
           <p class="text-gray-500 mt-1">Suivi des rapports de sessions et de missions soumis par les coaches</p>
         </div>
       </div>

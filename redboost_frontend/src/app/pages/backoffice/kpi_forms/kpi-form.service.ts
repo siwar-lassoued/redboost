@@ -28,6 +28,7 @@ export interface KpiForm {
     deadline?: string;
     createdAt?: string;
     questions: KpiFormQuestion[];
+    responses?: KpiFormResponse[];
 }
 
 export interface KpiFormAnswer {
@@ -117,19 +118,12 @@ export class KpiFormService {
         );
     }
 
-    /**
-     * Uses the existing /api/users?role=COACH endpoint,
-     * then filters to those whose programmes include the given programmeId.
-     */
     getCoachesByProgramme(programmeId: string | number): Observable<User[]> {
-        return this.http.get<User[]>(`${this.usersUrl}?role=COACH`).pipe(
-            map((coaches: User[]) =>
-                coaches.filter(coach =>
-                    coach.programmes &&
-                    coach.programmes.some(p => p.id === Number(programmeId))
-                )
-            )
-        );
+        return this.http.get<User[]>(`${this.apiUrl}/programme/${programmeId}/coaches`);
+    }
+
+    getAllCoaches(): Observable<User[]> {
+        return this.http.get<User[]>(`${this.usersUrl}?role=COACH`);
     }
 
     getEntrepreneursForEvaluation(programmeId: string | number, thematiqueId: string | number): Observable<User[]> {

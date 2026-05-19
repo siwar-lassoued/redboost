@@ -113,23 +113,39 @@ public class CandidatureRedstarterService {
         logAction(savedCandidature.getId(), "Candidature reçue", null, CandidatureRedstarter.StatutCandidature.EN_ATTENTE.name(),
                 null, "Système", "Via formulaire en ligne");
         
-        // Notify admins - Disabled as requested
-        /*
+        // ── Email de confirmation au candidat ─────────────────────────────
         try {
-            List<User> admins = userRepository.findByRoleIn(Arrays.asList(Role.ADMIN, Role.SUPERADMIN));
-            String message = "Nouvelle candidature soumise par " + savedCandidature.getNomPrenom() + " (" + savedCandidature.getNomEntreprise() + ")";
-            for (User admin : admins) {
-                notificationService.createAndSendNotification(
-                    admin.getId(),
-                    message,
-                    "NOUVELLE_CANDIDATURE",
-                    savedCandidature.getId()
-                );
+            String candidatEmail = savedCandidature.getEmail();
+            // Fallback dans dynamicAnswers si email non renseigné directement
+            if (candidatEmail == null || candidatEmail.isEmpty()) {
+                Map<String, Object> answers = getDynamicAnswersMap(savedCandidature);
+                if (answers != null) {
+                    for (Map.Entry<String, Object> e : answers.entrySet()) {
+                        if (e.getKey().toLowerCase().contains("email")) {
+                            candidatEmail = e.getValue().toString();
+                            break;
+                        }
+                    }
+                }
+            }
+            if (candidatEmail != null && !candidatEmail.isEmpty()) {
+                String nom = savedCandidature.getNomPrenom() != null ? savedCandidature.getNomPrenom() : "Candidat";
+                String entreprise = savedCandidature.getNomEntreprise() != null ? savedCandidature.getNomEntreprise() : "";
+                String emailBody =
+                    "Bonjour " + nom + ",\n\n" +
+                    "Nous avons bien reçu votre candidature" + (entreprise.isEmpty() ? "" : " pour " + entreprise) + ".\n\n" +
+                    "Votre dossier a été enregistré sous la référence #" + savedCandidature.getId() + " " +
+                    "et est actuellement en cours d'examen par notre équipe.\n\n" +
+                    "Nous vous contacterons prochainement pour vous informer de la suite donnée à votre candidature.\n\n" +
+                    "En attendant, n'hésitez pas à nous contacter si vous avez des questions.\n\n" +
+                    "Cordialement,\n" +
+                    "L'équipe RedBoost";
+                emailService.sendEmail(candidatEmail, "Confirmation de votre candidature - RedBoost", emailBody);
+                log.info("Email de confirmation envoyé à: {}", candidatEmail);
             }
         } catch (Exception e) {
-            log.error("Failed to send notifications for new candidature", e);
+            log.warn("Envoi de l'email de confirmation échoué (non bloquant): {}", e.getMessage());
         }
-        */
         
         return savedCandidature;
     }

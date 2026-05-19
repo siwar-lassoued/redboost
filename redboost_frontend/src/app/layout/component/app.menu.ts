@@ -239,7 +239,7 @@ export class AppMenu implements OnInit {
                         routerLink: ['/admin-kpi-forms'],
                     },
                     {
-                        label: 'Livrables Coach',
+                        label: 'Rapports Coach',
                         icon: 'pi pi-fw pi-file',
                         routerLink: ['/admin-livrables'],
                     },

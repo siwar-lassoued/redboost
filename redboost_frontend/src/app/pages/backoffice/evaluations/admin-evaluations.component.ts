@@ -272,6 +272,7 @@ type PageTab = 'byCoach' | 'allRatings' | 'forms';
                   <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500">Programme</th>
                   <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500">Date limite</th>
                   <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500">Questions</th>
+                  <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500">Destinataires</th>
                   <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500">Statut</th>
                   <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500 text-center">Actions</th>
                 </tr>
@@ -291,6 +292,12 @@ type PageTab = 'byCoach' | 'allRatings' | 'forms';
                     </td>
                     <td class="px-6 py-5 text-sm font-black text-gray-900">
                       {{ f.questions.length || 0 }}
+                    </td>
+                    <td class="px-6 py-5 text-sm font-black text-pink-600">
+                      <div class="flex items-center gap-1.5">
+                        <i class="pi pi-users text-pink-400"></i>
+                        {{ f.responses?.length || 0 }} <span class="text-[10px] text-gray-400 font-normal uppercase">Destinataires</span>
+                      </div>
                     </td>
                     <td class="px-6 py-5">
                       <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-tighter"
@@ -324,70 +331,70 @@ type PageTab = 'byCoach' | 'allRatings' | 'forms';
 
       <!-- RESPONSES MODAL -->
       @if (showResponsesModal && viewingForm()) {
-        <div class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4" (click)="closeModals()">
-          <div class="bg-white rounded-3xl shadow-2xl w-full max-w-[800px] max-h-[90vh] overflow-hidden flex flex-col" (click)="$event.stopPropagation()">
-            <div class="p-6 bg-gray-900 flex items-center justify-between rounded-t-3xl">
-              <div>
-                <h2 class="text-xl font-black text-white">Réponses — {{ viewingForm()?.title }}</h2>
-                <p class="text-white/60 text-xs font-medium mt-1">{{ formResponses().length }} réponse(s) reçue(s)</p>
+        <div class="modal-overlay" (click)="closeModals()">
+          <div class="modal-box" style="max-width: 850px;" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+              <div class="modal-header-info">
+                <h2 class="modal-name">Détails — {{ viewingForm()?.title }}</h2>
+                <p style="font-size:12px;color:#6B7280;margin:4px 0 0;">{{ formResponses().length }} entrepreneur(s) associé(s)</p>
               </div>
-              <button (click)="closeModals()" class="text-white/60 hover:text-white bg-transparent border-none cursor-pointer"><i class="pi pi-times text-xl"></i></button>
+              <button (click)="closeModals()" class="modal-close"><i class="pi pi-times"></i></button>
             </div>
-            <div class="p-6 overflow-y-auto flex-1 bg-gray-50">
+            <div class="modal-body" style="background: #F9FAFB; max-height: 70vh; overflow-y: auto;">
               @if (isLoadingResponses) {
-                <div class="flex flex-col items-center justify-center py-16 gap-4">
-                  <i class="pi pi-spin pi-spinner text-4xl text-pink-500"></i>
-                  <p class="text-gray-500 text-sm font-medium">Chargement des réponses...</p>
+                <div style="text-align:center;padding:40px;">
+                  <i class="pi pi-spin pi-spinner" style="font-size:2rem;color:#ea5073;"></i>
+                  <p style="margin-top:10px;color:#6B7280;">Chargement des détails...</p>
                 </div>
               } @else if (formResponses().length === 0) {
-                <div class="flex flex-col items-center justify-center py-16 gap-4 text-center">
-                  <i class="pi pi-inbox text-5xl text-gray-300"></i>
-                  <p class="text-gray-700 font-black text-lg">Aucune réponse reçue</p>
-                  <p class="text-gray-400 text-sm">Les entrepreneurs n'ont pas encore soumis leurs réponses.</p>
+                <div style="text-align: center; padding: 60px 20px; background: #fff; border-radius: 20px;">
+                  <i class="pi pi-inbox" style="font-size: 3rem; color: #D1D5DB; margin-bottom: 1rem; display: block;"></i>
+                  <p style="color: #4A5568; font-weight: 700; font-size: 16px; margin: 0;">Aucun entrepreneur lié</p>
+                  <p style="color: #9CA3AF; font-size: 13px; margin-top: 4px;">Le formulaire n'a été envoyé à aucun entrepreneur.</p>
                 </div>
               } @else {
-                <div class="flex flex-col gap-4">
+                <div style="display:flex;flex-direction:column;gap:16px;">
                   @for (resp of formResponses(); track resp.id) {
-                    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                      <div class="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                          <div class="w-9 h-9 rounded-xl flex items-center justify-center text-white font-black text-sm shadow" style="background: linear-gradient(135deg, #ea5073, #d4476a);">
+                    <div style="background:#fff;border-radius:16px;padding:20px;border:1px solid #E5E7EB;box-shadow:0 2px 8px rgba(0,0,0,0.03);">
+                      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                        <div style="display:flex;align-items:center;gap:10px;">
+                          <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#ea5073,#d4476a);display:flex;align-items:center;justify-content:center;color:white;font-weight:900;font-size:14px;">
                             {{ (resp.entrepreneurName || 'E').charAt(0).toUpperCase() }}
                           </div>
                           <div>
-                            <p class="font-black text-sm text-gray-900">{{ resp.entrepreneurName || 'Entrepreneur' }}</p>
-                            <p class="text-[11px] text-gray-400">ID: {{ resp.entrepreneurId }}</p>
+                            <p style="font-weight:800;font-size:14px;color:#1A1A2E;margin:0;">{{ resp.entrepreneurName || 'Entrepreneur' }}</p>
+                            <p style="font-size:11px;color:#9CA3AF;margin:0;">ID: {{ resp.entrepreneurId }}</p>
                           </div>
                         </div>
-                        <div class="flex items-center gap-3">
-                          <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-tighter"
-                            [ngClass]="{'bg-amber-100 text-amber-700': resp.status==='PENDING', 'bg-emerald-100 text-emerald-700': resp.status==='SUBMITTED', 'bg-blue-100 text-blue-700': resp.status==='VALIDATED'}">
+                        <div style="display:flex;align-items:center;gap:10px;">
+                          <span style="padding:4px 12px;border-radius:20px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;display:inline-flex;align-items:center;gap:4px;"
+                            [ngStyle]="{
+                              'background': resp.status==='PENDING' ? '#FEF3C7' : (resp.status==='SUBMITTED' ? '#D1FAE5' : '#DBEAFE'),
+                              'color': resp.status==='PENDING' ? '#B45309' : (resp.status==='SUBMITTED' ? '#047857' : '#1D4ED8')
+                            }">
                             {{ resp.status === 'PENDING' ? 'En attente' : resp.status === 'SUBMITTED' ? 'Soumis' : 'Validé' }}
                           </span>
                           @if (resp.submittedAt) {
-                            <span class="text-[11px] text-gray-400">{{ resp.submittedAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                            <span style="font-size:11px;color:#9CA3AF;">{{ resp.submittedAt | date:'dd/MM/yyyy HH:mm' }}</span>
                           }
                         </div>
                       </div>
                       @if (resp.answers && resp.answers.length > 0) {
-                        <div class="p-5 flex flex-col gap-3">
+                        <div style="display:flex;flex-direction:column;gap:12px;">
                           @for (ans of resp.answers; track ans.questionId) {
-                            <div class="bg-gray-50 rounded-xl p-4 border-l-4 border-pink-400">
-                              <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">{{ ans.questionText }}</p>
-                              <p class="text-sm font-semibold text-gray-900">{{ ans.answerValue || '—' }}</p>
+                            <div style="background:#F9FAFB;border-radius:12px;padding:16px;border-left:4px solid #ea5073;">
+                              <p style="font-size:10px;font-weight:800;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.05em;margin:0 0 8px 0;">{{ ans.questionText }}</p>
+                              <p style="font-size:14px;font-weight:600;color:#1A1A2E;margin:0;">{{ ans.answerValue || '—' }}</p>
                             </div>
                           }
                         </div>
                       } @else {
-                        <p class="px-5 py-4 text-sm text-gray-400 italic">Aucune réponse fournie.</p>
+                        <p style="padding:16px;font-size:13px;color:#9CA3AF;font-style:italic;margin:0;background:#F9FAFB;border-radius:12px;">Aucune réponse fournie.</p>
                       }
                     </div>
                   }
                 </div>
               }
-            </div>
-            <div class="px-6 py-4 border-t border-gray-100 bg-white flex justify-end">
-              <button (click)="closeModals()" class="px-6 py-2.5 rounded-xl bg-gray-100 text-gray-600 font-bold text-sm hover:bg-gray-200 border-none cursor-pointer transition-all">Fermer</button>
             </div>
           </div>
         </div>
@@ -593,21 +600,6 @@ type PageTab = 'byCoach' | 'allRatings' | 'forms';
                    <textarea [(ngModel)]="editingForm.description" rows="2" class="search-input-kpi" style="padding: 12px 16px; resize: vertical;"></textarea>
                  </div>
                  <div>
-                   <label style="display: block; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Date limite</label>
-                   <input type="datetime-local" [(ngModel)]="editingForm.deadline" class="search-input-kpi" style="padding: 11px 16px;">
-                 </div>
-
-                 <div>
-                   <label style="display: block; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Coach</label>
-                   <select [(ngModel)]="editingForm.coachId" (change)="onCoachChange()" class="filter-select-kpi" style="width: 100%; padding: 12px 16px;">
-                     <option [value]="null">-- Sélectionner un coach --</option>
-                     @for (c of allCoaches(); track c.id) {
-                       <option [value]="c.id">{{ c.firstName }} {{ c.lastName }}</option>
-                     }
-                   </select>
-                 </div>
-
-                 <div>
                    <label style="display: block; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Thématique</label>
                    <select [(ngModel)]="editingForm.thematiqueId" (change)="onThematiqueChange()" class="filter-select-kpi" style="width: 100%; padding: 12px 16px;">
                      <option [value]="null">-- Sélectionner une thématique --</option>
@@ -629,6 +621,24 @@ type PageTab = 'byCoach' | 'allRatings' | 'forms';
                        Sélectionnez d'abord une thématique
                      </div>
                    }
+                 </div>
+
+                 <div>
+                   <label style="display: block; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Coach</label>
+                   <select [(ngModel)]="editingForm.coachId" (change)="onCoachChange()" [disabled]="!editingForm.programmeId" class="filter-select-kpi" style="width: 100%; padding: 12px 16px;" [ngStyle]="{'opacity': !editingForm.programmeId ? '0.5' : '1'}">
+                     <option [value]="null">-- Sélectionner un coach --</option>
+                     @for (c of allCoaches(); track c.id) {
+                       <option [value]="c.id">{{ c.firstName }} {{ c.lastName }}</option>
+                     }
+                   </select>
+                   @if (!editingForm.programmeId) {
+                     <p style="font-size: 10px; color: #ea5073; margin-top: 4px;">Sélectionnez une thématique d'abord</p>
+                   }
+                 </div>
+
+                 <div>
+                   <label style="display: block; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Date limite</label>
+                   <input type="datetime-local" [(ngModel)]="editingForm.deadline" class="search-input-kpi" style="padding: 11px 16px;">
                  </div>
                </div>
 
@@ -687,7 +697,10 @@ type PageTab = 'byCoach' | 'allRatings' | 'forms';
 
             <div class="modal-footer">
                <button (click)="closeModals()" class="btn-close-modal-kpi">Annuler</button>
-               <button (click)="saveForm()" [disabled]="!editingForm.title" class="btn-gradient-kpi" [style.opacity]="!editingForm.title ? '0.5' : '1'">Sauvegarder</button>
+               <button (click)="saveForm()" [disabled]="!editingForm.title || isSaving" class="btn-gradient-kpi" [style.opacity]="!editingForm.title || isSaving ? '0.5' : '1'">
+                 <i class="pi" [ngClass]="isSaving ? 'pi-spin pi-spinner' : 'pi-send'"></i>
+                 {{ isSaving ? 'Envoi en cours...' : 'Sauvegarder et envoyer' }}
+               </button>
             </div>
           </div>
         </div>
@@ -783,16 +796,8 @@ export class AdminEvaluationsComponent implements OnInit {
     
     this.loadForms();
 
-    // Load all thematiques and coaches for dropdowns
+    // Load all thematiques for dropdowns
     this.kpiFormSvc.getAllThematiques().subscribe(t => this.allThematiques.set(t || []));
-    // Load all coaches (users with role COACH)
-    this.kpiFormSvc.getCoachesByProgramme(0).subscribe({
-      next: c => this.allCoaches.set(c || []),
-      error: () => {
-        // fallback: load coaches per programme is not needed for the dropdown
-        // The dropdown will populate as user selects thematique first
-      }
-    });
   }
 
   loadForms() {
@@ -820,11 +825,17 @@ export class AdminEvaluationsComponent implements OnInit {
 
   openFormModal() {
     this.editingForm = this.getEmptyForm();
+    this.allCoaches.set([]);
     this.showFormModal = true;
   }
 
   openFormModalForEdit(form: KpiForm) {
     this.editingForm = JSON.parse(JSON.stringify(form));
+    if (this.editingForm.programmeId) {
+       this.kpiFormSvc.getCoachesByProgramme(this.editingForm.programmeId).subscribe(c => this.allCoaches.set(c || []));
+    } else {
+       this.allCoaches.set([]);
+    }
     this.showFormModal = true;
   }
 
@@ -870,7 +881,15 @@ export class AdminEvaluationsComponent implements OnInit {
     this.editingForm.questions.splice(idx, 1);
   }
 
+  isSaving = false;
+
   saveForm() {
+    if (this.isSaving) return;
+    this.isSaving = true;
+    
+    // Ensure form type is EVALUATION
+    this.editingForm.formType = 'EVALUATION';
+
     const request = this.editingForm.id 
       ? this.kpiFormSvc.updateForm(this.editingForm.id, this.editingForm) 
       : this.kpiFormSvc.createForm(this.editingForm);
@@ -879,8 +898,12 @@ export class AdminEvaluationsComponent implements OnInit {
       next: (form) => {
         this.loadForms();
         this.closeModals();
+        this.isSaving = false;
       },
-      error: (e) => console.error('Failed to save form', e)
+      error: (e) => {
+        console.error('Failed to save form', e);
+        this.isSaving = false;
+      }
     });
   }
 

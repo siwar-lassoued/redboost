@@ -82,6 +82,19 @@ public class KpiFormService {
                 .collect(Collectors.toList());
     }
 
+    // Get entrepreneurs matched specifically with the selected coach
+    public List<User> getEntrepreneursForEvaluationCoach(Long programmeId, Long thematiqueId, Long coachId) {
+        List<Matching> matchings = matchingRepository.findByCoachIdAndStatut(coachId, Matching.StatutMatching.VALIDE);
+        return matchings.stream()
+                .filter(m -> programmeId.equals(m.getProgrammeId()) && 
+                            (thematiqueId == null || thematiqueId.equals(m.getThematiqueId())))
+                .map(m -> m.getEntrepreneurId())
+                .distinct()
+                .map(entId -> userRepository.findById(entId).orElse(null))
+                .filter(ent -> ent != null)
+                .collect(Collectors.toList());
+    }
+
     // Get all entrepreneurs for a programme
     public List<User> getEntrepreneursForProgramme(Long programmeId) {
         List<Matching> matchings = matchingRepository.findActiveByProgramme(programmeId);
@@ -112,7 +125,15 @@ public class KpiFormService {
         if (savedForm.getProgrammeId() != null) {
             if (form.getFormType() == KpiForm.FormType.EVALUATION) {
                 // EVALUATION: send to entrepreneurs only
-                List<User> entrepreneurs = getEntrepreneursForProgramme(form.getProgrammeId());
+                List<User> entrepreneurs;
+                if (form.getCoachId() != null) {
+                    entrepreneurs = getEntrepreneursForEvaluationCoach(form.getProgrammeId(), form.getThematiqueId(), form.getCoachId());
+                } else if (form.getThematiqueId() != null) {
+                    entrepreneurs = getEntrepreneursForEvaluation(form.getProgrammeId(), form.getThematiqueId());
+                } else {
+                    entrepreneurs = getEntrepreneursForProgramme(form.getProgrammeId());
+                }
+                
                 List<Long> entrepreneurIds = entrepreneurs.stream()
                         .map(User::getId)
                         .collect(Collectors.toList());

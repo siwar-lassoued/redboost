@@ -648,6 +648,7 @@ public class CoachService {
 
     // --- SEANCE EXCEPTIONNELLE ---
     
+    @Transactional(readOnly = true)
     public List<SeanceExceptionnelleDTO> getSeancesExceptionnellesByCoach(Long coachId) {
         return seanceExceptionnelleRepository.findByCoachId(coachId).stream().map(s -> {
             SeanceExceptionnelleDTO dto = mapToDTO(s);
