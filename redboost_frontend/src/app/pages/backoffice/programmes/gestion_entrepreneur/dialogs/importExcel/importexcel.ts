@@ -1,3 +1,4 @@
+import { environment } from '../../../../../../../environment';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
@@ -90,7 +91,7 @@ export class ExcelImportModalComponent {
       }); */
 
       const response = await this.http
-        .get('https://redboost.tn/api/users/entrepreneurs/template', {
+        .get(`${environment.apiUrl}/users/entrepreneurs/template`, {
 /*           headers,
  */          responseType: 'blob',
           observe: 'response'
@@ -142,7 +143,7 @@ export class ExcelImportModalComponent {
 
     try {
       const response: any = await this.http
-        .post('https://redboost.tn/api/users/import-entrepreneurs', formData, {
+        .post(`${environment.apiUrl}/users/import-entrepreneurs`, formData, {
           observe: 'response'
         })
         .pipe(

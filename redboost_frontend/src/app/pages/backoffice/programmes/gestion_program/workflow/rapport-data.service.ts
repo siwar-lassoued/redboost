@@ -1,3 +1,4 @@
+import { environment } from '../../../../../../environment';
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
@@ -8,8 +9,8 @@ import { RapportDTO, KpiLightDTO, SprintDetail, DocumentConsolide } from '../../
     providedIn: 'root'
 })
 export class RapportDataService {
-    private apiUrl = 'https://redboost.tn/api/rapports';
-    private backofficeUrl = 'https://redboost.tn/api/backoffice/programmes';
+    private apiUrl = `${environment.apiUrl}/rapports`;
+    private backofficeUrl = `${environment.apiUrl}/backoffice/programmes`;
 
     // State management
     private rapportSubject = new BehaviorSubject<RapportDTO | null>(null);

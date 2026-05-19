@@ -328,8 +328,8 @@ import { SessionService } from '../../../core/services/session.service';
               </button>
 
               <button class="btn-nav-save" (click)="saveReport()" [disabled]="isSaving">
-                  <i class="pi" [ngClass]="isSaving ? 'pi-spinner pi-spin' : 'pi-save'"></i>
-                  {{ isSaving ? "Enregistrement..." : "Enregistrer" }}
+                  <i class="pi" [ngClass]="isSaving ? 'pi-spinner pi-spin' : 'pi-send'"></i>
+                  {{ isSaving ? "Soumission en cours..." : "Soumettre et générer PDF" }}
               </button>
               
               <button class="btn-nav-primary" *ngIf="currentSection < totalSections" (click)="nextSection()" [disabled]="isSaving" style="margin-left: 8px;">
@@ -611,7 +611,7 @@ export class CoachRapportSessionComponent implements OnInit {
              console.log(`DEBUG: Found session with matching theme! Session ${s.id} (${s.titre}), s.entId=${s.entrepreneurId}, s.themeId=${s.thematiqueId}, isPast=${isPast}, isCancelled=${isCancelled}, entMatch=${entMatch}`);
           }
 
-          return !isCancelled && isPast && entMatch && themeMatch;
+          return !isCancelled && entMatch && themeMatch;
       });
       console.log("DEBUG: Final realizedSessions count:", this.realizedSessions.length);
   }
@@ -683,7 +683,7 @@ export class CoachRapportSessionComponent implements OnInit {
       this.currentReport.suiviActionsJson = JSON.stringify(this.actions);
       this.coachService.saveRapportSession(this.currentReport).subscribe({
           next: (res) => {
-              this.toastr.success('Rapport de session enregistré avec succès');
+              this.toastr.success('Rapport soumis et enregistré sous format PDF avec succès !');
               this.currentReport = res;
               this.isSaving = false;
               this.loadHistory();

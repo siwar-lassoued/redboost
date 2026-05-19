@@ -1,3 +1,4 @@
+import { environment } from '../../../../../../environment';
 // mes-taches-activites.component.ts
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
@@ -789,7 +790,7 @@ navigateToActivity(act: ActiviteDetailDTO): void {
 
     private refreshData(userId: number): void {
         this.http
-            .get<TacheDetailDTO[]>(`https://redboost.tn/api/backoffice/programmes/user/${userId}/taches`)
+            .get<TacheDetailDTO[]>(`${environment.apiUrl}/backoffice/programmes/user/${userId}/taches`)
             .subscribe({
                 next: (data) => {
                     this.detectNewAssignments(data, this.previousTacheIds, this.newTacheIds, 'tache');
@@ -797,11 +798,11 @@ navigateToActivity(act: ActiviteDetailDTO): void {
                     this.updateCount('taches', data.length);
                     this.previousTacheIds = new Set(data.map(t => t.id));
                 },
-                error: (err) => console.error('❌ Error refreshing tasks:', err)
+                error: (err) => console.error('Error refreshing tasks:', err)
             });
 
         this.http
-            .get<ActiviteDetailDTO[]>(`https://redboost.tn/api/backoffice/programmes/user/${userId}/activites`)
+            .get<ActiviteDetailDTO[]>(`${environment.apiUrl}/backoffice/programmes/user/${userId}/activites`)
             .subscribe({
                 next: (data) => {
                     this.detectNewAssignments(data, this.previousActiviteIds, this.newActiviteIds, 'activite');
@@ -809,7 +810,7 @@ navigateToActivity(act: ActiviteDetailDTO): void {
                     this.updateCount('activites', data.length);
                     this.previousActiviteIds = new Set(data.map(a => a.id));
                 },
-                error: (err) => console.error('❌ Error refreshing activities:', err)
+                error: (err) => console.error(' Error refreshing activities:', err)
             });
     }
 
@@ -842,7 +843,7 @@ navigateToActivity(act: ActiviteDetailDTO): void {
 
     private loadProgrammes() {
         this.http
-            .get<any[]>('https://redboost.tn/api/backoffice/programmes')
+            .get<any[]>(`${environment.apiUrl}/backoffice/programmes`)
             .subscribe({
                 next: (data) => {
                     this.programmes = data
@@ -855,7 +856,7 @@ navigateToActivity(act: ActiviteDetailDTO): void {
 
     private loadTaches(userId: number) {
         this.http
-            .get<TacheDetailDTO[]>(`https://redboost.tn/api/backoffice/programmes/user/${userId}/taches`)
+            .get<TacheDetailDTO[]>(`${environment.apiUrl}/backoffice/programmes/user/${userId}/taches`)
             .subscribe({
                 next: (data) => {
                     this.mesTaches = data;
@@ -872,7 +873,7 @@ navigateToActivity(act: ActiviteDetailDTO): void {
 
     private loadActivites(userId: number) {
   this.http
-    .get<ActiviteDetailDTO[]>(`https://redboost.tn/api/backoffice/programmes/user/${userId}/activites`)
+    .get<ActiviteDetailDTO[]>(`${environment.apiUrl}/backoffice/programmes/user/${userId}/activites`)
     .subscribe({
       next: (data) => {
         this.mesActivites = data;
@@ -1005,7 +1006,7 @@ switchToTachesTab() {
 
     marquerTermine(tacheId: number) {
         this.http
-            .patch<TacheDetailDTO>(`https://redboost.tn/api/backoffice/programmes/taches/${tacheId}/terminer`, {})
+            .patch<TacheDetailDTO>(`${environment.apiUrl}/backoffice/programmes/taches/${tacheId}/terminer`, {})
             .subscribe({
                 next: (updated) => {
                     const idx = this.mesTaches.findIndex(t => t.id === tacheId);
@@ -1017,7 +1018,7 @@ switchToTachesTab() {
 
     rouvrirTache(tacheId: number) {
         this.http
-            .patch<TacheDetailDTO>(`https://redboost.tn/api/backoffice/programmes/taches/${tacheId}/rouvrir`, {})
+            .patch<TacheDetailDTO>(`${environment.apiUrl}/backoffice/programmes/taches/${tacheId}/rouvrir`, {})
             .subscribe({
                 next: (updated) => {
                     const idx = this.mesTaches.findIndex(t => t.id === tacheId);

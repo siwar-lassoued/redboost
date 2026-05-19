@@ -39,14 +39,14 @@ import { AuthService } from '../../frontoffice/service/auth.service';
                 <label>Thématique de Coaching <span class="required">*</span></label>
                 <select [(ngModel)]="selectedThematiqueId" class="premium-input" (change)="onThematiqueChange()">
                   <option [ngValue]="0" disabled>Choisir une thématique...</option>
-                  <option *ngFor="let t of thematiques" [value]="t.id">{{ t.nom }}</option>
+                  <option *ngFor="let t of thematiques" [ngValue]="t.id">{{ t.nom }}</option>
                 </select>
               </div>
 
               <div class="form-group" *ngIf="selectedThematique">
                 <label>Programme associé</label>
                 <div class="info-tag">
-                    <i class="pi pi-info-circle"></i> {{ selectedThematique.programme?.nom }}
+                    <i class="pi pi-info-circle"></i> {{ selectedThematique.programmeNom || 'Programme non spécifié' }}
                 </div>
               </div>
             </div>
@@ -81,11 +81,11 @@ import { AuthService } from '../../frontoffice/service/auth.service';
             <tbody>
               <tr *ngFor="let h of history">
                 <td>
-                  <div style="font-weight:700; color:#1A1A2E;">{{ h.thematique?.nom }}</div>
+                  <div style="font-weight:700; color:#1A1A2E;">{{ h.thematique?.nom || selectedThematique?.nom }}</div>
                   <div class="hint">Rapport #{{ h.id }}</div>
                 </td>
                 <td>
-                  <span class="report-tag">{{ h.programme?.nom }}</span>
+                  <span class="report-tag">{{ h.programme?.nom || selectedThematique?.programmeNom || 'Programme' }}</span>
                 </td>
                 <td>
                    <div style="font-size:13px; color:#4B5563;">{{ h.dateCreation | date:'shortDate' }}</div>
@@ -278,8 +278,8 @@ import { AuthService } from '../../frontoffice/service/auth.service';
               </button>
 
               <button class="btn-nav-save" (click)="saveReport()" [disabled]="isSaving">
-                  <i class="pi" [ngClass]="isSaving ? 'pi-spinner pi-spin' : 'pi-save'"></i>
-                  {{ isSaving ? "Enregistrement..." : "Enregistrer" }}
+                  <i class="pi" [ngClass]="isSaving ? 'pi-spinner pi-spin' : 'pi-send'"></i>
+                  {{ isSaving ? "Soumission en cours..." : "Soumettre et générer PDF" }}
               </button>
               
               <button class="btn-nav-primary" *ngIf="currentSection < totalSections" (click)="nextSection()" [disabled]="isSaving" style="margin-left: 8px;">
@@ -576,7 +576,7 @@ export class CoachRapportMissionsComponent implements OnInit {
 
   getProgramName(id: number): string {
       const t = this.thematiques.find(them => them.id === id);
-      return t && t.programme ? t.programme.nom : 'Programme inconnu';
+      return t ? (t.programmeNom || 'Programme inconnu') : 'Programme inconnu';
   }
 
   onThematiqueChange() {
@@ -602,7 +602,7 @@ export class CoachRapportMissionsComponent implements OnInit {
     
     this.currentReport = {
         coachId: this.coachId,
-        programmeId: this.selectedThematique.programme ? this.selectedThematique.programme.id : 0,
+        programmeId: this.selectedThematique ? (this.selectedThematique.programmeId || 0) : 0,
         thematiqueId: this.selectedThematiqueId,
         attachedSessionIds: '',
         
@@ -629,8 +629,8 @@ export class CoachRapportMissionsComponent implements OnInit {
   openReport(reportData: any) {
       this.currentReport = { ...reportData };
       this.currentReport.coachId = this.coachId;
-      this.currentReport.programmeId = reportData.programme ? reportData.programme.id : 0;
-      this.currentReport.thematiqueId = reportData.thematique ? reportData.thematique.id : this.selectedThematiqueId;
+      this.currentReport.programmeId = reportData.programmeId || (reportData.programme ? reportData.programme.id : (this.selectedThematique?.programmeId || 0));
+      this.currentReport.thematiqueId = reportData.thematiqueId || (reportData.thematique ? reportData.thematique.id : this.selectedThematiqueId);
       
       this.attachedSessions = [];
       if (this.currentReport.attachedSessionIds) {
@@ -654,7 +654,7 @@ export class CoachRapportMissionsComponent implements OnInit {
       
       this.coachService.saveRapportMission(this.currentReport).subscribe({
           next: (res) => {
-              this.toastr.success('Rapport enregistré avec succès');
+              this.toastr.success('Rapport soumis et enregistré sous format PDF avec succès !');
               this.currentReport = res; 
               this.isSaving = false;
               this.loadHistory();

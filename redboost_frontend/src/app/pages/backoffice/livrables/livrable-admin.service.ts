@@ -22,31 +22,59 @@ export interface LivrableAdmin {
     coachEmail?: string;
 }
 
+export interface RapportSessionAdmin {
+    id: number;
+    beneficiaireNom?: string;
+    entrepriseNom?: string;
+    coachNom?: string;
+    coach?: { firstName: string, lastName: string };
+    numeroSession?: string;
+    dateSession?: string;
+    thematique?: { nom: string };
+    pdfPath?: string;
+    dateCreation?: string;
+}
+
+export interface RapportMissionAdmin {
+    id: number;
+    coach?: { firstName: string, lastName: string };
+    programme?: { nom: string };
+    thematique?: { nom: string };
+    dateDebut?: string;
+    dateFin?: string;
+    pdfPath?: string;
+    dateCreation?: string;
+}
+
 @Injectable({
     providedIn: 'root'
 })
 export class LivrableAdminService {
     private apiUrl = `${environment.apiUrl}/livrables`;
+    private apiSession = `${environment.apiUrl}/rapports-session-coach`;
+    private apiMission = `${environment.apiUrl}/rapports-mission-coach`;
 
     constructor(private http: HttpClient) {}
 
+    // Old generic methods...
     getAllLivrables(): Observable<LivrableAdmin[]> {
         return this.http.get<LivrableAdmin[]>(this.apiUrl);
     }
-
-    getLivrableById(id: number): Observable<LivrableAdmin> {
-        return this.http.get<LivrableAdmin>(`${this.apiUrl}/${id}`);
+    
+    // New specific methods
+    getAllSessionReports(): Observable<RapportSessionAdmin[]> {
+        return this.http.get<RapportSessionAdmin[]>(`${this.apiSession}/all`);
     }
 
-    createLivrable(livrable: LivrableAdmin): Observable<LivrableAdmin> {
-        return this.http.post<LivrableAdmin>(this.apiUrl, livrable);
+    getAllMissionReports(): Observable<RapportMissionAdmin[]> {
+        return this.http.get<RapportMissionAdmin[]>(`${this.apiMission}/all`);
     }
 
-    updateStatus(id: number, statut: string, coachComment?: string): Observable<LivrableAdmin> {
-        return this.http.patch<LivrableAdmin>(`${this.apiUrl}/${id}/statut`, { statut, coachComment });
+    getSessionReportPdfUrl(id: number): string {
+        return `${this.apiSession}/${id}/pdf`;
     }
 
-    deleteLivrable(id: number): Observable<void> {
-        return this.http.delete<void>(`${this.apiUrl}/${id}`);
+    getMissionReportPdfUrl(id: number): string {
+        return `${this.apiMission}/${id}/pdf`;
     }
 }

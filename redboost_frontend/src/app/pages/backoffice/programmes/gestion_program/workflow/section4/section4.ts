@@ -1,3 +1,4 @@
+import { environment } from '../../../../../../../environment';
 import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -77,7 +78,7 @@ export class RapportSection4Component implements OnInit, OnChanges {
     activeResultTab: 'strengths' | 'weaknesses' | 'comparisons' | 'recommendations' | 'feedback' = 'strengths';
 
     private isInitialized = false;
-    private readonly aiApiUrl = 'https://redboost.tn/api/ai';
+    private readonly aiApiUrl = `${environment.apiUrl}/ai`;
 
     constructor(
         private rapportDataService: RapportDataService,

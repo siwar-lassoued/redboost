@@ -1,3 +1,4 @@
+import { environment } from '../../../../environment';
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -20,7 +21,7 @@ export interface ImproveResponse {
     providedIn: 'root'
 })
 export class AiService {
-    private apiUrl = 'https://redboost.tn/api/ai';
+    private apiUrl = `${environment.apiUrl}/ai`;
 
     constructor(private http: HttpClient) {}
 

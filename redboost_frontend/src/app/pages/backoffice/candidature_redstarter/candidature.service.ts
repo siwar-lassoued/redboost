@@ -1,3 +1,4 @@
+import { environment } from '../../../../environment';
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -62,7 +63,7 @@ export interface ApiResponse {
     providedIn: 'root',
 })
 export class CandidatureService {
-    private apiUrl = 'https://redboost.tn/api/candidatures';
+    private apiUrl = `${environment.apiUrl}/candidatures`;
     //private apiUrl = 'http://localhost:8082/api/candidatures';
 
 

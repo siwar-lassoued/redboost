@@ -1,3 +1,4 @@
+import { environment } from '../../../../environment';
 // src/app/services/dashboard.service.ts
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
@@ -56,7 +57,7 @@ export interface SmallStatsDTO {
   providedIn: 'root'
 })
 export class DashboardService {
-  private apiUrl = 'https://redboost.tn/api/backoffice/programmes';
+  private apiUrl = `${environment.apiUrl}/backoffice/programmes`;
 
   constructor(private http: HttpClient) {}
 
@@ -66,7 +67,7 @@ export class DashboardService {
 
   getActivityTypesCount() {
     return this.http.get<Record<string, number>>(
-      'https://redboost.tn/api/backoffice/programmes/activities/count-by-type-global'
+      `${environment.apiUrl}/backoffice/programmes/activities/count-by-type-global`
     );
   }
 }

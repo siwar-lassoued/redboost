@@ -1,3 +1,4 @@
+import { environment } from '../../../../../environment';
 import { Component, DoCheck } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -627,7 +628,7 @@ export class ContactLandingComponent implements DoCheck {
         this.isSubmitting = true;
 
         this.http
-            .post('https://redboost.tn/api/contact', this.formData)
+            .post(`${environment.apiUrl}/contact`, this.formData)
             .subscribe({
                 next: (response: any) => {
                     this.formData = {

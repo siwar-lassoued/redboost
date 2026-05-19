@@ -11,4 +11,5 @@ public interface RapportMissionCoachRepository extends JpaRepository<RapportMiss
     List<RapportMissionCoach> findByCoachIdAndProgrammeIdOrderByDateCreationDesc(Long coachId, Long programmeId);
     List<RapportMissionCoach> findByCoachIdAndThematiqueIdOrderByDateCreationDesc(Long coachId, Long thematiqueId);
     List<RapportMissionCoach> findByProgrammeIdOrderByDateCreationDesc(Long programmeId);
+    List<RapportMissionCoach> findAllByOrderByDateCreationDesc();
 }

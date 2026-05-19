@@ -39,6 +39,32 @@ public class RapportSessionCoachController {
     private final ThematiqueRepository thematiqueRepository;
     private final ReportPdfService pdfService;
 
+    @GetMapping("/all")
+    public ResponseEntity<List<RapportSessionCoach>> getAll() {
+        return ResponseEntity.ok(repository.findAllByOrderByDateCreationDesc());
+    }
+
+    @GetMapping("/{id}/pdf")
+    public ResponseEntity<org.springframework.core.io.Resource> getPdf(@PathVariable Long id) {
+        try {
+            RapportSessionCoach rapport = repository.findById(id).orElseThrow();
+            if (rapport.getPdfPath() == null || rapport.getPdfPath().isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+            java.nio.file.Path filePath = java.nio.file.Paths.get(rapport.getPdfPath());
+            org.springframework.core.io.Resource resource = new org.springframework.core.io.UrlResource(filePath.toUri());
+            if (!resource.exists() || !resource.isReadable()) {
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"Rapport_Session_" + id + ".pdf\"")
+                    .body(resource);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
     @GetMapping("/coach/{coachId}")
     public ResponseEntity<List<RapportSessionCoach>> getHistory(@PathVariable Long coachId) {
         return ResponseEntity.ok(repository.findByCoachIdOrderByDateCreationDesc(coachId));

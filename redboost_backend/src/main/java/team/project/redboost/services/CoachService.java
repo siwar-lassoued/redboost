@@ -10,6 +10,7 @@ import team.project.redboost.entities.*;
 import team.project.redboost.repositories.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 import org.springframework.web.multipart.MultipartFile;
@@ -488,8 +489,69 @@ public class CoachService {
         return sessionCoachRepository.findByDisponibiliteId(disponibiliteId).stream().map(this::mapToDTO).collect(Collectors.toList());
     }
     
+    @Transactional(readOnly = true)
     public List<SessionCoachDTO> getSessionsByCoach(Long coachId) {
-        return sessionCoachRepository.findByDisponibiliteCoachId(coachId).stream().map(this::mapToDTO).collect(Collectors.toList());
+        List<SessionCoachDTO> list = sessionCoachRepository.findByDisponibiliteCoachId(coachId).stream().map(this::mapToDTO).collect(Collectors.toList());
+        Set<String> dispoIds = list.stream()
+                .map(s -> String.valueOf(s.getId()))
+                .collect(Collectors.toSet());
+
+        List<Session> bookedSessions = sessionRepository.findByCoachId(coachId);
+        for (Session s : bookedSessions) {
+            if (s.getDisponibiliteId() != null && dispoIds.contains(s.getDisponibiliteId())) {
+                continue;
+            }
+            SessionCoachDTO dto = new SessionCoachDTO();
+            dto.setId((long) Math.abs(s.getId().hashCode()));
+            dto.setTitre(s.getTitre());
+            dto.setDateSession(s.getDate() != null ? s.getDate().toLocalDate() : LocalDate.now());
+            dto.setHeureDebut(s.getDate() != null ? s.getDate().toLocalTime() : LocalTime.of(9, 0));
+            dto.setHeureFin(s.getDate() != null ? s.getDate().toLocalTime().plusMinutes(s.getDureeMinutes() != null ? s.getDureeMinutes() : 60) : LocalTime.of(10, 0));
+            dto.setTypeSession(s.getTypeSession() != null ? s.getTypeSession().name() : "EN_LIGNE");
+            dto.setIsBooked(true);
+            dto.setMeetLink(s.getMeetLink());
+            dto.setIsExceptionnelle(s.getIsExceptionnelle() != null ? s.getIsExceptionnelle() : false);
+            dto.setBookingStatus(s.getStatut() != null ? s.getStatut().name() : "CONFIRME");
+            if (s.getEntrepreneur() != null) {
+                dto.setEntrepreneurId(s.getEntrepreneur().getId());
+                dto.setEntrepreneurName(s.getEntrepreneur().getFirstName() + " " + s.getEntrepreneur().getLastName());
+            }
+            if (s.getProgramme() != null) {
+                dto.setProgrammeNom(s.getProgramme().getNom());
+            }
+
+            Long themeId = s.getThematiqueId();
+            if (themeId == null && s.getDisponibiliteId() != null) {
+                try {
+                    Long slotId = Long.parseLong(s.getDisponibiliteId());
+                    sessionCoachRepository.findById(slotId).ifPresent(slot -> {
+                        if (slot.getDisponibilite() != null && slot.getDisponibilite().getThematique() != null) {
+                            dto.setThematiqueId(slot.getDisponibilite().getThematique().getId());
+                            dto.setThematiqueNom(slot.getDisponibilite().getThematique().getNom());
+                        }
+                    });
+                } catch(Exception ignored) {}
+            }
+            if (dto.getThematiqueId() == null && s.getCoach() != null && s.getEntrepreneur() != null) {
+                List<Matching> matchings = matchingRepository.findByCoachIdAndStatut(
+                        s.getCoach().getId(), Matching.StatutMatching.VALIDE);
+                Matching match = matchings.stream()
+                        .filter(m -> m.getEntrepreneurId().equals(s.getEntrepreneur().getId()))
+                        .filter(m -> m.getThematiqueId() != null)
+                        .findFirst().orElse(null);
+                if (match != null) {
+                    themeId = match.getThematiqueId();
+                }
+            }
+            if (themeId != null && dto.getThematiqueId() == null) {
+                dto.setThematiqueId(themeId);
+                thematiqueRepository.findById(themeId).ifPresent(t -> dto.setThematiqueNom(t.getNom()));
+            } else if (dto.getThematiqueNom() == null) {
+                dto.setThematiqueNom("Thématique de coaching");
+            }
+            list.add(dto);
+        }
+        return list;
     }
 
     @Transactional
@@ -587,7 +649,21 @@ public class CoachService {
     // --- SEANCE EXCEPTIONNELLE ---
     
     public List<SeanceExceptionnelleDTO> getSeancesExceptionnellesByCoach(Long coachId) {
-        return seanceExceptionnelleRepository.findByCoachId(coachId).stream().map(this::mapToDTO).collect(Collectors.toList());
+        return seanceExceptionnelleRepository.findByCoachId(coachId).stream().map(s -> {
+            SeanceExceptionnelleDTO dto = mapToDTO(s);
+            if (dto.getThematiqueId() == null && s.getCoach() != null && s.getEntrepreneur() != null) {
+                List<Matching> matchings = matchingRepository.findByCoachIdAndStatut(
+                        s.getCoach().getId(), Matching.StatutMatching.VALIDE);
+                Matching match = matchings.stream()
+                        .filter(m -> m.getEntrepreneurId().equals(s.getEntrepreneur().getId()))
+                        .filter(m -> m.getThematiqueId() != null)
+                        .findFirst().orElse(null);
+                if (match != null) {
+                    dto.setThematiqueId(match.getThematiqueId());
+                }
+            }
+            return dto;
+        }).collect(Collectors.toList());
     }
 
     @Transactional

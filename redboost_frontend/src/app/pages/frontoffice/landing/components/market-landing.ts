@@ -1,3 +1,4 @@
+import { environment } from '../../../../../environment';
 import { Component, AfterViewInit, ElementRef, ViewChild } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
@@ -993,7 +994,7 @@ export class MarketLandingComponent implements AfterViewInit {
 
     fetchProjects() {
         this.loading = true;
-        const apiUrl = 'https://redboost.tn/api/projets/GetAllPublic';
+        const apiUrl = `${environment.apiUrl}/projets/GetAllPublic`;
 
         this.http.get<any[]>(apiUrl).subscribe({
             next: (response) => {

@@ -1,3 +1,4 @@
+import { environment } from '../../../../environment';
 // services/template.service.ts
 import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -16,7 +17,7 @@ import { Injectable } from '@angular/core';
     providedIn: 'root',
 })
 export class TemplateService {
-    private apiUrl = 'https://redboost.tn/api/templates';
+    private apiUrl = `${environment.apiUrl}/templates`;
 
     constructor(
         private http: HttpClient,

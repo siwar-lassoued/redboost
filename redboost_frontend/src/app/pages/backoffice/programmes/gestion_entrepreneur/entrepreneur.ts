@@ -1,3 +1,4 @@
+import { environment } from '../../../../../environment';
 // entrepreneur-management.component.ts
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -154,10 +155,10 @@ export class EntrepreneursManagementComponent implements OnInit {
         'Gafsa', 'Tozeur', 'Kebili', 'Gabès', 'Medenine', 'Tataouine'
     ];
 
-    private apiUrl = 'https://redboost.tn/api/users';
-    private detailsApiUrl = 'https://redboost.tn/api/backoffice/programmes/entrepreneurs-details';
-    private assignApiUrl = 'https://redboost.tn/api/backoffice/programmes';
-    private categoriesApiUrl = 'https://redboost.tn/api/backoffice/categories';
+    private apiUrl = `${environment.apiUrl}/users`;
+    private detailsApiUrl = `${environment.apiUrl}/backoffice/programmes/entrepreneurs-details`;
+    private assignApiUrl = `${environment.apiUrl}/backoffice/programmes`;
+    private categoriesApiUrl = `${environment.apiUrl}/backoffice/categories`;
 
     constructor(private http: HttpClient, private programmeService: ProgrammeService) {}
 

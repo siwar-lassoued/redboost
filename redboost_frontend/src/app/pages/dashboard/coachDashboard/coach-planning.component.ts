@@ -818,19 +818,28 @@ export class CoachPlanningComponent implements OnInit {
       s = s.filter(x => x.thematique === this.selectedThematique);
     }
 
+    let result = s;
     switch (this.activeFilter) {
-      case 'upcoming': return s.filter(x => x.dateSession >= today);
-      case 'booked': return s.filter(x => x.isBooked);
-      case 'free': return s.filter(x => !x.isBooked && x.dateSession >= today);
-      case 'exceptional': return [];
-      default: return s;
+      case 'upcoming': result = s.filter(x => x.dateSession >= today); break;
+      case 'booked': result = s.filter(x => x.isBooked); break;
+      case 'free': result = s.filter(x => !x.isBooked && x.dateSession >= today); break;
+      case 'exceptional': result = []; break;
+      default: result = s; break;
     }
+
+    return result.sort((a, b) => {
+      if (a.dateSession !== b.dateSession) return a.dateSession.localeCompare(b.dateSession);
+      return (a.heureDebut || '').localeCompare(b.heureDebut || '');
+    });
   }
 
   get filteredExceptionals(): ExceptionalSession[] {
     if (!this.planning) return [];
     if (this.activeFilter !== 'all' && this.activeFilter !== 'exceptional') return [];
-    return this.planning.exceptional;
+    return [...this.planning.exceptional].sort((a, b) => {
+      if (a.dateSeance !== b.dateSeance) return a.dateSeance.localeCompare(b.dateSeance);
+      return (a.heureDebut || '').localeCompare(b.heureDebut || '');
+    });
   }
 
   // ── Thematiques ──────────────────────────────────────────────────────────────
@@ -886,11 +895,11 @@ export class CoachPlanningComponent implements OnInit {
   goToday(): void { this.currentWeekStart = this.getMonday(new Date()); }
 
   getSlotsForDay(dateStr: string): SlotWithBookings[] {
-    return (this.planning?.slots || []).filter(s => s.dateSession === dateStr);
+    return this.filteredSlots.filter(s => s.dateSession === dateStr);
   }
 
   getExcForDay(dateStr: string): ExceptionalSession[] {
-    return (this.planning?.exceptional || []).filter(s => s.dateSeance === dateStr);
+    return this.filteredExceptionals.filter(s => s.dateSeance === dateStr);
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────────
