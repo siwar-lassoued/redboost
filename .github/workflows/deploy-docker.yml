@@ -91,12 +91,6 @@ jobs:
       - name: Deploy via Docker Compose
         run: |
           ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
-            # Stop old systemd services (ignoring errors if they don't exist)
-            sudo systemctl stop redboost-prod.service || true
-            sudo systemctl stop redboost-ai.service || true
-            sudo systemctl disable redboost-prod.service || true
-            sudo systemctl disable redboost-ai.service || true
-            
             cd /home/redboost/docker
             
             # Create a .env file for docker-compose to use the correct registry
