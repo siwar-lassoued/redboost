@@ -112,24 +112,48 @@ jobs:
           scp -i ~/.ssh/id_ed25519 -r nginx/* \
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/redboost/docker/nginx/ || true
 
+      # ── Stop old containers on VPS (releases mount and frees RAM) ───────────
+      - name: Stop old containers on VPS
+        run: |
+          ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+            set -e
+            cd /home/redboost/docker || exit 1
+            
+            if docker compose version >/dev/null 2>&1; then
+              COMPOSE="docker compose"
+            elif command -v docker-compose >/dev/null 2>&1; then
+              COMPOSE="docker-compose"
+            else
+              COMPOSE="docker compose"
+            fi
+            
+            echo "🛑 Stopping running containers to free RAM and release mounts..."
+            $COMPOSE down || true
+            docker rm -f redboost-backend redboost-ai redboost-frontend 2>/dev/null || true
+            
+            echo "🧹 Removing any root-owned firebase-service-account.json directory if created by docker bind-mount..."
+            docker run --rm -v /home/redboost/docker:/data alpine rm -rf /data/firebase-service-account.json || true
+            rm -rf /home/redboost/docker/firebase-service-account.json || true
+          EOF
+
       # Write the firebase credentials from GitHub Secret onto the VPS
       # (runs always to ensure the file exists for the docker-compose volume mount)
       - name: Upload Firebase credentials to VPS
         run: |
           ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
-            "sudo rm -rf /home/redboost/docker/firebase-service-account.json"
+            "rm -rf /home/redboost/docker/firebase-service-account.json"
           if [ -n "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
             echo "Firebase service account credentials secret is present. Uploading..."
             printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" | \
               ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
-              "sudo tee /home/redboost/docker/firebase-service-account.json >/dev/null"
+              "tee /home/redboost/docker/firebase-service-account.json >/dev/null"
           else
             echo "Firebase credentials secret is missing. Creating empty JSON file to satisfy Docker volume mount..."
             ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
-              "echo '{}' | sudo tee /home/redboost/docker/firebase-service-account.json >/dev/null"
+              "echo '{}' > /home/redboost/docker/firebase-service-account.json"
           fi
           ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
-            "sudo chmod 644 /home/redboost/docker/firebase-service-account.json"
+            "chmod 644 /home/redboost/docker/firebase-service-account.json"
 
       # Write the .env file — done via ssh echo to avoid secrets in scp
       - name: Write .env on VPS
@@ -155,8 +179,8 @@ jobs:
           ENVEOF
           ENVSSH
 
-      # ── OPTION A: Stop → Pull → Start (RAM-safe for 2 GB VPS) ───────────────
-      - name: Deploy (stop old, start new)
+      # ── Deploy (Pull & Start new containers) ────────────────────────────────
+      - name: Deploy (pull & start new)
         run: |
           ssh -i ~/.ssh/id_ed25519 \
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
@@ -169,32 +193,19 @@ jobs:
             elif command -v docker-compose >/dev/null 2>&1; then
               COMPOSE="docker-compose"
             else
-              echo "Docker Compose is not installed on the VPS."
-              echo "Install Docker Compose v2, or install the legacy docker-compose command."
-              exit 1
+              COMPOSE="docker compose"
             fi
 
-            echo " Step 1: Stop all running containers to free RAM..."
-            $COMPOSE down || true
-            docker rm -f redboost-backend redboost-ai redboost-frontend 2>/dev/null || true
-            echo " Containers currently using frontend ports:"
-            docker ps -a --format 'table {{.ID}}\t{{.Names}}\t{{.Ports}}' | grep -E '(:|0.0.0.0:)8080->|:::8080->|(:|0.0.0.0:)8443->|:::8443->' || true
-            STALE_CONTAINERS=$(docker ps -a --format '{{.ID}} {{.Ports}}' | awk '$0 ~ /(:|0\.0\.0\.0:)8080->|:::8080->|(:|0\.0\.0\.0:)8443->|:::8443->/ {print $1}')
-            if [ -n "$STALE_CONTAINERS" ]; then
-              echo " Removing stale container(s) using frontend ports: $STALE_CONTAINERS"
-              docker rm -f $STALE_CONTAINERS
-            fi
-
-            echo " Step 2: Remove unused images to free disk..."
+            echo " Step 1: Remove unused images to free disk..."
             docker image prune -af || true
 
-            echo " Step 3: Login to GHCR to pull images..."
+            echo " Step 2: Login to GHCR to pull images..."
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
 
-            echo " Step 4: Pull new images (no local build needed)..."
+            echo " Step 3: Pull new images (no local build needed)..."
             $COMPOSE pull
 
-            echo " Step 5: Start all services..."
+            echo " Step 4: Start all services..."
             if ! $COMPOSE up -d --remove-orphans --no-build; then
               echo " Compose startup failed. Current status:"
               $COMPOSE ps || true
@@ -207,7 +218,7 @@ jobs:
               exit 1
             fi
 
-            echo " Step 6: Wait for backend health..."
+            echo " Step 5: Wait for backend health..."
             for i in $(seq 1 30); do
               BACKEND_HEALTH=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' redboost-backend 2>/dev/null || echo "missing")
               echo " Backend health: $BACKEND_HEALTH"
