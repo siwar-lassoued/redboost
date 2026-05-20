@@ -181,6 +181,8 @@ jobs:
             if ! $COMPOSE up -d --remove-orphans --no-build; then
               echo " Compose startup failed. Current status:"
               $COMPOSE ps || true
+              echo " Redis logs:"
+              $COMPOSE logs --tail=100 redis || true
               echo " Backend logs:"
               $COMPOSE logs --tail=200 backend || true
               exit 1
