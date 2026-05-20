@@ -9,74 +9,80 @@ env:
   REGISTRY: ghcr.io
 
 jobs:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # JOB 1: Build images on GitHub's powerful runners and push to GHCR
+  # The VPS (2 GB RAM) never has to build — it just pulls the ready image.
+  # ─────────────────────────────────────────────────────────────────────────────
   build-and-push:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set lowercase repository name
-        run: |
-          echo "IMAGE_NAME=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+      - name: Set lowercase image name
+        run: echo "IMAGE_NAME=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
 
-      - name: Log in to the Container registry
+      - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      # ─── BUILD & PUSH BACKEND ──────────────────────────────────────────────
+      # ── BACKEND ──────────────────────────────────────────────────────────────
       - name: Build and push Backend
         uses: docker/build-push-action@v5
         with:
           context: ./redboost_backend
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:latest
-          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-      # ─── BUILD & PUSH FRONTEND ─────────────────────────────────────────────
+      # ── FRONTEND ─────────────────────────────────────────────────────────────
       - name: Build and push Frontend
         uses: docker/build-push-action@v5
         with:
           context: ./redboost_frontend
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend:latest
-          labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             API_URL=https://redboost.tn
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-      # ─── BUILD & PUSH AI-SERVICE ───────────────────────────────────────────
+      # ── AI SERVICE ───────────────────────────────────────────────────────────
       - name: Build and push AI Service
         uses: docker/build-push-action@v5
         with:
           context: ./ai_service
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-ai-service:latest
-          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
+  # ─────────────────────────────────────────────────────────────────────────────
+  # JOB 2: Deploy to VPS using Option A (stop → pull → start)
+  # Stops old containers first to free all 2 GB RAM, then starts fresh.
+  # ─────────────────────────────────────────────────────────────────────────────
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        
-      - name: Set lowercase repository name
-        run: |
-          echo "IMAGE_NAME=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
-        
+
+      - name: Set lowercase image name
+        run: echo "IMAGE_NAME=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
@@ -84,34 +90,87 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Create working directory on VPS
+      - name: Prepare directories on VPS
         run: |
-          ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "mkdir -p /home/redboost/docker/nginx/ssl /home/redboost/docker/prometheus /home/redboost/docker/backend_tokens /home/redboost/docker/backend_uploads"
+          ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+            "mkdir -p /home/redboost/docker/nginx/ssl \
+                      /home/redboost/docker/prometheus \
+                      /home/redboost/docker/backend_tokens \
+                      /home/redboost/docker/backend_uploads"
 
       - name: Copy deployment files to VPS
         run: |
-          # Copy files directly since docker-compose.yml now natively supports dynamic images via ${REGISTRY} env var
-          scp -i ~/.ssh/id_ed25519 docker-compose.yml ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/redboost/docker/
-          scp -i ~/.ssh/id_ed25519 prometheus/prometheus.yml ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/redboost/docker/prometheus/
-          scp -i ~/.ssh/id_ed25519 -r nginx/* ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/redboost/docker/nginx/ || true
-          
-      - name: Deploy via Docker Compose
+          scp -i ~/.ssh/id_ed25519 docker-compose.yml \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/redboost/docker/
+          scp -i ~/.ssh/id_ed25519 prometheus/prometheus.yml \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/redboost/docker/prometheus/
+          scp -i ~/.ssh/id_ed25519 -r nginx/* \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/redboost/docker/nginx/ || true
+
+      # Write the firebase credentials from GitHub Secret onto the VPS
+      # (only runs if the secret is set)
+      - name: Upload Firebase credentials to VPS
+        if: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON != '' }}
         run: |
-          ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}" | \
+            ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+            "cat > /home/redboost/docker/firebase-service-account.json && chmod 600 /home/redboost/docker/firebase-service-account.json"
+
+      # Write the .env file — done via ssh echo to avoid secrets in scp
+      - name: Write .env on VPS
+        run: |
+          ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} bash << ENVSSH
+            cat > /home/redboost/docker/.env << 'ENVEOF'
+          REGISTRY=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          DB_USER=${{ secrets.DB_USER }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
+          JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}
+          GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}
+          CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }}
+          CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET }}
+          MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}
+          MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}
+          GOOGLE_OAUTH_CLIENT_ID=${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
+          GOOGLE_OAUTH_CLIENT_SECRET=${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
+          GOOGLE_OAUTH_REFRESH_TOKEN=${{ secrets.GOOGLE_OAUTH_REFRESH_TOKEN }}
+          GOOGLE_OAUTH_ORGANIZER_EMAIL=${{ secrets.GOOGLE_OAUTH_ORGANIZER_EMAIL }}
+          ENVEOF
+          ENVSSH
+
+      # ── OPTION A: Stop → Pull → Start (RAM-safe for 2 GB VPS) ───────────────
+      - name: Deploy (Option A — stop old, start new)
+        run: |
+          # Pass GITHUB_TOKEN as an env var so it survives the SSH connection
+          export GHCR_TOKEN="${{ secrets.GITHUB_TOKEN }}"
+          export GHCR_USER="${{ github.actor }}"
+          export FULL_REGISTRY="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
+
+          ssh -i ~/.ssh/id_ed25519 \
+            -o SendEnv=GHCR_TOKEN \
+            -o SendEnv=GHCR_USER \
+            -o SendEnv=FULL_REGISTRY \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+            set -e
             cd /home/redboost/docker
-            
-            # Create a .env file for docker-compose to use the correct registry
-            echo "REGISTRY=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}" > .env
-            
-            # Login to GHCR to pull images
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            
-            # Pull new images
-            docker-compose pull
-            
-            # Restart containers without downtime
-            docker-compose up -d --remove-orphans
-            
-            # Prune old images to save space
-            docker image prune -af
+
+            echo "🛑 Step 1: Stop all running containers to free RAM..."
+            docker compose down || true
+
+            echo "🧹 Step 2: Remove unused images to free disk..."
+            docker image prune -af || true
+
+            echo "🔑 Step 3: Login to GHCR to pull images..."
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+
+            echo "📦 Step 4: Pull new images (no local build needed)..."
+            docker compose pull
+
+            echo "🚀 Step 5: Start all services..."
+            docker compose up -d --remove-orphans
+
+            echo "✅ Deployment complete! Container status:"
+            docker compose ps
           EOF

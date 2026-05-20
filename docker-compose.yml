@@ -60,7 +60,7 @@ services:
     volumes:
     - backend_uploads:/app/uploads
     - backend_tokens:/app/tokens
-    - ./redboost_backend/src/main/resources/firebase-service-account.json:/app/firebase-service-account.json:ro
+    - ./firebase-service-account.json:/app/firebase-service-account.json:ro
     networks:
     - redboost-net
     healthcheck:
@@ -73,7 +73,7 @@ services:
       start_period: 60s
     extra_hosts:
     - host.docker.internal:host-gateway
-    image: '/redboost-backend:'
+    image: ${REGISTRY}-backend:latest
     build:
       context: ./redboost_backend
       dockerfile: Dockerfile
@@ -87,7 +87,7 @@ services:
     - 8001:8000
     networks:
     - redboost-net
-    image: '/redboost-ai-service:'
+    image: ${REGISTRY}-ai-service:latest
     build:
       context: ./ai_service
       dockerfile: Dockerfile
@@ -105,12 +105,12 @@ services:
     - ./nginx/ssl:/etc/nginx/ssl:ro
     networks:
     - redboost-net
-    image: '/redboost-frontend:'
+    image: ${REGISTRY}-frontend:latest
     build:
       context: ./redboost_frontend
       dockerfile: Dockerfile
       args:
-        API_URL: ''
+        API_URL: '${API_URL:-https://redboost.tn}'
   prometheus:
     image: prom/prometheus:latest
     container_name: redboost-prometheus

@@ -26,9 +26,6 @@ COPY --from=builder /app/target/redboost-*.jar app.jar
 RUN mkdir -p /app/uploads /app/tokens && \
     chown -R spring:spring /app
 
-# Copy Firebase credentials (will be overridden by volume in production)
-COPY src/main/resources/firebase-service-account.json /app/firebase-service-account.json
-
 USER spring
 
 EXPOSE 8082

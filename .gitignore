@@ -81,3 +81,8 @@ redboost_frontend/src/environment.ts
 # ============================
 .env.production
 nginx/ssl/
+
+# Firebase credentials at project root (used by docker-compose volume mount)
+# In CI/CD: uploaded from FIREBASE_SERVICE_ACCOUNT_JSON GitHub secret
+# Locally: copy from redboost_backend/src/main/resources/firebase-service-account.json
+firebase-service-account.json
