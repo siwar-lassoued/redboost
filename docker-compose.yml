@@ -95,8 +95,7 @@ services:
     container_name: redboost-frontend
     restart: unless-stopped
     depends_on:
-      backend:
-        condition: service_healthy
+    - backend
     ports:
     - 8080:80
     - 8443:443

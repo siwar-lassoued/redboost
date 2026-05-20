@@ -200,6 +200,28 @@ jobs:
               exit 1
             fi
 
+            echo " Step 6: Wait for backend health..."
+            for i in $(seq 1 30); do
+              BACKEND_HEALTH=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' redboost-backend 2>/dev/null || echo "missing")
+              echo " Backend health: $BACKEND_HEALTH"
+              if [ "$BACKEND_HEALTH" = "healthy" ]; then
+                break
+              fi
+              if [ "$BACKEND_HEALTH" = "unhealthy" ]; then
+                echo " Backend became unhealthy. Logs:"
+                $COMPOSE logs --tail=200 backend || true
+                exit 1
+              fi
+              sleep 10
+            done
+
+            BACKEND_HEALTH=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' redboost-backend 2>/dev/null || echo "missing")
+            if [ "$BACKEND_HEALTH" != "healthy" ]; then
+              echo " Backend did not become healthy in time. Logs:"
+              $COMPOSE logs --tail=200 backend || true
+              exit 1
+            fi
+
             echo " Deployment complete! Container status:"
             $COMPOSE ps
           EOF
