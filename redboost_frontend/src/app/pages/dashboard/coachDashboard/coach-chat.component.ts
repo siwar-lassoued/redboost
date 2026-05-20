@@ -455,7 +455,34 @@ export class CoachChatComponent implements OnInit, OnDestroy, AfterViewChecked {
         const withId = this.route.snapshot.queryParamMap.get('with');
         if (withId) {
           const target = this.contacts.find(c => c.id === withId);
-          if (target) { this.selectContact(target); return; }
+          if (target) {
+            // Contact already in list — select directly
+            this.selectContact(target);
+            return;
+          } else {
+            // New match: contact not yet in list — fetch by ID from API
+            this.userService.getById(withId).subscribe({
+              next: (u: any) => {
+                const newContact: CoachContact = {
+                  id: String(u.id),
+                  name: `${u.firstName || u.prenom || ''} ${u.lastName || u.nom || ''}`.trim() || 'Utilisateur Inconnu',
+                  company: u.entreprise || u.startupName || u.startup || '',
+                  avatar: `${(u.firstName || u.prenom || '?')[0]}${(u.lastName || u.nom || '?')[0]}`.toUpperCase(),
+                };
+                // Add to contacts list if not already present
+                if (!this.contacts.find(c => c.id === newContact.id)) {
+                  this.contacts = [newContact, ...this.contacts];
+                  this.filteredContacts = [...this.contacts];
+                }
+                this.selectContact(newContact);
+              },
+              error: () => {
+                // Fallback: show first contact if fetch fails
+                if (this.filteredContacts.length) this.selectContact(this.filteredContacts[0]);
+              }
+            });
+            return;
+          }
         }
         if (this.filteredContacts.length) {
           this.selectContact(this.filteredContacts[0]);

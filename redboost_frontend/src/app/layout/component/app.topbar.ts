@@ -8,7 +8,7 @@ import {
     HostListener,
 } from '@angular/core';
 import { RouterModule, Router } from '@angular/router';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
 import { StyleClassModule } from 'primeng/styleclass';
 import { DialogModule } from 'primeng/dialog';
 import { ButtonModule } from 'primeng/button';
@@ -390,8 +390,29 @@ buildImageUrl(url?: string): string {
         return icons[type || 'DEFAULT'] || icons['DEFAULT'];
     }
 
-    formatNotificationTime(dateString: string): string {
-        const date = new Date(dateString);
+    private parseNotificationDate(dateVal: any): Date {
+        if (!dateVal) return new Date();
+        if (dateVal instanceof Date) return dateVal;
+        
+        if (Array.isArray(dateVal)) {
+            const [year, month, day, hour, minute, second] = dateVal;
+            return new Date(year, (month || 1) - 1, day || 1, hour || 0, minute || 0, second || 0);
+        }
+        
+        if (typeof dateVal === 'string') {
+            if (dateVal.includes(',')) {
+                const parts = dateVal.split(',').map(Number);
+                const [year, month, day, hour, minute, second] = parts;
+                return new Date(year, (month || 1) - 1, day || 1, hour || 0, minute || 0, second || 0);
+            }
+            return new Date(dateVal);
+        }
+        
+        return new Date(dateVal);
+    }
+
+    formatNotificationTime(dateString: any): string {
+        const date = this.parseNotificationDate(dateString);
         const now = new Date();
         const diff = now.getTime() - date.getTime();
         
@@ -404,10 +425,8 @@ buildImageUrl(url?: string): string {
         if (hours < 24) return `Il y a ${hours}h`;
         if (days < 7) return `Il y a ${days}j`;
         
-        return date.toLocaleDateString('fr-FR', {
-            day: 'numeric',
-            month: 'short'
-        });
+        const datePipe = new DatePipe('fr-FR');
+        return datePipe.transform(date, 'd MMM yyyy HH:mm') || date.toLocaleString();
     }
 
     showSettings(): void {

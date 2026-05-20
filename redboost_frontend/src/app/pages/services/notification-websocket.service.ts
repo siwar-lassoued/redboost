@@ -7,6 +7,7 @@ import { Router } from '@angular/router';
 import { Client, IMessage } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { environment } from '../../../environment';
+import { AuthService } from '../frontoffice/service/auth.service';
 
 // Matches the backend Entity/DTO
 export interface AppNotification {
@@ -41,7 +42,8 @@ export class NotificationWebSocketService {
 
   constructor(
     private http: HttpClient,
-    private router: Router
+    private router: Router,
+    private authService: AuthService
   ) {}
 
   // ==========================================
@@ -248,21 +250,54 @@ export class NotificationWebSocketService {
    * Handle notification click and navigate to the appropriate page
    */
   handleNotificationClick(notification: AppNotification) {
-  if (notification.type === 'TASK_ASSIGNMENT' && notification.entityId) {
-    this.router.navigate(['/mes-taches'], {
-      queryParams: { taskId: notification.entityId }
-    });
-  } else if (notification.type === 'ACTIVITY_ASSIGNMENT' && notification.entityId) {
-    this.router.navigate(['/mes-taches'], {
-      queryParams: { 
-        activiteId: notification.entityId,
-        tab: 'activites'          // ensures the activités tab is selected
+    const role = this.authService.getUserRole();
+
+    if (role === 'ENTREPRENEUR') {
+      if (notification.type === 'TASK_ASSIGNMENT' && notification.entityId) {
+        this.router.navigate(['/entrepreneur/mes-livrables'], {
+          queryParams: { view: 'TASKS', taskId: notification.entityId }
+        });
+      } else if (notification.type === 'ACTIVITY_ASSIGNMENT' && notification.entityId) {
+        this.router.navigate(['/entrepreneur/mes-livrables'], {
+          queryParams: { view: 'LIVRABLES', activiteId: notification.entityId }
+        });
+      } else if (notification.type === 'MATCHING_TERMINE') {
+        this.router.navigate(['/entrepreneur/mes-coachs']);
+      } else if (notification.type && notification.type.startsWith('SESSION_')) {
+        this.router.navigate(['/entrepreneur/mes-sessions']);
+      } else {
+        this.router.navigate(['/entrepreneur-dashboard']);
       }
-    });
-  } else {
-    this.router.navigate(['/mes-taches']);
+    } else if (role === 'COACH') {
+      if (notification.type === 'TASK_ASSIGNMENT' || notification.type === 'ACTIVITY_ASSIGNMENT') {
+        this.router.navigate(['/coach-entrep-deliverable'], {
+          queryParams: { entityId: notification.entityId, type: notification.type }
+        });
+      } else if (notification.type === 'MATCHING_TERMINE') {
+        this.router.navigate(['/coach-entrepreneurs']);
+      } else if (notification.type && notification.type.startsWith('SESSION_')) {
+        this.router.navigate(['/mes-sessions']);
+      } else {
+        this.router.navigate(['/coach-dashboard']);
+      }
+    } else {
+      // Default / ADMIN or fallback
+      if (notification.type === 'TASK_ASSIGNMENT' && notification.entityId) {
+        this.router.navigate(['/mes-taches'], {
+          queryParams: { taskId: notification.entityId }
+        });
+      } else if (notification.type === 'ACTIVITY_ASSIGNMENT' && notification.entityId) {
+        this.router.navigate(['/mes-taches'], {
+          queryParams: { 
+            activiteId: notification.entityId,
+            tab: 'activites'
+          }
+        });
+      } else {
+        this.router.navigate(['/mes-taches']);
+      }
+    }
   }
-}
 
   disconnect() {
     if (this.stompClient) {

@@ -992,17 +992,33 @@ public class UserController {
         List<team.project.redboost.entities.Matching> matchings = matchingRepository.findByCoachIdAndStatut(
                 coachId, team.project.redboost.entities.Matching.StatutMatching.VALIDE);
 
-        List<Map<String, Object>> response = matchings.stream()
-                .map(m -> {
-                    team.project.redboost.entities.CandidatureRedstarter cand = candidatureRedstarterRepository.findById(m.getEntrepreneurId()).orElse(null);
-                    if (cand == null || cand.getEmail() == null) {
-                        return null;
-                    }
-                    return userRepository.findByEmail(cand.getEmail());
-                })
-                .filter(entrepreneur -> entrepreneur != null)
-                .map(this::buildUserResponse)
-                .collect(Collectors.toList());
+        // Use a set to avoid duplicate users
+        Set<Long> seenUserIds = new HashSet<>();
+        List<Map<String, Object>> response = new ArrayList<>();
+
+        for (team.project.redboost.entities.Matching m : matchings) {
+            User entrepreneur = null;
+
+            // Strategy 1: treat entrepreneurId as CandidatureRedstarter ID (primary flow)
+            team.project.redboost.entities.CandidatureRedstarter cand =
+                    candidatureRedstarterRepository.findById(m.getEntrepreneurId()).orElse(null);
+            if (cand != null && cand.getEmail() != null) {
+                entrepreneur = userRepository.findByEmail(cand.getEmail());
+            }
+
+            // Strategy 2: treat entrepreneurId as direct User ID (fallback for direct/admin matchings)
+            if (entrepreneur == null) {
+                entrepreneur = userRepository.findById(m.getEntrepreneurId()).orElse(null);
+                // Make sure it's actually an entrepreneur
+                if (entrepreneur != null && entrepreneur.getRole() != team.project.redboost.entities.Role.ENTREPRENEUR) {
+                    entrepreneur = null;
+                }
+            }
+
+            if (entrepreneur != null && seenUserIds.add(entrepreneur.getId())) {
+                response.add(buildUserResponse(entrepreneur));
+            }
+        }
 
         return ResponseEntity.ok(response);
     }

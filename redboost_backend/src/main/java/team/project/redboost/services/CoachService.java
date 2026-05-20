@@ -84,9 +84,7 @@ public class CoachService {
         int completedTaches = 0;
         int totalTaches = 0;
         for (Matching m : matchings) {
-            CandidatureRedstarter cand = candidatureRepository.findById(m.getEntrepreneurId()).orElse(null);
-            if (cand == null || cand.getEmail() == null) continue;
-            User ent = userRepository.findByEmail(cand.getEmail());
+            User ent = userRepository.findById(m.getEntrepreneurId()).orElse(null);
             if (ent == null) continue;
 
             List<Tache> tasks = tacheRepository.findByResponsableId(ent.getId());
@@ -141,10 +139,7 @@ public class CoachService {
         
         return validEntIds.stream()
             .map(entId -> {
-                CandidatureRedstarter cand = candidatureRepository.findById(entId).orElse(null);
-                if (cand == null || cand.getEmail() == null) return null;
-                
-                User ent = userRepository.findByEmail(cand.getEmail());
+                User ent = userRepository.findById(entId).orElse(null);
                 if (ent == null) return null;
             
             List<Tache> tasks = tacheRepository.findByResponsableId(ent.getId());
@@ -206,10 +201,7 @@ public class CoachService {
             for (Matching m : themMatchings) {
                 if (!seenEntIds.add(m.getEntrepreneurId())) continue;
 
-                CandidatureRedstarter cand = candidatureRepository.findById(m.getEntrepreneurId()).orElse(null);
-                if (cand == null || cand.getEmail() == null) continue;
-
-                User ent = userRepository.findByEmail(cand.getEmail());
+                User ent = userRepository.findById(m.getEntrepreneurId()).orElse(null);
                 if (ent == null) continue;
 
                 Map<String, Object> entMap = new LinkedHashMap<>();
@@ -615,10 +607,8 @@ public class CoachService {
                 dispo.getCoach().getId(), Matching.StatutMatching.VALIDE);
         for (Matching m : matchings) {
             try {
-                CandidatureRedstarter cand = candidatureRepository.findById(m.getEntrepreneurId()).orElse(null);
-                if (cand != null && cand.getEmail() != null) {
-                    User entUser = userRepository.findByEmail(cand.getEmail());
-                    if (entUser != null) {
+                User entUser = userRepository.findById(m.getEntrepreneurId()).orElse(null);
+                if (entUser != null) {
                         notificationService.createAndSendNotification(
                                 entUser.getId(),
                                 "Nouveau créneau disponible : \"" + dto.getTitre() + "\" le " + sessionDate,

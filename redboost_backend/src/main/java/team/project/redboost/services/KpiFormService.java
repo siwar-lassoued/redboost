@@ -30,11 +30,7 @@ public class KpiFormService {
 
     private User resolveUserFromEntrepreneurId(Long entId) {
         if (entId == null) return null;
-        CandidatureRedstarter cand = candidatureRepository.findById(entId).orElse(null);
-        if (cand == null || cand.getEmail() == null) {
-            return null;
-        }
-        return userRepository.findByEmail(cand.getEmail());
+        return userRepository.findById(entId).orElse(null);
     }
 
     @Transactional(readOnly = true)

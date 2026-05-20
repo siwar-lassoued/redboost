@@ -1,6 +1,7 @@
 import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { LivrableService } from '../../../core/services/livrable.service';
 import { TacheService } from '../../../core/services/tache.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -354,6 +355,7 @@ export class EntrepreneurLivrablesComponent implements OnInit {
   private tacheSvc = inject(TacheService);
   private authSvc = inject(AuthService);
   private matchSvc = inject(MatchingService);
+  private route = inject(ActivatedRoute);
 
   currentView = signal<ViewType>('LIVRABLES');
   loading = signal(true);
@@ -376,6 +378,13 @@ export class EntrepreneurLivrablesComponent implements OnInit {
   selectedFiles = signal<Record<string, File>>({});
 
   ngOnInit(): void {
+    this.route.queryParams.subscribe(params => {
+      if (params['view'] === 'TASKS') {
+        this.currentView.set('TASKS');
+      } else if (params['view'] === 'LIVRABLES') {
+        this.currentView.set('LIVRABLES');
+      }
+    });
     this.loadAllData();
   }
 

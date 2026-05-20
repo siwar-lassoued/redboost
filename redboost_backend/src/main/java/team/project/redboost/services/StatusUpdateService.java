@@ -81,17 +81,9 @@ public class StatusUpdateService {
     private void notifyMatchingTermine(Matching m) {
         try {
             User coach = userRepository.findById(m.getCoachId()).orElse(null);
-            CandidatureRedstarter cand = candidatureRepository.findById(m.getEntrepreneurId()).orElse(null);
-            Long entrepreneurUserId = null;
-            String entrepreneurName = "Entrepreneur";
-
-            if (cand != null) {
-                entrepreneurName = cand.getNomPrenom() != null ? cand.getNomPrenom() : "Entrepreneur";
-                if (cand.getEmail() != null) {
-                    User entUser = userRepository.findByEmail(cand.getEmail());
-                    if (entUser != null) entrepreneurUserId = entUser.getId();
-                }
-            }
+            User entUser = userRepository.findById(m.getEntrepreneurId()).orElse(null);
+            Long entrepreneurUserId = entUser != null ? entUser.getId() : null;
+            String entrepreneurName = entUser != null ? (entUser.getFirstName() + " " + entUser.getLastName()) : "Entrepreneur";
 
             String programmeName = "";
             programmeRepository.findById(m.getProgrammeId()).ifPresent(p -> {});
