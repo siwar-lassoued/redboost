@@ -22,7 +22,7 @@ public class ObjectifGlobal {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "rapport_id", nullable = false)
+    @JoinColumn(name = "rapport_id", nullable = false, foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     @JsonIgnoreProperties({"objectifsGlobaux", "sprintsMethodologie"})
     private Rapport rapport;
 
