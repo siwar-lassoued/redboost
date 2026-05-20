@@ -66,28 +66,27 @@ public class GmailConfig {
         return credential;
     }
 
-    @Bean
-    public Gmail gmailService(Credential credential) throws IOException, GeneralSecurityException {
-        if (credential == null) {
-            return null;
-        }
-        final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
-        return new Gmail.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential)
-                .setApplicationName(APPLICATION_NAME)
-                .build();
+   @Bean
+public Gmail gmailService(@Autowired(required = false) Credential credential) throws IOException, GeneralSecurityException {
+    if (credential == null) {
+        return null;
     }
+    final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
+    return new Gmail.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential)
+            .setApplicationName(APPLICATION_NAME)
+            .build();
+}
 
-    // NEW: Add Calendar Service Bean
-    @Bean
-    public Calendar calendarService(Credential credential) throws IOException, GeneralSecurityException {
-        if (credential == null) {
-            return null;
-        }
-        final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
-        return new Calendar.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential)
-                .setApplicationName(APPLICATION_NAME)
-                .build();
+@Bean
+public Calendar calendarService(@Autowired(required = false) Credential credential) throws IOException, GeneralSecurityException {
+    if (credential == null) {
+        return null;
     }
+    final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
+    return new Calendar.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential)
+            .setApplicationName(APPLICATION_NAME)
+            .build();
+}
 
     @Bean
     public String organizerEmail() {
