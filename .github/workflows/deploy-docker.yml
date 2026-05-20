@@ -146,7 +146,7 @@ jobs:
           ENVSSH
 
       # ── OPTION A: Stop → Pull → Start (RAM-safe for 2 GB VPS) ───────────────
-      - name: Deploy (Option A — stop old, start new)
+      - name: Deploy (stop old, start new)
         run: |
           ssh -i ~/.ssh/id_ed25519 \
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
@@ -177,7 +177,7 @@ jobs:
             $COMPOSE pull
 
             echo " Step 5: Start all services..."
-            $COMPOSE up -d --remove-orphans
+            $COMPOSE up -d --remove-orphans --no-build
 
             echo " Deployment complete! Container status:"
             $COMPOSE ps
