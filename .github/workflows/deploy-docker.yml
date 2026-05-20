@@ -75,6 +75,11 @@ jobs:
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    env:
+      FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
 
     steps:
       - name: Checkout repository
@@ -110,9 +115,9 @@ jobs:
       # Write the firebase credentials from GitHub Secret onto the VPS
       # (only runs if the secret is set)
       - name: Upload Firebase credentials to VPS
-        if: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON != '' }}
+        if: ${{ env.FIREBASE_SERVICE_ACCOUNT_JSON != '' }}
         run: |
-          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}" | \
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" | \
             ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
             "cat > /home/redboost/docker/firebase-service-account.json && chmod 600 /home/redboost/docker/firebase-service-account.json"
 
@@ -143,16 +148,9 @@ jobs:
       # ── OPTION A: Stop → Pull → Start (RAM-safe for 2 GB VPS) ───────────────
       - name: Deploy (Option A — stop old, start new)
         run: |
-          # Pass GITHUB_TOKEN as an env var so it survives the SSH connection
-          export GHCR_TOKEN="${{ secrets.GITHUB_TOKEN }}"
-          export GHCR_USER="${{ github.actor }}"
-          export FULL_REGISTRY="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
-
           ssh -i ~/.ssh/id_ed25519 \
-            -o SendEnv=GHCR_TOKEN \
-            -o SendEnv=GHCR_USER \
-            -o SendEnv=FULL_REGISTRY \
-            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+            "GHCR_TOKEN='${{ secrets.GITHUB_TOKEN }}' GHCR_USER='${{ github.actor }}' FULL_REGISTRY='${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}' bash -s" << 'EOF'
             set -e
             cd /home/redboost/docker
 
