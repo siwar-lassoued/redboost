@@ -74,9 +74,6 @@ services:
     extra_hosts:
     - host.docker.internal:host-gateway
     image: ${REGISTRY}-backend:latest
-    build:
-      context: ./redboost_backend
-      dockerfile: Dockerfile
   ai-service:
     container_name: redboost-ai
     restart: unless-stopped
@@ -88,9 +85,6 @@ services:
     networks:
     - redboost-net
     image: ${REGISTRY}-ai-service:latest
-    build:
-      context: ./ai_service
-      dockerfile: Dockerfile
   frontend:
     container_name: redboost-frontend
     restart: unless-stopped
@@ -106,11 +100,6 @@ services:
     networks:
     - redboost-net
     image: ${REGISTRY}-frontend:latest
-    build:
-      context: ./redboost_frontend
-      dockerfile: Dockerfile
-      args:
-        API_URL: '${API_URL:-https://redboost.tn}'
   prometheus:
     image: prom/prometheus:latest
     container_name: redboost-prometheus

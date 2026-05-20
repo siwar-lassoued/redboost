@@ -166,6 +166,7 @@ jobs:
 
             echo " Step 1: Stop all running containers to free RAM..."
             $COMPOSE down || true
+            docker rm -f redboost-backend redboost-ai redboost-frontend 2>/dev/null || true
 
             echo " Step 2: Remove unused images to free disk..."
             docker image prune -af || true
