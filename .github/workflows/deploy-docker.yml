@@ -177,7 +177,13 @@ jobs:
             $COMPOSE pull
 
             echo " Step 5: Start all services..."
-            $COMPOSE up -d --remove-orphans --no-build
+            if ! $COMPOSE up -d --remove-orphans --no-build; then
+              echo " Compose startup failed. Current status:"
+              $COMPOSE ps || true
+              echo " Backend logs:"
+              $COMPOSE logs --tail=200 backend || true
+              exit 1
+            fi
 
             echo " Deployment complete! Container status:"
             $COMPOSE ps
