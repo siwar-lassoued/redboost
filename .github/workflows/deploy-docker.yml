@@ -154,21 +154,21 @@ jobs:
             set -e
             cd /home/redboost/docker
 
-            echo "🛑 Step 1: Stop all running containers to free RAM..."
+            echo " Step 1: Stop all running containers to free RAM..."
             docker compose down || true
 
-            echo "🧹 Step 2: Remove unused images to free disk..."
+            echo " Step 2: Remove unused images to free disk..."
             docker image prune -af || true
 
-            echo "🔑 Step 3: Login to GHCR to pull images..."
+            echo " Step 3: Login to GHCR to pull images..."
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
 
-            echo "📦 Step 4: Pull new images (no local build needed)..."
+            echo " Step 4: Pull new images (no local build needed)..."
             docker compose pull
 
-            echo "🚀 Step 5: Start all services..."
+            echo " Step 5: Start all services..."
             docker compose up -d --remove-orphans
 
-            echo "✅ Deployment complete! Container status:"
+            echo " Deployment complete! Container status:"
             docker compose ps
           EOF
