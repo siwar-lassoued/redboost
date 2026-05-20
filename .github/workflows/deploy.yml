@@ -1,38 +1,75 @@
-name: Build & Deploy
+name: Build, Push & Deploy to VPS
 
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  deploy:
+  build-and-push:
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: read
+      packages: write
+    
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
         with:
-          java-version: '17'
-          distribution: 'temurin'
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build JAR
-        run: mvn clean package -DskipTests
-        working-directory: redboost_backend
-
-      - name: Set up Node
-        uses: actions/setup-node@v4
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
         with:
-          node-version: '24'
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
-      - name: Install & Build Angular
-        run: |
-          npm install
-          npm run build
-        working-directory: redboost_frontend
+      # ─── BUILD & PUSH BACKEND ──────────────────────────────────────────────
+      - name: Build and push Backend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./redboost_backend
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:latest
+          labels: ${{ steps.meta.outputs.labels }}
 
+      # ─── BUILD & PUSH FRONTEND ─────────────────────────────────────────────
+      - name: Build and push Frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./redboost_frontend
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend:latest
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            API_URL=https://redboost.tn
+
+      # ─── BUILD & PUSH AI-SERVICE ───────────────────────────────────────────
+      - name: Build and push AI Service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./ai_service
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-ai-service:latest
+          labels: ${{ steps.meta.outputs.labels }}
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
@@ -40,35 +77,40 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Upload JAR
+      - name: Create working directory on VPS
         run: |
-          scp -i ~/.ssh/id_ed25519 \
-            redboost_backend/target/*.jar \
-            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/redboost/
+          ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "mkdir -p /home/redboost/docker/nginx/ssl /home/redboost/docker/prometheus /home/redboost/docker/backend_tokens /home/redboost/docker/backend_uploads"
 
-      - name: Upload Angular dist
+      - name: Copy deployment files to VPS
         run: |
-          scp -i ~/.ssh/id_ed25519 -r \
-            redboost_frontend/dist/sakai-ng/* \
-            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/html/
-
-      - name: Restart service
+          # Copy files directly since docker-compose.yml now natively supports dynamic images via ${REGISTRY} env var
+          scp -i ~/.ssh/id_ed25519 docker-compose.yml ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/redboost/docker/
+          scp -i ~/.ssh/id_ed25519 prometheus/prometheus.yml ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/redboost/docker/prometheus/
+          scp -i ~/.ssh/id_ed25519 -r nginx/* ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/redboost/docker/nginx/ || true
+          
+      - name: Deploy via Docker Compose
         run: |
-          ssh -i ~/.ssh/id_ed25519 \
-            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
-            "sudo systemctl restart redboost-prod.service"
-      
-      - name: Upload AI Service
-        run: |
-          ssh -i ~/.ssh/id_ed25519 \
-            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
-            "mkdir -p /home/redboost/ai_service"
-          scp -i ~/.ssh/id_ed25519 -r \
-            ai_service/* \
-            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/redboost/ai_service/
-
-      - name: Install AI dependencies & restart AI service
-        run: |
-          ssh -i ~/.ssh/id_ed25519 \
-            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
-            "/home/redboost/ai_venv/bin/pip install -r /home/redboost/ai_service/requirements.txt && sudo systemctl restart redboost-ai.service"
+          ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+            # Stop old systemd services (ignoring errors if they don't exist)
+            sudo systemctl stop redboost-prod.service || true
+            sudo systemctl stop redboost-ai.service || true
+            sudo systemctl disable redboost-prod.service || true
+            sudo systemctl disable redboost-ai.service || true
+            
+            cd /home/redboost/docker
+            
+            # Create a .env file for docker-compose to use the correct registry
+            echo "REGISTRY=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}" > .env
+            
+            # Login to GHCR to pull images
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            
+            # Pull new images
+            docker-compose pull
+            
+            # Restart containers without downtime
+            docker-compose up -d --remove-orphans
+            
+            # Prune old images to save space
+            docker image prune -af
+          EOF

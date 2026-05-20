@@ -75,3 +75,9 @@ ai_service/.idea/
 ai_service/**/__pycache__/
 
 redboost_frontend/src/environment.ts
+
+# ============================
+# Docker Secrets
+# ============================
+.env.production
+nginx/ssl/
