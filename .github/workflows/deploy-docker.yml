@@ -154,8 +154,18 @@ jobs:
             set -e
             cd /home/redboost/docker
 
+            if docker compose version >/dev/null 2>&1; then
+              COMPOSE="docker compose"
+            elif command -v docker-compose >/dev/null 2>&1; then
+              COMPOSE="docker-compose"
+            else
+              echo "Docker Compose is not installed on the VPS."
+              echo "Install Docker Compose v2, or install the legacy docker-compose command."
+              exit 1
+            fi
+
             echo " Step 1: Stop all running containers to free RAM..."
-            docker compose down || true
+            $COMPOSE down || true
 
             echo " Step 2: Remove unused images to free disk..."
             docker image prune -af || true
@@ -164,11 +174,11 @@ jobs:
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
 
             echo " Step 4: Pull new images (no local build needed)..."
-            docker compose pull
+            $COMPOSE pull
 
             echo " Step 5: Start all services..."
-            docker compose up -d --remove-orphans
+            $COMPOSE up -d --remove-orphans
 
             echo " Deployment complete! Container status:"
-            docker compose ps
+            $COMPOSE ps
           EOF
