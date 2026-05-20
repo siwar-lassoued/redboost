@@ -177,6 +177,13 @@ jobs:
             echo " Step 1: Stop all running containers to free RAM..."
             $COMPOSE down || true
             docker rm -f redboost-backend redboost-ai redboost-frontend 2>/dev/null || true
+            for PORT in 8080 8443; do
+              STALE_CONTAINERS=$(docker ps -aq --filter "publish=$PORT")
+              if [ -n "$STALE_CONTAINERS" ]; then
+                echo " Removing stale container(s) using frontend port $PORT: $STALE_CONTAINERS"
+                docker rm -f $STALE_CONTAINERS
+              fi
+            done
 
             echo " Step 2: Remove unused images to free disk..."
             docker image prune -af || true
