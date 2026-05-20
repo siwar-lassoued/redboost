@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed, inject, ChangeDetectionStrategy, Input } from '@angular/core';
+import { Component, OnInit, signal, computed, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -6,49 +6,25 @@ import { EvaluationService, CoachRating } from './evaluation.service';
 import { KpiFormService, KpiForm, ThematiqueCoaching, User as FormUser, KpiFormResponse } from '../kpi_forms/kpi-form.service';
 import { ProgrammeService } from '../programmes/programme.service';
 
-export interface CoachStats {
-    id: number;
-    name: string;
-    email: string;
-    avatar: string;
-    count: number;
-    avg: number;
-    avgComm: number;
-    avgExp: number;
-    avgDispo: number;
-    avgImpact: number;
-    programs: string[];
+
+interface FlatEvalResponse {
+  formId: number;
+  formTitle: string;
+  coachId?: number;
+  coachName?: string;
+  programmeName: string;
+  thematiqueName: string;
+  response: KpiFormResponse;
 }
 
-@Component({
-  selector: 'rb-stars',
-  standalone: true,
-  imports: [CommonModule],
-  template: `
-    <div class="flex items-center gap-0.5">
-      @for (s of [1,2,3,4,5]; track s) {
-        <i class="pi" 
-           [ngClass]="s <= round(value) ? 'pi-star-fill' : 'pi-star'"
-           [style.color]="s <= round(value) ? '#F59E0B' : '#E5E7EB'"
-           [style.fontSize.px]="size">
-        </i>
-      }
-    </div>
-  `
-})
-export class StarsComponent {
-  @Input() value = 0;
-  @Input() size = 14;
-  round = Math.round;
-}
 
-type PageTab = 'byCoach' | 'allRatings' | 'forms';
+type PageTab = 'allRatings' | 'forms';
 
 @Component({
   selector: 'rb-admin-evaluations',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, StarsComponent],
+  imports: [CommonModule, FormsModule],
   template: `
     <div class="p-6 bg-background min-h-screen font-sans">
       <!-- Header -->
@@ -59,13 +35,13 @@ type PageTab = 'byCoach' | 'allRatings' | 'forms';
         </div>
         <div class="flex items-center gap-4">
           <button (click)="openFormModal()" 
-                  class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-[#ea5073] border-none cursor-pointer transition-all shadow-[0_4px_12px_rgba(234,80,115,0.3)] hover:bg-[#d4476a] hover:-translate-y-px">
+                  class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-[#ec407a] border-none cursor-pointer transition-all shadow-[0_4px_12px_rgba(236,64,122,0.3)] hover:bg-[#d81b60] hover:-translate-y-px">
             <i class="pi pi-plus text-xs"></i>
             Nouveau Formulaire
           </button>
-          <div class="flex items-center gap-2 px-4 py-2 bg-pink-50 text-pink-600 rounded-full text-xs font-black shadow-sm">
+          <div class="flex items-center gap-2 px-4 py-2 bg-[#fce4ec] text-pink-600 rounded-full text-xs font-black shadow-sm">
             <div class="w-2 h-2 rounded-full bg-pink-600 animate-pulse"></div>
-            {{ kpis().unread }} NON LUES
+            {{ kpis().pending }} EN ATTENTE
           </div>
         </div>
       </div>
@@ -104,15 +80,9 @@ type PageTab = 'byCoach' | 'allRatings' | 'forms';
 
         <select [(ngModel)]="filterStatus" class="text-gray-800 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-pink-100 cursor-pointer">
           <option value="all">Tous les statuts</option>
-          <option value="NON_LU">Non lu</option>
-          <option value="LU">Lu</option>
-          <option value="ARCHIVE">Archivé</option>
-        </select>
-
-        <select [(ngModel)]="filterNote" class="text-gray-800 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-pink-100 cursor-pointer">
-          <option value="all">Toutes les notes</option>
-          <option value="high">Haute (≥ 4)</option>
-          <option value="low">Faible (≤ 2)</option>
+          <option value="PENDING">En attente</option>
+          <option value="SUBMITTED">Soumis</option>
+          <option value="VALIDATED">Validé</option>
         </select>
 
         @if (hasFilters()) {
@@ -122,149 +92,100 @@ type PageTab = 'byCoach' | 'allRatings' | 'forms';
 
       <!-- Tabs Nav -->
       <div class="flex gap-2 mb-6">
-        <button (click)="pageTab.set('byCoach')" 
-          [class]="pageTab() === 'byCoach' ? 'bg-pink-500 text-white shadow-lg shadow-pink-500/20 border-transparent' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'"
-          class="border flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-black transition-all cursor-pointer">
-          <i class="pi pi-chart-bar text-sm"></i>
-          Moyenne par Coach
-        </button>
         <button (click)="pageTab.set('allRatings')" 
-          [class]="pageTab() === 'allRatings' ? 'bg-pink-500 text-white shadow-lg shadow-pink-500/20 border-transparent' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'"
+          [class]="pageTab() === 'allRatings' ? 'bg-[#ec407a] text-white shadow-lg shadow-[0_4px_12px_rgba(236,64,122,0.3)] border-transparent' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'"
           class="border flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-black transition-all cursor-pointer">
           <i class="pi pi-list text-sm"></i>
           Toutes les évaluations
         </button>
         <button (click)="pageTab.set('forms')" 
-          [class]="pageTab() === 'forms' ? 'bg-pink-500 text-white shadow-lg shadow-pink-500/20 border-transparent' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'"
+          [class]="pageTab() === 'forms' ? 'bg-[#ec407a] text-white shadow-lg shadow-[0_4px_12px_rgba(236,64,122,0.3)] border-transparent' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'"
           class="border flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-black transition-all cursor-pointer">
           <i class="pi pi-file text-sm"></i>
-          Formulaires d'évaluation
+          Formulaires envoyés
         </button>
       </div>
 
       <!-- TABLES SECTION -->
       <div class="bg-white rounded-3xl shadow-sm overflow-hidden border border-gray-100">
         <div class="overflow-x-auto min-w-full">
-          @if (pageTab() === 'byCoach') {
-            <!-- Tab 1: Aggregate by Coach -->
-            <table class="w-full text-left border-collapse">
-              <thead>
-                <tr class="bg-gray-50 border-b border-gray-100">
-                  <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500">Coach</th>
-                  <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500">Programmes</th>
-                  <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500">Total Avis</th>
-                  <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500">Moyenne</th>
-                  <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500">Critères</th>
-                  <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500 text-center">Actions</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-gray-100">
-                @for (coach of coachStats(); track coach.id) {
-                  <tr class="hover:bg-gray-50 transition-colors" [class]="coach.avg > 0 && coach.avg < 3 ? 'bg-red-50' : ''">
-                    <td class="px-6 py-5">
-                      <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl flex items-center justify-center text-white font-black text-sm shadow-md"
-                          style="background: linear-gradient(135deg, #00d2ff, #3aafff)">
-                          {{ coach.avatar }}
-                        </div>
-                        <div>
-                          <p class="text-sm font-black text-gray-900 leading-tight">{{ coach.name }}</p>
-                          <p class="text-[11px] text-gray-500 font-medium">{{ coach.email }}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td class="px-6 py-5">
-                      <div class="flex flex-wrap gap-1">
-                        @for (p of coach.programs.slice(0, 2); track p) {
-                          <span class="text-[10px] px-2 py-0.5 rounded-md bg-gray-100 text-gray-600 font-black uppercase tracking-tighter">{{ p }}</span>
+          @if (pageTab() === 'allRatings') {
+            <!-- Tab: Toutes les évaluations — une ligne par réponse entrepreneur -->
+            @if (isLoadingFlatResponses) {
+              <div style="text-align:center;padding:60px 20px;">
+                <i class="pi pi-spin pi-spinner" style="font-size:2rem;color:#e91e63;"></i>
+                <p style="margin-top:12px;color:#6B7280;font-size:14px;">Chargement des évaluations...</p>
+              </div>
+            } @else {
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="bg-gray-50 border-b border-gray-100">
+                    <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500">Formulaire</th>
+                    <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500">Programme · Thématique</th>
+                    <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500">Coach</th>
+                    <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500">Entrepreneur</th>
+                    <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500">Statut</th>
+                    <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500">Date soumission</th>
+                    <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500 text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                  @for (fr of filteredFlat(); track fr.response.id) {
+                    <tr class="hover:bg-gray-50 transition-colors">
+                      <td class="px-6 py-4">
+                        <p class="text-sm font-black text-gray-900">{{ fr.formTitle }}</p>
+                      </td>
+                      <td class="px-6 py-4">
+                        <p class="text-xs font-bold text-gray-700">{{ fr.programmeName || '—' }}</p>
+                        @if (fr.thematiqueName) {
+                          <span style="display:inline-flex;align-items:center;gap:4px;margin-top:4px;padding:2px 8px;border-radius:6px;background:#F3E8FF;color:#7C3AED;font-size:10px;font-weight:700;">
+                            <i class="pi pi-tag" style="font-size:8px;"></i>{{ fr.thematiqueName }}
+                          </span>
                         }
-                        @if (coach.programs.length > 2) {
-                          <span class="text-[10px] px-2 py-0.5 rounded-md bg-gray-100 text-gray-600 font-black">+{{ coach.programs.length - 2 }}</span>
-                        }
-                      </div>
-                    </td>
-                    <td class="px-6 py-5">
-                      <span class="text-sm font-black text-gray-900">{{ coach.count }} avis</span>
-                    </td>
-                    <td class="px-6 py-5">
-                      @if (coach.count > 0) {
-                        <div class="flex flex-col gap-1.5">
-                          <div class="flex items-center gap-1.5">
-                            <rb-stars [value]="coach.avg" [size]="12"></rb-stars>
-                            <span class="text-sm font-black" [style.color]="ratingColor(coach.avg)">{{ coach.avg }}</span>
-                            @if (coach.avg < 3) { <i class="pi pi-exclamation-triangle text-red-500 text-xs"></i> }
+                      </td>
+                      <td class="px-6 py-4 text-xs font-medium text-gray-600">{{ getCoachName(fr.coachId) }}</td>
+                      <td class="px-6 py-4">
+                        <div style="display:flex;align-items:center;gap:8px;">
+                          <div style="width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#e91e63,#c2185b);display:flex;align-items:center;justify-content:center;color:white;font-weight:900;font-size:12px;flex-shrink:0;">
+                            {{ (fr.response.entrepreneurName || 'E').charAt(0).toUpperCase() }}
                           </div>
-                          <div class="w-24 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                            <div class="h-full rounded-full transition-all" [style.width.%]="(coach.avg/5)*100" [style.background]="ratingColor(coach.avg)"></div>
-                          </div>
+                          <span class="text-sm font-bold text-gray-900">{{ fr.response.entrepreneurName }}</span>
                         </div>
-                      } @else { <span class="text-xs text-gray-400 italic">Aucun avis</span> }
-                    </td>
-                    <td class="px-6 py-5 text-[10px] font-black text-gray-500 uppercase tracking-tighter space-y-0.5">
-                      <p>COMM : <span class="text-gray-900">{{ coach.avgComm }}</span></p>
-                      <p>EXP : <span class="text-gray-900">{{ coach.avgExp }}</span></p>
-                      <p>DISPO : <span class="text-gray-900">{{ coach.avgDispo }}</span></p>
-                      <p>IMPACT : <span class="text-gray-900">{{ coach.avgImpact }}</span></p>
-                    </td>
-                    <td class="px-6 py-5 text-center">
-                      @if (coach.count > 0) {
-                        <button (click)="openCoachModal(coach)" class="flex items-center gap-1.5 mx-auto px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border border-pink-200 text-pink-600 hover:bg-pink-50 transition-all cursor-pointer bg-transparent">
-                          <i class="pi pi-eye text-[10px]"></i>
-                          Voir les notes
+                      </td>
+                      <td class="px-6 py-4">
+                        <span style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;"
+                          [ngStyle]="{
+                            'background': fr.response.status==='PENDING' ? '#FEF3C7' : (fr.response.status==='SUBMITTED' ? '#D1FAE5' : '#DBEAFE'),
+                            'color': fr.response.status==='PENDING' ? '#B45309' : (fr.response.status==='SUBMITTED' ? '#047857' : '#1D4ED8')
+                          }">
+                          {{ fr.response.status === 'PENDING' ? 'En attente' : fr.response.status === 'SUBMITTED' ? 'Soumis' : 'Validé' }}
+                        </span>
+                      </td>
+                      <td class="px-6 py-4 text-xs text-gray-500 font-medium">
+                        {{ fr.response.submittedAt ? (fr.response.submittedAt | date:'dd/MM/yyyy') : '—' }}
+                      </td>
+                      <td class="px-6 py-4 text-center">
+                        <button (click)="openFlatResponseModal(fr)"
+                          style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:10px;font-size:11px;font-weight:700;color:#e91e63;background:#fce4ec;border:1px solid #FECDD3;cursor:pointer;transition:all .2s;"
+                          [disabled]="fr.response.status === 'PENDING'">
+                          <i class="pi pi-eye" style="font-size:11px;"></i>
+                          Voir réponses
                         </button>
-                      }
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          } @else if (pageTab() === 'allRatings') {
-            <!-- Tab 2: Individual Ratings -->
-            <table class="w-full text-left border-collapse">
-              <thead>
-                <tr class="bg-gray-50 border-b border-gray-100">
-                  <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500">Coach</th>
-                  <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500">Séance</th>
-                  <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500">Programme</th>
-                  <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500">Entrepreneur</th>
-                  <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500">Note</th>
-                  <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500">Date</th>
-                  <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500">Statut</th>
-                  <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500 text-center">Actions</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-gray-100">
-                @for (r of filtered(); track r.id) {
-                  <tr class="hover:bg-gray-50 transition-colors" [class]="r.globalRating <= 2 ? 'bg-red-50' : ''">
-                    <td class="px-6 py-5 text-sm font-black text-gray-900">{{ r.coach?.firstName }} {{ r.coach?.lastName }}</td>
-                    <td class="px-6 py-5 text-xs font-bold text-[#3B82A6]">{{ r.session?.titre || 'Session' }}</td>
-                    <td class="px-6 py-5 text-xs font-medium text-gray-500">{{ r.programme?.nom }}</td>
-                    <td class="px-6 py-5">
-                      <span class="text-sm font-bold text-gray-900">{{ r.entrepreneur?.firstName }} {{ r.entrepreneur?.lastName }}</span>
-                    </td>
-                    <td class="px-6 py-5">
-                      <div class="flex items-center gap-1.5 text-sm font-black" [style.color]="ratingColor(r.globalRating)">
-                        {{ r.globalRating }}
-                        <rb-stars [value]="r.globalRating" [size]="12"></rb-stars>
-                        @if (r.globalRating <= 2) { <i class="pi pi-exclamation-triangle text-red-500 text-xs"></i> }
-                      </div>
-                    </td>
-                    <td class="px-6 py-5 text-[11px] text-gray-500 font-medium">{{ r.createdAt | date:'dd/MM/yyyy' }}</td>
-                    <td class="px-6 py-5">
-                      @if (r.statut === 'NON_LU') { <span class="px-2 py-0.5 rounded-full bg-pink-100 text-pink-600 text-[10px] font-black uppercase tracking-tighter">Non lu</span> }
-                      @else if (r.statut === 'LU') { <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-600 text-[10px] font-black uppercase tracking-tighter">Lu</span> }
-                      @else { <span class="px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 text-[10px] font-black uppercase tracking-tighter">Archivé</span> }
-                    </td>
-                    <td class="px-6 py-5 text-center flex items-center justify-center gap-2">
-                       <button (click)="openRatingModal(r)" class="p-2 hover:bg-gray-100 rounded-xl text-gray-500 hover:text-sky-500 transition-all border-none bg-transparent cursor-pointer"><i class="pi pi-eye text-sm"></i></button>
-                      <button (click)="archiveRating(r.id!)" class="p-2 hover:bg-gray-100 rounded-xl text-gray-500 hover:text-gray-900 transition-all border-none bg-transparent cursor-pointer"><i class="pi pi-inbox text-sm"></i></button>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
+                      </td>
+                    </tr>
+                  }
+                  @if (filteredFlat().length === 0) {
+                    <tr>
+                      <td colspan="7" style="padding:60px 24px;text-align:center;color:#9CA3AF;font-size:14px;font-weight:500;">
+                        Aucune évaluation trouvée.
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            }
           } @else if (pageTab() === 'forms') {
-            <!-- Tab 3: Forms -->
+            <!-- Tab: Formulaires envoyés -->
             <table class="w-full text-left border-collapse">
               <thead>
                 <tr class="bg-gray-50 border-b border-gray-100">
@@ -311,13 +232,12 @@ type PageTab = 'byCoach' | 'allRatings' | 'forms';
                     </td>
                     <td class="px-6 py-5 text-center flex items-center justify-center gap-2">
                        <button (click)="openFormModalForEdit(f)" class="p-2 hover:bg-gray-100 rounded-xl text-gray-500 hover:text-sky-500 transition-all border-none bg-transparent cursor-pointer"><i class="pi pi-pencil text-sm"></i></button>
-                       <button (click)="viewResponses(f)" class="p-2 hover:bg-gray-100 rounded-xl text-gray-500 hover:text-pink-500 transition-all border-none bg-transparent cursor-pointer" title="Voir les réponses"><i class="pi pi-users text-sm"></i></button>
                     </td>
                   </tr>
                 }
                 @if (formsList().length === 0) {
                   <tr>
-                    <td colspan="6" class="px-6 py-8 text-center text-sm font-medium text-gray-400">Aucun formulaire d'évaluation trouvé.</td>
+                    <td colspan="7" class="px-6 py-8 text-center text-sm font-medium text-gray-400">Aucun formulaire d'évaluation envoyé.</td>
                   </tr>
                 }
               </tbody>
@@ -343,7 +263,7 @@ type PageTab = 'byCoach' | 'allRatings' | 'forms';
             <div class="modal-body" style="background: #F9FAFB; max-height: 70vh; overflow-y: auto;">
               @if (isLoadingResponses) {
                 <div style="text-align:center;padding:40px;">
-                  <i class="pi pi-spin pi-spinner" style="font-size:2rem;color:#ea5073;"></i>
+                  <i class="pi pi-spin pi-spinner" style="font-size:2rem;color:#e91e63;"></i>
                   <p style="margin-top:10px;color:#6B7280;">Chargement des détails...</p>
                 </div>
               } @else if (formResponses().length === 0) {
@@ -358,7 +278,7 @@ type PageTab = 'byCoach' | 'allRatings' | 'forms';
                     <div style="background:#fff;border-radius:16px;padding:20px;border:1px solid #E5E7EB;box-shadow:0 2px 8px rgba(0,0,0,0.03);">
                       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
                         <div style="display:flex;align-items:center;gap:10px;">
-                          <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#ea5073,#d4476a);display:flex;align-items:center;justify-content:center;color:white;font-weight:900;font-size:14px;">
+                          <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#e91e63,#c2185b);display:flex;align-items:center;justify-content:center;color:white;font-weight:900;font-size:14px;">
                             {{ (resp.entrepreneurName || 'E').charAt(0).toUpperCase() }}
                           </div>
                           <div>
@@ -382,7 +302,7 @@ type PageTab = 'byCoach' | 'allRatings' | 'forms';
                       @if (resp.answers && resp.answers.length > 0) {
                         <div style="display:flex;flex-direction:column;gap:12px;">
                           @for (ans of resp.answers; track ans.questionId) {
-                            <div style="background:#F9FAFB;border-radius:12px;padding:16px;border-left:4px solid #ea5073;">
+                            <div style="background:#F9FAFB;border-radius:12px;padding:16px;border-left:4px solid #e91e63;">
                               <p style="font-size:10px;font-weight:800;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.05em;margin:0 0 8px 0;">{{ ans.questionText }}</p>
                               <p style="font-size:14px;font-weight:600;color:#1A1A2E;margin:0;">{{ ans.answerValue || '—' }}</p>
                             </div>
@@ -400,180 +320,68 @@ type PageTab = 'byCoach' | 'allRatings' | 'forms';
         </div>
       }
 
-      <!-- COACH DETAIL MODAL -->
-      @if (selectedCoach()) {
-        <div class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4" (click)="selectedCoach.set(null)">
-          <div class="bg-white rounded-3xl shadow-2xl w-full max-w-[700px] max-h-[90vh] overflow-y-auto" (click)="$event.stopPropagation()">
-            <div class="p-6 bg-gray-900 flex items-center justify-between rounded-t-3xl">
-              <div class="flex items-center gap-4">
-                <div class="w-12 h-12 rounded-xl flex items-center justify-center text-white font-black text-lg shadow-lg"
-                  style="background: linear-gradient(135deg, #00d2ff, #3aafff)">
-                  {{ selectedCoach()?.avatar }}
-                </div>
-                <div>
-                  <h2 class="text-xl font-black text-white leading-tight">{{ selectedCoach()?.name }}</h2>
-                  <p class="text-white/60 text-xs font-medium tracking-wide uppercase">Notes reçues · {{ selectedCoach()?.count }} évaluations</p>
-                </div>
+
+
+      <!-- DETAIL RÉPONSE MODAL — utilise modal-overlay (z-index 9999) -->
+      @if (selectedFlatResponse()) {
+        <div class="modal-overlay" (click)="selectedFlatResponse.set(null)">
+          <div class="modal-box" style="max-width:850px;" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+              <div class="modal-header-info">
+                <h2 class="modal-name">Réponses — {{ selectedFlatResponse()!.formTitle }}</h2>
+                <p style="font-size:12px;color:#6B7280;margin:4px 0 0;">
+                  <i class="pi pi-briefcase" style="margin-right:4px;"></i>{{ getCoachName(selectedFlatResponse()!.coachId) }}
+                  @if (selectedFlatResponse()!.programmeName) {
+                    · {{ selectedFlatResponse()!.programmeName }}
+                  }
+                  @if (selectedFlatResponse()!.thematiqueName) {
+                    · {{ selectedFlatResponse()!.thematiqueName }}
+                  }
+                </p>
               </div>
-              <button (click)="selectedCoach.set(null)" class="text-white/60 hover:text-white bg-transparent border-none cursor-pointer"><i class="pi pi-times text-xl"></i></button>
+              <button (click)="selectedFlatResponse.set(null)" class="modal-close"><i class="pi pi-times"></i></button>
             </div>
             
-            <div class="p-6 space-y-6">
-              <div class="grid grid-cols-4 gap-4">
-                <div class="col-span-1 bg-gray-50 rounded-2xl p-5 text-center flex flex-col items-center justify-center">
-                  <p class="text-4xl font-black mb-1" [style.color]="ratingColor(selectedCoach()?.avg || 0)">{{ selectedCoach()?.avg }}</p>
-                  <rb-stars [value]="selectedCoach()?.avg || 0" [size]="14"></rb-stars>
-                  <p class="text-[10px] text-gray-400 mt-2 font-black uppercase tracking-widest">Score Global</p>
-                </div>
-                <div class="col-span-3 bg-gray-50 rounded-2xl p-5 space-y-4">
-                  @for (c of [
-                    { label: 'Communication', value: selectedCoach()?.avgComm || 0 },
-                    { label: 'Expertise', value: selectedCoach()?.avgExp || 0 },
-                    { label: 'Disponibilité', value: selectedCoach()?.avgDispo || 0 },
-                    { label: 'Impact', value: selectedCoach()?.avgImpact || 0 }
-                  ]; track c.label) {
-                    <div class="flex items-center gap-4">
-                      <span class="text-xs font-bold text-gray-600 w-32">{{ c.label }}</span>
-                      <div class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                        <div class="h-full rounded-full transition-all duration-500" [style.width.%]="(c.value/5)*100" [style.background]="ratingColor(c.value)"></div>
-                      </div>
-                      <span class="text-xs font-black w-8 text-right" [style.color]="ratingColor(c.value)">{{ c.value }}</span>
+            <div class="modal-body" style="background: #F9FAFB; max-height: 70vh; overflow-y: auto;">
+              <div style="background:#fff;border-radius:16px;padding:20px;border:1px solid #E5E7EB;box-shadow:0 2px 8px rgba(0,0,0,0.03);">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                  <div style="display:flex;align-items:center;gap:10px;">
+                    <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#e91e63,#c2185b);display:flex;align-items:center;justify-content:center;color:white;font-weight:900;font-size:14px;">
+                      {{ (selectedFlatResponse()!.response.entrepreneurName || 'E').charAt(0).toUpperCase() }}
                     </div>
-                  }
-                </div>
-              </div>
-
-              <div class="grid grid-cols-1 gap-3">
-                @for (r of coachRatings(); track r.id) {
-                  <div class="p-4 rounded-2xl border border-gray-100 hover:border-pink-200 hover:bg-pink-50 transition-all">
-                    <div class="flex items-start justify-between mb-2">
-                      <div>
-                        <p class="text-sm font-black text-gray-900">{{ r.entrepreneur?.firstName }} {{ r.entrepreneur?.lastName }}</p>
-                        <p class="text-[10px] text-gray-500 font-bold uppercase tracking-tight">{{ r.programme?.nom }}</p>
-                      </div>
-                      <div class="text-right">
-                        <rb-stars [value]="r.globalRating" [size]="12"></rb-stars>
-                        <p class="text-[10px] text-gray-400 mt-1 font-medium">{{ r.createdAt | date:'dd MMM yyyy' }}</p>
-                      </div>
+                    <div>
+                      <p style="font-weight:800;font-size:14px;color:#1A1A2E;margin:0;">{{ selectedFlatResponse()!.response.entrepreneurName || 'Entrepreneur' }}</p>
+                      <p style="font-size:11px;color:#9CA3AF;margin:0;">ID: {{ selectedFlatResponse()!.response.entrepreneurId }}</p>
                     </div>
-                    @if (r.commentaire) {
-                      <p class="text-xs text-gray-700 italic leading-relaxed">"{{ r.commentaire }}"</p>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:10px;">
+                    <span style="font-size:10px;font-weight:900;padding:4px 12px;border-radius:20px;text-transform:uppercase;letter-spacing:0.05em;"
+                      [ngClass]="{'bg-amber-100 text-amber-700': selectedFlatResponse()!.response.status==='PENDING', 'bg-emerald-100 text-emerald-700': selectedFlatResponse()!.response.status==='SUBMITTED', 'bg-blue-100 text-blue-700': selectedFlatResponse()!.response.status==='VALIDATED'}">
+                      {{ selectedFlatResponse()!.response.status === 'PENDING' ? 'En attente' : selectedFlatResponse()!.response.status === 'SUBMITTED' ? 'Soumis' : 'Validé' }}
+                    </span>
+                    @if (selectedFlatResponse()!.response.submittedAt) {
+                      <span style="font-size:11px;color:#6B7280;">{{ selectedFlatResponse()!.response.submittedAt | date:'dd/MM/yyyy HH:mm' }}</span>
                     }
                   </div>
+                </div>
+
+                @if (selectedFlatResponse()!.response.answers && selectedFlatResponse()!.response.answers.length > 0) {
+                  <div style="display:flex;flex-direction:column;gap:10px;">
+                    @for (ans of selectedFlatResponse()!.response.answers; track ans.questionId) {
+                      <div style="background:#f8f9fa;border-radius:12px;padding:14px;border-left:4px solid #e91e63;">
+                        <p style="font-size:10px;font-weight:800;color:#6B7280;text-transform:uppercase;letter-spacing:0.08em;margin:0 0 6px;">{{ ans.questionText }}</p>
+                        <p style="font-size:14px;font-weight:600;color:#1A1A2E;margin:0;">{{ ans.answerValue || '—' }}</p>
+                      </div>
+                    }
+                  </div>
+                } @else {
+                  <p style="font-size:13px;color:#9CA3AF;font-style:italic;margin:0;">Aucune réponse fournie.</p>
                 }
               </div>
             </div>
-          </div>
-        </div>
-      }
-
-      <!-- INDIVIDUAL RATING MODAL -->
-      @if (selectedRating()) {
-        <div class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4" (click)="selectedRating.set(null)">
-          <div class="bg-white rounded-3xl shadow-2xl w-full max-w-[650px]" (click)="$event.stopPropagation()">
             
-            <div class="p-6 bg-gray-900 flex items-center justify-between rounded-t-3xl">
-              <div class="flex items-center gap-6">
-                <div class="flex items-center gap-4">
-                  <div class="text-center">
-                    <div class="w-12 h-12 rounded-xl flex items-center justify-center text-white font-black text-sm mb-1 shadow-md" style="background: linear-gradient(135deg, #00d2ff, #3aafff)">
-                      {{ getInitial(selectedRating()?.coach) }}
-                    </div>
-                    <p class="text-[10px] text-white/60 font-black uppercase">Coach</p>
-                  </div>
-                  <div class="text-white/30 font-black">/</div>
-                  <div class="text-center">
-                    <div class="w-12 h-12 rounded-xl flex items-center justify-center text-white font-black text-sm mb-1 shadow-md" style="background: linear-gradient(135deg, #7B2D8B, #4A148C)">
-                      {{ getInitial(selectedRating()?.entrepreneur) }}
-                    </div>
-                    <p class="text-[10px] text-white/60 font-black uppercase">Entrepreneur</p>
-                  </div>
-                </div>
-                <div>
-                  <h2 class="text-xl font-black text-white leading-tight">{{ selectedRating()?.coach?.firstName }} {{ selectedRating()?.coach?.lastName }}</h2>
-                  <p class="text-white/60 text-xs font-medium">{{ selectedRating()?.entrepreneur?.firstName }} {{ selectedRating()?.entrepreneur?.lastName }}</p>
-                </div>
-              </div>
-              <button (click)="selectedRating.set(null)" class="text-white/60 hover:text-white bg-transparent border-none cursor-pointer"><i class="pi pi-times text-xl"></i></button>
-            </div>
-
-            <div class="p-6 space-y-8">
-              <div class="text-center">
-                <div class="flex justify-center mb-4">
-                  <rb-stars [value]="selectedRating()?.globalRating || 0" [size]="32"></rb-stars>
-                </div>
-                <p class="text-5xl font-black leading-none" [style.color]="ratingColor(selectedRating()?.globalRating || 0)">
-                  {{ selectedRating()?.globalRating }}<span class="text-gray-200 text-3xl"> / 5</span>
-                </p>
-                @if ((selectedRating()?.globalRating || 0) <= 2) {
-                  <div class="inline-flex items-center gap-2 mt-4 px-4 py-1.5 rounded-full bg-red-100 text-red-600 text-xs font-black uppercase tracking-widest">
-                    <i class="pi pi-exclamation-triangle text-[10px]"></i>
-                    Note critique - Action recommandée
-                  </div>
-                }
-              </div>
-
-              <div class="grid grid-cols-3 gap-4">
-                @for (c of [
-                  { label: 'Communication', value: selectedRating()?.communication || 0 },
-                  { label: 'Expertise', value: selectedRating()?.expertise || 0 },
-                  { label: 'Disponibilité', value: selectedRating()?.availability || 0 },
-                  { label: 'Impact', value: selectedRating()?.impact || 0 }
-                ]; track c.label) {
-                  <div class="bg-gray-50 rounded-2xl p-4 text-center">
-                    <p class="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-2">{{ c.label }}</p>
-                    <rb-stars [value]="c.value" [size]="16" class="justify-center mb-2"></rb-stars>
-                    <p class="text-lg font-black" [style.color]="ratingColor(c.value)">{{ c.value }} / 5</p>
-                  </div>
-                }
-              </div>
-
-              @if (selectedRating()?.tags) {
-                <div class="flex flex-wrap gap-2 mb-4">
-                  @for (tag of selectedRating()?.tags?.split(', '); track tag) {
-                    <span class="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-100">{{ tag }}</span>
-                  }
-                </div>
-              }
-
-              @if (selectedRating()?.commentaire) {
-                <div class="bg-pink-50/30 border-l-4 border-pink-500 p-6 rounded-r-2xl shadow-sm">
-                  <p class="text-gray-600 text-sm italic leading-relaxed font-medium">"{{ selectedRating()?.commentaire }}"</p>
-                </div>
-              }
-
-              <div class="grid grid-cols-3 gap-4">
-                @for (item of [
-                  { icon: 'pi-book', label: 'Programme', value: selectedRating()?.programme?.nom },
-                  { icon: 'pi-calendar-clock', label: 'Séance', value: selectedRating()?.session?.titre },
-                  { icon: 'pi-calendar', label: 'Date', value: selectedRating()?.createdAt }
-                ]; track item.label) {
-                  <div class="bg-gray-50 rounded-2xl p-4">
-                    <div class="flex items-center gap-2 mb-1 text-gray-400">
-                      <i class="pi {{ item.icon }} text-[10px]"></i>
-                      <span class="text-[10px] font-black uppercase tracking-widest">{{ item.label }}</span>
-                    </div>
-                    <p class="text-sm font-black text-gray-900">
-                      @if (item.label === 'Date') {
-                        {{ item.value | date:'dd MMMM yyyy' }}
-                      } @else {
-                        {{ item.value || '—' }}
-                      }
-                    </p>
-                  </div>
-                }
-              </div>
-            </div>
-
-            <div class="p-6 flex items-center justify-between gap-3 border-t border-gray-100 bg-gray-50 rounded-b-3xl">
-              <button (click)="archiveRating(selectedRating()?.id!)" class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest border border-gray-200 text-gray-400 hover:text-gray-600 transition-all cursor-pointer">
-                <i class="pi pi-inbox text-[10px]"></i>
-                Archiver
-              </button>
-              <button (click)="markRead(selectedRating()?.id!)" class="flex items-center gap-2 px-6 py-2.5 bg-emerald-600 text-white border-transparent rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-emerald-600/20 hover:scale-[1.02] transition-all cursor-pointer">
-                <i class="pi pi-check-circle text-sm"></i>
-                Marquer comme lu
-              </button>
+            <div class="modal-footer">
+              <button (click)="selectedFlatResponse.set(null)" class="btn-close-modal-kpi">Fermer</button>
             </div>
           </div>
         </div>
@@ -632,20 +440,52 @@ type PageTab = 'byCoach' | 'allRatings' | 'forms';
                      }
                    </select>
                    @if (!editingForm.programmeId) {
-                     <p style="font-size: 10px; color: #ea5073; margin-top: 4px;">Sélectionnez une thématique d'abord</p>
+                     <p style="font-size: 10px; color: #e91e63; margin-top: 4px;">Sélectionnez une thématique d'abord</p>
                    }
+                   <div>
+                     <label style="display: block; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Date limite</label>
+                     <input type="datetime-local" [(ngModel)]="editingForm.deadline" class="search-input-kpi" style="padding: 11px 16px;">
+                   </div>
                  </div>
 
-                 <div>
-                   <label style="display: block; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Date limite</label>
-                   <input type="datetime-local" [(ngModel)]="editingForm.deadline" class="search-input-kpi" style="padding: 11px 16px;">
-                 </div>
+                 <!-- Matched Entrepreneurs Preview -->
+                 @if (editingForm.programmeId && editingForm.thematiqueId && editingForm.coachId) {
+                   <div style="grid-column: span 2; margin-bottom: 24px; padding: 16px; border: 1px solid #E5E7EB; border-radius: 12px; background: #F9FAFB;">
+                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                       <h4 style="font-size: 13px; font-weight: 800; color: #1A1A2E; margin: 0;">Entrepreneurs ciblés</h4>
+                       <span style="font-size: 11px; font-weight: 700; color: #e91e63; background: #fce4ec; padding: 4px 8px; border-radius: 8px;">
+                         {{ matchedEntrepreneurs().length }} destinataire(s)
+                       </span>
+                     </div>
+                     @if (isLoadingMatchedEntrepreneurs()) {
+                       <div style="text-align: center; padding: 12px;">
+                         <i class="pi pi-spin pi-spinner" style="color: #e91e63; font-size: 1.2rem;"></i>
+                         <span style="font-size: 12px; color: #6B7280; margin-left: 8px;">Vérification des correspondances...</span>
+                       </div>
+                     } @else if (matchedEntrepreneurs().length === 0) {
+                       <div style="text-align: center; padding: 12px; color: #6B7280; font-size: 12px; font-style: italic;">
+                         Aucun entrepreneur n'a de matching validé pour cette thématique avec ce coach. Le formulaire ne sera envoyé à personne.
+                       </div>
+                     } @else {
+                       <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                         @for (ent of matchedEntrepreneurs(); track ent.id) {
+                           <div style="display: flex; align-items: center; gap: 6px; background: white; padding: 6px 12px; border: 1px solid #E5E7EB; border-radius: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+                             <div style="width: 20px; height: 20px; border-radius: 6px; background: linear-gradient(135deg, #e91e63, #c2185b); display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 10px;">
+                               {{ (ent.firstName ? ent.firstName.charAt(0).toUpperCase() : 'E') }}
+                             </div>
+                             <span style="font-size: 12px; font-weight: 700; color: #1A1A2E;">{{ ent.firstName }} {{ ent.lastName }}</span>
+                           </div>
+                         }
+                       </div>
+                     }
+                   </div>
+                 }
                </div>
 
                <div>
                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #E5E7EB;">
                    <h3 style="font-size: 16px; font-weight: 800; color: #1A1A2E; margin: 0;">Questions</h3>
-                   <button (click)="addQuestion()" class="btn-outline-sm-kpi" style="color: #ea5073; border-color: #ea5073;">
+                   <button (click)="addQuestion()" class="btn-outline-sm-kpi" style="color: #e91e63; border-color: #e91e63;">
                      <i class="pi pi-plus"></i> Ajouter
                    </button>
                  </div>
@@ -653,7 +493,7 @@ type PageTab = 'byCoach' | 'allRatings' | 'forms';
                  <div style="display: flex; flex-direction: column; gap: 16px;">
                    @for (q of editingForm.questions; track $index) {
                      <div style="background: white; padding: 20px; border-radius: 16px; border: 1px solid #E5E7EB; box-shadow: 0 2px 8px rgba(0,0,0,0.02); position: relative;">
-                       <button (click)="removeQuestion($index)" style="position: absolute; top: 16px; right: 16px; padding: 8px; background: #FFF0F5; color: #C0392B; border: none; border-radius: 8px; cursor: pointer; transition: all .2s;">
+                       <button (click)="removeQuestion($index)" style="position: absolute; top: 16px; right: 16px; padding: 8px; background: #fce4ec; color: #C0392B; border: none; border-radius: 8px; cursor: pointer; transition: all .2s;">
                          <i class="pi pi-trash"></i>
                        </button>
                        
@@ -673,7 +513,7 @@ type PageTab = 'byCoach' | 'allRatings' | 'forms';
                          </div>
                          <div style="grid-column: span 2; display: flex; align-items: flex-end; padding-bottom: 10px;">
                            <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; cursor: pointer;">
-                             <input type="checkbox" [(ngModel)]="q.required" style="width: 16px; height: 16px; accent-color: #ea5073;"> Obligatoire
+                             <input type="checkbox" [(ngModel)]="q.required" style="width: 16px; height: 16px; accent-color: #e91e63;"> Obligatoire
                            </label>
                          </div>
 
@@ -723,20 +563,20 @@ type PageTab = 'byCoach' | 'allRatings' | 'forms';
     .btn-gradient-kpi {
       display: flex; align-items: center; gap: 8px; padding: 10px 20px;
       border-radius: 12px; font-size: 14px; font-weight: 600; color: #fff;
-      background: #ea5073; border: none; cursor: pointer;
+      background: #e91e63; border: none; cursor: pointer;
       transition: all .2s; box-shadow: 0 4px 12px rgba(234, 80, 115, 0.3);
     }
-    .btn-gradient-kpi:hover:not(:disabled) { background: #d4476a; transform: translateY(-1px); }
+    .btn-gradient-kpi:hover:not(:disabled) { background: #c2185b; transform: translateY(-1px); }
     .search-input-kpi {
       width: 100%; border: 1px solid #E5E7EB; border-radius: 12px; font-size: 14px; 
       outline: none; color: #333; transition: border-color .2s; background: #fff; box-sizing: border-box;
     }
-    .search-input-kpi:focus { border-color: #ea5073; }
+    .search-input-kpi:focus { border-color: #e91e63; }
     .filter-select-kpi {
       border: 1px solid #E5E7EB; border-radius: 12px; font-size: 14px; 
       outline: none; color: #333; cursor: pointer; background: #fff; transition: border-color .2s;
     }
-    .filter-select-kpi:focus { border-color: #ea5073; }
+    .filter-select-kpi:focus { border-color: #e91e63; }
     .btn-outline-sm-kpi {
       display: flex; align-items: center; gap: 8px; padding: 8px 16px;
       border-radius: 10px; font-size: 13px; font-weight: 700;
@@ -761,7 +601,10 @@ export class AdminEvaluationsComponent implements OnInit {
   availableKpis = signal<any[]>([]);
   entrepreneurs = signal<FormUser[]>([]);
   allThematiques = signal<ThematiqueCoaching[]>([]);
-  allCoaches = signal<FormUser[]>([]);
+  allCoaches = signal<FormUser[]>([]); // Used specifically for form builder (filtered by programme)
+  globalCoaches = signal<FormUser[]>([]); // All coaches for display
+  matchedEntrepreneurs = signal<any[]>([]);
+  isLoadingMatchedEntrepreneurs = signal<boolean>(false);
 
   // Responses modal
   showResponsesModal = false;
@@ -769,11 +612,15 @@ export class AdminEvaluationsComponent implements OnInit {
   formResponses = signal<any[]>([]);
   isLoadingResponses = false;
 
-  pageTab = signal<PageTab>('byCoach');
+  pageTab = signal<PageTab>('allRatings');
   ratings = signal<CoachRating[]>([]);
   formsList = signal<KpiForm[]>([]);
-  selectedCoach = signal<CoachStats | null>(null);
   selectedRating = signal<CoachRating | null>(null);
+
+  // Flat evaluation responses (one entry per entrepreneur per form)
+  flatEvalResponses = signal<FlatEvalResponse[]>([]);
+  selectedFlatResponse = signal<FlatEvalResponse | null>(null);
+  isLoadingFlatResponses = false;
 
   filterProgram = 'all';
   filterCoach = 'all';
@@ -798,11 +645,68 @@ export class AdminEvaluationsComponent implements OnInit {
 
     // Load all thematiques for dropdowns
     this.kpiFormSvc.getAllThematiques().subscribe(t => this.allThematiques.set(t || []));
+
+    // Load all coaches globally to map coachId -> Name
+    this.kpiFormSvc.getAllCoaches().subscribe(c => this.globalCoaches.set(c || []));
+  }
+
+  getCoachName(coachId?: number): string {
+    if (!coachId) return '—';
+    const coach = this.globalCoaches().find(c => c.id === coachId);
+    return coach ? `${coach.firstName} ${coach.lastName}` : 'Coach inconnu';
   }
 
   loadForms() {
+    this.isLoadingFlatResponses = true;
     this.kpiFormSvc.getEvaluationForms().subscribe(f => {
-      this.formsList.set(f || []);
+      const forms = f || [];
+      this.formsList.set(forms);
+      this.loadAllEvaluationResponses(forms);
+    });
+  }
+
+  loadAllEvaluationResponses(forms: KpiForm[]) {
+    if (!forms.length) {
+      this.flatEvalResponses.set([]);
+      this.isLoadingFlatResponses = false;
+      return;
+    }
+    const flat: FlatEvalResponse[] = [];
+    let remaining = forms.length;
+    forms.forEach(form => {
+      this.kpiFormSvc.getResponsesForForm(form.id!).subscribe({
+        next: (responses) => {
+          (responses || []).forEach(resp => {
+            const thematiqueName = form.thematiqueLabel ||
+              this.allThematiques().find(t => t.id === form.thematiqueId)?.nom || '';
+            flat.push({
+              formId: form.id!,
+              formTitle: form.title,
+              coachId: form.coachId,
+              programmeName: this.getProgrammeName(form.programmeId),
+              thematiqueName,
+              response: resp
+            });
+          });
+          remaining--;
+          if (remaining === 0) {
+            flat.sort((a, b) => {
+              const da = new Date(a.response.submittedAt || 0).getTime();
+              const db = new Date(b.response.submittedAt || 0).getTime();
+              return db - da;
+            });
+            this.flatEvalResponses.set([...flat]);
+            this.isLoadingFlatResponses = false;
+          }
+        },
+        error: () => {
+          remaining--;
+          if (remaining === 0) {
+            this.flatEvalResponses.set([...flat]);
+            this.isLoadingFlatResponses = false;
+          }
+        }
+      });
     });
   }
 
@@ -826,15 +730,20 @@ export class AdminEvaluationsComponent implements OnInit {
   openFormModal() {
     this.editingForm = this.getEmptyForm();
     this.allCoaches.set([]);
+    this.matchedEntrepreneurs.set([]);
     this.showFormModal = true;
   }
 
   openFormModalForEdit(form: KpiForm) {
     this.editingForm = JSON.parse(JSON.stringify(form));
     if (this.editingForm.programmeId) {
-       this.kpiFormSvc.getCoachesByProgramme(this.editingForm.programmeId).subscribe(c => this.allCoaches.set(c || []));
+       this.kpiFormSvc.getCoachesByProgramme(this.editingForm.programmeId).subscribe(c => {
+         this.allCoaches.set(c || []);
+         this.loadMatchedEntrepreneurs();
+       });
     } else {
        this.allCoaches.set([]);
+       this.matchedEntrepreneurs.set([]);
     }
     this.showFormModal = true;
   }
@@ -842,6 +751,11 @@ export class AdminEvaluationsComponent implements OnInit {
   closeModals() {
     this.showFormModal = false;
     this.showResponsesModal = false;
+    this.selectedFlatResponse.set(null);
+  }
+
+  openFlatResponseModal(fr: FlatEvalResponse) {
+    this.selectedFlatResponse.set(fr);
   }
 
   onProgrammeChange() {
@@ -858,19 +772,45 @@ export class AdminEvaluationsComponent implements OnInit {
 
   onThematiqueChange() {
     const tId = this.editingForm.thematiqueId;
-    // Auto-fill programmeId from selected thematique
     if (tId) {
       const theme = this.allThematiques().find(t => t.id === Number(tId));
       if (theme?.programmeId) {
         this.editingForm.programmeId = theme.programmeId;
-        // Also load coaches for that programme
-        this.kpiFormSvc.getCoachesByProgramme(theme.programmeId).subscribe(c => this.allCoaches.set(c || []));
+        this.kpiFormSvc.getCoachesByProgramme(theme.programmeId).subscribe(c => {
+          this.allCoaches.set(c || []);
+          this.loadMatchedEntrepreneurs();
+        });
       }
+    } else {
+      this.editingForm.programmeId = undefined;
+      this.allCoaches.set([]);
+      this.matchedEntrepreneurs.set([]);
     }
   }
 
   onCoachChange() {
-    // Store the coach selection - coachId is already bound via ngModel to editingForm.coachId
+    this.loadMatchedEntrepreneurs();
+  }
+
+  loadMatchedEntrepreneurs() {
+    const pId = this.editingForm.programmeId;
+    const tId = this.editingForm.thematiqueId;
+    const cId = this.editingForm.coachId;
+    if (pId && tId && cId) {
+      this.isLoadingMatchedEntrepreneurs.set(true);
+      this.kpiFormSvc.getEntrepreneursForEvaluationCoach(Number(pId), Number(tId), Number(cId)).subscribe({
+        next: (ent) => {
+          this.matchedEntrepreneurs.set(ent || []);
+          this.isLoadingMatchedEntrepreneurs.set(false);
+        },
+        error: () => {
+          this.matchedEntrepreneurs.set([]);
+          this.isLoadingMatchedEntrepreneurs.set(false);
+        }
+      });
+    } else {
+      this.matchedEntrepreneurs.set([]);
+    }
   }
 
   addQuestion() {
@@ -907,71 +847,43 @@ export class AdminEvaluationsComponent implements OnInit {
     });
   }
 
-  programs = computed(() => Array.from(new Set(this.ratings().map(r => r.programme?.nom))));
-  coaches = computed(() => Array.from(new Set(this.ratings().map(r => `${r.coach?.firstName} ${r.coach?.lastName}`))));
+  programs = computed(() => Array.from(new Set(this.flatEvalResponses().map(fr => fr.programmeName).filter(Boolean))));
+  coaches = computed(() => Array.from(new Set(this.flatEvalResponses().map(fr => this.getCoachName(fr.coachId)).filter(n => n !== '—' && n !== 'Coach inconnu'))));
 
   kpis = computed(() => {
-    const list = this.ratings();
-    const sum = list.reduce((acc, r) => acc + (r.globalRating || 0), 0);
+    const list = this.flatEvalResponses();
     return {
       total: list.length,
-      unread: list.filter(r => r.statut === 'NON_LU').length,
-      avg: list.length ? (sum / list.length).toFixed(1) : '—',
-      alerts: new Set(list.filter(r => r.globalRating < 3).map(r => r.coach?.id)).size
+      pending: list.filter(fr => fr.response.status === 'PENDING').length,
+      submitted: list.filter(fr => fr.response.status === 'SUBMITTED').length,
+      forms: this.formsList().length
     };
   });
 
   kpiCards = computed(() => {
     const data = this.kpis();
     return [
-      { label: 'ÉVALUATIONS', sub: 'au total', value: data.total, icon: 'pi-chart-bar', gradient: 'linear-gradient(135deg,#a17dfd 0%,#7B52D3 100%)', shadow: '0 4px 16px rgba(161,125,253,0.30)' },
-      { label: 'NON LUES', sub: 'à traiter', value: data.unread, icon: 'pi-eye', gradient: 'linear-gradient(135deg,#ff3d91 0%,#a17dfd 100%)', shadow: '0 4px 16px rgba(255,61,145,0.30)' },
-      { label: 'NOTE MOYENNE', sub: 'sur 5 étoiles', value: `${data.avg}★`, icon: 'pi-star', gradient: 'linear-gradient(135deg,#F59E0B 0%,#FF6F00 100%)', shadow: '0 4px 16px rgba(245,158,11,0.30)' },
-      { label: 'ALERTES', sub: 'note critique', value: data.alerts, icon: 'pi-chart-line', gradient: 'linear-gradient(135deg,#FF6F00 0%,#C0392B 100%)', shadow: '0 4px 16px rgba(192,57,43,0.25)' },
+      { label: 'RÉPONSES TOTALES', sub: 'au total', value: data.total, icon: 'pi-chart-bar', gradient: 'linear-gradient(135deg, #ec407a 0%, #d81b60 100%)', shadow: '0 4px 16px rgba(236,64,122,0.30)' },
+      { label: 'EN ATTENTE', sub: 'non soumises', value: data.pending, icon: 'pi-clock', gradient: 'linear-gradient(135deg, #8e24aa 0%, #5e1174 100%)', shadow: '0 4px 16px rgba(142,36,170,0.30)' },
+      { label: 'SOUMISES', sub: 'réponses reçues', value: data.submitted, icon: 'pi-check-circle', gradient: 'linear-gradient(135deg, #26a69a 0%, #00695c 100%)', shadow: '0 4px 16px rgba(38,166,154,0.30)' },
+      { label: 'FORMULAIRES', sub: 'envoyés', value: data.forms, icon: 'pi-file', gradient: 'linear-gradient(135deg, #ff7043 0%, #ff1100 100%)', shadow: '0 4px 16px rgba(255,112,67,0.30)' },
     ];
   });
 
-  filtered = computed(() => {
-    return this.ratings().filter(r => {
-      if (this.filterProgram !== 'all' && r.programme?.nom !== this.filterProgram) return false;
-      const coachFullName = `${r.coach?.firstName} ${r.coach?.lastName}`;
-      if (this.filterCoach !== 'all' && coachFullName !== this.filterCoach) return false;
-      if (this.filterStatus !== 'all' && r.statut !== this.filterStatus) return false;
-      if (this.filterNote === 'low' && r.globalRating > 2) return false;
-      if (this.filterNote === 'high' && r.globalRating < 4) return false;
+  filteredFlat = computed(() => {
+    return this.flatEvalResponses().filter(fr => {
+      if (this.filterProgram !== 'all' && fr.programmeName !== this.filterProgram) return false;
+      const cName = this.getCoachName(fr.coachId);
+      if (this.filterCoach !== 'all' && cName !== this.filterCoach) return false;
+      if (this.filterStatus !== 'all' && fr.response.status !== this.filterStatus) return false;
       return true;
     });
   });
 
-  coachStats = computed(() => {
-    const list = this.ratings();
-    const coachIds = Array.from(new Set(list.map(r => r.coach?.id).filter(id => id != null)));
-    return coachIds.map(id => {
-      const cr = list.filter(r => r.coach?.id === id);
-      const n = cr.length;
-      return {
-        id,
-        name: `${cr[0].coach?.firstName} ${cr[0].coach?.lastName}`,
-        email: `coach.${id}@coach.tn`, // Default email since not in User obj directly
-        avatar: this.getInitial(cr[0].coach),
-        count: n,
-        avg: n ? parseFloat((cr.reduce((acc, r) => acc + r.globalRating, 0) / n).toFixed(1)) : 0,
-        avgComm: n ? parseFloat((cr.reduce((acc, r) => acc + r.communication, 0) / n).toFixed(1)) : 0,
-        avgExp: n ? parseFloat((cr.reduce((acc, r) => acc + r.expertise, 0) / n).toFixed(1)) : 0,
-        avgDispo: n ? parseFloat((cr.reduce((acc, r) => acc + r.availability, 0) / n).toFixed(1)) : 0,
-        avgImpact: n ? parseFloat((cr.reduce((acc, r) => acc + (r.impact || 0), 0) / n).toFixed(1)) : 0,
-        programs: Array.from(new Set(cr.map(r => r.programme?.nom).filter(p => p != null)))
-      } as CoachStats;
-    });
-  });
+  filtered = computed(() => this.filteredFlat());
 
-  coachRatings = computed(() => {
-    const coach = this.selectedCoach();
-    if (!coach) return [];
-    return this.ratings().filter(r => r.coach?.id === coach.id);
-  });
 
-  hasFilters = computed(() => this.filterProgram !== 'all' || this.filterCoach !== 'all' || this.filterStatus !== 'all' || this.filterNote !== 'all');
+  hasFilters = computed(() => this.filterProgram !== 'all' || this.filterCoach !== 'all' || this.filterStatus !== 'all');
 
   resetFilters() {
     this.filterProgram = 'all';
@@ -991,9 +903,6 @@ export class AdminEvaluationsComponent implements OnInit {
     return user.firstName ? user.firstName.charAt(0).toUpperCase() : '?';
   }
 
-  openCoachModal(coach: CoachStats) {
-    this.selectedCoach.set(coach);
-  }
 
   openRatingModal(rating: CoachRating) {
     this.selectedRating.set(rating);

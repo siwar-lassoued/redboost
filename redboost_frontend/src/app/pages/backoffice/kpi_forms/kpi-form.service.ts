@@ -118,8 +118,12 @@ export class KpiFormService {
         );
     }
 
-    getCoachesByProgramme(programmeId: string | number): Observable<User[]> {
+    getCoachesByProgramme(programmeId: number): Observable<User[]> {
         return this.http.get<User[]>(`${this.apiUrl}/programme/${programmeId}/coaches`);
+    }
+
+    getEntrepreneursForEvaluationCoach(programmeId: number, thematiqueId: number, coachId: number): Observable<User[]> {
+        return this.http.get<User[]>(`${this.apiUrl}/programme/${programmeId}/thematique/${thematiqueId}/coach/${coachId}/entrepreneurs`);
     }
 
     getAllCoaches(): Observable<User[]> {

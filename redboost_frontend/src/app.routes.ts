@@ -60,7 +60,6 @@ import { CoachRapportMissionsComponent } from './app/pages/dashboard/coachDashbo
 import { CoachRapportSessionComponent } from './app/pages/dashboard/coachDashboard/coach-rapport-session.component';
 import { CoachLivrablesComponent } from './app/pages/dashboard/coachDashboard/coach-livrables.component';
 import { NoteDeSyntheseCreateComponent } from './app/pages/dashboard/coachDashboard/note-de-synthese-create.component';
-import { CoachKpiFormsComponent } from './app/pages/dashboard/coachDashboard/coach-kpi-forms.component';
 
 
 // New dynamic KPI and Form features
@@ -158,7 +157,6 @@ export const appRoutes: Routes = [
             { path: 'coach-planning', component: CoachPlanningComponent },
             { path: 'coach-entrep-deliverable', component: CoachLivrablesComponent },
             { path: 'coach-livrables', component: CoachLivrablesComponent },
-            { path: 'coach-kpi-forms', component: CoachKpiFormsComponent },
             { path: 'note-de-synthese-create/:id', component: NoteDeSyntheseCreateComponent },
             { path: 'messagerie-reclamation', component: ReclamationsComponent },
             { path: 'coach-reclamations', component: ReclamationsComponent },

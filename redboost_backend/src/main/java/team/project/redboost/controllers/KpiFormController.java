@@ -68,6 +68,14 @@ public class KpiFormController {
         return ResponseEntity.ok(kpiFormService.getEntrepreneursForEvaluation(programmeId, thematiqueId));
     }
 
+    @GetMapping("/programme/{programmeId}/thematique/{thematiqueId}/coach/{coachId}/entrepreneurs")
+    public ResponseEntity<List<User>> getEntrepreneursForEvaluationCoach(
+            @PathVariable Long programmeId,
+            @PathVariable Long thematiqueId,
+            @PathVariable Long coachId) {
+        return ResponseEntity.ok(kpiFormService.getEntrepreneursForEvaluationCoach(programmeId, thematiqueId, coachId));
+    }
+
     @GetMapping("/programme/{programmeId}/entrepreneurs")
     public ResponseEntity<List<User>> getEntrepreneursForProgramme(@PathVariable Long programmeId) {
         return ResponseEntity.ok(kpiFormService.getEntrepreneursForProgramme(programmeId));

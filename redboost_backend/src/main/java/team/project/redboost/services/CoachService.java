@@ -115,14 +115,33 @@ public class CoachService {
     }
 
     public List<CoachEntrepreneurDTO> getCoachEntrepreneurs(Long coachId) {
-        List<Matching> matchings = matchingRepository.findByCoachIdAndStatut(coachId, Matching.StatutMatching.VALIDE);
+        List<Matching> matchingsForCoach = matchingRepository.findByCoachIdAndStatut(coachId, Matching.StatutMatching.VALIDE);
+        if (matchingsForCoach.isEmpty()) return new ArrayList<>();
+
+        List<Long> entIds = matchingsForCoach.stream().map(Matching::getEntrepreneurId).collect(Collectors.toList());
+        List<Matching> allActiveForTheseEnts = matchingRepository.findByEntrepreneurIdInAndStatut(entIds, Matching.StatutMatching.VALIDE);
+
+        // Find the latest matching for each entrepreneur and thematique combination
+        Map<String, Matching> latestMatchingPerEntTheme = new HashMap<>();
+        for (Matching m : allActiveForTheseEnts) {
+            String key = m.getEntrepreneurId() + "_" + m.getThematiqueId();
+            Matching currentLatest = latestMatchingPerEntTheme.get(key);
+            if (currentLatest == null || 
+                (m.getDateValidation() != null && currentLatest.getDateValidation() != null && m.getDateValidation().isAfter(currentLatest.getDateValidation())) ||
+                (m.getId() > currentLatest.getId())) {
+                latestMatchingPerEntTheme.put(key, m);
+            }
+        }
+
+        // Keep only entrepreneurs who have at least one LATEST active matching with THIS coach
+        Set<Long> validEntIds = latestMatchingPerEntTheme.values().stream()
+                .filter(m -> m.getCoachId().equals(coachId))
+                .map(Matching::getEntrepreneurId)
+                .collect(Collectors.toSet());
         
-        Set<Long> seenIds = new HashSet<>();
-        
-        return matchings.stream()
-            .filter(m -> seenIds.add(m.getEntrepreneurId()))
-            .map(m -> {
-                CandidatureRedstarter cand = candidatureRepository.findById(m.getEntrepreneurId()).orElse(null);
+        return validEntIds.stream()
+            .map(entId -> {
+                CandidatureRedstarter cand = candidatureRepository.findById(entId).orElse(null);
                 if (cand == null || cand.getEmail() == null) return null;
                 
                 User ent = userRepository.findByEmail(cand.getEmail());

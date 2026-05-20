@@ -9,6 +9,8 @@ export interface CoachRating {
     entrepreneur?: { id: number, firstName: string, lastName: string };
     programme?: { id: number, nom: string };
     session?: { id: string, titre: string };
+    formTitle?: string;
+    thematique?: { id: number, nom: string };
     globalRating: number;
     communication: number;
     expertise: number;
@@ -18,6 +20,7 @@ export interface CoachRating {
     commentaire?: string;
     statut?: 'LU' | 'NON_LU' | 'ARCHIVE';
     createdAt?: string;
+    answers?: { questionId: number; questionText: string; answerValue: string }[];
 }
 
 @Injectable({

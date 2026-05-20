@@ -38,75 +38,175 @@ import { ProgrammeService } from '../programmes/programme.service';
         }
       </div>
 
-      <!-- Table Section -->
-      <div class="table-card">
-        <div class="table-scroll">
-          <table class="cand-table">
-            <thead>
-              <tr>
-                <th>Titre</th>
-                <th>Programme</th>
-                <th>Créé le</th>
-                <th>Deadline</th>
-                <th>Questions</th>
-                <th style="text-align: center;">Statut</th>
-                <th style="text-align: center;">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (f of forms(); track f.id) {
-                <tr class="table-row">
-                  <td>
-                    <div class="name-cell">
-                      <span class="name-text">{{ f.title }}</span>
-                      <span class="email-text line-clamp-1" style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ f.description }}</span>
-                    </div>
-                  </td>
-                  <td>
-                    <span class="prog-badge">
-                      <i class="pi pi-book" style="font-size: 10px;"></i>
-                      {{ getProgrammeName(f.programmeId) }}
-                    </span>
-                  </td>
-                  <td class="date-cell">{{ f.createdAt | date:'dd/MM/yyyy' }}</td>
-                  <td class="date-cell" style="color: #ea5073; font-weight: 700;">{{ f.deadline | date:'dd/MM/yyyy' }}</td>
-                  <td>
-                    <span style="font-size: 14px; font-weight: 700; color: #1A1A2E;">{{ f.questions.length || 0 }}</span>
-                  </td>
-                  <td style="text-align: center;">
-                    <span class="status-badge"
-                      [ngClass]="{
-                        'bg-gray-100 text-gray-600': f.status === 'DRAFT',
-                        'bg-emerald-100 text-emerald-600': f.status === 'SENT',
-                        'bg-red-100 text-red-600': f.status === 'CLOSED'
-                      }">
-                      {{ f.status }}
-                    </span>
-                  </td>
-                  <td style="text-align: center;">
-                    <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
-                       <button (click)="openFormModal(f)" title="Éditer" class="btn-detail"><i class="pi pi-pencil"></i></button>
-                       <button (click)="openSendModal(f)" title="Envoyer" class="btn-detail" style="color: #059669"><i class="pi pi-send"></i></button>
-                       <button (click)="viewResponses(f)" title="Réponses" class="btn-detail" style="color: #1565C0"><i class="pi pi-users"></i></button>
-                    </div>
-                  </td>
-                </tr>
-              }
-              @if (forms().length === 0) {
-                <tr>
-                  <td colSpan="8">
-                    <div class="empty-state">
-                      <i class="pi pi-file-edit" style="font-size: 3rem; color: #D1D5DB; margin-bottom: 1rem; display: block;"></i>
-                      <p class="empty-text">Aucun formulaire trouvé</p>
-                      <p class="empty-sub">Créez votre premier formulaire KPI.</p>
-                    </div>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
+      <!-- Tabs Nav -->
+      <div style="display: flex; gap: 12px; mb-6; margin-bottom: 24px;">
+        <button (click)="pageTab.set('responses')" 
+          [class]="pageTab() === 'responses' ? 'bg-[#ec407a] text-white shadow-lg shadow-[0_4px_12px_rgba(236,64,122,0.3)]' : 'bg-white text-gray-500 hover:bg-gray-50'"
+          class="btn-tab-premium"
+          style="border: 1px solid #E5E7EB; border-radius: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 10px 20px; font-size: 14px; transition: all 0.2s;">
+          <i class="pi pi-list text-sm"></i>
+          Toutes les réponses
+        </button>
+        <button (click)="pageTab.set('forms')" 
+          [class]="pageTab() === 'forms' ? 'bg-[#ec407a] text-white shadow-lg shadow-[0_4px_12px_rgba(236,64,122,0.3)]' : 'bg-white text-gray-500 hover:bg-gray-50'"
+          class="btn-tab-premium"
+          style="border: 1px solid #E5E7EB; border-radius: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 10px 20px; font-size: 14px; transition: all 0.2s;">
+          <i class="pi pi-file text-sm"></i>
+          Formulaires KPI
+        </button>
       </div>
+
+      <!-- Table Section -->
+      @if (pageTab() === 'responses') {
+        <div class="table-card">
+          <div class="table-scroll">
+            <table class="cand-table">
+              <thead>
+                <tr>
+                  <th>Formulaire</th>
+                  <th>Programme</th>
+                  <th>Entrepreneur</th>
+                  <th>Date de soumission</th>
+                  <th style="text-align: center;">Statut</th>
+                  <th style="text-align: center;">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (resp of allResponses(); track resp.id || $index) {
+                  <tr class="table-row">
+                    <td>
+                      <div class="name-cell">
+                        <span class="name-text">{{ resp.formTitle }}</span>
+                        <div style="margin-top: 4px; display: flex; gap: 4px;">
+                          <span class="kf-type-tag" [ngClass]="resp.formType === 'EVALUATION' ? 'eval-tag' : 'kpi-tag'" style="padding: 2px 6px; font-size: 9px; font-weight: 800; border-radius: 4px; display: inline-flex; align-items: center; gap: 2px;">
+                            <i class="pi" [ngClass]="resp.formType === 'EVALUATION' ? 'pi-star' : 'pi-chart-line'" style="font-size: 8px;"></i>
+                            {{ resp.formType === 'EVALUATION' ? 'Évaluation Coach' : 'KPI' }}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <span class="prog-badge">
+                        <i class="pi pi-book" style="font-size: 10px;"></i>
+                        {{ getProgrammeName(resp.programmeId) }}
+                      </span>
+                    </td>
+                    <td>
+                      <span style="font-weight: 700; color: #1A1A2E;">{{ resp.entrepreneurName }}</span>
+                    </td>
+                    <td class="date-cell">
+                      @if (resp.submittedAt) {
+                        {{ resp.submittedAt | date:'dd/MM/yyyy HH:mm' }}
+                      } @else {
+                        <span style="color: #9CA3AF; font-style: italic;">Non soumis</span>
+                      }
+                    </td>
+                    <td style="text-align: center;">
+                      <span class="status-badge"
+                        [ngClass]="{
+                          'bg-amber-100 text-amber-700': resp.status === 'PENDING',
+                          'bg-emerald-100 text-emerald-700': resp.status === 'SUBMITTED',
+                          'bg-blue-100 text-blue-700': resp.status === 'VALIDATED'
+                        }">
+                        {{ resp.status === 'PENDING' ? 'En attente' : resp.status === 'SUBMITTED' ? 'Soumis' : 'Validé' }}
+                      </span>
+                    </td>
+                    <td style="text-align: center;">
+                      <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <button (click)="selectedResponse.set(resp)" title="Voir les réponses" class="btn-detail" style="color: #e91e63; font-size: 1.1rem; padding: 6px; border-radius: 8px; background: none; border: none; cursor: pointer;">
+                          <i class="pi pi-eye"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+                @if (allResponses().length === 0) {
+                  <tr>
+                    <td colSpan="6">
+                      <div class="empty-state">
+                        <i class="pi pi-inbox" style="font-size: 3rem; color: #D1D5DB; margin-bottom: 1rem; display: block;"></i>
+                        <p class="empty-text">Aucune réponse soumise</p>
+                        <p class="empty-sub">Les réponses des entrepreneurs s'afficheront ici.</p>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+
+      @if (pageTab() === 'forms') {
+        <div class="table-card">
+          <div class="table-scroll">
+            <table class="cand-table">
+              <thead>
+                <tr>
+                  <th>Titre</th>
+                  <th>Programme</th>
+                  <th>Créé le</th>
+                  <th>Deadline</th>
+                  <th>Questions</th>
+                  <th style="text-align: center;">Statut</th>
+                  <th style="text-align: center;">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (f of forms(); track f.id) {
+                  <tr class="table-row">
+                    <td>
+                      <div class="name-cell">
+                        <span class="name-text">{{ f.title }}</span>
+                        <span class="email-text line-clamp-1" style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ f.description }}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span class="prog-badge">
+                        <i class="pi pi-book" style="font-size: 10px;"></i>
+                        {{ getProgrammeName(f.programmeId) }}
+                      </span>
+                    </td>
+                    <td class="date-cell">{{ f.createdAt | date:'dd/MM/yyyy' }}</td>
+                    <td class="date-cell" style="color: #e91e63; font-weight: 700;">{{ f.deadline | date:'dd/MM/yyyy' }}</td>
+                    <td>
+                      <span style="font-size: 14px; font-weight: 700; color: #1A1A2E;">{{ f.questions.length || 0 }}</span>
+                    </td>
+                    <td style="text-align: center;">
+                      <span class="status-badge"
+                        [ngClass]="{
+                          'bg-gray-100 text-gray-600': f.status === 'DRAFT',
+                          'bg-emerald-100 text-emerald-600': f.status === 'SENT',
+                          'bg-red-100 text-red-600': f.status === 'CLOSED'
+                        }">
+                        {{ f.status }}
+                      </span>
+                    </td>
+                    <td style="text-align: center;">
+                      <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                         <button (click)="openFormModal(f)" title="Éditer" class="btn-detail"><i class="pi pi-pencil"></i></button>
+                         <button (click)="openSendModal(f)" title="Envoyer" class="btn-detail" style="color: #059669"><i class="pi pi-send"></i></button>
+                         <button (click)="viewResponses(f)" title="Réponses" class="btn-detail" style="color: #1565C0"><i class="pi pi-users"></i></button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+                @if (forms().length === 0) {
+                  <tr>
+                    <td colSpan="8">
+                      <div class="empty-state">
+                        <i class="pi pi-file-edit" style="font-size: 3rem; color: #D1D5DB; margin-bottom: 1rem; display: block;"></i>
+                        <p class="empty-text">Aucun formulaire trouvé</p>
+                        <p class="empty-sub">Créez votre premier formulaire KPI.</p>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
 
       <!-- FORM BUILDER MODAL -->
       @if (showFormModal) {
@@ -132,15 +232,15 @@ import { ProgrammeService } from '../programmes/programme.service';
                  
                  <div>
                    <label style="display: block; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Date limite</label>
-                   <input type="datetime-local" [(ngModel)]="editingForm.deadline" class="search-input" style="padding: 11px 16px;">
+                   <input type="date" [(ngModel)]="editingForm.deadline" class="search-input" style="padding: 11px 16px;">
                  </div>
 
                  <div>
                    <label style="display: block; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Thématique</label>
                    <select [(ngModel)]="editingForm.thematiqueId" (change)="onThematiqueChange()" class="filter-select" style="width: 100%; padding: 12px 16px;">
-                     <option [value]="null">-- Sélectionner une thématique --</option>
+                     <option [ngValue]="null">-- Sélectionner une thématique --</option>
                      @for (t of allThematiques(); track t.id) {
-                       <option [value]="t.id">{{ t.nom }}</option>
+                       <option [ngValue]="t.id">{{ t.nom }}</option>
                      }
                    </select>
                  </div>
@@ -156,22 +256,47 @@ import { ProgrammeService } from '../programmes/programme.service';
                      <div style="padding: 11px 16px; border: 1px solid #E5E7EB; border-radius: 12px; background: #F9FAFB; font-size: 14px; color: #9CA3AF;">
                        Sélectionnez d'abord une thématique
                      </div>
-                   }
-                 </div>
-                   @if (entrepreneurs().length > 0) {
-                     <div style="grid-column: span 2; background: #F0F9FF; padding: 12px 16px; border-radius: 12px; border: 1px solid #e0f2fe;">
-                       <p style="font-size: 12px; font-weight: 600; color: #0369a1; margin: 0; margin-bottom: 8px;">
-                         <i class="pi pi-info-circle" style="margin-right: 6px;"></i>
-                         {{ entrepreneurs().length }} entrepreneur(s) sélectionné(s) recevront ce formulaire automatiquement
-                       </p>
-                     </div>
-                   }
-               </div>
+                    }
+                </div>
+              </div>
+
+              <!-- Matched Entrepreneurs Preview -->
+              @if (editingForm.programmeId && editingForm.thematiqueId) {
+                <div style="margin-bottom: 24px; padding: 16px; border: 1px solid #E5E7EB; border-radius: 12px; background: #F9FAFB;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <h4 style="font-size: 13px; font-weight: 800; color: #1A1A2E; margin: 0;">Entrepreneurs ciblés</h4>
+                    <span style="font-size: 11px; font-weight: 700; color: #e91e63; background: #fce4ec; padding: 4px 8px; border-radius: 8px;">
+                      {{ entrepreneurs().length }} destinataire(s)
+                    </span>
+                  </div>
+                  @if (isLoadingEntrepreneurs()) {
+                    <div style="text-align: center; padding: 12px;">
+                      <i class="pi pi-spin pi-spinner" style="color: #e91e63; font-size: 1.2rem;"></i>
+                      <span style="font-size: 12px; color: #6B7280; margin-left: 8px;">Vérification des correspondances...</span>
+                    </div>
+                  } @else if (entrepreneurs().length === 0) {
+                    <div style="text-align: center; padding: 12px; color: #6B7280; font-size: 12px; font-style: italic;">
+                      Aucun entrepreneur n'a de matching validé pour cette thématique. Le formulaire ne sera envoyé à personne.
+                    </div>
+                  } @else {
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                      @for (ent of entrepreneurs(); track ent.id) {
+                        <div style="display: flex; align-items: center; gap: 6px; background: white; padding: 6px 12px; border: 1px solid #E5E7EB; border-radius: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+                          <div style="width: 20px; height: 20px; border-radius: 6px; background: linear-gradient(135deg, #e91e63, #c2185b); display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 10px;">
+                            {{ (ent.firstName ? ent.firstName.charAt(0).toUpperCase() : 'E') }}
+                          </div>
+                          <span style="font-size: 12px; font-weight: 700; color: #1A1A2E;">{{ ent.firstName }} {{ ent.lastName }}</span>
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              }
 
                <div>
                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #E5E7EB;">
                    <h3 style="font-size: 16px; font-weight: 800; color: #1A1A2E; margin: 0;">Questions</h3>
-                   <button (click)="addQuestion()" class="btn-outline-sm" style="color: #ea5073; border-color: #ea5073;">
+                   <button (click)="addQuestion()" class="btn-outline-sm" style="color: #e91e63; border-color: #e91e63;">
                      <i class="pi pi-plus"></i> Ajouter
                    </button>
                  </div>
@@ -179,7 +304,7 @@ import { ProgrammeService } from '../programmes/programme.service';
                  <div style="display: flex; flex-direction: column; gap: 16px;">
                    @for (q of editingForm.questions; track $index) {
                      <div style="background: white; padding: 20px; border-radius: 16px; border: 1px solid #E5E7EB; box-shadow: 0 2px 8px rgba(0,0,0,0.02); position: relative;">
-                       <button (click)="removeQuestion($index)" style="position: absolute; top: 16px; right: 16px; padding: 8px; background: #FFF0F5; color: #C0392B; border: none; border-radius: 8px; cursor: pointer; transition: all .2s;">
+                       <button (click)="removeQuestion($index)" style="position: absolute; top: 16px; right: 16px; padding: 8px; background: #fce4ec; color: #C0392B; border: none; border-radius: 8px; cursor: pointer; transition: all .2s;">
                          <i class="pi pi-trash"></i>
                        </button>
                        
@@ -199,7 +324,7 @@ import { ProgrammeService } from '../programmes/programme.service';
                          </div>
                          <div style="grid-column: span 2; display: flex; align-items: flex-end; padding-bottom: 10px;">
                            <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; cursor: pointer;">
-                             <input type="checkbox" [(ngModel)]="q.required" style="width: 16px; height: 16px; accent-color: #ea5073;"> Obligatoire
+                             <input type="checkbox" [(ngModel)]="q.required" style="width: 16px; height: 16px; accent-color: #e91e63;"> Obligatoire
                            </label>
                          </div>
 
@@ -208,7 +333,7 @@ import { ProgrammeService } from '../programmes/programme.service';
                               <label style="display: block; font-size: 10px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Options (séparées par virgule)</label>
                               <input type="text" [(ngModel)]="q.options" placeholder="Option 1, Option 2, Option 3..." class="search-input" style="padding: 10px 14px;">
                            </div>
-                            <div style="grid-column: span 3; background: #FFF0F5; padding: 12px 16px; border-radius: 12px; border: 1px solid #fad2e1; display: flex; align-items: center; gap: 16px; margin-top: 8px;">
+                            <div style="grid-column: span 3; background: #fce4ec; padding: 12px 16px; border-radius: 12px; border: 1px solid #fad2e1; display: flex; align-items: center; gap: 16px; margin-top: 8px;">
                               <div style="flex: 1;">
                                 <label style="display: flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 800; color: #C0392B; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">
                                   <i class="pi pi-link"></i> Lier à un KPI Backoffice (Automatique)
@@ -220,7 +345,7 @@ import { ProgrammeService } from '../programmes/programme.service';
                                       <option [value]="k.id">{{ k.nom }} ({{ k.uniteMesure }})</option>
                                     }
                                   </select>
-                                  <p style="font-size: 11px; color: #ea5073; margin: 0; line-height: 1.4; max-width: 200px;">
+                                  <p style="font-size: 11px; color: #e91e63; margin: 0; line-height: 1.4; max-width: 200px;">
                                     La réponse mettra à jour automatiquement ce KPI pour l'entrepreneur.
                                   </p>
                                 </div>
@@ -241,8 +366,13 @@ import { ProgrammeService } from '../programmes/programme.service';
             </div>
 
             <div class="modal-footer">
-               <button (click)="closeModals()" class="btn-close-modal">Annuler</button>
-               <button (click)="saveForm()" [disabled]="!editingForm.title" class="btn-gradient" [style.opacity]="!editingForm.title ? '0.5' : '1'">Sauvegarder</button>
+               <button (click)="closeModals()" class="btn-close-modal" [disabled]="isSavingForm">Annuler</button>
+               <button (click)="saveForm()" [disabled]="!editingForm.title || isSavingForm" class="btn-gradient" [style.opacity]="(!editingForm.title || isSavingForm) ? '0.5' : '1'">
+                 @if (isSavingForm) {
+                   <i class="pi pi-spin pi-spinner" style="margin-right: 8px;"></i>
+                 }
+                 Sauvegarder
+               </button>
             </div>
           </div>
         </div>
@@ -259,7 +389,7 @@ import { ProgrammeService } from '../programmes/programme.service';
               <button (click)="closeModals()" class="modal-close"><i class="pi pi-times"></i></button>
             </div>
             <div class="modal-body" style="background: #F9FAFB;">
-               <div class="note-box note-info" style="margin-top: 0; margin-bottom: 20px; background: #FFF0F5; border-color: #ea5073;">
+               <div class="note-box note-info" style="margin-top: 0; margin-bottom: 20px; background: #fce4ec; border-color: #e91e63;">
                   <p style="color: #333;">Vous allez envoyer le formulaire <strong style="color: #1A1A2E;">"{{ formToSend?.title }}"</strong> à des entrepreneurs.</p>
                </div>
                
@@ -283,7 +413,7 @@ import { ProgrammeService } from '../programmes/programme.service';
                        <input type="checkbox" 
                               [checked]="selectedEntIds().includes(ent.id)" 
                               (change)="toggleEntrepreneurSelection(ent.id)"
-                              style="width: 18px; height: 18px; accent-color: #ea5073;">
+                              style="width: 18px; height: 18px; accent-color: #e91e63;">
                        <div style="display: flex; flex-direction: column;">
                          <span style="font-size: 14px; font-weight: 700; color: #1A1A2E;">{{ ent.firstName }} {{ ent.lastName }}</span>
                          <span style="font-size: 11px; color: #6B7280;">ID: {{ ent.id }} · {{ ent.email }}</span>
@@ -301,9 +431,12 @@ import { ProgrammeService } from '../programmes/programme.service';
                </div>
             </div>
             <div class="modal-footer">
-               <button (click)="closeModals()" class="btn-close-modal">Annuler</button>
-               <button (click)="submitSendForm()" [disabled]="isSubmitDisabled()" class="btn-gradient" [style.opacity]="getSubmitOpacity()">
-                 <i class="pi pi-send"></i> Envoyer
+               <button (click)="closeModals()" class="btn-close-modal" [disabled]="isSendingForm">Annuler</button>
+               <button (click)="submitSendForm()" [disabled]="isSubmitDisabled() || isSendingForm" class="btn-gradient" [style.opacity]="(isSubmitDisabled() || isSendingForm) ? '0.5' : '1'">
+                 @if (isSendingForm) {
+                   <i class="pi pi-spin pi-spinner" style="margin-right: 8px;"></i>
+                 }
+                 Envoyer
                </button>
             </div>
           </div>
@@ -324,7 +457,7 @@ import { ProgrammeService } from '../programmes/programme.service';
             <div class="modal-body" style="background: #F9FAFB; max-height: 70vh; overflow-y: auto;">
               @if (isLoadingResponses) {
                 <div style="text-align:center;padding:40px;">
-                  <i class="pi pi-spin pi-spinner" style="font-size:2rem;color:#ea5073;"></i>
+                  <i class="pi pi-spin pi-spinner" style="font-size:2rem;color:#e91e63;"></i>
                   <p style="margin-top:10px;color:#6B7280;">Chargement des réponses...</p>
                 </div>
               } @else if (formResponses().length === 0) {
@@ -339,7 +472,7 @@ import { ProgrammeService } from '../programmes/programme.service';
                     <div style="background:#fff;border-radius:16px;padding:20px;border:1px solid #E5E7EB;box-shadow:0 2px 8px rgba(0,0,0,0.03);">
                       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
                         <div style="display:flex;align-items:center;gap:10px;">
-                          <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#ea5073,#d4476a);display:flex;align-items:center;justify-content:center;color:white;font-weight:900;font-size:14px;">
+                          <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#e91e63,#c2185b);display:flex;align-items:center;justify-content:center;color:white;font-weight:900;font-size:14px;">
                             {{ (resp.entrepreneurName || 'E').charAt(0).toUpperCase() }}
                           </div>
                           <div>
@@ -361,7 +494,7 @@ import { ProgrammeService } from '../programmes/programme.service';
                       @if (resp.answers && resp.answers.length > 0) {
                         <div style="display:flex;flex-direction:column;gap:10px;">
                           @for (ans of resp.answers; track ans.questionId) {
-                            <div style="background:#F8FAFC;border-radius:12px;padding:14px;border-left:4px solid #ea5073;">
+                            <div style="background:#f8f9fa;border-radius:12px;padding:14px;border-left:4px solid #e91e63;">
                               <p style="font-size:10px;font-weight:800;color:#6B7280;text-transform:uppercase;letter-spacing:0.08em;margin:0 0 6px;">{{ ans.questionText }}</p>
                               <p style="font-size:14px;font-weight:600;color:#1A1A2E;margin:0;">{{ ans.answerValue || '—' }}</p>
                             </div>
@@ -377,6 +510,91 @@ import { ProgrammeService } from '../programmes/programme.service';
             </div>
             <div class="modal-footer">
               <button (click)="closeModals()" class="btn-close-modal">Fermer</button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- INDIVIDUAL RESPONSE DETAIL MODAL -->
+      @if (selectedResponse()) {
+        <div class="modal-overlay" (click)="selectedResponse.set(null)">
+          <div class="modal-box" style="max-width: 850px;" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+              <div class="modal-header-info">
+                <h2 class="modal-name">Réponses — {{ selectedResponse()?.formTitle }}</h2>
+                <p style="font-size:12px;color:#6B7280;margin:4px 0 0;">
+                  <span class="kf-type-tag" [ngClass]="selectedResponse()?.formType === 'EVALUATION' ? 'eval-tag' : 'kpi-tag'" style="padding: 2px 6px; font-size: 9px; font-weight: 800; border-radius: 4px; display: inline-flex; align-items: center; gap: 2px;">
+                    <i class="pi" [ngClass]="selectedResponse()?.formType === 'EVALUATION' ? 'pi-star' : 'pi-chart-line'" style="font-size: 8px;"></i>
+                    {{ selectedResponse()?.formType === 'EVALUATION' ? 'Évaluation Coach' : 'KPI' }}
+                  </span>
+                </p>
+              </div>
+              <button (click)="selectedResponse.set(null)" class="modal-close"><i class="pi pi-times"></i></button>
+            </div>
+            
+            <div class="modal-body" style="background: #F9FAFB; max-height: 70vh; overflow-y: auto;">
+              <div style="background:#fff;border-radius:16px;padding:20px;border:1px solid #E5E7EB;box-shadow:0 2px 8px rgba(0,0,0,0.03);">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                  <div style="display:flex;align-items:center;gap:10px;">
+                    <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#e91e63,#c2185b);display:flex;align-items:center;justify-content:center;color:white;font-weight:900;font-size:14px;">
+                      {{ (selectedResponse()?.entrepreneurName || 'E').charAt(0).toUpperCase() }}
+                    </div>
+                    <div>
+                      <p style="font-weight:800;font-size:14px;color:#1A1A2E;margin:0;">{{ selectedResponse()?.entrepreneurName || 'Entrepreneur' }}</p>
+                      <p style="font-size:11px;color:#9CA3AF;margin:0;">ID: {{ selectedResponse()?.entrepreneurId }}</p>
+                    </div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:10px;">
+                    <span style="font-size:10px;font-weight:900;padding:4px 12px;border-radius:20px;text-transform:uppercase;letter-spacing:0.05em;"
+                      [ngClass]="{'bg-amber-100 text-amber-700': selectedResponse()?.status==='PENDING', 'bg-emerald-100 text-emerald-700': selectedResponse()?.status==='SUBMITTED', 'bg-blue-100 text-blue-700': selectedResponse()?.status==='VALIDATED'}">
+                      {{ selectedResponse()?.status === 'PENDING' ? 'En attente' : selectedResponse()?.status === 'SUBMITTED' ? 'Soumis' : 'Validé' }}
+                    </span>
+                    @if (selectedResponse()?.submittedAt) {
+                      <span style="font-size:11px;color:#6B7280;">{{ selectedResponse()?.submittedAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                    }
+                  </div>
+                </div>
+
+                @if (selectedResponse()?.answers && selectedResponse()!.answers.length > 0) {
+                  <div style="display:flex;flex-direction:column;gap:10px;">
+                    @for (ans of selectedResponse()!.answers; track ans.questionId || $index) {
+                      <div style="background:#f8f9fa;border-radius:12px;padding:14px;border-left:4px solid #e91e63;">
+                        <p style="font-size:10px;font-weight:800;color:#6B7280;text-transform:uppercase;letter-spacing:0.08em;margin:0 0 6px;">{{ ans.questionText }}</p>
+                        
+                        @if (ans.questionId === -1) {
+                          <!-- 5-Star General Rating Block -->
+                          <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px;">
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                              @for (s of [1,2,3,4,5]; track s) {
+                                <i class="pi" 
+                                   [ngClass]="s <= toNumber(ans.answerValue) ? 'pi-star-fill' : 'pi-star'"
+                                   [style.color]="s <= toNumber(ans.answerValue) ? '#F59E0B' : '#E5E7EB'"
+                                   style="font-size: 24px;">
+                                </i>
+                              }
+                              <span style="font-size: 18px; font-weight: 900; color: #1A1A2E; margin-left: 8px;">
+                                {{ ans.answerValue }} / 5
+                              </span>
+                            </div>
+                            <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;"
+                              [style.color]="toNumber(ans.answerValue) >= 4 ? '#22C55E' : (toNumber(ans.answerValue) >= 3 ? '#F97316' : '#e91e63')">
+                              {{ toNumber(ans.answerValue) === 5 ? 'Excellent !' : toNumber(ans.answerValue) === 4 ? 'Très bien' : toNumber(ans.answerValue) === 3 ? 'Bien' : toNumber(ans.answerValue) === 2 ? 'Moyen' : 'Décevant' }}
+                            </span>
+                          </div>
+                        } @else {
+                          <p style="font-size:14px;font-weight:600;color:#1A1A2E;margin:0;">{{ ans.answerValue || '—' }}</p>
+                        }
+                      </div>
+                    }
+                  </div>
+                } @else {
+                  <p style="font-size:13px;color:#9CA3AF;font-style:italic;margin:0;">Aucune réponse fournie.</p>
+                }
+              </div>
+            </div>
+            
+            <div class="modal-footer">
+              <button (click)="selectedResponse.set(null)" class="btn-close-modal">Fermer</button>
             </div>
           </div>
         </div>
@@ -397,10 +615,10 @@ import { ProgrammeService } from '../programmes/programme.service';
     .btn-gradient {
       display: flex; align-items: center; gap: 8px; padding: 10px 20px;
       border-radius: 12px; font-size: 14px; font-weight: 600; color: #fff;
-      background: #ea5073; border: none; cursor: pointer;
+      background: #e91e63; border: none; cursor: pointer;
       transition: all .2s; box-shadow: 0 4px 12px rgba(234, 80, 115, 0.3);
     }
-    .btn-gradient:hover:not(:disabled) { background: #d4476a; transform: translateY(-1px); }
+    .btn-gradient:hover:not(:disabled) { background: #c2185b; transform: translateY(-1px); }
     
     .btn-outline-sm {
       display: flex; align-items: center; gap: 8px; padding: 8px 16px;
@@ -414,12 +632,12 @@ import { ProgrammeService } from '../programmes/programme.service';
       width: 100%; border: 1px solid #E5E7EB; border-radius: 12px; font-size: 14px; 
       outline: none; color: #333; transition: border-color .2s; background: #fff; box-sizing: border-box;
     }
-    .search-input:focus { border-color: #ea5073; }
+    .search-input:focus { border-color: #e91e63; }
     .filter-select {
       border: 1px solid #E5E7EB; border-radius: 12px; font-size: 14px; 
       outline: none; color: #333; cursor: pointer; background: #fff; transition: border-color .2s;
     }
-    .filter-select:focus { border-color: #ea5073; }
+    .filter-select:focus { border-color: #e91e63; }
 
     /* ── Table ── */
     .table-card { background: #fff; border-radius: 20px; overflow: hidden; box-shadow: 0 2px 16px rgba(0,0,0,0.07); }
@@ -441,7 +659,7 @@ import { ProgrammeService } from '../programmes/programme.service';
     .status-badge { padding: 4px 12px; border-radius: 20px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; display: inline-flex; align-items: center; gap: 4px; }
     
     .btn-detail { padding: 6px; border-radius: 8px; font-size: 14px; color: #6B7280; background: none; border: none; cursor: pointer; transition: all .2s; }
-    .btn-detail:hover { background: #F3F4F6; color: #ea5073; }
+    .btn-detail:hover { background: #F3F4F6; color: #e91e63; }
 
     .empty-state { text-align: center; padding: 60px 20px; background: #fff; border-radius: 20px; }
     .empty-text { color: #4A5568; font-weight: 700; font-size: 16px; margin: 0; }
@@ -463,6 +681,10 @@ import { ProgrammeService } from '../programmes/programme.service';
     .btn-close-modal:hover { background: #E5E7EB; color: #1A1A2E; }
     
     .note-box { padding: 12px 16px; border-radius: 12px; border-left: 4px solid; }
+    
+    .kf-type-tag { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+    .eval-tag { background: #FEF0F1; color: #e91e63; border: 1px solid #fcd2db; }
+    .kpi-tag { background: #E0F2FE; color: #0369a1; border: 1px solid #bae6fd; }
   `]
 })
 export class AdminKpiFormsComponent implements OnInit {
@@ -494,6 +716,34 @@ export class AdminKpiFormsComponent implements OnInit {
   viewingForm = signal<KpiForm | null>(null);
   formResponses = signal<KpiFormResponse[]>([]);
   isLoadingResponses = false;
+  isLoadingEntrepreneurs = signal<boolean>(false);
+  isSavingForm = false;
+  isSendingForm = false;
+
+  pageTab = signal<'responses' | 'forms'>('responses');
+  selectedResponse = signal<any | null>(null);
+
+  allResponses = computed(() => {
+    const list: any[] = [];
+    this.forms().forEach(form => {
+      if (form.responses) {
+        form.responses.forEach(resp => {
+          list.push({
+            ...resp,
+            formTitle: form.title,
+            programmeId: form.programmeId,
+            deadline: form.deadline,
+            formType: form.formType || 'KPI'
+          });
+        });
+      }
+    });
+    return list.sort((a, b) => new Date(b.submittedAt || 0).getTime() - new Date(a.submittedAt || 0).getTime());
+  });
+
+  toNumber(val: string): number {
+    return Number(val) || 0;
+  }
 
   ngOnInit() {
     this.loadForms();
@@ -564,19 +814,19 @@ export class AdminKpiFormsComponent implements OnInit {
 
   loadEntrepreneursForEvaluation(programmeId: number | undefined, thematiqueId: number | undefined) {
     if (!programmeId || !thematiqueId) {
-      console.log(' Missing programmeId or thematiqueId, clearing entrepreneurs');
       this.entrepreneurs.set([]);
       return;
     }
-    console.log('Loading entrepreneurs for programme:', programmeId, 'thematique:', thematiqueId);
+    this.isLoadingEntrepreneurs.set(true);
     this.svc.getEntrepreneursForEvaluation(programmeId, thematiqueId).subscribe({
       next: (e) => {
-        console.log(' Entrepreneurs received:', e);
         this.entrepreneurs.set(e || []);
+        this.isLoadingEntrepreneurs.set(false);
       },
       error: (err) => {
         console.error(' Error loading entrepreneurs:', err);
         this.entrepreneurs.set([]);
+        this.isLoadingEntrepreneurs.set(false);
       }
     });
   }
@@ -597,20 +847,32 @@ export class AdminKpiFormsComponent implements OnInit {
     });
   }
 
-  loadAvailableEntrepreneurs(programmeId: number | undefined) {
+  loadAvailableEntrepreneurs(programmeId: number | undefined, thematiqueId?: number | undefined) {
     if (!programmeId) {
       this.availableEntrepreneurs.set([]);
       return;
     }
-    this.svc.getEntrepreneursForProgramme(programmeId).subscribe({
-      next: (ents) => {
-        this.availableEntrepreneurs.set(ents || []);
-      },
-      error: (err) => {
-        console.error('Error loading eligible entrepreneurs:', err);
-        this.availableEntrepreneurs.set([]);
-      }
-    });
+    if (thematiqueId) {
+      this.svc.getEntrepreneursForEvaluation(programmeId, thematiqueId).subscribe({
+        next: (ents) => {
+          this.availableEntrepreneurs.set(ents || []);
+        },
+        error: (err) => {
+          console.error('Error loading eligible entrepreneurs:', err);
+          this.availableEntrepreneurs.set([]);
+        }
+      });
+    } else {
+      this.svc.getEntrepreneursForProgramme(programmeId).subscribe({
+        next: (ents) => {
+          this.availableEntrepreneurs.set(ents || []);
+        },
+        error: (err) => {
+          console.error('Error loading eligible entrepreneurs:', err);
+          this.availableEntrepreneurs.set([]);
+        }
+      });
+    }
   }
 
   onProgrammeChange() {
@@ -635,6 +897,7 @@ export class AdminKpiFormsComponent implements OnInit {
         this.loadAvailableKpis(theme.programmeId);
       }
     }
+    this.loadEntrepreneursForEvaluation(this.editingForm.programmeId, this.editingForm.thematiqueId);
   }
 
   parseEntrepreneurIds() {
@@ -681,9 +944,9 @@ export class AdminKpiFormsComponent implements OnInit {
   stats = computed(() => {
     const list = this.forms();
     return [
-      { label: 'TOTAL FORMULAIRES', value: list.length, gradient: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', shadow: '0 4px 16px rgba(15,23,42,0.20)' },
-      { label: 'FORMULAIRES ENVOYÉS', value: list.filter(f => f.status === 'SENT').length, gradient: 'linear-gradient(135deg, #ea5073 0%, #d4476a 100%)', shadow: '0 4px 16px rgba(234,80,115,0.30)' },
-      { label: 'EN MODE BROUILLON', value: list.filter(f => f.status === 'DRAFT').length, gradient: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)', shadow: '0 4px 16px rgba(245,158,11,0.20)' },
+      { label: 'TOTAL FORMULAIRES', value: list.length, gradient: 'linear-gradient(135deg, #ec407a 0%, #d81b60 100%)', shadow: '0 4px 16px rgba(236,64,122,0.30)' },
+      { label: 'FORMULAIRES ENVOYÉS', value: list.filter(f => f.status === 'SENT').length, gradient: 'linear-gradient(135deg, #8e24aa 0%, #5e1174 100%)', shadow: '0 4px 16px rgba(142,36,170,0.30)' },
+      { label: 'EN MODE BROUILLON', value: list.filter(f => f.status === 'DRAFT').length, gradient: 'linear-gradient(135deg, #26a69a 0%, #00695c 100%)', shadow: '0 4px 16px rgba(38,166,154,0.30)' },
     ];
   });
 
@@ -704,9 +967,11 @@ export class AdminKpiFormsComponent implements OnInit {
         this.loadAvailableKpis(this.editingForm.programmeId);
         this.loadThematiquesForProgramme(this.editingForm.programmeId);
         this.loadCoachesForProgramme(this.editingForm.programmeId);
+        this.loadEntrepreneursForEvaluation(this.editingForm.programmeId, this.editingForm.thematiqueId);
       }
     } else {
       this.editingForm = { title: '', description: '', questions: [], formType: 'KPI', status: 'DRAFT' };
+      this.entrepreneurs.set([]);
     }
     this.showFormModal = true;
   }
@@ -726,20 +991,29 @@ export class AdminKpiFormsComponent implements OnInit {
 
   saveForm() {
     const isNew = !this.editingForm.id;
+    this.isSavingForm = true;
     const ob$ = this.editingForm.id 
       ? this.svc.updateForm(this.editingForm.id, this.editingForm)
       : this.svc.createForm(this.editingForm);
 
-    ob$.subscribe((form: KpiForm) => {
-      this.loadForms();
-      this.closeModals();
+    ob$.subscribe({
+      next: (form: KpiForm) => {
+        this.isSavingForm = false;
+        this.loadForms();
+        this.closeModals();
+      },
+      error: (err) => {
+        this.isSavingForm = false;
+        console.error('Erreur lors de la sauvegarde du formulaire:', err);
+        alert('Une erreur est survenue lors de la sauvegarde. Veuillez vérifier les champs.');
+      }
     });
   }
 
   openSendModal(form: KpiForm) {
     this.formToSend = form;
     this.selectedEntIds.set([]);
-    this.loadAvailableEntrepreneurs(form.programmeId);
+    this.loadAvailableEntrepreneurs(form.programmeId, form.thematiqueId);
     this.showSendModal = true;
   }
 
@@ -749,9 +1023,18 @@ export class AdminKpiFormsComponent implements OnInit {
       
     if (ids.length === 0) return;
 
-    this.svc.sendForm(this.formToSend.id, ids).subscribe(() => {
-      this.loadForms();
-      this.closeModals();
+    this.isSendingForm = true;
+    this.svc.sendForm(this.formToSend.id, ids).subscribe({
+      next: () => {
+        this.isSendingForm = false;
+        this.loadForms();
+        this.closeModals();
+      },
+      error: (err) => {
+        this.isSendingForm = false;
+        console.error('Erreur lors de l\'envoi du formulaire:', err);
+        alert('Une erreur est survenue lors de l\'envoi.');
+      }
     });
   }
 

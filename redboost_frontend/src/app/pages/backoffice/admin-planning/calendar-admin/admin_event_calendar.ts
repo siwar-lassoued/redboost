@@ -462,8 +462,8 @@ isSelectedDate(date: Date): boolean {
 // Get gradient for event type
 getEventGradient(typeName: string): string {
   const gradients: { [key: string]: string } = {
-    'pitch deck': 'linear-gradient(135deg, #ea5073 0%, #d4476a 100%)',
-    'pitch': 'linear-gradient(135deg, #ea5073 0%, #d4476a 100%)',
+    'pitch deck': 'linear-gradient(135deg, #ec407a 0%, #d4476a 100%)',
+    'pitch': 'linear-gradient(135deg, #ec407a 0%, #d4476a 100%)',
     'networking': 'linear-gradient(135deg, #2a7b8c 0%, #1a6778 100%)',
     'formation': 'linear-gradient(135deg, #6d3345 0%, #5a2a3a 100%)',
     'atelier': 'linear-gradient(135deg, #2a5f6f 0%, #1a4f5f 100%)',

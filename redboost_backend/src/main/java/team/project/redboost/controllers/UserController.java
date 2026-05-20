@@ -993,7 +993,13 @@ public class UserController {
                 coachId, team.project.redboost.entities.Matching.StatutMatching.VALIDE);
 
         List<Map<String, Object>> response = matchings.stream()
-                .map(m -> userService.findById(m.getEntrepreneurId()))
+                .map(m -> {
+                    team.project.redboost.entities.CandidatureRedstarter cand = candidatureRedstarterRepository.findById(m.getEntrepreneurId()).orElse(null);
+                    if (cand == null || cand.getEmail() == null) {
+                        return null;
+                    }
+                    return userRepository.findByEmail(cand.getEmail());
+                })
                 .filter(entrepreneur -> entrepreneur != null)
                 .map(this::buildUserResponse)
                 .collect(Collectors.toList());

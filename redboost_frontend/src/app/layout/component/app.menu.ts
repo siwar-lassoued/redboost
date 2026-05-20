@@ -422,16 +422,6 @@ export class AppMenu implements OnInit {
                 ],
             },
             {
-                label: 'FORMULAIRES',
-                items: [
-                    {
-                        label: 'Mes Formulaires',
-                        icon: 'pi pi-fw pi-file-edit',
-                        routerLink: ['/coach-kpi-forms'],
-                    },
-                ],
-            },
-            {
                 label: 'SUPPORT',
                 items: [
                     {

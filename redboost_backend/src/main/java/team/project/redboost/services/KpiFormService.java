@@ -10,6 +10,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.Map;
+import java.util.HashMap;
 
 @Service
 @RequiredArgsConstructor
@@ -22,15 +24,30 @@ public class KpiFormService {
     private final ThematiqueRepository thematiqueRepository;
     private final MatchingRepository matchingRepository;
     private final DisponibiliteRepository disponibiliteRepository;
+    private final CandidatureRedstarterRepository candidatureRepository;
+    private final CoachRatingRepository coachRatingRepository;
+    private final ProgrammeRepository programmeRepository;
 
+    private User resolveUserFromEntrepreneurId(Long entId) {
+        if (entId == null) return null;
+        CandidatureRedstarter cand = candidatureRepository.findById(entId).orElse(null);
+        if (cand == null || cand.getEmail() == null) {
+            return null;
+        }
+        return userRepository.findByEmail(cand.getEmail());
+    }
+
+    @Transactional(readOnly = true)
     public List<KpiForm> getAllForms() {
         return kpiFormRepository.findAll();
     }
 
+    @Transactional(readOnly = true)
     public List<KpiForm> getFormsByProgramme(Long programmeId) {
         return kpiFormRepository.findByProgrammeId(programmeId);
     }
 
+    @Transactional(readOnly = true)
     public List<KpiForm> getFormsByType(KpiForm.FormType formType) {
         return kpiFormRepository.findAll().stream()
                 .filter(form -> form.getFormType() == formType)
@@ -45,6 +62,7 @@ public class KpiFormService {
         return getFormsByType(KpiForm.FormType.EVALUATION);
     }
 
+    @Transactional(readOnly = true)
     public List<KpiForm> getEvaluationFormsByThematique(Long thematiqueId) {
         return kpiFormRepository.findAll().stream()
                 .filter(form -> form.getFormType() == KpiForm.FormType.EVALUATION
@@ -52,6 +70,7 @@ public class KpiFormService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public List<KpiForm> getEvaluationFormsByCoach(Long coachId) {
         return kpiFormRepository.findAll().stream()
                 .filter(form -> form.getFormType() == KpiForm.FormType.EVALUATION
@@ -73,24 +92,27 @@ public class KpiFormService {
 
     // Get entrepreneurs matching programme + thématique criteria
     public List<User> getEntrepreneursForEvaluation(Long programmeId, Long thematiqueId) {
-        List<Matching> matchings = matchingRepository.findByProgrammeAndThematique(programmeId, thematiqueId);
+        List<Matching> matchings = matchingRepository.findActiveByProgramme(programmeId);
         return matchings.stream()
+                .filter(m -> thematiqueId == null || thematiqueId.equals(m.getThematiqueId()))
                 .map(m -> m.getEntrepreneurId())
                 .distinct()
-                .map(entId -> userRepository.findById(entId).orElse(null))
+                .map(this::resolveUserFromEntrepreneurId)
                 .filter(ent -> ent != null)
                 .collect(Collectors.toList());
     }
 
     // Get entrepreneurs matched specifically with the selected coach
     public List<User> getEntrepreneursForEvaluationCoach(Long programmeId, Long thematiqueId, Long coachId) {
-        List<Matching> matchings = matchingRepository.findByCoachIdAndStatut(coachId, Matching.StatutMatching.VALIDE);
+        List<Matching> matchings = matchingRepository.findByCoachIdAndStatut(
+                coachId, Matching.StatutMatching.VALIDE);
+
         return matchings.stream()
-                .filter(m -> programmeId.equals(m.getProgrammeId()) && 
-                            (thematiqueId == null || thematiqueId.equals(m.getThematiqueId())))
-                .map(m -> m.getEntrepreneurId())
+                .filter(m -> (programmeId == null || m.getProgrammeId().equals(programmeId))
+                        && (thematiqueId == null || m.getThematiqueId().equals(thematiqueId)))
+                .map(Matching::getEntrepreneurId)
                 .distinct()
-                .map(entId -> userRepository.findById(entId).orElse(null))
+                .map(this::resolveUserFromEntrepreneurId)
                 .filter(ent -> ent != null)
                 .collect(Collectors.toList());
     }
@@ -101,7 +123,7 @@ public class KpiFormService {
         return matchings.stream()
                 .map(m -> m.getEntrepreneurId())
                 .distinct()
-                .map(entId -> userRepository.findById(entId).orElse(null))
+                .map(this::resolveUserFromEntrepreneurId)
                 .filter(ent -> ent != null)
                 .collect(Collectors.toList());
     }
@@ -313,14 +335,58 @@ public class KpiFormService {
             }
         } else if (form.getFormType() == KpiForm.FormType.EVALUATION) {
             // Evaluation Form: Just store answers, no KPI update
-            // Validate that evaluation forms don't have KPI associations
+            double globalRatingVal = 0.0;
+            String commentaire = "";
             for (KpiFormAnswer answer : answers) {
                 answer.setResponse(response);
+
+                // Check for our special rating answer (questionId = -1)
+                if (answer.getQuestionId() != null && answer.getQuestionId() == -1L) {
+                    try {
+                        globalRatingVal = Double.parseDouble(answer.getAnswerValue());
+                    } catch (NumberFormatException e) {
+                        // ignore or log
+                    }
+                } else if (answer.getQuestionText() != null && (answer.getQuestionText().toLowerCase().contains("commentaire") || answer.getQuestionText().toLowerCase().contains("avis"))) {
+                    commentaire = answer.getAnswerValue();
+                }
 
                 // Log warning if a KPI question is somehow in an evaluation form
                 if (answer.getKpiId() != null) {
                     System.out.println("Warning: KPI association found in EVALUATION form (Form: " + form.getId() + ", Question: " + answer.getQuestionId() + ")");
                 }
+            }
+
+            // Create CoachRating if we have a valid rating
+            if (globalRatingVal > 0) {
+                CoachRating rating = new CoachRating();
+                
+                // Fetch entrepreneur user
+                if (response.getEntrepreneurId() != null) {
+                    userRepository.findById(response.getEntrepreneurId()).ifPresent(rating::setEntrepreneur);
+                }
+                
+                // Fetch coach user
+                if (form.getCoachId() != null) {
+                    userRepository.findById(form.getCoachId()).ifPresent(rating::setCoach);
+                } else if (response.getCoachId() != null) {
+                    userRepository.findById(response.getCoachId()).ifPresent(rating::setCoach);
+                }
+                
+                // Fetch programme
+                if (form.getProgrammeId() != null) {
+                    programmeRepository.findById(form.getProgrammeId()).ifPresent(rating::setProgramme);
+                }
+                
+                rating.setGlobalRating(globalRatingVal);
+                rating.setCommentaire(commentaire);
+                // Also default standard details to global rating so the charts look complete
+                rating.setCommunication(globalRatingVal);
+                rating.setExpertise(globalRatingVal);
+                rating.setAvailability(globalRatingVal);
+                rating.setImpact(globalRatingVal);
+                
+                coachRatingRepository.save(rating);
             }
         }
 

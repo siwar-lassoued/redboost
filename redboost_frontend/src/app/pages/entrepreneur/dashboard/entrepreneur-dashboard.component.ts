@@ -85,7 +85,7 @@ import { OnInit, computed } from '@angular/core';
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-2">
                     <span class="text-[10px] px-2 py-0.5 rounded-full font-black uppercase tracking-widest"
-                      style="background: #FFF0F5; color: #ea5073">{{ session.thematiqueName }}</span>
+                      style="background: #fce4ec; color: #ec407a">{{ session.thematiqueName }}</span>
                   </div>
                   <button routerLink="/entrepreneur/mes-coachs" 
                     class="text-[11px] font-black text-[#10B981] hover:underline uppercase tracking-tighter flex items-center gap-1">
@@ -316,12 +316,12 @@ export class EntrepreneurDashboardComponent implements OnInit {
         subtext: 'assignés', 
         footer: 'Accompagnement actif', 
         icon: 'users', 
-        gradient: '#F97316', 
-        shadow: '0 4px 16px rgba(249,115,22,0.15)' 
+        gradient: 'linear-gradient(135deg, #ec407a 0%, #d81b60 100%)', 
+        shadow: '0 4px 16px rgba(236,64,122,0.30)' 
       },
-      { label: 'SESSION', value: this.upcomingSessionsCount().toString(), subtext: 'à venir', footer: this.nextSession() ? 'Planifiée' : 'Aucune', icon: 'calendar', gradient: '#8B5CF6', shadow: '0 4px 16px rgba(139,92,246,0.15)' },
-      { label: 'TÂCHES', value: this.totalTasks().toString(), subtext: 'à faire', footer: 'En cours', icon: 'list', gradient: '#3B82A6', shadow: '0 4px 16px rgba(59,130,166,0.15)' },
-      { label: 'PROGRESSION', value: this.progress() + '%', subtext: 'sessions réalisées', footer: 'Avancement global', icon: 'chart-line', gradient: '#10B981', shadow: '0 4px 16px rgba(16,185,129,0.15)' },
+      { label: 'SESSION', value: this.upcomingSessionsCount().toString(), subtext: 'à venir', footer: this.nextSession() ? 'Planifiée' : 'Aucune', icon: 'calendar', gradient: 'linear-gradient(135deg, #8e24aa 0%, #5e1174 100%)', shadow: '0 4px 16px rgba(142,36,170,0.30)' },
+      { label: 'TÂCHES', value: this.totalTasks().toString(), subtext: 'à faire', footer: 'En cours', icon: 'list', gradient: 'linear-gradient(135deg, #26a69a 0%, #00695c 100%)', shadow: '0 4px 16px rgba(38,166,154,0.30)' },
+      { label: 'PROGRESSION', value: this.progress() + '%', subtext: 'sessions réalisées', footer: 'Avancement global', icon: 'chart-line', gradient: 'linear-gradient(135deg, #ff7043 0%, #ff1100 100%)', shadow: '0 4px 16px rgba(255,112,67,0.30)' },
     ];
   });
 }

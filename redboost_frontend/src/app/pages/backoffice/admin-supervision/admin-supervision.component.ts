@@ -13,24 +13,24 @@ type DetailTab = 'sessions' | 'taches' | 'livrables';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="p-8 bg-[#f8fafc] min-h-screen font-sans">
+    <div class="p-8 bg-[#f8f9fa] min-h-screen font-sans">
       <!-- HEADER -->
       <div class="flex items-center justify-between mb-10">
         <div>
-          <h1 class="text-4xl font-black text-[#1e293b] tracking-tight">Planning de coaching</h1>
-          <p class="text-[#64748b] mt-1.5 font-semibold text-lg opacity-80">Supervision ciblée par Programme et Thématique</p>
+          <h1 class="text-4xl font-black text-[#2c3e50] tracking-tight">Planning de coaching</h1>
+          <p class="text-[#7f8c8d] mt-1.5 font-semibold text-lg opacity-80">Supervision ciblée par Programme et Thématique</p>
         </div>
         
         <div class="flex items-center gap-6">
           <!-- Global Filters Card -->
-          <div class="flex items-center gap-4 bg-white rounded-3xl border border-[#e2e8f0] p-2 shadow-sm">
+          <div class="flex items-center gap-4 bg-white rounded-3xl border border-[#e8ecf0] p-2 shadow-sm">
             <!-- Programme Selector -->
-            <div class="group relative flex items-center gap-3 px-5 py-2.5 bg-[#f8fafc] rounded-2xl border border-[#f1f5f9] hover:border-[#ea5073]/30 transition-all duration-300">
+            <div class="group relative flex items-center gap-3 px-5 py-2.5 bg-[#f8f9fa] rounded-2xl border border-[#f0f0f0] hover:border-[#e91e63]/30 transition-all duration-300">
               <div class="flex flex-col">
-                <label class="text-[9px] font-black uppercase text-[#94a3b8] tracking-widest mb-0.5">Programme</label>
+                <label class="text-[9px] font-black uppercase text-[#95a5a6] tracking-widest mb-0.5">Programme</label>
                 <div class="flex items-center gap-2">
-                  <i class="pi pi-briefcase text-[#ea5073] text-[10px]"></i>
-                  <select [(ngModel)]="selectedProgId" (change)="onProgChange()" class="bg-transparent border-none outline-none text-sm font-bold text-[#1e293b] cursor-pointer min-w-[180px]">
+                  <i class="pi pi-briefcase text-[#e91e63] text-[10px]"></i>
+                  <select [(ngModel)]="selectedProgId" (change)="onProgChange()" class="bg-transparent border-none outline-none text-sm font-bold text-[#2c3e50] cursor-pointer min-w-[180px]">
                     <option [ngValue]="0">Tous les programmes</option>
                     @for (p of programmes(); track p.id) {
                       <option [ngValue]="p.id">{{ p.nom }}</option>
@@ -41,14 +41,14 @@ type DetailTab = 'sessions' | 'taches' | 'livrables';
             </div>
 
             <!-- Thematique Selector -->
-            <div class="group relative flex items-center gap-3 px-5 py-2.5 bg-[#f8fafc] rounded-2xl border border-[#f1f5f9] hover:border-[#ea5073]/30 transition-all duration-300" 
+            <div class="group relative flex items-center gap-3 px-5 py-2.5 bg-[#f8f9fa] rounded-2xl border border-[#f0f0f0] hover:border-[#e91e63]/30 transition-all duration-300" 
                  [class.opacity-50]="selectedProgId === 0" [class.grayscale]="selectedProgId === 0">
               <div class="flex flex-col">
-                <label class="text-[9px] font-black uppercase text-[#94a3b8] tracking-widest mb-0.5">Thématique</label>
+                <label class="text-[9px] font-black uppercase text-[#95a5a6] tracking-widest mb-0.5">Thématique</label>
                 <div class="flex items-center gap-2">
-                  <i class="pi pi-tag text-[#ea5073] text-[10px]"></i>
+                  <i class="pi pi-tag text-[#e91e63] text-[10px]"></i>
                   <select [(ngModel)]="selectedThematiqueId" (change)="onThematiqueChange()" [disabled]="selectedProgId === 0" 
-                          class="bg-transparent border-none outline-none text-sm font-bold text-[#1e293b] cursor-pointer min-w-[180px]">
+                          class="bg-transparent border-none outline-none text-sm font-bold text-[#2c3e50] cursor-pointer min-w-[180px]">
                     <option [ngValue]="0">Toutes les thématiques</option>
                     @for (t of thematiques(); track t.id) {
                       <option [ngValue]="t.id">{{ t.nom }}</option>
@@ -60,17 +60,17 @@ type DetailTab = 'sessions' | 'taches' | 'livrables';
           </div>
 
           <!-- View Mode Switcher -->
-          <div class="flex items-center gap-2 bg-white rounded-3xl border border-[#e2e8f0] shadow-sm p-2">
+          <div class="flex items-center gap-2 bg-white rounded-3xl border border-[#e8ecf0] shadow-sm p-2">
             <button (click)="switchMode('coach')" class="px-6 py-3 rounded-2xl text-sm font-bold transition-all cursor-pointer flex items-center gap-3"
-              [class.bg-[#ea5073]]="viewMode() === 'coach'" [class.text-white]="viewMode() === 'coach'"
-              [class.shadow-xl]="viewMode() === 'coach'" [class.shadow-pink-200]="viewMode() === 'coach'"
-              [class.text-[#64748b]]="viewMode() !== 'coach'">
+              [class.bg-[#e91e63]]="viewMode() === 'coach'" [class.text-white]="viewMode() === 'coach'"
+              [class.shadow-xl]="viewMode() === 'coach'" [class.shadow-[0_8px_25px_rgba(0,0,0,0.1)]]="viewMode() === 'coach'"
+              [class.text-[#7f8c8d]]="viewMode() !== 'coach'">
               <i class="pi pi-user-check"></i> Coachs
             </button>
             <button (click)="switchMode('entrepreneur')" class="px-6 py-3 rounded-2xl text-sm font-bold transition-all cursor-pointer flex items-center gap-3"
-              [class.bg-[#ea5073]]="viewMode() === 'entrepreneur'" [class.text-white]="viewMode() === 'entrepreneur'"
-              [class.shadow-xl]="viewMode() === 'entrepreneur'" [class.shadow-pink-200]="viewMode() === 'entrepreneur'"
-              [class.text-[#64748b]]="viewMode() !== 'entrepreneur'">
+              [class.bg-[#e91e63]]="viewMode() === 'entrepreneur'" [class.text-white]="viewMode() === 'entrepreneur'"
+              [class.shadow-xl]="viewMode() === 'entrepreneur'" [class.shadow-[0_8px_25px_rgba(0,0,0,0.1)]]="viewMode() === 'entrepreneur'"
+              [class.text-[#7f8c8d]]="viewMode() !== 'entrepreneur'">
               <i class="pi pi-briefcase"></i> Entrepreneurs
             </button>
           </div>
@@ -80,48 +80,48 @@ type DetailTab = 'sessions' | 'taches' | 'livrables';
       <div class="grid grid-cols-12 gap-8">
         <!-- LEFT: USER LIST -->
         <div class="col-span-4">
-          <div class="bg-white rounded-[32px] shadow-sm border border-[#f1f5f9] overflow-hidden">
-            <div class="p-6 border-b border-[#f1f5f9] bg-[#f8fafc]">
+          <div class="bg-white rounded-[32px] shadow-sm border border-[#f0f0f0] overflow-hidden">
+            <div class="p-6 border-b border-[#f0f0f0] bg-[#f8f9fa]">
               <div class="relative group">
-                <i class="pi pi-search absolute left-4 top-1/2 -translate-y-1/2 text-[#94a3b8] text-sm group-focus-within:text-[#ea5073] transition-colors"></i>
+                <i class="pi pi-search absolute left-4 top-1/2 -translate-y-1/2 text-[#95a5a6] text-sm group-focus-within:text-[#e91e63] transition-colors"></i>
                 <input type="text" [(ngModel)]="searchUser" (ngModelChange)="filterUsers()"
                   [placeholder]="viewMode() === 'coach' ? 'Rechercher un coach...' : 'Rechercher un entrepreneur...'"
-                  class="w-full pl-11 pr-4 py-3.5 bg-white border border-[#e2e8f0] rounded-2xl text-sm font-medium outline-none focus:border-[#ea5073] focus:ring-4 focus:ring-pink-50 transition-all" />
+                  class="w-full pl-11 pr-4 py-3.5 bg-white border border-[#e8ecf0] rounded-2xl text-sm font-medium outline-none focus:border-[#e91e63] focus:ring-4 focus:ring-[#fce4ec] transition-all" />
               </div>
             </div>
             <div class="overflow-y-auto" style="max-height: 65vh;">
               @if (loadingUsers()) {
                 <div class="flex items-center justify-center py-20">
-                  <div class="w-12 h-12 border-4 border-[#f1f5f9] border-t-[#ea5073] rounded-full animate-spin"></div>
+                  <div class="w-12 h-12 border-4 border-[#f0f0f0] border-t-[#e91e63] rounded-full animate-spin"></div>
                 </div>
               }
               @for (u of filteredUsers(); track u.id) {
-                <div class="flex items-center gap-4 p-5 cursor-pointer border-b border-[#f8fafc] transition-all hover:bg-[#fff5f7] group"
-                  [class.bg-[#fff5f7]]="selectedUser()?.id === u.id"
+                <div class="flex items-center gap-4 p-5 cursor-pointer border-b border-[#f8f9fa] transition-all hover:bg-[#fce4ec] group"
+                  [class.bg-[#fce4ec]]="selectedUser()?.id === u.id"
                   [class.border-l-[6px]]="selectedUser()?.id === u.id"
-                  [class.border-[#ea5073]]="selectedUser()?.id === u.id"
+                  [class.border-[#e91e63]]="selectedUser()?.id === u.id"
                   (click)="selectUser(u)">
                   <div class="flex-1 min-w-0">
-                    <p class="text-[15px] font-black text-[#1e293b] leading-tight truncate uppercase tracking-tight group-hover:text-[#ea5073] transition-colors">
+                    <p class="text-[15px] font-black text-[#2c3e50] leading-tight truncate uppercase tracking-tight group-hover:text-[#e91e63] transition-colors">
                       {{ u.fullName }}
                     </p>
                     <div class="flex flex-wrap gap-1 mt-2">
                       @for (p of u.programmes; track p) {
-                        <span class="px-2 py-0.5 bg-slate-100 text-[#64748b] text-[9px] font-black rounded uppercase tracking-tighter">{{ p }}</span>
+                        <span class="px-2 py-0.5 bg-[#f0f0f0] text-[#7f8c8d] text-[9px] font-black rounded uppercase tracking-tighter">{{ p }}</span>
                       }
                       @if (!u.programmes || u.programmes.length === 0) {
-                        <span class="text-[11px] text-[#94a3b8] font-bold truncate">{{ u.email }}</span>
+                        <span class="text-[11px] text-[#95a5a6] font-bold truncate">{{ u.email }}</span>
                       }
                     </div>
                   </div>
                   @if (selectedUser()?.id === u.id) {
-                    <i class="pi pi-chevron-right text-[#ea5073] text-sm flex-shrink-0 animate-pulse"></i>
+                    <i class="pi pi-chevron-right text-[#e91e63] text-sm flex-shrink-0 animate-pulse"></i>
                   }
                 </div>
               }
               @if (!loadingUsers() && filteredUsers().length === 0) {
-                <div class="text-center py-32 text-[#94a3b8]">
-                  <div class="w-20 h-20 bg-[#f1f5f9] rounded-full flex items-center justify-center mx-auto mb-6">
+                <div class="text-center py-32 text-[#95a5a6]">
+                  <div class="w-20 h-20 bg-[#f0f0f0] rounded-full flex items-center justify-center mx-auto mb-6">
                     <i class="pi pi-filter text-4xl opacity-20"></i>
                   </div>
                   <p class="text-lg font-bold">Aucun profil trouvé</p>
@@ -135,25 +135,25 @@ type DetailTab = 'sessions' | 'taches' | 'livrables';
         <!-- RIGHT: DETAILS PANEL -->
         <div class="col-span-8">
           @if (!selectedUser()) {
-            <div class="bg-white rounded-[32px] shadow-sm border border-[#f1f5f9] flex flex-col items-center justify-center py-40">
-              <div class="w-24 h-24 rounded-[32px] bg-[#fff5f7] flex items-center justify-center mb-8">
-                <i class="pi pi-users text-[#ea5073] text-4xl opacity-30"></i>
+            <div class="bg-white rounded-[32px] shadow-sm border border-[#f0f0f0] flex flex-col items-center justify-center py-40">
+              <div class="w-24 h-24 rounded-[32px] bg-[#fce4ec] flex items-center justify-center mb-8">
+                <i class="pi pi-users text-[#e91e63] text-4xl opacity-30"></i>
               </div>
-              <h3 class="text-2xl font-black text-[#1e293b]">Profil à superviser</h3>
-              <p class="text-[#64748b] text-base mt-3 font-semibold opacity-70">Sélectionnez un binôme matché pour voir l'activité réelle.</p>
+              <h3 class="text-2xl font-black text-[#2c3e50]">Profil à superviser</h3>
+              <p class="text-[#7f8c8d] text-base mt-3 font-semibold opacity-70">Sélectionnez un binôme matché pour voir l'activité réelle.</p>
             </div>
           } @else {
             <!-- User Header Card -->
-            <div class="bg-white rounded-[24px] shadow-sm border border-[#f1f5f9] p-6 mb-6 relative overflow-hidden">
-              <div class="absolute top-0 right-0 w-48 h-48 bg-[#ea5073]/5 rounded-full -mr-24 -mt-24"></div>
+            <div class="bg-white rounded-[24px] shadow-sm border border-[#f0f0f0] p-6 mb-6 relative overflow-hidden">
+              <div class="absolute top-0 right-0 w-48 h-48 bg-[#e91e63]/5 rounded-full -mr-24 -mt-24"></div>
               <div class="flex items-center gap-6 relative z-10">
                 <div class="flex-1">
-                  <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#f1f5f9] text-[#ea5073] text-[9px] font-black uppercase tracking-widest mb-3 border border-[#e2e8f0]">
+                  <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#f0f0f0] text-[#e91e63] text-[9px] font-black uppercase tracking-widest mb-3 border border-[#e8ecf0]">
                     <i class="pi" [class.pi-user-check]="viewMode() === 'coach'" [class.pi-briefcase]="viewMode() === 'entrepreneur'"></i>
                     {{ viewMode() === 'coach' ? 'Expert Coaching' : 'Entrepreneur' }}
                   </div>
-                  <h2 class="text-2xl font-black text-[#1e293b] leading-none uppercase tracking-tight">{{ selectedUser()!.firstName }} {{ selectedUser()!.lastName }}</h2>
-                  <p class="text-sm text-[#64748b] font-bold mt-2 opacity-80">{{ selectedUser()!.email }}</p>
+                  <h2 class="text-2xl font-black text-[#2c3e50] leading-none uppercase tracking-tight">{{ selectedUser()!.firstName }} {{ selectedUser()!.lastName }}</h2>
+                  <p class="text-sm text-[#7f8c8d] font-bold mt-2 opacity-80">{{ selectedUser()!.email }}</p>
                 </div>
                 <div class="flex items-center gap-3">
                   <div class="text-center bg-white rounded-2xl p-4 border border-[#f0f9ff] min-w-[90px] shadow-sm">
@@ -173,21 +173,21 @@ type DetailTab = 'sessions' | 'taches' | 'livrables';
             </div>
 
             <!-- Tabs Section -->
-            <div class="bg-white rounded-[24px] shadow-sm border border-[#f1f5f9] overflow-hidden">
-              <div class="flex px-4 border-b border-[#f1f5f9] bg-[#f8fafc]">
+            <div class="bg-white rounded-[24px] shadow-sm border border-[#f0f0f0] overflow-hidden">
+              <div class="flex px-4 border-b border-[#f0f0f0] bg-[#f8f9fa]">
                 <button (click)="activeTab.set('sessions')" class="flex items-center gap-2 px-6 py-4 text-[13px] font-black border-b-2 transition-all cursor-pointer"
-                  [class.border-[#ea5073]]="activeTab() === 'sessions'" [class.text-[#ea5073]]="activeTab() === 'sessions'"
-                  [class.border-transparent]="activeTab() !== 'sessions'" [class.text-[#94a3b8]]="activeTab() !== 'sessions'">
+                  [class.border-[#e91e63]]="activeTab() === 'sessions'" [class.text-[#e91e63]]="activeTab() === 'sessions'"
+                  [class.border-transparent]="activeTab() !== 'sessions'" [class.text-[#95a5a6]]="activeTab() !== 'sessions'">
                   <i class="pi pi-calendar"></i> SESSIONS
                 </button>
                 <button (click)="activeTab.set('taches')" class="flex items-center gap-2 px-6 py-4 text-[13px] font-black border-b-2 transition-all cursor-pointer"
-                  [class.border-[#ea5073]]="activeTab() === 'taches'" [class.text-[#ea5073]]="activeTab() === 'taches'"
-                  [class.border-transparent]="activeTab() !== 'taches'" [class.text-[#94a3b8]]="activeTab() !== 'taches'">
+                  [class.border-[#e91e63]]="activeTab() === 'taches'" [class.text-[#e91e63]]="activeTab() === 'taches'"
+                  [class.border-transparent]="activeTab() !== 'taches'" [class.text-[#95a5a6]]="activeTab() !== 'taches'">
                   <i class="pi pi-list"></i> TÂCHES
                 </button>
                 <button (click)="activeTab.set('livrables')" class="flex items-center gap-2 px-6 py-4 text-[13px] font-black border-b-2 transition-all cursor-pointer"
-                  [class.border-[#ea5073]]="activeTab() === 'livrables'" [class.text-[#ea5073]]="activeTab() === 'livrables'"
-                  [class.border-transparent]="activeTab() !== 'livrables'" [class.text-[#94a3b8]]="activeTab() !== 'livrables'">
+                  [class.border-[#e91e63]]="activeTab() === 'livrables'" [class.text-[#e91e63]]="activeTab() === 'livrables'"
+                  [class.border-transparent]="activeTab() !== 'livrables'" [class.text-[#95a5a6]]="activeTab() !== 'livrables'">
                   <i class="pi pi-file"></i> LIVRABLES
                 </button>
               </div>
@@ -195,7 +195,7 @@ type DetailTab = 'sessions' | 'taches' | 'livrables';
               <div class="p-6 overflow-y-auto" style="max-height: 55vh;">
                 @if (loadingDetail()) {
                   <div class="flex items-center justify-center py-20">
-                    <div class="w-10 h-10 border-4 border-[#f1f5f9] border-t-[#ea5073] rounded-full animate-spin"></div>
+                    <div class="w-10 h-10 border-4 border-[#f0f0f0] border-t-[#e91e63] rounded-full animate-spin"></div>
                   </div>
                 }
 
@@ -203,28 +203,28 @@ type DetailTab = 'sessions' | 'taches' | 'livrables';
                 @if (!loadingDetail() && activeTab() === 'sessions') {
                   <div class="space-y-4">
                     @for (s of detail().sessions; track s.id) {
-                      <div class="flex items-start gap-4 p-4 bg-white rounded-2xl border border-[#f1f5f9] hover:border-[#ea5073]/20 hover:shadow-lg hover:shadow-pink-500/5 transition-all group">
-                        <div class="w-12 h-12 rounded-xl flex items-center justify-center text-[#ea5073] bg-[#fff5f7] flex-shrink-0 group-hover:scale-105 transition-transform">
+                      <div class="flex items-start gap-4 p-4 bg-white rounded-2xl border border-[#f0f0f0] hover:border-[#e91e63]/20 hover:shadow-lg hover:shadow-[0_4px_20px_rgba(0,0,0,0.05)] transition-all group">
+                        <div class="w-12 h-12 rounded-xl flex items-center justify-center text-[#e91e63] bg-[#fce4ec] flex-shrink-0 group-hover:scale-105 transition-transform">
                           <i class="pi pi-calendar text-xl"></i>
                         </div>
                         <div class="flex-1 min-w-0">
                           <div class="flex items-center justify-between">
-                            <p class="text-lg font-black text-[#1e293b] truncate uppercase tracking-tight">{{ s.titre || 'Session' }}</p>
+                            <p class="text-lg font-black text-[#2c3e50] truncate uppercase tracking-tight">{{ s.titre || 'Session' }}</p>
                             <span class="text-[9px] font-black px-3 py-1 rounded-lg uppercase tracking-widest border" [style.background]="getSessionBadge(s.statut).bg" [style.color]="getSessionBadge(s.statut).color" [style.borderColor]="getSessionBadge(s.statut).color + '20'">
                                 {{ getSessionBadge(s.statut).label }}
                             </span>
                           </div>
                           
                           <div class="flex flex-col gap-1 mt-2">
-                             <div class="flex items-center gap-2 text-[11px] font-bold text-slate-400">
+                             <div class="flex items-center gap-2 text-[11px] font-bold text-[#95a5a6]">
                                 <i class="pi pi-bookmark text-sky-500 text-[10px]"></i>
                                 <span class="uppercase">{{ s.programmeNom || 'Programme' }}</span>
                                 <span class="text-slate-200">|</span>
                                 <i class="pi pi-tag text-[#10b981] text-[10px]"></i>
-                                <span class="text-slate-500">{{ s.thematiqueNom || 'Thématique' }}</span>
+                                <span class="text-[#7f8c8d]">{{ s.thematiqueNom || 'Thématique' }}</span>
                              </div>
-                             <div class="flex items-center gap-3 text-[11px] font-bold text-slate-500 mt-1">
-                                <div class="flex items-center gap-1.5"><i class="pi pi-clock text-slate-300"></i> {{ s.date | date:'dd MMM yyyy à HH:mm' }}</div>
+                             <div class="flex items-center gap-3 text-[11px] font-bold text-[#7f8c8d] mt-1">
+                                <div class="flex items-center gap-1.5"><i class="pi pi-clock text-[#b0bec5]"></i> {{ s.date | date:'dd MMM yyyy à HH:mm' }}</div>
                                 
                                 <div class="flex items-center gap-2">
                                   @if (viewMode() === 'entrepreneur') {
@@ -252,7 +252,7 @@ type DetailTab = 'sessions' | 'taches' | 'livrables';
                       </div>
                     }
                     @if (detail().sessions.length === 0) {
-                      <div class="py-12 flex flex-col items-center justify-center text-slate-300 bg-slate-50/50 rounded-3xl border-2 border-dashed border-slate-100">
+                      <div class="py-12 flex flex-col items-center justify-center text-[#b0bec5] bg-[#f8f9fa]/50 rounded-3xl border-2 border-dashed border-[#f0f0f0]">
                         <i class="pi pi-calendar-times text-4xl mb-3"></i>
                         <p class="text-sm font-bold uppercase tracking-widest">Aucune session planifiée</p>
                       </div>
@@ -264,18 +264,18 @@ type DetailTab = 'sessions' | 'taches' | 'livrables';
                 @if (!loadingDetail() && activeTab() === 'taches') {
                   <div class="space-y-3">
                     @for (t of detail().taches; track t.id) {
-                      <div class="flex items-center gap-4 p-4 bg-white rounded-2xl border border-[#f1f5f9] hover:border-[#ea5073]/20 hover:shadow-lg transition-all group">
+                      <div class="flex items-center gap-4 p-4 bg-white rounded-2xl border border-[#f0f0f0] hover:border-[#e91e63]/20 hover:shadow-lg transition-all group">
                         <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
                           <i class="pi pi-check-circle text-lg"></i>
                         </div>
                         <div class="flex-1 min-w-0">
-                          <p class="text-[14px] font-black text-[#1e293b] truncate uppercase tracking-tight">{{ t.titre }}</p>
+                          <p class="text-[14px] font-black text-[#2c3e50] truncate uppercase tracking-tight">{{ t.titre }}</p>
                           <div class="flex items-center gap-3 mt-1.5">
-                            <span class="text-[9px] font-black px-2 py-0.5 rounded bg-slate-100 text-slate-500 uppercase tracking-widest border border-slate-200">
+                            <span class="text-[9px] font-black px-2 py-0.5 rounded bg-[#f0f0f0] text-[#7f8c8d] uppercase tracking-widest border border-[#e8ecf0]">
                               {{ t.status }}
                             </span>
                             @if (t.dateLimite) {
-                              <span class="flex items-center gap-1.5 text-[10px] font-bold text-slate-400">
+                              <span class="flex items-center gap-1.5 text-[10px] font-bold text-[#95a5a6]">
                                 <i class="pi pi-calendar text-[9px]"></i>
                                 {{ t.dateLimite | date:'dd MMM' }}
                               </span>
@@ -283,13 +283,13 @@ type DetailTab = 'sessions' | 'taches' | 'livrables';
                           </div>
                         </div>
                         <div class="flex flex-col items-end gap-1">
-                           <span class="text-[8px] font-black text-slate-300 uppercase tracking-widest">Priorité</span>
+                           <span class="text-[8px] font-black text-[#b0bec5] uppercase tracking-widest">Priorité</span>
                            <span class="text-[10px] font-black" [class]="t.priorite === 'HAUTE' ? 'text-rose-500' : 'text-amber-500'">{{ t.priorite }}</span>
                         </div>
                       </div>
                     }
                     @if (detail().taches.length === 0) {
-                      <div class="py-12 flex flex-col items-center justify-center text-slate-300 bg-slate-50/50 rounded-3xl border-2 border-dashed border-slate-100">
+                      <div class="py-12 flex flex-col items-center justify-center text-[#b0bec5] bg-[#f8f9fa]/50 rounded-3xl border-2 border-dashed border-[#f0f0f0]">
                         <i class="pi pi-list text-4xl mb-3"></i>
                         <p class="text-sm font-bold uppercase tracking-widest">Aucune tâche assignée</p>
                       </div>
@@ -301,8 +301,8 @@ type DetailTab = 'sessions' | 'taches' | 'livrables';
                 @if (!loadingDetail() && activeTab() === 'livrables') {
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     @for (l of detail().livrables; track l.id) {
-                      <div class="p-4 bg-white rounded-2xl border border-[#f1f5f9] hover:border-[#ea5073]/20 hover:shadow-lg hover:shadow-pink-500/5 transition-all group relative overflow-hidden">
-                        <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-[#ea5073]/5 to-transparent rounded-bl-full -mr-10 -mt-10 group-hover:scale-110 transition-transform pointer-events-none"></div>
+                      <div class="p-4 bg-white rounded-2xl border border-[#f0f0f0] hover:border-[#e91e63]/20 hover:shadow-lg hover:shadow-[0_4px_20px_rgba(0,0,0,0.05)] transition-all group relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-[#e91e63]/5 to-transparent rounded-bl-full -mr-10 -mt-10 group-hover:scale-110 transition-transform pointer-events-none"></div>
                         <div class="flex items-start gap-4">
                           <div class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform shadow-sm"
                             [style.backgroundColor]="getFileIconConfig(l.nom).bg"
@@ -311,10 +311,10 @@ type DetailTab = 'sessions' | 'taches' | 'livrables';
                           </div>
                           <div class="flex-1 min-w-0">
                             <div class="flex items-start justify-between gap-2">
-                              <p class="text-[14px] font-black text-[#1e293b] truncate uppercase tracking-tight group-hover:text-[#ea5073] transition-colors leading-tight" [title]="l.nom">
+                              <p class="text-[14px] font-black text-[#2c3e50] truncate uppercase tracking-tight group-hover:text-[#e91e63] transition-colors leading-tight" [title]="l.nom">
                                 {{ l.nom }}
                               </p>
-                              <a [href]="l.url" target="_blank" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-[#ea5073] hover:bg-[#fff5f7] transition-all">
+                              <a [href]="l.url" target="_blank" class="w-8 h-8 rounded-lg flex items-center justify-center text-[#95a5a6] hover:text-[#e91e63] hover:bg-[#fce4ec] transition-all">
                                 <i class="pi pi-download text-sm"></i>
                               </a>
                             </div>
@@ -328,24 +328,24 @@ type DetailTab = 'sessions' | 'taches' | 'livrables';
                             </div>
                             <div class="mt-3 space-y-1.5">
                               @if (l.tacheTitre) {
-                                <div class="flex items-center gap-2 text-[10px] font-bold text-slate-500">
-                                  <i class="pi pi-tag text-slate-300"></i>
+                                <div class="flex items-center gap-2 text-[10px] font-bold text-[#7f8c8d]">
+                                  <i class="pi pi-tag text-[#b0bec5]"></i>
                                   <span class="truncate">{{ l.tacheTitre }}</span>
                                 </div>
                               }
                               <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-50">
-                                <div class="flex items-center gap-2 text-[10px] font-bold text-slate-400">
+                                <div class="flex items-center gap-2 text-[10px] font-bold text-[#95a5a6]">
                                   <i class="pi pi-clock text-[9px]"></i>
                                   {{ l.dateUpload | date:'dd/MM/yy' }}
                                 </div>
                                 <div class="flex items-center gap-2">
                                   <div class="flex flex-col items-end">
-                                    <span class="text-[8px] text-slate-400 uppercase font-black tracking-widest">Destinataire</span>
-                                    <span class="text-[10px] font-black text-slate-600 uppercase">
+                                    <span class="text-[8px] text-[#95a5a6] uppercase font-black tracking-widest">Destinataire</span>
+                                    <span class="text-[10px] font-black text-[#7f8c8d] uppercase">
                                       {{ viewMode() === 'coach' ? (l.entrepreneurName || 'Entrepreneur') : (l.coachName || 'Coach') }}
                                     </span>
                                   </div>
-                                  <div class="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px] text-slate-400">
+                                  <div class="w-6 h-6 rounded-full bg-[#f0f0f0] flex items-center justify-center text-[10px] text-[#95a5a6]">
                                     <i class="pi pi-user"></i>
                                   </div>
                                 </div>
@@ -356,7 +356,7 @@ type DetailTab = 'sessions' | 'taches' | 'livrables';
                       </div>
                     }
                     @if (detail().livrables.length === 0) {
-                      <div class="col-span-full py-12 flex flex-col items-center justify-center text-slate-300 bg-slate-50/50 rounded-3xl border-2 border-dashed border-slate-100">
+                      <div class="col-span-full py-12 flex flex-col items-center justify-center text-[#b0bec5] bg-[#f8f9fa]/50 rounded-3xl border-2 border-dashed border-[#f0f0f0]">
                         <i class="pi pi-inbox text-4xl mb-3"></i>
                         <p class="text-sm font-bold uppercase tracking-widest">Aucun livrable partagé</p>
                       </div>
@@ -373,8 +373,8 @@ type DetailTab = 'sessions' | 'taches' | 'livrables';
   styles: [`
     :host { display: block; }
     ::-webkit-scrollbar { width: 8px; }
-    ::-webkit-scrollbar-track { background: #f8fafc; }
-    ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+    ::-webkit-scrollbar-track { background: #f8f9fa; }
+    ::-webkit-scrollbar-thumb { background: #e8ecf0; border-radius: 10px; }
     ::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
     select { 
       appearance: none; 
@@ -460,7 +460,7 @@ export class AdminSupervisionDashboardComponent implements OnInit {
       this.http.get<any[]>(url, { headers: this.headers }).subscribe({
         next: (matchings) => {
           const uniqueUsersMap = new Map<number, any>();
-          matchings.forEach(m => {
+          matchings.filter(m => m.statut === 'VALIDE').forEach(m => {
             const userData = mode === 'coach' ? m.coach : m.entrepreneur;
             const rootId = mode === 'coach' ? m.coachId : m.entrepreneurId;
             const finalId = userData?.id || rootId;
@@ -487,7 +487,7 @@ export class AdminSupervisionDashboardComponent implements OnInit {
           });
           const users = Array.from(uniqueUsersMap.values());
           this.allUsers.set(users);
-          this.filteredUsersData.set(users);
+          this.filterUsers();
           this.loadingUsers.set(false);
           this.cdr.markForCheck();
         },
@@ -498,7 +498,7 @@ export class AdminSupervisionDashboardComponent implements OnInit {
       this.http.get<any[]>(`${environment.apiUrl}/matching/history`, { headers: this.headers }).subscribe({
         next: (matchings) => {
           const uniqueUsersMap = new Map<number, any>();
-          matchings.forEach(m => {
+          matchings.filter(m => m.statut === 'VALIDE').forEach(m => {
             const userData = mode === 'coach' ? m.coach : m.entrepreneur;
             const rootId = mode === 'coach' ? m.coachId : m.entrepreneurId;
             const finalId = userData?.id || rootId;
@@ -525,11 +525,11 @@ export class AdminSupervisionDashboardComponent implements OnInit {
           });
           const users = Array.from(uniqueUsersMap.values());
           this.allUsers.set(users);
-          this.filteredUsersData.set(users);
+          this.filterUsers();
           this.loadingUsers.set(false);
           this.cdr.markForCheck();
         },
-        error: () => { this.loadingUsers.set(false); this.cdr.markForCheck(); }
+        error: () => { this.allUsers.set([]); this.filteredUsersData.set([]); this.loadingUsers.set(false); this.cdr.markForCheck(); }
       });
     }
   }
@@ -593,7 +593,7 @@ export class AdminSupervisionDashboardComponent implements OnInit {
       TERMINE:   { label: 'Terminée', bg: '#f0fdf4', color: '#15803d' },
       ANNULEE:   { label: 'Annulée', bg: '#fef2f2', color: '#dc2626' },
     };
-    return map[statut] || { label: statut || '—', bg: '#f8fafc', color: '#64748b' };
+    return map[statut] || { label: statut || '—', bg: '#f8f9fa', color: '#7f8c8d' };
   }
 
   getLivrableUrl(url: string): string {
@@ -607,6 +607,6 @@ export class AdminSupervisionDashboardComponent implements OnInit {
     if (ext === 'pdf') return { icon: 'pi-file-pdf', color: '#ef4444', bg: '#fef2f2' };
     if (['doc', 'docx'].includes(ext!)) return { icon: 'pi-file-word', color: '#3b82f6', bg: '#eff6ff' };
     if (['xls', 'xlsx'].includes(ext!)) return { icon: 'pi-file-excel', color: '#10b981', bg: '#f0fdf4' };
-    return { icon: 'pi-file', color: '#94a3b8', bg: '#f8fafc' };
+    return { icon: 'pi-file', color: '#95a5a6', bg: '#f8f9fa' };
   }
 }

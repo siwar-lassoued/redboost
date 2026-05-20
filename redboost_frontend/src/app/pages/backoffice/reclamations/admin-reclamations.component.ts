@@ -29,7 +29,7 @@ export interface AdminReclamation {
       <!-- Header -->
       <div class="flex items-center justify-between mb-8">
         <div>
-          <h1 class="text-3xl font-black text-gray-900 tracking-tight">Réclamations & Litiges</h1>
+          <h1 class="text-3xl font-black text-gray-900 tracking-tight">Réclamations</h1>
           <p class="text-gray-500 mt-1">Supervision des signalements effectués par les coachs et entrepreneurs</p>
         </div>
         <div class="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-full text-xs font-black shadow-sm">
@@ -40,7 +40,7 @@ export interface AdminReclamation {
 
       <!-- KPI Cards -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <div class="rounded-2xl p-5 text-white relative overflow-hidden shadow-xl" style="background: linear-gradient(135deg, #1E293B 0%, #334155 100%);">
+        <div class="rounded-2xl p-5 text-white relative overflow-hidden shadow-xl" style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);">
           <div class="absolute -right-4 -top-4 rounded-full w-20 h-20 bg-white/10"></div>
           <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center mb-4">
             <i class="pi pi-inbox text-xl"></i>
@@ -50,7 +50,7 @@ export interface AdminReclamation {
           <p class="text-xs opacity-70">Réclamations enregistrées</p>
         </div>
         
-        <div class="rounded-2xl p-5 text-white relative overflow-hidden shadow-xl" style="background: linear-gradient(135deg, #EF4444 0%, #B91C1C 100%);">
+        <div class="rounded-2xl p-5 text-white relative overflow-hidden shadow-xl" style="background: linear-gradient(135deg, #ec407a 0%, #d81b60 100%);">
           <div class="absolute -right-4 -top-4 rounded-full w-20 h-20 bg-white/10"></div>
           <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center mb-4">
             <i class="pi pi-exclamation-circle text-xl"></i>
@@ -74,10 +74,10 @@ export interface AdminReclamation {
       <!-- Tabs & Filters Wrapper -->
       <div class="bg-white rounded-2xl p-2 mb-8 shadow-sm border border-gray-100 flex flex-col md:flex-row items-center justify-between gap-4">
         <div class="flex p-1 bg-gray-50 rounded-xl">
-           <button (click)="activeTab.set('COACH')" [class.bg-white]="activeTab()==='COACH'" [class.shadow-sm]="activeTab()==='COACH'" class="px-6 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all border-none cursor-pointer" [class.text-indigo-600]="activeTab()==='COACH'" [class.text-gray-400]="activeTab()!=='COACH'">
+           <button (click)="activeTab.set('COACH')" [class.bg-white]="activeTab()==='COACH'" [class.shadow-sm]="activeTab()==='COACH'" class="px-6 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all border-none cursor-pointer" [class.text-[#ec407a]]="activeTab()==='COACH'" [class.text-gray-400]="activeTab()!=='COACH'">
              <i class="pi pi-user-edit mr-2"></i>Coachs
            </button>
-           <button (click)="activeTab.set('ENTREPRENEUR')" [class.bg-white]="activeTab()==='ENTREPRENEUR'" [class.shadow-sm]="activeTab()==='ENTREPRENEUR'" class="px-6 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all border-none cursor-pointer" [class.text-blue-600]="activeTab()==='ENTREPRENEUR'" [class.text-gray-400]="activeTab()!=='ENTREPRENEUR'">
+           <button (click)="activeTab.set('ENTREPRENEUR')" [class.bg-white]="activeTab()==='ENTREPRENEUR'" [class.shadow-sm]="activeTab()==='ENTREPRENEUR'" class="px-6 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all border-none cursor-pointer" [class.text-[#2c3e50]]="activeTab()==='ENTREPRENEUR'" [class.text-gray-400]="activeTab()!=='ENTREPRENEUR'">
              <i class="pi pi-briefcase mr-2"></i>Entrepreneurs
            </button>
         </div>
@@ -128,12 +128,12 @@ export interface AdminReclamation {
                   <td class="px-6 py-5">
                     <div class="flex items-center gap-3">
                       <div class="w-8 h-8 rounded-full flex items-center justify-center text-white font-black text-xs shadow-sm"
-                           [class.bg-indigo-500]="activeTab()==='COACH'" [class.bg-blue-500]="activeTab()==='ENTREPRENEUR'">
+                           [class.bg-[#ec407a]]="activeTab()==='COACH'" [class.bg-[#2c3e50]]="activeTab()==='ENTREPRENEUR'">
                         {{ getInitial(activeTab()==='COACH' ? r.coach : r.entrepreneur) }}
                       </div>
                       <div>
                         <p class="text-sm font-black text-gray-900 leading-tight">
-                            {{ activeTab()==='COACH' ? r.coach?.firstName + ' ' + r.coach?.lastName : r.entrepreneur?.firstName + ' ' + r.entrepreneur?.lastName }}
+                            {{ activeTab()==='COACH' ? (r.coach?.firstName || '') + ' ' + (r.coach?.lastName || '') : (r.entrepreneur?.firstName || '') + ' ' + (r.entrepreneur?.lastName || '') }}
                         </p>
                       </div>
                     </div>
@@ -146,7 +146,7 @@ export interface AdminReclamation {
                       </div>
                       <div>
                         <p class="text-sm font-bold text-gray-900 leading-tight">
-                            {{ activeTab()==='COACH' ? r.entrepreneur?.firstName + ' ' + r.entrepreneur?.lastName : r.coach?.firstName + ' ' + r.coach?.lastName }}
+                            {{ activeTab()==='COACH' ? (r.entrepreneur?.firstName || '') + ' ' + (r.entrepreneur?.lastName || '') : (r.coach?.firstName || '') + ' ' + (r.coach?.lastName || '') }}
                         </p>
                       </div>
                     </div>
@@ -157,7 +157,7 @@ export interface AdminReclamation {
                       <span class="text-sm font-bold text-gray-800">{{ r.sujet }}</span>
                       <div class="flex gap-1 mt-1">
                           <span *ngIf="r.programmeName" class="px-1.5 py-0.5 bg-gray-50 text-gray-500 rounded text-[9px] font-bold border border-gray-100">{{r.programmeName}}</span>
-                          <span *ngIf="r.thematiqueName" class="px-1.5 py-0.5 bg-blue-50 text-blue-500 rounded text-[9px] font-bold border border-blue-100">{{r.thematiqueName}}</span>
+                          <span *ngIf="r.thematiqueName" class="px-1.5 py-0.5 bg-[#e2e8f0] text-[#2c3e50] rounded text-[9px] font-bold border border-[#cbd5e1]">{{r.thematiqueName}}</span>
                       </div>
                     </div>
                   </td>
@@ -186,65 +186,78 @@ export interface AdminReclamation {
 
       <!-- DETAIL MODAL -->
       @if (selectedReclamation()) {
-        <div class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4" (click)="selectedReclamation.set(null)">
-          <div class="bg-white rounded-3xl shadow-2xl w-full max-w-[650px]" (click)="$event.stopPropagation()">
-            
-            <div class="p-6 bg-gray-900 flex items-center justify-between rounded-t-3xl border-b border-gray-800">
-              <div>
-                <h2 class="text-xl font-black text-white leading-tight">Dossier de Réclamation #{{ selectedReclamation()?.id }}</h2>
-                <p class="text-white/60 text-xs font-medium mt-1">{{ selectedReclamation()?.dateReclamation | date:'fullDate' }}</p>
+        <div class="modal-overlay" (click)="selectedReclamation.set(null)">
+          <div class="modal-box" style="max-width: 650px;" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+              <div class="modal-header-info">
+                <h2 class="modal-name">Dossier de Réclamation #{{ selectedReclamation()?.id }}</h2>
+                <p style="font-size:12px;color:#6B7280;margin:4px 0 0;">{{ selectedReclamation()?.dateReclamation | date:'fullDate' }}</p>
               </div>
-              <button (click)="selectedReclamation.set(null)" class="text-white/60 hover:text-white bg-transparent border-none cursor-pointer"><i class="pi pi-times text-xl"></i></button>
+              <button (click)="selectedReclamation.set(null)" class="modal-close"><i class="pi pi-times"></i></button>
             </div>
 
-            <div class="p-6 space-y-6">
-              <div class="flex items-center justify-between bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                <div class="text-center w-1/2 border-r border-gray-200 pr-4">
-                  <p class="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Signalant ({{ selectedReclamation()?.roleEmetteur === 'COACH' ? 'Coach' : 'Entrepreneur' }})</p>
-                  <p class="text-sm font-black" [class.text-indigo-600]="selectedReclamation()?.roleEmetteur === 'COACH'" [class.text-blue-600]="selectedReclamation()?.roleEmetteur === 'ENTREPRENEUR'">
-                    {{ selectedReclamation()?.roleEmetteur === 'COACH' ? selectedReclamation()?.coach?.firstName + ' ' + selectedReclamation()?.coach?.lastName : selectedReclamation()?.entrepreneur?.firstName + ' ' + selectedReclamation()?.entrepreneur?.lastName }}
-                  </p>
+            <div class="modal-body" style="background: #F9FAFB; max-height: 70vh; overflow-y: auto;">
+              <div style="background:#fff;border-radius:16px;padding:20px;border:1px solid #E5E7EB;box-shadow:0 2px 8px rgba(0,0,0,0.03);">
+                
+                <div class="flex items-center justify-between mb-4">
+                  <div class="flex items-center gap-3">
+                    <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#ec407a,#d81b60);display:flex;align-items:center;justify-content:center;color:white;font-weight:900;font-size:14px;">
+                      {{ selectedReclamation()?.roleEmetteur === 'COACH' ? (selectedReclamation()?.coach?.firstName || 'C').charAt(0).toUpperCase() : (selectedReclamation()?.entrepreneur?.firstName || 'E').charAt(0).toUpperCase() }}
+                    </div>
+                    <div>
+                      <p style="font-weight:800;font-size:14px;color:#1A1A2E;margin:0;">
+                        {{ selectedReclamation()?.roleEmetteur === 'COACH' ? (selectedReclamation()?.coach?.firstName || '') + ' ' + (selectedReclamation()?.coach?.lastName || '') : (selectedReclamation()?.entrepreneur?.firstName || '') + ' ' + (selectedReclamation()?.entrepreneur?.lastName || '') }}
+                      </p>
+                      <p style="font-size:11px;color:#9CA3AF;margin:0;">Signalant ({{ selectedReclamation()?.roleEmetteur === 'COACH' ? 'Coach' : 'Entrepreneur' }})</p>
+                    </div>
+                  </div>
+                  
+                  <div class="flex items-center gap-3">
+                    <div style="text-align: right;">
+                      <p style="font-weight:800;font-size:14px;color:#1A1A2E;margin:0;">
+                        {{ selectedReclamation()?.roleEmetteur === 'COACH' ? (selectedReclamation()?.entrepreneur?.firstName || '') + ' ' + (selectedReclamation()?.entrepreneur?.lastName || '') : (selectedReclamation()?.coach?.firstName || '') + ' ' + (selectedReclamation()?.coach?.lastName || '') }}
+                      </p>
+                      <p style="font-size:11px;color:#9CA3AF;margin:0;">Cible ({{ selectedReclamation()?.roleEmetteur === 'COACH' ? 'Entrepreneur' : 'Coach' }})</p>
+                    </div>
+                    <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#2c3e50,#34495e);display:flex;align-items:center;justify-content:center;color:white;font-weight:900;font-size:14px;">
+                      {{ selectedReclamation()?.roleEmetteur === 'COACH' ? (selectedReclamation()?.entrepreneur?.firstName || 'E').charAt(0).toUpperCase() : (selectedReclamation()?.coach?.firstName || 'C').charAt(0).toUpperCase() }}
+                    </div>
+                  </div>
                 </div>
-                <div class="text-center w-1/2 pl-4">
-                  <p class="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Cible ({{ selectedReclamation()?.roleEmetteur === 'COACH' ? 'Entrepreneur' : 'Coach' }})</p>
-                  <p class="text-sm font-black text-slate-700">
-                    {{ selectedReclamation()?.roleEmetteur === 'COACH' ? selectedReclamation()?.entrepreneur?.firstName + ' ' + selectedReclamation()?.entrepreneur?.lastName : selectedReclamation()?.coach?.firstName + ' ' + selectedReclamation()?.coach?.lastName }}
-                  </p>
-                </div>
-              </div>
 
-              <div>
-                <div class="flex flex-wrap gap-2 mb-2">
-                  <span class="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-[10px] font-black uppercase">{{ selectedReclamation()?.typeReclamation }}</span>
-                  <span *ngIf="selectedReclamation()?.programmeName" class="px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded text-[10px] font-black border border-indigo-100">Prog: {{ selectedReclamation()?.programmeName }}</span>
-                  <span *ngIf="selectedReclamation()?.thematiqueName" class="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[10px] font-black border border-blue-100">Thème: {{ selectedReclamation()?.thematiqueName }}</span>
+                <div style="margin-bottom: 16px;">
+                  <div style="display:flex;gap:8px;margin-bottom:12px;">
+                    <span style="font-size:10px;font-weight:900;padding:4px 12px;border-radius:20px;text-transform:uppercase;letter-spacing:0.05em;background:#F3F4F6;color:#4B5563;">{{ selectedReclamation()?.typeReclamation }}</span>
+                    <span *ngIf="selectedReclamation()?.programmeName" style="font-size:10px;font-weight:900;padding:4px 12px;border-radius:20px;text-transform:uppercase;letter-spacing:0.05em;background:#fce4ec;color:#ec407a;">Prog: {{ selectedReclamation()?.programmeName }}</span>
+                    <span *ngIf="selectedReclamation()?.thematiqueName" style="font-size:10px;font-weight:900;padding:4px 12px;border-radius:20px;text-transform:uppercase;letter-spacing:0.05em;background:#e2e8f0;color:#2c3e50;">Thème: {{ selectedReclamation()?.thematiqueName }}</span>
+                  </div>
+                  <h3 style="font-size: 16px; font-weight: 800; color: #1A1A2E; margin: 0 0 8px 0;">{{ selectedReclamation()?.sujet }}</h3>
+                  
+                  <div *ngIf="selectedReclamation()?.sessionDetails" style="background:#FFFBEB;border:1px solid #FEF3C7;border-radius:12px;padding:12px;margin-bottom:12px;">
+                    <p style="font-size:10px;font-weight:800;color:#D97706;text-transform:uppercase;letter-spacing:0.05em;margin:0 0 4px 0;">Session concernée</p>
+                    <p style="font-size:13px;font-weight:600;color:#92400E;margin:0;">{{ selectedReclamation()?.sessionDetails }}</p>
+                  </div>
+                  
+                  <div style="background:#f8f9fa;border-radius:12px;padding:16px;border-left:4px solid #ef4444;">
+                    <p style="font-size:10px;font-weight:800;color:#6B7280;text-transform:uppercase;letter-spacing:0.08em;margin:0 0 6px;">Description</p>
+                    <p style="font-size:14px;font-weight:500;color:#374151;margin:0;line-height:1.6;">{{ selectedReclamation()?.description }}</p>
+                  </div>
                 </div>
-                <h3 class="text-lg font-black text-gray-900 mb-2">{{ selectedReclamation()?.sujet }}</h3>
-                <div *ngIf="selectedReclamation()?.sessionDetails" class="p-2 bg-amber-50 border border-amber-100 rounded-lg mb-3">
-                  <div class="text-[9px] text-amber-600 font-bold uppercase mb-1">Session concernée</div>
-                  <div class="text-xs text-amber-800 font-medium">{{ selectedReclamation()?.sessionDetails }}</div>
-                </div>
-                <div class="bg-red-50/50 border-l-4 border-red-500 p-4 rounded-r-xl text-sm text-gray-700 leading-relaxed">
-                  {{ selectedReclamation()?.description }}
-                </div>
+
               </div>
             </div>
 
-            <div class="p-6 flex items-center justify-between gap-3 border-t border-gray-100 bg-gray-50 rounded-b-3xl">
-              <span class="text-xs font-bold text-gray-500 uppercase">Statut actuel: <span class="text-gray-900">{{ selectedReclamation()?.statut }}</span></span>
-              
-              <div class="flex gap-2">
-                @if (selectedReclamation()?.statut !== 'REJETEE') {
-                  <button (click)="updateStatus(selectedReclamation()?.id!, 'REJETEE')" class="px-4 py-2 rounded-xl text-xs font-black uppercase bg-white border border-gray-200 text-gray-500 hover:bg-gray-100 transition-all cursor-pointer shadow-sm">
-                    Rejeter
-                  </button>
-                }
-                @if (selectedReclamation()?.statut !== 'TRAITEE') {
-                  <button (click)="updateStatus(selectedReclamation()?.id!, 'TRAITEE')" class="px-4 py-2 rounded-xl text-xs font-black uppercase bg-emerald-600 border-emerald-600 text-white shadow-md shadow-emerald-600/20 hover:scale-105 transition-all cursor-pointer">
-                    Marquer comme Traitée
-                  </button>
-                }
-              </div>
+            <div class="modal-footer">
+               <span style="font-size:12px;font-weight:700;color:#6B7280;margin-right:auto;">Statut actuel: <span style="color:#1A1A2E;">{{ selectedReclamation()?.statut }}</span></span>
+               
+               @if (selectedReclamation()?.statut !== 'REJETEE') {
+                 <button (click)="updateStatus(selectedReclamation()?.id!, 'REJETEE')" class="btn-close-modal-kpi">Rejeter</button>
+               }
+               @if (selectedReclamation()?.statut !== 'TRAITEE') {
+                 <button (click)="updateStatus(selectedReclamation()?.id!, 'TRAITEE')" class="btn-gradient-kpi" style="background:#10B981;box-shadow:0 4px 12px rgba(16,185,129,0.3);">
+                   <i class="pi pi-check"></i> Marquer comme Traitée
+                 </button>
+               }
             </div>
           </div>
         </div>
@@ -253,6 +266,24 @@ export interface AdminReclamation {
   `,
   styles: [`
     :host ::ng-deep .pi { font-size: inherit; }
+    .modal-overlay { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
+    .modal-box { background: #fff; border-radius: 24px; width: 100%; max-width: 800px; max-height: 90vh; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.15); display: flex; flex-direction: column; }
+    .modal-header { padding: 20px 24px; border-bottom: 1px solid #F3F4F6; background: #fff; display: flex; align-items: center; justify-content: space-between; }
+    .modal-header-info { flex: 1; }
+    .modal-name { font-weight: 800; font-size: 20px; color: #1A1A2E; margin: 0; }
+    .modal-close { width: 36px; height: 36px; border-radius: 12px; border: none; background: #F3F4F6; cursor: pointer; color: #6B7280; transition: all .2s; display: flex; align-items: center; justify-content: center; }
+    .modal-close:hover { background: #E5E7EB; color: #1A1A2E; }
+    .modal-body { padding: 24px; overflow-y: auto; flex: 1; }
+    .modal-footer { padding: 20px 24px; border-top: 1px solid #F3F4F6; background: #fff; display: flex; align-items: center; justify-content: flex-end; gap: 12px; }
+    .btn-close-modal-kpi { padding: 10px 20px; border-radius: 12px; font-size: 14px; font-weight: 600; color: #6B7280; background: #F3F4F6; border: none; cursor: pointer; transition: all .2s; }
+    .btn-close-modal-kpi:hover { background: #E5E7EB; color: #1A1A2E; }
+    .btn-gradient-kpi {
+      display: flex; align-items: center; gap: 8px; padding: 10px 20px;
+      border-radius: 12px; font-size: 14px; font-weight: 600; color: #fff;
+      background: #ec407a; border: none; cursor: pointer;
+      transition: all .2s; box-shadow: 0 4px 12px rgba(236, 64, 122, 0.3);
+    }
+    .btn-gradient-kpi:hover:not(:disabled) { background: #d81b60; transform: translateY(-1px); }
   `]
 })
 export class AdminReclamationsComponent implements OnInit {

@@ -16,6 +16,9 @@ public interface MatchingRepository extends JpaRepository<Matching, Long> {
     List<Matching> findByEntrepreneurIdAndStatut(
             Long entrepreneurId, Matching.StatutMatching statut);
 
+    List<Matching> findByEntrepreneurIdInAndStatut(
+            List<Long> entrepreneurIds, Matching.StatutMatching statut);
+
     List<Matching> findByEntrepreneurIdAndStatutIn(
             Long entrepreneurId, List<Matching.StatutMatching> statuts);
     @Query("""

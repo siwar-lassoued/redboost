@@ -117,11 +117,11 @@ type MoisOption = 'current' | 'last' | 'custom';
       </div>
 
       <!-- ── Rapport Généré ─────────────────────── -->
-      <div id="reportToDownload" *ngIf="generatedReport() as report" class="card" style="padding:0; overflow:hidden; border-left:5px solid #ea5073;">
+      <div id="reportToDownload" *ngIf="generatedReport() as report" class="card" style="padding:0; overflow:hidden; border-left:5px solid #ec407a;">
         <div class="report-header">
           <div>
             <h2 class="card-title" style="display:flex; align-items:center; gap:10px;">
-              <i class="pi pi-file" style="color:#ea5073;"></i> Rapport d'Activité
+              <i class="pi pi-file" style="color:#ec407a;"></i> Rapport d'Activité
             </h2>
             <p class="hint" style="margin-top:6px;">
               <span class="report-tag">{{ report.periodType }}</span>
@@ -166,7 +166,7 @@ type MoisOption = 'current' | 'last' | 'custom';
 
           <!-- Exec Summary -->
           <div class="exec-summary">
-            <h3><i class="pi pi-star" style="color:#ea5073; margin-right:8px;"></i> Résumé Exécutif</h3>
+            <h3><i class="pi pi-star" style="color:#ec407a; margin-right:8px;"></i> Résumé Exécutif</h3>
             <p>{{ report.resumeExecutif }}</p>
           </div>
 
@@ -241,7 +241,7 @@ type MoisOption = 'current' | 'last' | 'custom';
             <tbody>
               <tr *ngFor="let h of history()">
                 <td>
-                  <div style="font-weight:700; color:#1A1A2E;">{{ h.programme?.nom || 'Programme N/A' }}</div>
+                  <div style="font-weight:700; color:#2c3e50;">{{ h.programme?.nom || 'Programme N/A' }}</div>
                   <div class="hint">Le {{ h.dateGeneration }}</div>
                 </td>
                 <td>
@@ -271,15 +271,15 @@ type MoisOption = 'current' | 'last' | 'custom';
     :host { display: block; }
     
     /* Variables communes depuis admin_matching.ts */
-    .matching-page { padding: 24px; background: #F5F6FA; min-height: 100vh; }
+    .matching-page { padding: 24px; background: #f8f9fa; min-height: 100vh; }
     .matching-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }
-    .matching-title { font-size: 28px; font-weight: 800; color: #1A1A2E; margin: 0; }
-    .matching-subtitle { color: #8a8a8a; font-size: 14px; margin-top: 4px; }
+    .matching-title { font-size: 28px; font-weight: 800; color: #2c3e50; margin: 0; }
+    .matching-subtitle { color: #95a5a6; font-size: 14px; margin-top: 4px; }
     .header-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
     .ia-badge {
       display: flex; align-items: center; gap: 6px; padding: 8px 16px;
       border-radius: 12px; font-size: 13px; font-weight: 700; color: #fff;
-      background: linear-gradient(135deg, #ea5073, #6d3345);
+      background: linear-gradient(135deg, #ec407a, #d81b60);
     }
     .card {
       background: #fff; border-radius: 20px; padding: 24px;
@@ -289,20 +289,20 @@ type MoisOption = 'current' | 'last' | 'custom';
     .card-icon {
       width: 36px; height: 36px; border-radius: 10px; display: flex;
       align-items: center; justify-content: center; font-size: 16px;
-      background: linear-gradient(135deg, #ea5073, #6d3345); color: white;
+      background: linear-gradient(135deg, #ec407a, #d81b60); color: white;
     }
-    .card-title { font-size: 18px; font-weight: 700; color: #1A1A2E; margin: 0; }
+    .card-title { font-size: 18px; font-weight: 700; color: #2c3e50; margin: 0; }
 
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
     .form-group { display: flex; flex-direction: column; gap: 8px; }
     .form-group label { font-size: 13px; font-weight: 600; color: #374151; }
-    .required { color: #ea5073; }
+    .required { color: #ec407a; }
     .form-select, .form-input {
       width: 100%; padding: 12px 16px; border: 1px solid #E5E7EB; background: #F9FAFB;
       border-radius: 12px; font-size: 14px; outline: none; font-weight: 500;
       color: #333; transition: border-color .2s; box-sizing: border-box;
     }
-    .form-select:focus, .form-input:focus { border-color: #ea5073; }
+    .form-select:focus, .form-input:focus { border-color: #ec407a; }
     .hint { font-size: 12px; color: #9CA3AF; margin-top: 4px; }
     .empty-state-inline {
       text-align: center; padding: 32px; color: #6B7280; font-size: 14px;
@@ -312,8 +312,8 @@ type MoisOption = 'current' | 'last' | 'custom';
     .btn-launch {
       display: inline-flex; align-items: center; gap: 8px; padding: 16px 24px;
       border-radius: 12px; font-size: 15px; font-weight: 700; color: #fff;
-      background: linear-gradient(135deg, #ea5073, #6d3345); border: none;
-      cursor: pointer; transition: all .2s; box-shadow: 0 4px 12px rgba(234, 80, 115, 0.3);
+      background: linear-gradient(135deg, #ec407a, #d81b60); border: none;
+      cursor: pointer; transition: all .2s; box-shadow: 0 4px 12px rgba(236, 64, 122, 0.3);
     }
     .btn-launch:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
     .btn-launch:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -331,8 +331,8 @@ type MoisOption = 'current' | 'last' | 'custom';
       border: none; cursor: pointer; transition: all .2s; background: transparent; color: #6B7280;
     }
     .period-btn.active {
-      background: linear-gradient(135deg, #ea5073, #6d3345); color: #fff;
-      box-shadow: 0 2px 4px rgba(234,80,115,0.2);
+      background: linear-gradient(135deg, #ec407a, #d81b60); color: #fff;
+      box-shadow: 0 2px 4px rgba(236,64,122,0.2);
     }
 
     .opt-label {
@@ -340,7 +340,7 @@ type MoisOption = 'current' | 'last' | 'custom';
       padding: 12px; border-radius: 12px; border: 2px solid #F3F4F6; background: #F9FAFB;
       color: #6B7280; font-size: 12px; font-weight: 700; cursor: pointer; transition: all .2s; text-align: center;
     }
-    .opt-label.active-opt { border-color: #ea5073; background: #FFF0F5; color: #ea5073; }
+    .opt-label.active-opt { border-color: #ec407a; background: #fce4ec; color: #ec407a; }
 
     /* Données traitées */
     .data-item {
@@ -349,17 +349,17 @@ type MoisOption = 'current' | 'last' | 'custom';
     }
     .data-icon {
       width: 20px; height: 20px; border-radius: 4px; display: flex; align-items: center; justify-content: center;
-      background: linear-gradient(135deg, #ea5073, #6d3345); color: #fff; font-size: 10px; margin-right: 12px;
+      background: linear-gradient(135deg, #ec407a, #d81b60); color: #fff; font-size: 10px; margin-right: 12px;
     }
 
     /* Report Details Header */
     .report-header {
       padding: 20px 24px; border-bottom: 1px solid #F3F4F6;
-      background: linear-gradient(to right, #ffffff, #FFF0F5);
+      background: linear-gradient(to right, #ffffff, #fce4ec);
       display: flex; justify-content: space-between; align-items: center;
     }
     .report-tag {
-      background: rgba(234,80,115,0.1); color: #ea5073; font-weight: 800;
+      background: rgba(236,64,122,0.1); color: #ec407a; font-weight: 800;
       padding: 2px 8px; border-radius: 4px; font-size: 10px; text-transform: uppercase; margin-right: 8px;
     }
 
@@ -385,10 +385,10 @@ type MoisOption = 'current' | 'last' | 'custom';
 
     /* Summaries */
     .exec-summary {
-      background: #F9FAFB; border-left: 4px solid #ea5073;
+      background: #F9FAFB; border-left: 4px solid #ec407a;
       padding: 24px; border-radius: 0 16px 16px 0; margin-bottom: 32px;
     }
-    .exec-summary h3 { font-size: 14px; font-weight: 800; color: #1A1A2E; text-transform: uppercase; margin: 0 0 12px; display: flex; align-items: center; }
+    .exec-summary h3 { font-size: 14px; font-weight: 800; color: #2c3e50; text-transform: uppercase; margin: 0 0 12px; display: flex; align-items: center; }
     .exec-summary p { margin: 0; font-size: 14px; color: #374151; line-height: 1.6; font-weight: 500; }
 
     .livrables-summary {

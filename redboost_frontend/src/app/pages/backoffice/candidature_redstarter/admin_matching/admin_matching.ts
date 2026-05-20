@@ -26,11 +26,11 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
       <!-- Programme & Global Filters -->
       <div *ngIf="!selectedThematiqueId" class="flex items-center gap-4 bg-white rounded-3xl border border-[#e2e8f0] p-2 shadow-sm mb-6" style="width: fit-content; max-width: 100%; flex-wrap: wrap;">
         <!-- Programme Selector -->
-        <div class="group relative flex items-center gap-3 px-5 py-2.5 bg-[#f8fafc] rounded-2xl border border-[#f1f5f9] hover:border-[#ea5073]/30 transition-all duration-300">
+        <div class="group relative flex items-center gap-3 px-5 py-2.5 bg-[#f8fafc] rounded-2xl border border-[#f1f5f9] hover:border-[#ec407a]/30 transition-all duration-300">
           <div class="flex flex-col">
-            <label class="text-[9px] font-black uppercase text-[#94a3b8] tracking-widest mb-0.5">Programme <span class="text-[#ea5073]">*</span></label>
+            <label class="text-[9px] font-black uppercase text-[#94a3b8] tracking-widest mb-0.5">Programme <span class="text-[#ec407a]">*</span></label>
             <div class="flex items-center gap-2">
-              <i class="pi pi-briefcase text-[#ea5073] text-[10px]"></i>
+              <i class="pi pi-briefcase text-[#ec407a] text-[10px]"></i>
               <select [(ngModel)]="selectedProgId" (change)="onProgChange()" class="bg-transparent border-none outline-none text-sm font-bold text-[#1e293b] cursor-pointer min-w-[180px] custom-select">
                 <option [ngValue]="0">Tous les programmes</option>
                 <option *ngFor="let p of programmes" [ngValue]="p.id">{{ p.nom }}</option>
@@ -40,14 +40,14 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
         </div>
 
         <!-- Entrepreneur Selector -->
-        <div class="group relative flex items-center gap-3 px-5 py-2.5 bg-[#f8fafc] rounded-2xl border border-[#f1f5f9] hover:border-[#ea5073]/30 transition-all duration-300 cursor-pointer"
+        <div class="group relative flex items-center gap-3 px-5 py-2.5 bg-[#f8fafc] rounded-2xl border border-[#f1f5f9] hover:border-[#ec407a]/30 transition-all duration-300 cursor-pointer"
              [class.opacity-50]="!selectedProgId" [class.grayscale]="!selectedProgId"
              (click)="selectedProgId ? entDropdownOpen = !entDropdownOpen : null; coachDropdownOpen = false;">
           <div class="flex flex-col w-full">
             <label class="text-[9px] font-black uppercase text-[#94a3b8] tracking-widest mb-0.5 cursor-pointer">Entrepreneur</label>
             <div class="flex items-center gap-2 justify-between w-full">
               <div class="flex items-center gap-2">
-                <i class="pi pi-user text-[#ea5073] text-[10px]"></i>
+                <i class="pi pi-user text-[#ec407a] text-[10px]"></i>
                 <span class="text-sm font-bold text-[#1e293b] whitespace-nowrap">{{ getSelectedEntName() }}</span>
               </div>
               <i class="pi pi-chevron-down text-[10px] text-[#94a3b8]" [class.rotate-180]="entDropdownOpen"></i>
@@ -58,13 +58,13 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
           <div *ngIf="entDropdownOpen" class="absolute left-0 top-[calc(100%+8px)] w-full min-w-[220px] bg-white rounded-xl shadow-xl border border-gray-100 max-h-[250px] overflow-y-auto z-[100]" (click)="$event.stopPropagation()">
             <div class="p-1">
               <div class="px-4 py-2 hover:bg-gray-50 rounded-lg cursor-pointer text-sm font-medium text-gray-700 transition-colors"
-                   [class.bg-[#FFF1F3]]="selectedGlobalEntId === 0" [class.text-[#ea5073]]="selectedGlobalEntId === 0"
+                   [class.bg-[#fce4ec]]="selectedGlobalEntId === 0" [class.text-[#ec407a]]="selectedGlobalEntId === 0"
                    (click)="selectGlobalEnt(0)">
                 Tous les entrepreneurs
               </div>
               <div *ngFor="let e of globalEntrepreneurs" 
                    class="px-4 py-2 hover:bg-gray-50 rounded-lg cursor-pointer text-sm font-medium text-gray-700 transition-colors truncate"
-                   [class.bg-[#FFF1F3]]="selectedGlobalEntId === e.id" [class.text-[#ea5073]]="selectedGlobalEntId === e.id"
+                   [class.bg-[#fce4ec]]="selectedGlobalEntId === e.id" [class.text-[#ec407a]]="selectedGlobalEntId === e.id"
                    (click)="selectGlobalEnt(e.id)">
                 {{ e.firstName || e.nom }} {{ e.lastName || '' }}
               </div>
@@ -73,14 +73,14 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
         </div>
 
         <!-- Coach Selector -->
-        <div class="group relative flex items-center gap-3 px-5 py-2.5 bg-[#f8fafc] rounded-2xl border border-[#f1f5f9] hover:border-[#ea5073]/30 transition-all duration-300 cursor-pointer"
+        <div class="group relative flex items-center gap-3 px-5 py-2.5 bg-[#f8fafc] rounded-2xl border border-[#f1f5f9] hover:border-[#ec407a]/30 transition-all duration-300 cursor-pointer"
              [class.opacity-50]="!selectedProgId" [class.grayscale]="!selectedProgId"
              (click)="selectedProgId ? coachDropdownOpen = !coachDropdownOpen : null; entDropdownOpen = false;">
           <div class="flex flex-col w-full">
             <label class="text-[9px] font-black uppercase text-[#94a3b8] tracking-widest mb-0.5 cursor-pointer">Coach</label>
             <div class="flex items-center gap-2 justify-between w-full">
               <div class="flex items-center gap-2">
-                <i class="pi pi-user-check text-[#ea5073] text-[10px]"></i>
+                <i class="pi pi-user-check text-[#ec407a] text-[10px]"></i>
                 <span class="text-sm font-bold text-[#1e293b] whitespace-nowrap">{{ getSelectedCoachName() }}</span>
               </div>
               <i class="pi pi-chevron-down text-[10px] text-[#94a3b8]" [class.rotate-180]="coachDropdownOpen"></i>
@@ -91,13 +91,13 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
           <div *ngIf="coachDropdownOpen" class="absolute left-0 top-[calc(100%+8px)] w-full min-w-[220px] bg-white rounded-xl shadow-xl border border-gray-100 max-h-[250px] overflow-y-auto z-[100]" (click)="$event.stopPropagation()">
             <div class="p-1">
               <div class="px-4 py-2 hover:bg-gray-50 rounded-lg cursor-pointer text-sm font-medium text-gray-700 transition-colors"
-                   [class.bg-[#FFF1F3]]="selectedGlobalCoachId === 0" [class.text-[#ea5073]]="selectedGlobalCoachId === 0"
+                   [class.bg-[#fce4ec]]="selectedGlobalCoachId === 0" [class.text-[#ec407a]]="selectedGlobalCoachId === 0"
                    (click)="selectGlobalCoach(0)">
                 Tous les coachs
               </div>
               <div *ngFor="let c of globalCoaches" 
                    class="px-4 py-2 hover:bg-gray-50 rounded-lg cursor-pointer text-sm font-medium text-gray-700 transition-colors truncate"
-                   [class.bg-[#FFF1F3]]="selectedGlobalCoachId === c.id" [class.text-[#ea5073]]="selectedGlobalCoachId === c.id"
+                   [class.bg-[#fce4ec]]="selectedGlobalCoachId === c.id" [class.text-[#ec407a]]="selectedGlobalCoachId === c.id"
                    (click)="selectGlobalCoach(c.id)">
                 {{ c.firstName || c.prenom }} {{ c.lastName || c.nom }}
               </div>
@@ -110,7 +110,7 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
       <ng-container>
 
         <!-- ═══ Thématique Add/Edit Card (Isolated) ═══ -->
-        <div *ngIf="showAddForm" class="card thematique-form-card" style="border-left: 5px solid #ea5073; animation: slideInDown 0.3s ease-out;">
+        <div *ngIf="showAddForm" class="card thematique-form-card" style="border-left: 5px solid #ec407a; animation: slideInDown 0.3s ease-out;">
           <div class="card-header-row">
             <div class="card-icon"><i class="pi" [ngClass]="editingThematique ? 'pi-pencil' : 'pi-plus'"></i></div>
             <h2 class="card-title">{{ editingThematique ? 'Modification : ' + editingThematique.nom : 'Nouvelle thématique' }}</h2>
@@ -191,17 +191,17 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
         <!-- ═══ Selected Thématique content (when a specific one is chosen) ═══ -->
         <ng-container *ngIf="selectedThematiqueId">
           <div class="thematique-section" style="animation: slideInDown 0.3s ease-out;">
-            <button class="btn-back-to-list" (click)="goToDetail(0)" style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px; background: none; border: none; color: #ea5073; font-weight: 700; cursor: pointer;">
+            <button class="btn-back-to-list" (click)="goToDetail(0)" style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px; background: none; border: none; color: #ec407a; font-weight: 700; cursor: pointer;">
               <i class="pi pi-arrow-left"></i> Retour à la liste
             </button>
             <!-- Premium Header -->
             <div class="bg-white rounded-[24px] p-6 shadow-sm border border-[#e2e8f0]/60 mb-6 relative overflow-hidden" *ngIf="selectedThematiqueObj">
               <!-- Decorative background gradient -->
-              <div class="absolute top-0 right-0 -mt-20 -mr-20 w-64 h-64 bg-gradient-to-br from-[#ea5073]/10 to-transparent rounded-full blur-3xl pointer-events-none"></div>
+              <div class="absolute top-0 right-0 -mt-20 -mr-20 w-64 h-64 bg-gradient-to-br from-[#ec407a]/10 to-transparent rounded-full blur-3xl pointer-events-none"></div>
               
               <div class="flex items-center gap-5 relative z-10">
                 <!-- Icon Block -->
-                <div class="w-14 h-14 rounded-[16px] bg-gradient-to-br from-[#ea5073] to-[#8E2D4A] flex items-center justify-center text-white shadow-lg shadow-[#ea5073]/20 flex-shrink-0">
+                <div class="w-14 h-14 rounded-[16px] bg-gradient-to-br from-[#ec407a] to-[#d81b60] flex items-center justify-center text-white shadow-lg shadow-[#ec407a]/20 flex-shrink-0">
                   <i class="pi pi-star text-2xl"></i>
                 </div>
                 
@@ -210,7 +210,7 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
                   <h3 class="text-[22px] font-extrabold text-[#0f172a] tracking-tight m-0 leading-none mb-2">{{ selectedThematiqueObj.nom }}</h3>
                   <div class="flex flex-wrap items-center gap-3">
                     <span class="inline-flex items-center gap-1.5 text-xs font-bold text-[#64748b] bg-[#f8fafc] px-3 py-1.5 rounded-lg border border-[#f1f5f9]">
-                      <i class="pi pi-calendar text-[11px] text-[#ea5073]"></i>
+                      <i class="pi pi-calendar text-[11px] text-[#ec407a]"></i>
                       {{ selectedThematiqueObj.dateDebut }} <span class="text-[#cbd5e1] mx-0.5">→</span> {{ selectedThematiqueObj.dateFin }}
                     </span>
                     <span class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-bold" 
@@ -223,7 +223,7 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
 
                 <!-- Actions -->
                 <div class="flex gap-2">
-                  <button class="w-10 h-10 rounded-[12px] flex items-center justify-center bg-white border border-[#e2e8f0] text-[#64748b] hover:border-[#ea5073] hover:text-[#ea5073] hover:bg-[#fff1f3] hover:shadow-sm transition-all" (click)="editThematique(selectedThematiqueObj)" title="Modifier">
+                  <button class="w-10 h-10 rounded-[12px] flex items-center justify-center bg-white border border-[#e2e8f0] text-[#64748b] hover:border-[#ec407a] hover:text-[#ec407a] hover:bg-[#fff1f3] hover:shadow-sm transition-all" (click)="editThematique(selectedThematiqueObj)" title="Modifier">
                     <i class="pi pi-pencil"></i>
                   </button>
                   <button class="w-10 h-10 rounded-[12px] flex items-center justify-center bg-white border border-[#e2e8f0] text-[#64748b] hover:border-red-500 hover:text-red-600 hover:bg-red-50 hover:shadow-sm transition-all" (click)="deleteThematique(selectedThematiqueObj.id!)" title="Supprimer">
@@ -235,7 +235,7 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
               <!-- Description Box -->
               <div class="mt-6 p-4 rounded-2xl bg-gradient-to-r from-[#f8fafc] to-white border border-[#f1f5f9] relative z-10">
                 <p class="text-[13px] font-medium text-[#475569] leading-relaxed m-0 flex items-start gap-3">
-                  <i class="pi pi-info-circle text-[#ea5073] mt-0.5 opacity-80"></i>
+                  <i class="pi pi-info-circle text-[#ec407a] mt-0.5 opacity-80"></i>
                   {{ selectedThematiqueObj.description || 'Aucune description détaillée n\\'a été fournie pour cette thématique d\\'accompagnement.' }}
                 </p>
               </div>
@@ -399,7 +399,7 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
                   <span class="manual-badge">Sans IA</span>
                 </div>
 
-                <div *ngIf="manualLoading" class="loading-box"><i class="pi pi-spin pi-spinner" style="font-size:24px;color:#ea5073"></i><p style="margin-top:12px">Chargement des candidats...</p></div>
+                <div *ngIf="manualLoading" class="loading-box"><i class="pi pi-spin pi-spinner" style="font-size:24px;color:#ec407a"></i><p style="margin-top:12px">Chargement des candidats...</p></div>
                 <div *ngIf="manualError" class="error-box" style="margin-top:16px"><p>{{ manualError }}</p></div>
                 <div *ngIf="manualSuccess" class="success-toast"><i class="pi pi-check-circle"></i> Matching créé : <strong>{{ manualSuccess.entrepreneurNom }}</strong> → <strong>{{ manualSuccess.coachNom }}</strong></div>
 
@@ -549,24 +549,24 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
     `,
     styles: [`
       :host { display: block; }
-      .matching-page { padding: 24px; background: #F5F6FA; min-height: 100vh; }
+      .matching-page { padding: 24px; background: #f8f9fa; min-height: 100vh; }
 
       .matching-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }
-      .matching-title { font-size: 28px; font-weight: 800; color: #1A1A2E; margin: 0; }
-      .matching-subtitle { color: #8a8a8a; font-size: 14px; margin-top: 4px; }
+      .matching-title { font-size: 28px; font-weight: 800; color: #2c3e50; margin: 0; }
+      .matching-subtitle { color: #95a5a6; font-size: 14px; margin-top: 4px; }
 
       .card { background: #fff; border-radius: 20px; padding: 24px; box-shadow: 0 2px 16px rgba(0,0,0,0.07); margin-bottom: 16px; }
       .prog-card { margin-bottom: 16px; }
       .card-header-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
-      .card-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; background: linear-gradient(135deg, #ea5073, #6d3345); color: white; }
-      .card-title { font-size: 18px; font-weight: 700; color: #1A1A2E; margin: 0; flex: 1; }
+      .card-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; background: linear-gradient(135deg, #ec407a, #d81b60); color: white; }
+      .card-title { font-size: 18px; font-weight: 700; color: #2c3e50; margin: 0; flex: 1; }
       .manual-badge { padding: 4px 12px; border-radius: 20px; background: #EDE9FE; color: #7C3AED; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
 
       .form-group { display: flex; flex-direction: column; gap: 6px; }
       .form-group label { font-size: 13px; font-weight: 600; color: #374151; }
-      .required { color: #ea5073; }
+      .required { color: #ec407a; }
       .form-select, .form-input { width: 100%; padding: 10px 14px; border: 1px solid #E5E7EB; border-radius: 12px; font-size: 14px; outline: none; background: #fff; color: #333; transition: border-color .2s; box-sizing: border-box; }
-      .form-select:focus, .form-input:focus { border-color: #ea5073; }
+      .form-select:focus, .form-input:focus { border-color: #ec407a; }
       textarea.form-input { resize: vertical; font-family: inherit; }
       .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
       .form-actions { display: flex; gap: 12px; margin-top: 12px; }
@@ -586,7 +586,7 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
       .btn-add-thematique { display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px; border-radius: 12px; font-size: 13px; font-weight: 700; background: #F3F4F6; color: #374151; border: 1px solid #E5E7EB; cursor: pointer; transition: all .2s; white-space: nowrap; }
       .btn-add-thematique:hover { background: #E5E7EB; }
       .thematique-add-form { margin-top: 20px; padding-top: 20px; border-top: 1px solid #F3F4F6; }
-      .thematique-add-form h4 { margin: 0 0 16px; font-size: 15px; font-weight: 700; color: #1A1A2E; }
+      .thematique-add-form h4 { margin: 0 0 16px; font-size: 15px; font-weight: 700; color: #2c3e50; }
 
       /* Thematique section */
       .thematique-section { }
@@ -594,7 +594,7 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
       .th-card-title-row { display: flex; align-items: center; gap: 12px; }
       .th-card-icon { font-size: 24px; }
       .th-card-info { flex: 1; }
-      .th-name { font-size: 20px; font-weight: 800; color: #1A1A2E; margin: 0; }
+      .th-name { font-size: 20px; font-weight: 800; color: #2c3e50; margin: 0; }
       .th-dates { font-size: 13px; color: #9CA3AF; margin: 2px 0 0; }
       .th-desc { font-size: 13px; color: #6B7280; margin: 12px 0 0; line-height: 1.5; }
       .th-card-actions-top { display: flex; gap: 6px; margin-left: 12px; }
@@ -607,13 +607,13 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
       .stat-neutral { background: #F3F4F6; color: #6B7280; border: 1px solid #E5E7EB; }
 
       .th-action-bar { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
-      .btn-launch { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; border-radius: 12px; font-size: 15px; font-weight: 700; color: #fff; background: linear-gradient(135deg, #ea5073, #6d3345); border: none; cursor: pointer; transition: all .2s; box-shadow: 0 4px 12px rgba(234,80,115,0.3); }
+      .btn-launch { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; border-radius: 12px; font-size: 15px; font-weight: 700; color: #fff; background: linear-gradient(135deg, #ec407a, #d81b60); border: none; cursor: pointer; transition: all .2s; box-shadow: 0 4px 12px rgba(236,64,122,0.3); }
       .btn-launch:hover { opacity: 0.9; transform: translateY(-1px); }
       .btn-launch:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
       .btn-cancel { padding: 10px 20px; border-radius: 12px; font-size: 14px; font-weight: 600; background: #F3F4F6; color: #6B7280; border: none; cursor: pointer; }
       .btn-manual-toggle { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; border-radius: 12px; font-size: 15px; font-weight: 700; color: #374151; background: #fff; border: 2px solid #E5E7EB; cursor: pointer; transition: all .2s; }
-      .btn-manual-toggle:hover { border-color: #ea5073; color: #ea5073; }
-      .btn-manual-toggle.active { border-color: #ea5073; color: #ea5073; background: #FFF1F3; }
+      .btn-manual-toggle:hover { border-color: #ec407a; color: #ec407a; }
+      .btn-manual-toggle.active { border-color: #ec407a; color: #ec407a; background: #fce4ec; }
 
       .error-box { margin-bottom: 15px; padding: 12px 16px; background: #FEF2F2; border-left: 4px solid #EF4444; border-radius: 12px; }
       .error-box p { margin: 0; color: #DC2626; font-size: 13px; }
@@ -622,7 +622,7 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
       /* IA Results */
       .results-section { margin-bottom: 20px; }
       .results-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-      .results-header h3 { font-size: 22px; font-weight: 800; color: #1A1A2E; margin: 0; }
+      .results-header h3 { font-size: 22px; font-weight: 800; color: #2c3e50; margin: 0; }
       .results-meta { font-size: 13px; color: #9CA3AF; margin-top: 4px; }
       .btn-validate-all { padding: 10px 20px; border-radius: 12px; font-size: 13px; font-weight: 700; background: #16a34a; color: #fff; border: none; cursor: pointer; box-shadow: 0 4px 12px rgba(22,163,74,0.25); }
       .btn-validate-all:disabled { opacity: 0.5; }
@@ -637,13 +637,13 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
       .color-high { color: #16a34a; } .color-mid { color: #d97706; } .color-low { color: #dc2626; }
       .match-main-col { flex: 1; }
 
-      .match-card { background: #fff; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.07); border-top: 3px solid #ea5073; overflow: hidden; }
+      .match-card { background: #fff; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.07); border-top: 3px solid #ec407a; overflow: hidden; }
       .match-card-header { display: flex; align-items: flex-start; padding: 20px 24px; }
       .profile-block { flex: 1; padding: 0 16px; }
       .profile-block:first-child { padding-left: 0; }
       .profile-block:last-child { padding-right: 0; }
-      .profile-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: #ea5073; margin-bottom: 6px; }
-      .profile-name { font-size: 17px; font-weight: 700; color: #1A1A2E; }
+      .profile-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: #ec407a; margin-bottom: 6px; }
+      .profile-name { font-size: 17px; font-weight: 700; color: #2c3e50; }
       .profile-meta { font-size: 13px; color: #6B7280; margin-top: 4px; }
       .meta-sep { color: #D1D5DB; }
       .match-divider { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 16px; gap: 4px; color: #D1D5DB; min-width: 80px; }
@@ -653,15 +653,15 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
       .justification-label { font-weight: 700; }
 
       .match-actions { display: flex; align-items: center; gap: 10px; padding: 16px 24px; border-top: 1px solid #F3F4F6; }
-      .btn-accept { display: inline-flex; align-items: center; gap: 6px; padding: 9px 20px; border-radius: 10px; font-size: 13px; font-weight: 700; background: linear-gradient(135deg, #ea5073, #c43355); color: #fff; border: none; cursor: pointer; box-shadow: 0 3px 10px rgba(234,80,115,0.3); }
+      .btn-accept { display: inline-flex; align-items: center; gap: 6px; padding: 9px 20px; border-radius: 10px; font-size: 13px; font-weight: 700; background: linear-gradient(135deg, #ec407a, #c43355); color: #fff; border: none; cursor: pointer; box-shadow: 0 3px 10px rgba(236,64,122,0.3); }
       .btn-accept:disabled { opacity: 0.5; cursor: not-allowed; }
       .btn-details { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border-radius: 10px; font-size: 13px; font-weight: 600; background: #fff; color: #374151; border: 1px solid #E5E7EB; cursor: pointer; }
-      .btn-change { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border-radius: 10px; font-size: 13px; font-weight: 600; background: #fff; color: #ea5073; border: 1.5px solid #ea5073; cursor: pointer; }
+      .btn-change { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border-radius: 10px; font-size: 13px; font-weight: 600; background: #fff; color: #ec407a; border: 1.5px solid #ec407a; cursor: pointer; }
 
       .details-panel { border-top: 1px solid #F3F4F6; }
       .details-section { padding: 20px 24px; border-bottom: 1px solid #F3F4F6; }
-      .details-title { font-size: 14px; font-weight: 700; color: #1A1A2E; display: flex; align-items: center; gap: 8px; margin: 0 0 16px; }
-      .details-title i { color: #ea5073; }
+      .details-title { font-size: 14px; font-weight: 700; color: #2c3e50; display: flex; align-items: center; gap: 8px; margin: 0 0 16px; }
+      .details-title i { color: #ec407a; }
       .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
       .detail-item { display: flex; flex-direction: column; gap: 2px; }
       .detail-item.full-width { grid-column: 1 / -1; }
@@ -679,12 +679,12 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
       .alt-row { display: flex; align-items: center; gap: 16px; padding: 16px 24px; border-bottom: 1px solid #F0F0F0; }
       .alt-row:last-child { border-bottom: none; }
       .alt-info { flex: 1; }
-      .alt-rank { font-size: 10px; font-weight: 700; color: #ea5073; text-transform: uppercase; margin-bottom: 2px; }
-      .alt-coach-name { font-size: 15px; font-weight: 700; color: #1A1A2E; }
+      .alt-rank { font-size: 10px; font-weight: 700; color: #ec407a; text-transform: uppercase; margin-bottom: 2px; }
+      .alt-coach-name { font-size: 15px; font-weight: 700; color: #2c3e50; }
       .alt-coach-meta { font-size: 12px; color: #6B7280; }
       .alt-score { text-align: center; }
-      .alt-score-val { font-size: 20px; font-weight: 800; color: #1A1A2E; }
-      .btn-select-alt { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 10px; font-size: 12px; font-weight: 700; background: linear-gradient(135deg, #ea5073, #c43355); color: #fff; border: none; cursor: pointer; white-space: nowrap; }
+      .alt-score-val { font-size: 20px; font-weight: 800; color: #2c3e50; }
+      .btn-select-alt { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 10px; font-size: 12px; font-weight: 700; background: linear-gradient(135deg, #ec407a, #c43355); color: #fff; border: none; cursor: pointer; white-space: nowrap; }
       .btn-select-alt:disabled { opacity: 0.5; }
 
       /* Manual matching */
@@ -692,15 +692,15 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
       .manual-workspace { display: grid; grid-template-columns: 1fr 260px 1fr; gap: 16px; align-items: start; margin-top: 8px; }
       .manual-panel { background: #fff; border-radius: 20px; box-shadow: 0 2px 16px rgba(0,0,0,0.07); overflow: hidden; max-height: 500px; overflow-y: auto; }
       .manual-panel-header { display: flex; align-items: center; gap: 10px; padding: 18px 20px; border-bottom: 1px solid #F3F4F6; background: #FAFAFA; position: sticky; top: 0; z-index: 1; }
-      .manual-panel-title { font-size: 15px; font-weight: 700; color: #1A1A2E; margin: 0; flex: 1; }
-      .manual-count-badge { background: #ea5073; color: #fff; border-radius: 20px; font-size: 12px; font-weight: 700; padding: 2px 10px; }
+      .manual-panel-title { font-size: 15px; font-weight: 700; color: #2c3e50; margin: 0; flex: 1; }
+      .manual-count-badge { background: #ec407a; color: #fff; border-radius: 20px; font-size: 12px; font-weight: 700; padding: 2px 10px; }
       .manual-card { padding: 16px 20px; border-bottom: 1px solid #F9FAFB; cursor: pointer; transition: all .2s; }
       .manual-card:hover { background: #FFF5F7; }
-      .manual-card-selected { background: #FFF1F3 !important; border-left: 3px solid #ea5073; }
+      .manual-card-selected { background: #fce4ec !important; border-left: 3px solid #ec407a; }
       .manual-card-saturated { opacity: 0.6; }
       .mc-top-row { display: flex; justify-content: space-between; align-items: flex-start; }
-      .mc-name { font-size: 15px; font-weight: 700; color: #1A1A2E; }
-      .mc-select-indicator { color: #ea5073; font-size: 18px; }
+      .mc-name { font-size: 15px; font-weight: 700; color: #2c3e50; }
+      .mc-select-indicator { color: #ec407a; font-size: 18px; }
       .mc-meta { font-size: 12px; color: #6B7280; margin-top: 3px; }
       .mc-detail-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
       .mc-chip { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; background: #F3F4F6; color: #6B7280; }
@@ -710,17 +710,17 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
       .mc-chip-saturated { background: #FEE2E2; color: #991B1B; }
       .mc-coach-stats { display: flex; gap: 16px; margin-top: 8px; }
       .mc-stat { display: flex; align-items: baseline; gap: 3px; }
-      .mc-stat-val { font-size: 18px; font-weight: 800; color: #1A1A2E; }
+      .mc-stat-val { font-size: 18px; font-weight: 800; color: #2c3e50; }
       .mc-stat-label { font-size: 11px; color: #9CA3AF; }
 
       .manual-center { display: flex; flex-direction: column; align-items: center; gap: 16px; padding-top: 60px; }
       .manual-arrow-box { width: 52px; height: 52px; border-radius: 50%; background: #F3F4F6; display: flex; align-items: center; justify-content: center; font-size: 22px; color: #D1D5DB; transition: all .3s; }
-      .arrow-ready { background: linear-gradient(135deg, #ea5073, #c43355); color: #fff; box-shadow: 0 4px 16px rgba(234,80,115,0.4); transform: scale(1.1); }
-      .manual-confirm-zone { background: #fff; border-radius: 16px; padding: 20px; box-shadow: 0 4px 20px rgba(234,80,115,0.15); border: 2px solid #ea5073; width: 100%; }
+      .arrow-ready { background: linear-gradient(135deg, #ec407a, #c43355); color: #fff; box-shadow: 0 4px 16px rgba(234,80,115,0.4); transform: scale(1.1); }
+      .manual-confirm-zone { background: #fff; border-radius: 16px; padding: 20px; box-shadow: 0 4px 20px rgba(234,80,115,0.15); border: 2px solid #ec407a; width: 100%; }
       .confirm-pair { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-bottom: 16px; }
-      .confirm-name { font-size: 14px; font-weight: 700; color: #1A1A2E; text-align: center; }
-      .confirm-arrow { color: #ea5073; font-size: 18px; }
-      .btn-confirm-manual { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 13px 20px; border-radius: 12px; font-size: 14px; font-weight: 700; color: #fff; background: linear-gradient(135deg, #ea5073, #c43355); border: none; cursor: pointer; box-shadow: 0 4px 12px rgba(234,80,115,0.35); }
+      .confirm-name { font-size: 14px; font-weight: 700; color: #2c3e50; text-align: center; }
+      .confirm-arrow { color: #ec407a; font-size: 18px; }
+      .btn-confirm-manual { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 13px 20px; border-radius: 12px; font-size: 14px; font-weight: 700; color: #fff; background: linear-gradient(135deg, #ec407a, #c43355); border: none; cursor: pointer; box-shadow: 0 4px 12px rgba(234,80,115,0.35); }
       .btn-confirm-manual:disabled { opacity: 0.5; cursor: not-allowed; }
 
       /* History cards */
@@ -733,7 +733,7 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
       .hc-pair { display: flex; align-items: center; gap: 12px; }
       .hc-arrow { color: #D1D5DB; font-size: 20px; }
       .hc-role { font-size: 10px; font-weight: 700; color: #9CA3AF; text-transform: uppercase; margin: 0; }
-      .hc-name { font-weight: 700; color: #1A1A2E; margin: 0; }
+      .hc-name { font-weight: 700; color: #2c3e50; margin: 0; }
       .hc-right { text-align: center; min-width: 100px; }
       .hc-score { font-size: 22px; font-weight: 800; margin: 0; }
       .hc-score-label { font-size: 10px; font-weight: 700; color: #9CA3AF; text-transform: uppercase; margin: 2px 0 8px; }
@@ -747,14 +747,14 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
       .btn-sm-danger:hover { background: #FEE2E2; }
 
       /* Overview cards */
-      .th-overview-card { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; background: #fff; border-radius: 20px; box-shadow: 0 2px 16px rgba(0,0,0,0.07); margin-bottom: 12px; cursor: pointer; transition: all .2s; border-left: 4px solid #ea5073; }
+      .th-overview-card { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; background: #fff; border-radius: 20px; box-shadow: 0 2px 16px rgba(0,0,0,0.07); margin-bottom: 12px; cursor: pointer; transition: all .2s; border-left: 4px solid #ec407a; }
       .th-overview-card:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(0,0,0,0.1); }
       .th-overview-left { display: flex; align-items: flex-start; gap: 16px; flex: 1; }
       .th-overview-icon { font-size: 24px; }
-      .th-overview-name { font-size: 17px; font-weight: 700; color: #1A1A2E; margin: 0; }
+      .th-overview-name { font-size: 17px; font-weight: 700; color: #2c3e50; margin: 0; }
       .th-overview-dates { font-size: 12px; color: #9CA3AF; margin: 4px 0 0; }
       .th-overview-desc { font-size: 13px; color: #6B7280; margin: 4px 0 0; }
-      .th-overview-prog { font-size: 13px; font-weight: 700; color: #ea5073; margin: 4px 0 0; display: flex; align-items: center; }
+      .th-overview-prog { font-size: 13px; font-weight: 700; color: #ec407a; margin: 4px 0 0; display: flex; align-items: center; }
       .th-overview-right { display: flex; align-items: center; gap: 12px; }
       .th-overview-actions { display: flex; gap: 6px; }
 
@@ -766,12 +766,12 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
       .count-chip { background: #F3F4F6; color: #6B7280; border-radius: 10px; padding: 1px 8px; font-size: 11px; font-weight: 600; }
       .th-list-item { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 10px; cursor: pointer; transition: background .15s, border-color .15s; border: 1.5px solid transparent; margin-bottom: 6px; background: #F9FAFB; }
       .th-list-item:hover { background: #F3F4F6; border-color: #E5E7EB; }
-      .th-list-item-active { background: #FFF0F4 !important; border-color: #ea5073 !important; }
+      .th-list-item-active { background: #FFF0F4 !important; border-color: #ec407a !important; }
       .th-list-item-editing { background: #FEF3C7 !important; border-color: #F59E0B !important; }
       .th-list-item-main { display: flex; flex-direction: column; flex: 1; min-width: 0; }
       .th-list-nom { font-size: 14px; font-weight: 600; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
       .th-list-dates { font-size: 11px; color: #9CA3AF; margin-top: 2px; }
-      .th-list-prog { font-size: 12px; font-weight: 600; color: #ea5073; white-space: nowrap; display: flex; align-items: center; flex-shrink: 0; }
+      .th-list-prog { font-size: 12px; font-weight: 600; color: #ec407a; white-space: nowrap; display: flex; align-items: center; flex-shrink: 0; }
       .th-list-status { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 8px; white-space: nowrap; flex-shrink: 0; }
       .th-status-active { background: #D1FAE5; color: #065F46; }
       .th-status-done { background: #E5E7EB; color: #374151; }
