@@ -132,28 +132,52 @@ jobs:
             docker rm -f redboost-backend redboost-ai redboost-frontend 2>/dev/null || true
             
             echo "🧹 Removing any root-owned firebase-service-account.json directory if created by docker bind-mount..."
-            docker run --rm -v /home/redboost/docker:/data alpine rm -rf /data/firebase-service-account.json || true
-            rm -rf /home/redboost/docker/firebase-service-account.json || true
+            docker run --rm -v /home/redboost/docker:/data alpine rm -rf /data/firebase-service-account.json /data/google-oauth-credentials.json || true
+            rm -rf /home/redboost/docker/firebase-service-account.json /home/redboost/docker/google-oauth-credentials.json || true
           EOF
 
-      # Write the firebase credentials from GitHub Secret onto the VPS
-      # (runs always to ensure the file exists for the docker-compose volume mount)
-      - name: Upload Firebase credentials to VPS
+      # Upload or Restore Credentials (runs always to ensure both files exist for the docker-compose volume mounts)
+      - name: Upload or Restore Credentials to VPS
+        env:
+          GOOGLE_DRIVE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS_JSON }}
         run: |
           ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
-            "rm -rf /home/redboost/docker/firebase-service-account.json"
-          if [ -n "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
+            "rm -rf /home/redboost/docker/firebase-service-account.json /home/redboost/docker/google-oauth-credentials.json"
+          
+          # Setup Firebase
+          if ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "[ -f /home/redboost/config-prod/firebase-service-account.json ]"; then
+            echo "Copying Firebase credentials from config-prod on VPS..."
+            ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+              "cp /home/redboost/config-prod/firebase-service-account.json /home/redboost/docker/firebase-service-account.json"
+          elif [ -n "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
             echo "Firebase service account credentials secret is present. Uploading..."
             printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" | \
               ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
               "tee /home/redboost/docker/firebase-service-account.json >/dev/null"
           else
-            echo "Firebase credentials secret is missing. Creating empty JSON file to satisfy Docker volume mount..."
+            echo "Firebase credentials secret is missing. Creating empty JSON file..."
             ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
               "echo '{}' > /home/redboost/docker/firebase-service-account.json"
           fi
+
+          # Setup Google OAuth (Drive)
+          if ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "[ -f /home/redboost/config-prod/google-oauth-credentials.json ]"; then
+            echo "Copying Google Drive credentials from config-prod on VPS..."
+            ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+              "cp /home/redboost/config-prod/google-oauth-credentials.json /home/redboost/docker/google-oauth-credentials.json"
+          elif [ -n "$GOOGLE_DRIVE_CREDENTIALS_JSON" ]; then
+            echo "Google Drive credentials secret is present. Uploading..."
+            printf '%s' "$GOOGLE_DRIVE_CREDENTIALS_JSON" | \
+              ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+              "tee /home/redboost/docker/google-oauth-credentials.json >/dev/null"
+          else
+            echo "Google Drive credentials secret is missing. Creating empty JSON file..."
+            ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+              "echo '{}' > /home/redboost/docker/google-oauth-credentials.json"
+          fi
+
           ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
-            "chmod 644 /home/redboost/docker/firebase-service-account.json"
+            "chmod 644 /home/redboost/docker/firebase-service-account.json /home/redboost/docker/google-oauth-credentials.json"
 
       # Write the .env file — done via ssh echo to avoid secrets in scp
       - name: Write .env on VPS

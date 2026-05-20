@@ -27,7 +27,7 @@ public class EmailService {
     private final Credential credential;
 
     @Autowired
-    public EmailService(Gmail gmail, Credential credential) {
+    public EmailService(@org.springframework.lang.Nullable Gmail gmail, @org.springframework.lang.Nullable Credential credential) {
         this.gmail = gmail;
         this.credential = credential;
     }
@@ -36,6 +36,10 @@ public class EmailService {
      * Sends an email via Gmail API with proactive token refresh
      */
     public void sendEmail(String to, String subject, String body) throws MessagingException, IOException {
+        if (gmail == null || credential == null) {
+            logger.warn("Gmail service is not configured (missing refresh token). Skipping email to {}", to);
+            return;
+        }
         ensureValidCredential(); // Proactively refresh token
         try {
             MimeMessage mimeMessage = createEmail(to, USER_EMAIL, subject, body);
@@ -64,6 +68,9 @@ public class EmailService {
      * Ensures the credential is valid, refreshing it proactively if nearing expiry
      */
     private void ensureValidCredential() throws IOException {
+        if (credential == null) {
+            return;
+        }
         synchronized (credential) { // Thread-safe refresh
             if (credential.getExpiresInSeconds() == null || credential.getExpiresInSeconds() <= 60) {
                 logger.info("Access token nearing expiry ({} seconds remaining), refreshing proactively.",

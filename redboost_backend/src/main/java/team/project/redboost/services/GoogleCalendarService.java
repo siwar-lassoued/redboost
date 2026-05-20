@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class GoogleCalendarService {
 
@@ -32,6 +31,12 @@ public class GoogleCalendarService {
     private final Calendar calendarService;
     private final Credential credential;
     
+    @org.springframework.beans.factory.annotation.Autowired
+    public GoogleCalendarService(@org.springframework.lang.Nullable Calendar calendarService, @org.springframework.lang.Nullable Credential credential) {
+        this.calendarService = calendarService;
+        this.credential = credential;
+    }
+    
     @Value("${google.oauth.organizer-email}")
     private String organizerEmail;
 
@@ -40,6 +45,10 @@ public class GoogleCalendarService {
      * This will send email invitations to all participants automatically
      */
     public com.google.api.services.calendar.model.Event createCalendarEvent(Event event) throws IOException {
+        if (calendarService == null || credential == null) {
+            log.warn("Google Calendar service not configured. Skipping event creation.");
+            return null;
+        }
         ensureValidCredential();
         
         // Build the Google Calendar event
@@ -69,6 +78,10 @@ public class GoogleCalendarService {
      * Creates a simple Google Meet event without linking an Event entity directly
      */
     public GoogleEventResult createMeetEvent(String title, LocalDateTime start, LocalDateTime end, String coachEmail, String entrepreneurEmail) throws IOException {
+        if (calendarService == null || credential == null) {
+            log.warn("Google Calendar service not configured. Skipping meet event creation.");
+            return null;
+        }
         ensureValidCredential();
 
         com.google.api.services.calendar.model.Event googleEvent = new com.google.api.services.calendar.model.Event()
@@ -125,6 +138,10 @@ public class GoogleCalendarService {
      */
     public com.google.api.services.calendar.model.Event updateCalendarEvent(
             String eventId, Event event) throws IOException {
+        if (calendarService == null || credential == null) {
+            log.warn("Google Calendar service not configured. Skipping event update.");
+            return null;
+        }
         ensureValidCredential();
         
         com.google.api.services.calendar.model.Event googleEvent = 
@@ -165,6 +182,10 @@ public class GoogleCalendarService {
      * Adds conference data (Google Meet) to an existing event
      */
     public com.google.api.services.calendar.model.Event addConferenceToEvent(String eventId, Event event) throws IOException {
+        if (calendarService == null || credential == null) {
+            log.warn("Google Calendar service not configured. Skipping conference addition.");
+            return null;
+        }
         ensureValidCredential();
 
         com.google.api.services.calendar.model.Event googleEvent = 
@@ -189,6 +210,10 @@ public class GoogleCalendarService {
      * Removes conference data (Google Meet) from an existing event
      */
     public com.google.api.services.calendar.model.Event removeConferenceFromEvent(String eventId) throws IOException {
+        if (calendarService == null || credential == null) {
+            log.warn("Google Calendar service not configured. Skipping conference removal.");
+            return null;
+        }
         ensureValidCredential();
 
         com.google.api.services.calendar.model.Event googleEvent = 
@@ -208,6 +233,10 @@ public class GoogleCalendarService {
      * Cancels a calendar event
      */
     public void cancelCalendarEvent(String eventId) throws IOException {
+        if (calendarService == null || credential == null) {
+            log.warn("Google Calendar service not configured. Skipping event cancellation.");
+            return;
+        }
         ensureValidCredential();
 
         calendarService.events()
@@ -341,6 +370,9 @@ public class GoogleCalendarService {
      * Reuse the same credential refresh logic from EmailService
      */
     private void ensureValidCredential() throws IOException {
+        if (credential == null) {
+            return;
+        }
         synchronized (credential) {
             if (credential.getExpiresInSeconds() == null || credential.getExpiresInSeconds() <= 60) {
                 log.info("Access token nearing expiry, refreshing proactively.");

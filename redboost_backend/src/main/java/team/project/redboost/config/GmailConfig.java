@@ -57,6 +57,10 @@ public class GmailConfig {
 
     @Bean
     public Credential credential() throws IOException, GeneralSecurityException {
+        if (refreshToken == null || refreshToken.isEmpty() || clientId == null || clientId.isEmpty() || clientSecret == null || clientSecret.isEmpty()) {
+            logger.warn("Google OAuth credentials are not fully configured (missing client-id, client-secret, or refresh-token). Google services will be disabled.");
+            return null;
+        }
         final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
         Credential credential = getCredentials(HTTP_TRANSPORT);
         return credential;
@@ -64,6 +68,9 @@ public class GmailConfig {
 
     @Bean
     public Gmail gmailService(Credential credential) throws IOException, GeneralSecurityException {
+        if (credential == null) {
+            return null;
+        }
         final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
         return new Gmail.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential)
                 .setApplicationName(APPLICATION_NAME)
@@ -73,6 +80,9 @@ public class GmailConfig {
     // NEW: Add Calendar Service Bean
     @Bean
     public Calendar calendarService(Credential credential) throws IOException, GeneralSecurityException {
+        if (credential == null) {
+            return null;
+        }
         final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
         return new Calendar.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential)
                 .setApplicationName(APPLICATION_NAME)
@@ -85,9 +95,6 @@ public class GmailConfig {
     }
 
     private Credential getCredentials(final NetHttpTransport HTTP_TRANSPORT) throws IOException {
-        if (refreshToken == null || refreshToken.isEmpty()) {
-            throw new IllegalStateException("google.oauth.refresh-token is not set in application.properties");
-        }
 
         GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(
                 JSON_FACTORY,
