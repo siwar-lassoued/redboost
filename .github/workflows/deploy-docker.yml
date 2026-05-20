@@ -123,9 +123,11 @@ jobs:
 
       - name: Upload Firebase credentials to VPS
         run: |
+          ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+            "sudo rm -rf /home/redboost/docker/firebase-service-account.json"
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" | \
             ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
-            "cat > /home/redboost/docker/firebase-service-account.json && chmod 600 /home/redboost/docker/firebase-service-account.json"
+            "sudo tee /home/redboost/docker/firebase-service-account.json >/dev/null && sudo chmod 644 /home/redboost/docker/firebase-service-account.json"
           ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
             "test -s /home/redboost/docker/firebase-service-account.json"
 
