@@ -614,7 +614,6 @@ public class CoachService {
                                 "Nouveau créneau disponible : \"" + dto.getTitre() + "\" le " + sessionDate,
                                 "SESSION_SLOT_ADDED", saved.getId());
                     }
-                }
             } catch (Exception e) {
                 log.warn("Notification failed for entrepreneur candidature {}: {}", m.getEntrepreneurId(), e.getMessage());
             }
