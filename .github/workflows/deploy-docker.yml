@@ -11,7 +11,6 @@ env:
 jobs:
   # ─────────────────────────────────────────────────────────────────────────────
   # JOB 1: Build images on GitHub's powerful runners and push to GHCR
-  # The VPS (2 GB RAM) never has to build — it just pulls the ready image.
   # ─────────────────────────────────────────────────────────────────────────────
   build-and-push:
     runs-on: ubuntu-latest
@@ -36,7 +35,6 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # ── BACKEND ──────────────────────────────────────────────────────────────
       - name: Build and push Backend
         uses: docker/build-push-action@v5
         with:
@@ -46,7 +44,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # ── FRONTEND ─────────────────────────────────────────────────────────────
       - name: Build and push Frontend
         uses: docker/build-push-action@v5
         with:
@@ -58,7 +55,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # ── AI SERVICE ───────────────────────────────────────────────────────────
       - name: Build and push AI Service
         uses: docker/build-push-action@v5
         with:
@@ -69,8 +65,7 @@ jobs:
           cache-to: type=gha,mode=max
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # JOB 2: Deploy to VPS using Option A (stop → pull → start)
-  # Stops old containers first to free all 2 GB RAM, then starts fresh.
+  # JOB 2: Deploy to VPS
   # ─────────────────────────────────────────────────────────────────────────────
   deploy:
     needs: build-and-push
@@ -78,8 +73,6 @@ jobs:
     permissions:
       contents: read
       packages: read
-    env:
-      FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
 
     steps:
       - name: Checkout repository
@@ -112,158 +105,129 @@ jobs:
           scp -i ~/.ssh/id_ed25519 -r nginx/* \
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/redboost/docker/nginx/ || true
 
-      # ── Stop old containers on VPS (releases mount and frees RAM) ───────────
       - name: Stop old containers on VPS
         run: |
           ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
             set -e
             cd /home/redboost/docker || exit 1
-            
             if docker compose version >/dev/null 2>&1; then
               COMPOSE="docker compose"
-            elif command -v docker-compose >/dev/null 2>&1; then
-              COMPOSE="docker-compose"
             else
-              COMPOSE="docker compose"
+              COMPOSE="docker-compose"
             fi
-            
-            echo "🛑 Stopping running containers to free RAM and release mounts..."
+            echo "Stopping containers..."
             $COMPOSE down || true
             docker rm -f redboost-backend redboost-ai redboost-frontend 2>/dev/null || true
-            
-            echo "🧹 Removing any root-owned firebase-service-account.json directory if created by docker bind-mount..."
-            docker run --rm -v /home/redboost/docker:/data alpine rm -rf /data/firebase-service-account.json /data/google-oauth-credentials.json || true
-            rm -rf /home/redboost/docker/firebase-service-account.json /home/redboost/docker/google-oauth-credentials.json || true
+            # Supprimer les fichiers credential pour éviter les conflits de type dir/file
+            rm -f /home/redboost/docker/firebase-service-account.json \
+                  /home/redboost/docker/google-oauth-credentials.json || true
           EOF
 
-      # Upload or Restore Credentials (runs always to ensure both files exist for the docker-compose volume mounts)
-      - name: Upload or Restore Credentials to VPS
-        env:
-          GOOGLE_DRIVE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS_JSON }}
+      - name: Restore credentials on VPS
         run: |
-          ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
-            "rm -rf /home/redboost/docker/firebase-service-account.json /home/redboost/docker/google-oauth-credentials.json"
-          
-          # Setup Firebase
-          if ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "[ -f /home/redboost/config-prod/firebase-service-account.json ]"; then
-            echo "Copying Firebase credentials from config-prod on VPS..."
+          # Firebase — depuis config-prod sur le VPS (priorité) ou depuis secret GitHub
+          if ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+              "[ -f /home/redboost/config-prod/firebase-service-account.json ]"; then
             ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
-              "cp /home/redboost/config-prod/firebase-service-account.json /home/redboost/docker/firebase-service-account.json"
-          elif [ -n "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
-            echo "Firebase service account credentials secret is present. Uploading..."
-            printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" | \
-              ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
-              "tee /home/redboost/docker/firebase-service-account.json >/dev/null"
+              "cp /home/redboost/config-prod/firebase-service-account.json \
+                  /home/redboost/docker/firebase-service-account.json"
           else
-            echo "Firebase credentials secret is missing. Creating empty JSON file..."
-            ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
-              "echo '{}' > /home/redboost/docker/firebase-service-account.json"
+            printf '%s' '${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}' | \
+              ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+              "cat > /home/redboost/docker/firebase-service-account.json"
           fi
 
-          # Setup Google OAuth (Drive)
-          if ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "[ -f /home/redboost/config-prod/google-oauth-credentials.json ]"; then
-            echo "Copying Google Drive credentials from config-prod on VPS..."
+          # Google OAuth Drive credentials
+          if ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+              "[ -f /home/redboost/config-prod/google-oauth-credentials.json ]"; then
             ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
-              "cp /home/redboost/config-prod/google-oauth-credentials.json /home/redboost/docker/google-oauth-credentials.json"
-          elif [ -n "$GOOGLE_DRIVE_CREDENTIALS_JSON" ]; then
-            echo "Google Drive credentials secret is present. Uploading..."
-            printf '%s' "$GOOGLE_DRIVE_CREDENTIALS_JSON" | \
-              ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
-              "tee /home/redboost/docker/google-oauth-credentials.json >/dev/null"
+              "cp /home/redboost/config-prod/google-oauth-credentials.json \
+                  /home/redboost/docker/google-oauth-credentials.json"
           else
-            echo "Google Drive credentials secret is missing. Creating empty JSON file..."
-            ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
-              "echo '{}' > /home/redboost/docker/google-oauth-credentials.json"
+            printf '%s' '${{ secrets.GOOGLE_DRIVE_CREDENTIALS_JSON }}' | \
+              ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+              "cat > /home/redboost/docker/google-oauth-credentials.json"
           fi
 
           ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
-            "chmod 644 /home/redboost/docker/firebase-service-account.json /home/redboost/docker/google-oauth-credentials.json"
+            "chmod 644 /home/redboost/docker/firebase-service-account.json \
+                       /home/redboost/docker/google-oauth-credentials.json"
 
-      # Write the .env file — done via ssh echo to avoid secrets in scp
+      # ── CORRECTION CLÉ : heredoc sans indentation pour éviter les valeurs vides ──
       - name: Write .env on VPS
         run: |
-          ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} bash << ENVSSH
-            cat > /home/redboost/docker/.env << 'ENVEOF'
-          REGISTRY=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          DB_USER=${{ secrets.DB_USER }}
-          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-          REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
-          JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}
-          GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
-          GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}
-          CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }}
-          CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }}
-          CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET }}
-          MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}
-          MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}
-          GOOGLE_OAUTH_CLIENT_ID=${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
-          GOOGLE_OAUTH_CLIENT_SECRET=${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
-          GOOGLE_OAUTH_REFRESH_TOKEN=${{ secrets.GOOGLE_OAUTH_REFRESH_TOKEN }}
-          GOOGLE_OAUTH_ORGANIZER_EMAIL=${{ secrets.GOOGLE_OAUTH_ORGANIZER_EMAIL }}
-          ENVEOF
-          ENVSSH
+          ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "cat > /home/redboost/docker/.env" << EOF
+            REGISTRY=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+            DB_USER=${{ secrets.DB_USER }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
+            JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}
+            GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+            GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}
+            CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }}
+            CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }}
+            CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET }}
+            MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}
+            MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}
+            GOOGLE_OAUTH_CLIENT_ID=${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
+            GOOGLE_OAUTH_CLIENT_SECRET=${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
+            GOOGLE_OAUTH_REFRESH_TOKEN=${{ secrets.GOOGLE_OAUTH_REFRESH_TOKEN }}
+            GOOGLE_OAUTH_ORGANIZER_EMAIL=${{ secrets.GOOGLE_OAUTH_ORGANIZER_EMAIL }}
+            EOF
 
-      # ── Deploy (Pull & Start new containers) ────────────────────────────────
-      - name: Deploy (pull & start new)
+      - name: Deploy — pull & start
         run: |
-          ssh -i ~/.ssh/id_ed25519 \
-            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
-            "GHCR_TOKEN='${{ secrets.GITHUB_TOKEN }}' GHCR_USER='${{ github.actor }}' FULL_REGISTRY='${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}' bash -s" << 'EOF'
+          ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+            "GHCR_TOKEN='${{ secrets.GITHUB_TOKEN }}' GHCR_USER='${{ github.actor }}' bash -s" << 'EOF'
             set -e
             cd /home/redboost/docker
 
             if docker compose version >/dev/null 2>&1; then
               COMPOSE="docker compose"
-            elif command -v docker-compose >/dev/null 2>&1; then
-              COMPOSE="docker-compose"
             else
-              COMPOSE="docker compose"
+              COMPOSE="docker-compose"
             fi
 
-            echo " Step 1: Remove unused images to free disk..."
+            echo "Step 1: Prune unused images..."
             docker image prune -af || true
 
-            echo " Step 2: Login to GHCR to pull images..."
+            echo "Step 2: Login to GHCR..."
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
 
-            echo " Step 3: Pull new images (no local build needed)..."
+            echo "Step 3: Pull new images..."
             $COMPOSE pull
 
-            echo " Step 4: Start all services..."
-            if ! $COMPOSE up -d --remove-orphans --no-build; then
-              echo " Compose startup failed. Current status:"
-              $COMPOSE ps || true
-              echo " Redis logs:"
-              $COMPOSE logs --tail=100 redis || true
-              echo " Backend logs:"
-              $COMPOSE logs --tail=200 backend || true
-              echo " Frontend logs:"
-              $COMPOSE logs --tail=200 frontend || true
-              exit 1
+            echo "Step 4: Copier StoredCredential si absent..."
+            if [ -f /home/redboost/tokens/StoredCredential ] && \
+               [ ! -f /home/redboost/docker/backend_tokens/StoredCredential ]; then
+              cp /home/redboost/tokens/StoredCredential \
+                 /home/redboost/docker/backend_tokens/StoredCredential
+              echo "StoredCredential copié."
             fi
 
-            echo " Step 5: Wait for backend health..."
+            echo "Step 5: Start all services..."
+            $COMPOSE up -d --remove-orphans --no-build
+
+            echo "Step 6: Wait for backend health (max 5 min)..."
             for i in $(seq 1 30); do
-              BACKEND_HEALTH=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' redboost-backend 2>/dev/null || echo "missing")
-              echo " Backend health: $BACKEND_HEALTH"
-              if [ "$BACKEND_HEALTH" = "healthy" ]; then
-                break
-              fi
-              if [ "$BACKEND_HEALTH" = "unhealthy" ]; then
-                echo " Backend became unhealthy. Logs:"
-                $COMPOSE logs --tail=200 backend || true
+              STATUS=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' redboost-backend 2>/dev/null || echo "missing")
+              echo "  [$i/30] backend: $STATUS"
+              [ "$STATUS" = "healthy" ] && break
+              if [ "$STATUS" = "unhealthy" ]; then
+                echo "Backend unhealthy. Logs:"
+                $COMPOSE logs --tail=100 backend
                 exit 1
               fi
               sleep 10
             done
 
-            BACKEND_HEALTH=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' redboost-backend 2>/dev/null || echo "missing")
-            if [ "$BACKEND_HEALTH" != "healthy" ]; then
-              echo " Backend did not become healthy in time. Logs:"
-              $COMPOSE logs --tail=200 backend || true
+            FINAL=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' redboost-backend 2>/dev/null || echo "missing")
+            if [ "$FINAL" != "healthy" ]; then
+              echo "Backend did not become healthy. Logs:"
+              $COMPOSE logs --tail=100 backend
               exit 1
             fi
 
-            echo " Deployment complete! Container status:"
+            echo "Deployment complete!"
             $COMPOSE ps
           EOF

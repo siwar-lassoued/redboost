@@ -64,8 +64,8 @@ services:
     ports:
     - 8083:8082
     volumes:
-    - backend_uploads:/app/uploads
-    - backend_tokens:/app/tokens
+    - ./backend_uploads:/app/uploads       
+    - ./backend_tokens:/app/tokens          
     - ./firebase-service-account.json:/app/firebase-service-account.json:ro
     - ./google-oauth-credentials.json:/app/google-oauth-credentials.json:ro
     networks:
