@@ -26,7 +26,7 @@ FROM nginx:1.25-alpine
 RUN rm -rf /usr/share/nginx/html/*
 
 # Copy built Angular app
-COPY --from=builder /app/dist/sakai-ng/browser /usr/share/nginx/html
+COPY --from=builder /app/dist/sakai-ng /usr/share/nginx/html
 
 EXPOSE 80 443
 
