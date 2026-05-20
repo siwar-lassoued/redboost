@@ -114,12 +114,20 @@ jobs:
 
       # Write the firebase credentials from GitHub Secret onto the VPS
       # (only runs if the secret is set)
+      - name: Validate Firebase credentials secret
+        run: |
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
+            echo "FIREBASE_SERVICE_ACCOUNT_JSON GitHub secret is missing or empty."
+            exit 1
+          fi
+
       - name: Upload Firebase credentials to VPS
-        if: ${{ env.FIREBASE_SERVICE_ACCOUNT_JSON != '' }}
         run: |
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" | \
             ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
             "cat > /home/redboost/docker/firebase-service-account.json && chmod 600 /home/redboost/docker/firebase-service-account.json"
+          ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+            "test -s /home/redboost/docker/firebase-service-account.json"
 
       # Write the .env file — done via ssh echo to avoid secrets in scp
       - name: Write .env on VPS
@@ -185,6 +193,8 @@ jobs:
               $COMPOSE logs --tail=100 redis || true
               echo " Backend logs:"
               $COMPOSE logs --tail=200 backend || true
+              echo " Frontend logs:"
+              $COMPOSE logs --tail=200 frontend || true
               exit 1
             fi
 
