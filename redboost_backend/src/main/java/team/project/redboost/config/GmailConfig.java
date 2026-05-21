@@ -2,7 +2,7 @@
 // 1. UPDATED GmailConfig - Add Calendar API Support
 // ============================================================================
 package team.project.redboost.config;
-
+import org.springframework.beans.factory.annotation.Autowired;
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
