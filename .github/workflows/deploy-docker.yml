@@ -94,7 +94,9 @@ jobs:
             "mkdir -p /home/redboost/docker/nginx/ssl \
                       /home/redboost/docker/prometheus \
                       /home/redboost/docker/backend_tokens \
-                      /home/redboost/docker/backend_uploads"
+                      /home/redboost/docker/backend_uploads && \
+             chmod -R 777 /home/redboost/docker/backend_uploads \
+                          /home/redboost/docker/backend_tokens"
 
       - name: Copy deployment files to VPS
         run: |
@@ -118,14 +120,12 @@ jobs:
             echo "Stopping containers..."
             $COMPOSE down || true
             docker rm -f redboost-backend redboost-ai redboost-frontend 2>/dev/null || true
-            # Supprimer les fichiers credential pour éviter les conflits de type dir/file
             rm -f /home/redboost/docker/firebase-service-account.json \
                   /home/redboost/docker/google-oauth-credentials.json || true
           EOF
 
       - name: Restore credentials on VPS
         run: |
-          # Firebase — depuis config-prod sur le VPS (priorité) ou depuis secret GitHub
           if ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
               "[ -f /home/redboost/config-prod/firebase-service-account.json ]"; then
             ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
@@ -137,7 +137,6 @@ jobs:
               "cat > /home/redboost/docker/firebase-service-account.json"
           fi
 
-          # Google OAuth Drive credentials
           if ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
               "[ -f /home/redboost/config-prod/google-oauth-credentials.json ]"; then
             ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
@@ -153,7 +152,6 @@ jobs:
             "chmod 644 /home/redboost/docker/firebase-service-account.json \
                        /home/redboost/docker/google-oauth-credentials.json"
 
-      # ── CORRECTION CLÉ : heredoc sans indentation pour éviter les valeurs vides ──
       - name: Protect .env on VPS (never overwrite)
         run: |
           ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
@@ -199,23 +197,33 @@ jobs:
 
             echo "Step 6: Wait for backend health (max 5 min)..."
             for i in $(seq 1 30); do
-              STATUS=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' redboost-backend 2>/dev/null || echo "missing")
-              echo "  [$i/30] backend: $STATUS"
-              [ "$STATUS" = "healthy" ] && break
-              if [ "$STATUS" = "unhealthy" ]; then
-                echo "Backend unhealthy. Logs:"
+              # Check if container is running first
+              RUNNING=$(docker inspect -f '{{.State.Running}}' redboost-backend 2>/dev/null || echo "false")
+              if [ "$RUNNING" != "true" ]; then
+                echo "  [$i/30] backend: not running yet..."
+                sleep 10
+                continue
+              fi
+
+              # Check health via actuator directly
+              HTTP_CODE=$(docker exec redboost-backend sh -c \
+                "wget -qO- http://localhost:8082/actuator/health 2>&1" \
+                | grep -c '"status":"UP"' || true)
+
+              echo "  [$i/30] backend: $([ "$HTTP_CODE" -gt 0 ] && echo 'UP' || echo 'starting...')"
+
+              if [ "$HTTP_CODE" -gt 0 ]; then
+                echo "Backend is healthy!"
+                break
+              fi
+
+              if [ "$i" -eq 30 ]; then
+                echo "Backend did not become healthy in time. Logs:"
                 $COMPOSE logs --tail=100 backend
                 exit 1
               fi
               sleep 10
             done
-
-            FINAL=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' redboost-backend 2>/dev/null || echo "missing")
-            if [ "$FINAL" != "healthy" ]; then
-              echo "Backend did not become healthy. Logs:"
-              $COMPOSE logs --tail=100 backend
-              exit 1
-            fi
 
             echo "Deployment complete!"
             $COMPOSE ps
