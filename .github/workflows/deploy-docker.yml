@@ -95,8 +95,10 @@ jobs:
                       /home/redboost/docker/prometheus \
                       /home/redboost/docker/backend_tokens \
                       /home/redboost/docker/backend_uploads && \
+             sudo chmod -R 777 /home/redboost/docker/backend_uploads \
+                               /home/redboost/docker/backend_tokens 2>/dev/null || \
              chmod -R 777 /home/redboost/docker/backend_uploads \
-                          /home/redboost/docker/backend_tokens"
+                          /home/redboost/docker/backend_tokens 2>/dev/null || true"
 
       - name: Copy deployment files to VPS
         run: |
