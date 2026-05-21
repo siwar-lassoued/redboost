@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
+import com.google.api.client.util.store.MemoryDataStoreFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
@@ -93,25 +93,25 @@ public Calendar calendarService(@Autowired(required = false) Credential credenti
         return organizerEmail;
     }
 
-    private Credential getCredentials(final NetHttpTransport HTTP_TRANSPORT) throws IOException {
+ 
 
-        GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(
-                JSON_FACTORY,
-                new StringReader("{\"installed\":{\"client_id\":\"" + clientId + "\",\"client_secret\":\"" + clientSecret + "\"}}")
-        );
+private Credential getCredentials(final NetHttpTransport HTTP_TRANSPORT) throws IOException {
 
-        // UPDATED: Use both scopes
-        GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
-                HTTP_TRANSPORT, JSON_FACTORY, clientSecrets, SCOPES)
-                .setDataStoreFactory(new FileDataStoreFactory(new File(TOKENS_DIRECTORY_PATH)))
-                .setAccessType("offline")
-                .build();
+    GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(
+            JSON_FACTORY,
+            new StringReader("{\"installed\":{\"client_id\":\"" + clientId + "\",\"client_secret\":\"" + clientSecret + "\"}}")
+    );
 
-        GoogleTokenResponse tokenResponse = new GoogleTokenResponse().setRefreshToken(refreshToken);
-        Credential credential = flow.createAndStoreCredential(tokenResponse, "user");
-//        refreshCredentialIfNeeded(credential);
-        return credential;
-    }
+    GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
+            HTTP_TRANSPORT, JSON_FACTORY, clientSecrets, SCOPES)
+            .setDataStoreFactory(MemoryDataStoreFactory.getDefaultInstance())  // ← CHANGEMENT ICI
+            .setAccessType("offline")
+            .build();
+
+    GoogleTokenResponse tokenResponse = new GoogleTokenResponse().setRefreshToken(refreshToken);
+    Credential credential = flow.createAndStoreCredential(tokenResponse, "user");
+    return credential;
+}
 
     private void refreshCredentialIfNeeded(Credential credential) throws IOException {
         synchronized (credential) {
