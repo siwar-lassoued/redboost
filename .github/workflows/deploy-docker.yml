@@ -156,24 +156,25 @@ jobs:
       # ── CORRECTION CLÉ : heredoc sans indentation pour éviter les valeurs vides ──
       - name: Write .env on VPS
         run: |
-          ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "cat > /home/redboost/docker/.env" << EOF
-            REGISTRY=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-            DB_USER=${{ secrets.DB_USER }}
-            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-            REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
-            JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}
-            GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
-            GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}
-            CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }}
-            CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }}
-            CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET }}
-            MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}
-            MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}
-            GOOGLE_OAUTH_CLIENT_ID=${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
-            GOOGLE_OAUTH_CLIENT_SECRET=${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
-            GOOGLE_OAUTH_REFRESH_TOKEN=${{ secrets.GOOGLE_OAUTH_REFRESH_TOKEN }}
-            GOOGLE_OAUTH_ORGANIZER_EMAIL=${{ secrets.GOOGLE_OAUTH_ORGANIZER_EMAIL }}
-            EOF
+          printf '%s\n' \
+            "REGISTRY=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}" \
+            "DB_USER=${{ secrets.DB_USER }}" \
+            "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" \
+            "REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}" \
+            "JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}" \
+            "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" \
+            "GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}" \
+            "CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }}" \
+            "CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }}" \
+            "CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET }}" \
+            "MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}" \
+            "MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}" \
+            "GOOGLE_OAUTH_CLIENT_ID=${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}" \
+            "GOOGLE_OAUTH_CLIENT_SECRET=${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}" \
+            "GOOGLE_OAUTH_REFRESH_TOKEN=${{ secrets.GOOGLE_OAUTH_REFRESH_TOKEN }}" \
+            "GOOGLE_OAUTH_ORGANIZER_EMAIL=${{ secrets.GOOGLE_OAUTH_ORGANIZER_EMAIL }}" \
+          | ssh -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+            "cat > /home/redboost/docker/.env"
 
       - name: Deploy — pull & start
         run: |
