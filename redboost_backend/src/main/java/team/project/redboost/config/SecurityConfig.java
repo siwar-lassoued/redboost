@@ -19,82 +19,58 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.web.filter.OncePerRequestFilter;
-
-import java.io.IOException;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity
+@EnableMethodSecurity // Enable method-level security
 public class SecurityConfig {
 
-    @Bean
-    public JwtRequestFilter jwtRequestFilter() {
-        return new JwtRequestFilter();
-    }
+    private final JwtRequestFilter jwtAuthFilter;
 
-    public static class JwtRequestFilter extends OncePerRequestFilter {
-
-        @Override
-        protected void doFilterInternal(HttpServletRequest request,
-                                        HttpServletResponse response,
-                                        FilterChain filterChain)
-                throws ServletException, IOException {
-
-            if (request.getRequestURI().startsWith("/actuator")) {
-                filterChain.doFilter(request, response);
-                return;
-            }
-
-            filterChain.doFilter(request, response);
-        }
+    public SecurityConfig(JwtRequestFilter jwtAuthFilter) {
+        this.jwtAuthFilter = jwtAuthFilter;
     }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable())
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/actuator/**").permitAll()
-                .requestMatchers("/api/Auth/**", "/ws/**", "/error").permitAll()
-                .anyRequest().authenticated()
-            )
-            .sessionManagement(session ->
-                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            )
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .addFilterBefore(jwtRequestFilter(), UsernamePasswordAuthenticationFilter.class);
-
+                .csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/actuator/**").permitAll()
+                        .requestMatchers("/api/Auth/**", "/ws/**", "/api/ws/**", "/api/coach/submit", "/api/coach/binome","/api/projets/GetAllPublic","/api/contact","/api/projets/count", "/api/users/coaches/count","/api/users/entrepreneurs/count","/api/files/**","/error","/api/candidatures/**","/api/form-templates/**").permitAll()
+                        .requestMatchers("/uploads/**", "/api/documents/**", "/api/rapports-mission-coach/*/pdf", "/api/rapports-session-coach/*/pdf").permitAll()
+                        .requestMatchers(
+                                "/v3/api-docs/**",          
+                                "/swagger-ui/**",           
+                                "/swagger-ui.html",         
+                                "/swagger-ui/index.html"    
+                        ).permitAll()
+                        .anyRequest().authenticated()
+                )
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable()));
         return http.build();
     }
-
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration config = new CorsConfiguration();
-
-        config.setAllowedOrigins(Arrays.asList(
-            "https://redboost.tn",
-            "http://localhost:4200"
-        ));
-
-        config.setAllowedMethods(Arrays.asList("GET","POST","PUT","DELETE","PATCH","OPTIONS"));
-        config.setAllowedHeaders(Arrays.asList("*"));
-        config.setAllowCredentials(true);
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(Arrays.asList("https://redboost.tn","http://test.redboost.tn","http://www.test.redboost.tn","http://test.redboost.tn:8081","https://www.redboost.tn:8443","https://www.redboost.tn","https://redboost.tn:8443","http://localhost:4200","http://127.0.0.1:5500"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
+        configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config);
-
+        source.registerCorsConfiguration("/**", configuration);
         return source;
     }
 
+
+    //authentication par defaut , springsecurity
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config)
-            throws Exception {
-        return config.getAuthenticationManager();
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
+        return authConfig.getAuthenticationManager();
     }
 
     @Bean
@@ -102,4 +78,9 @@ public class SecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
+
+//    @Bean
+//    public RestTemplate restTemplate() {
+//        return new RestTemplate();
+//    }
 }
