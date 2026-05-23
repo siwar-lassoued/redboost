@@ -5,7 +5,7 @@ import { CoachRequest } from '../../../models/coach-request.model';
 @Component({
     selector: 'app-coach-requests',
     templateUrl: './coach-requests.component.html',
-    styleUrls: ['./coach-requests.component.css'],
+    styleUrls: ['./coach-requests.component.scss'],
 })
 export class CoachRequestsComponent implements OnInit {
     requests: CoachRequest[] = [];
