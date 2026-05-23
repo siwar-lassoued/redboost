@@ -1,9 +1,12 @@
 import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { UserService } from '../../frontoffice/service/UserService';
 import { CoachRequest } from '../../../models/coach-request.model';
 
 @Component({
     selector: 'app-coach-requests',
+    standalone: true,
+    imports: [CommonModule],
     templateUrl: './coach-requests.component.html',
     styleUrls: ['./coach-requests.component.scss'],
 })
