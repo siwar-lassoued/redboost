@@ -142,10 +142,11 @@ services:
     environment:
       - GF_SMTP_ENABLED=true
       - GF_SMTP_HOST=smtp.gmail.com:587
-      - GF_SMTP_USER=${MAIL_USERNAME}
+      - GF_SMTP_USER=${GRAFANA_MAIL_USERNAME}
+      - GF_SMTP_PASSWORD=${GRAFANA_MAIL_PASSWORD}
       - GF_SMTP_SKIP_VERIFY=true
-      - GF_SMTP_FROM_ADDRESS=${MAIL_USERNAME}
-      - GF_SMTP_FROM_NAME=Grafana
+      - GF_SMTP_FROM_ADDRESS=${GRAFANA_MAIL_USERNAME}
+      - GF_SMTP_FROM_NAME=Grafana Redboost
     ports:
       - 3000:3000
     volumes:
