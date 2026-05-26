@@ -103,4 +103,10 @@ public class MatchingController {
     public ResponseEntity<Map<String, String>> handleRuntimeException(RuntimeException ex) {
         return ResponseEntity.badRequest().body(Collections.singletonMap("message", ex.getMessage()));
     }
+
+    @DeleteMapping("/{matchingId}")
+    public ResponseEntity<Void> deleteMatching(@PathVariable Long matchingId) {
+    matchingService.deleteMatching(matchingId);
+    return ResponseEntity.noContent().build();
+}
 }

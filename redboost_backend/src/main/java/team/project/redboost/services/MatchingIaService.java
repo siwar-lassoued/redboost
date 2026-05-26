@@ -641,42 +641,48 @@ public class MatchingIaService {
                     .filter(c -> c.getFormTemplateId() != null && templateIds.contains(c.getFormTemplateId()))
                     .collect(Collectors.toList());
 
-            // 3. Identify which ones are not in history
-            Set<Long> matchedEntrepreneurCandidatureIds = history.stream()
+            // 3. Collect emails of already-matched entrepreneurs for reliable deduplication
+            //    (using emails avoids the User ID vs Candidature ID mismatch)
+            Set<String> matchedEmails = history.stream()
                     .filter(m -> m.get("entrepreneur") != null)
                     .map(m -> {
                         Object ent = m.get("entrepreneur");
-                        if (ent instanceof Map) return (Long) ((Map) ent).get("id");
+                        if (ent instanceof Map) return (String) ((Map) ent).get("email");
                         return null;
                     })
                     .filter(Objects::nonNull)
+                    .map(String::toLowerCase)
                     .collect(Collectors.toSet());
 
             for (CandidatureRedstarter c : accepted) {
-                if (!matchedEntrepreneurCandidatureIds.contains(c.getId())) {
-                    Map<String, Object> virtual = new LinkedHashMap<>();
-                    virtual.put("id", -c.getId()); // Use negative ID for virtual entries
-                    virtual.put("entrepreneurId", c.getId());
-                    virtual.put("programmeId", programmeId);
-                    virtual.put("programmeName", progNom);
-                    virtual.put("statut", "NON_MATCHÉ");
-                    
-                    Map<String, Object> ent = new LinkedHashMap<>();
-                    
-                    // Resolve real User ID if possible
-                    User user = userRepo.findByEmail(c.getEmail());
-                    ent.put("id", user != null ? user.getId() : c.getId());
-                    ent.put("isUser", user != null);
-                    ent.put("nom", c.getNomPrenom());
-                    ent.put("email", c.getEmail());
-                    ent.put("entreprise", c.getNomEntreprise());
-                    
-                    virtual.put("entrepreneur", ent);
-                    virtual.put("entrepreneurName", ent.get("nom"));
-                    
-                    history.add(virtual);
-                    matchedEntrepreneurCandidatureIds.add(c.getId());
-                }
+                // Skip if no email or already present in history
+                if (c.getEmail() == null || matchedEmails.contains(c.getEmail().toLowerCase())) continue;
+
+                // Resolve the real User account
+                User user = userRepo.findByEmail(c.getEmail());
+                // Only include if user exists and actually belongs to this programme
+                if (user == null || user.getProgrammes().stream().noneMatch(pg -> pg.getId().equals(programmeId))) continue;
+
+                matchedEmails.add(c.getEmail().toLowerCase());
+
+                Map<String, Object> virtual = new LinkedHashMap<>();
+                virtual.put("id", -user.getId());
+                virtual.put("entrepreneurId", user.getId());
+                virtual.put("programmeId", programmeId);
+                virtual.put("programmeName", progNom);
+                virtual.put("statut", "NON_MATCHÉ");
+                
+                Map<String, Object> ent = new LinkedHashMap<>();
+                ent.put("id", user.getId());
+                ent.put("isUser", true);
+                ent.put("nom", c.getNomPrenom());
+                ent.put("email", c.getEmail());
+                ent.put("entreprise", c.getNomEntreprise());
+                
+                virtual.put("entrepreneur", ent);
+                virtual.put("entrepreneurName", ent.get("nom"));
+                
+                history.add(virtual);
             }
         });
     }
@@ -1205,4 +1211,12 @@ public class MatchingIaService {
             result.add(view);
         });
     }
+
+    @Transactional
+    public void deleteMatching(Long matchingId) {
+    Matching matching = matchingRepo.findById(matchingId)
+            .orElseThrow(() -> new RuntimeException("Matching introuvable : " + matchingId));
+    matchingRepo.delete(matching);
+    log.info("Matching {} supprimé", matchingId);
+}
 }

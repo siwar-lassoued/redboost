@@ -92,4 +92,7 @@ export class MatchingService {
         if (note) params.note = note;
         return this.http.put<any>(`${this.baseUrl}/manual/${matchingId}`, null, { params });
     }
+    deleteMatching(matchingId: number): Observable<void> {
+        return this.http.delete<void>(`${environment.apiUrl}/matching/${matchingId}`);
+    }
 }

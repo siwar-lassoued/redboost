@@ -504,9 +504,21 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
                   <p class="hc-score" [style.color]="scoreColor(m.scoreIa)">{{ m.scoreIa ? (m.scoreIa + '%') : 'Manuel' }}</p>
                   <p class="hc-score-label">Score</p>
                   <span class="status-badge" [class.active]="m.statut === 'VALIDE'" [class.proposed]="m.statut === 'PROPOSE'" [class.expired]="m.statut === 'TERMINE' || m.statut === 'LIBERE'">{{ m.statut }}</span>
-                  <button *ngIf="m.statut === 'VALIDE' || m.statut === 'PROPOSE'" class="btn-sm" style="margin-top: 8px; display: block; margin-left: auto; margin-right: auto;" (click)="editMatching(m)" title="Modifier ce matching">
-                    <i class="pi pi-pencil"></i> Modifier
-                  </button>
+                  <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 8px;">
+                      <button *ngIf="m.statut === 'VALIDE' || m.statut === 'PROPOSE'" 
+                              class="btn-sm" 
+                              (click)="editMatching(m)" 
+                              title="Modifier ce matching">
+                          <i class="pi pi-pencil"></i> Modifier
+                      </button>
+                      <button class="btn-sm btn-sm-danger" 
+                              (click)="deleteMatching(m)" 
+                              [disabled]="deletingMatchingId === (m.matchingId || m.id)"
+                              title="Supprimer ce matching">
+                          <i class="pi pi-trash"></i> 
+                          {{ deletingMatchingId === (m.matchingId || m.id) ? '...' : 'Supprimer' }}
+                      </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -843,6 +855,7 @@ export class AdminMatchingComponent implements OnInit {
     manualNote = '';
     selectedEntrepreneur: any = null;
     selectedCoach: any = null;
+    deletingMatchingId: number | null = null;
 
     // Thematique matchings
     thematiqueMatchings: any[] = [];
@@ -1245,6 +1258,21 @@ export class AdminMatchingComponent implements OnInit {
         }
     }
 
+    deleteMatching(m: any): void {
+        const matchingId = m.matchingId || m.id;
+        if (!confirm(`Supprimer le matching entre ${m.entrepreneur?.nom || 'cet entrepreneur'} et ${m.coach?.prenom} ${m.coach?.nom} ?`)) return;
+        this.deletingMatchingId = matchingId;
+        this.matchingSvc.deleteMatching(matchingId).subscribe({
+            next: () => {
+                this.deletingMatchingId = null;
+                this.loadThematiqueMatchings();
+            },
+            error: (e) => {
+                this.deletingMatchingId = null;
+                alert(e.error?.message || 'Erreur lors de la suppression.');
+            }
+        });
+  }
     // ─── Thématique CRUD ───
     saveThematique(): void {
         const pId = this.newThematique.programmeId || this.selectedProgId;
