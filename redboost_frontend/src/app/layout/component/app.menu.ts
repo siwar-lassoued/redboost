@@ -171,11 +171,6 @@ export class AppMenu implements OnInit {
                         routerLink: ['/programme'],
                     },
                     {
-                        label: 'Gestion des entrepreneurs',
-                        icon: 'pi pi-fw pi-folder',
-                        routerLink: ['/gestion-entrepreneur'],
-                    },
-                    {
                         label: 'Mes tâches et activités',
                         icon: 'pi pi-fw pi-list',
                         routerLink: ['/mes-taches'],
@@ -209,20 +204,14 @@ export class AppMenu implements OnInit {
                 ],
             },
             {
-                label: 'MATCHING',
-                icon: 'pi pi-fw pi-bolt',
+                label: 'SUIVI ACCOMPAGNEMENT',
+                icon: 'pi pi-fw pi-star',
                 items: [
                     {
                         label: 'Matching',
                         icon: 'pi pi-fw pi-link',
                         routerLink: ['/admin_matching'],
-                    }
-                ]
-            },
-            {
-                label: 'SUIVI ACCOMPAGNEMENT',
-                icon: 'pi pi-fw pi-star',
-                items: [
+                    },
                     {
                         label: 'Planning de coaching',
                         icon: 'pi pi-fw pi-calendar-clock',
@@ -232,11 +221,6 @@ export class AppMenu implements OnInit {
                         label: 'Évaluations Coach',
                         icon: 'pi pi-fw pi-star-fill',
                         routerLink: ['/admin-evaluations'],
-                    },
-                    {
-                        label: 'Formulaires KPI',
-                        icon: 'pi pi-fw pi-list',
-                        routerLink: ['/admin-kpi-forms'],
                     },
                     {
                         label: 'Rapports Coach',
@@ -252,6 +236,22 @@ export class AppMenu implements OnInit {
                         label: 'Rapports IA',
                         icon: 'pi pi-fw pi-sparkles',
                         routerLink: ['/admin_reporting_ia'],
+                    },
+                ],
+            },
+            {
+                label: 'SUIVI ENTREPRENEURS',
+                icon: 'pi pi-fw pi-users',
+                items: [
+                    {
+                        label: 'Formulaires KPI',
+                        icon: 'pi pi-fw pi-list',
+                        routerLink: ['/admin-kpi-forms'],
+                    },
+                    {
+                        label: 'Gestion des entrepreneurs',
+                        icon: 'pi pi-fw pi-user',
+                        routerLink: ['/gestion-entrepreneur'],
                     },
                 ],
             },

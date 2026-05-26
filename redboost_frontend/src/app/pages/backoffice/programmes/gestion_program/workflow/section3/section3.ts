@@ -213,7 +213,7 @@ export class RapportSection3Component implements OnInit, OnChanges {
             text: textToSend,
             type,
             context,
-            model: 'mistral',
+            model: 'gemini',
         }).subscribe({
             next: (response) => {
                 this.aiResponse = response;

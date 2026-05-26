@@ -155,8 +155,8 @@ Ajouter une alerte si :
 - nb_entrepreneurs_actifs >= 5 → "COACH_SURCHARGE"
 - secteurs incompatibles → "MISMATCH_SECTORIEL"
 
-━━━ SORTIE — TOP 3 PAR ENTREPRENEUR ━━━
-Pour CHAQUE entrepreneur, évaluer TOUS les coachs et retourner les 3 meilleurs.
+━━━ SORTIE — ÉVALUATION GLOBALE ━━━
+Pour CHAQUE entrepreneur, évaluer TOUS les coachs disponibles et retourner une proposition pour CHACUN.
 Trier par score_final décroissant. Rank 1 = meilleur recommandé.
 
 RÈGLE ABSOLUE : Retourne UNIQUEMENT du JSON valide, zéro texte avant ou après."""
@@ -213,7 +213,61 @@ Schéma JSON attendu :
             ],
             response_format={"type": "json_object"}
         )
-        return self._parse_json_response(response.choices[0].message.content)
+        parsed_json = self._parse_json_response(response.choices[0].message.content)
+
+        # --- Algorithme de Distribution Équitable (Greedy Capacitated Assignment) ---
+        try:
+            import math
+            num_entrepreneurs = len(entrepreneurs)
+            num_coaches = len(coaches)
+            
+            if num_entrepreneurs > 0 and num_coaches > 0:
+                max_capacity = math.ceil(num_entrepreneurs / num_coaches)
+                
+                all_propositions = []
+                # Aplatir toutes les propositions avec leurs indices pour les retrouver
+                for i, m in enumerate(parsed_json.get("matchings", [])):
+                    for j, p in enumerate(m.get("propositions", [])):
+                        all_propositions.append({
+                            "ent_idx": i,
+                            "prop_idx": j,
+                            "coach_id": p.get("coach_id"),
+                            "score": p.get("score_final", 0)
+                        })
+                
+                # Trier toutes les propositions par score décroissant
+                all_propositions.sort(key=lambda x: x["score"], reverse=True)
+                
+                coach_assignments = {c["id"]: 0 for c in coaches}
+                assigned_ents = set()
+                
+                # Réinitialiser tous les rangs à 99 (non assigné prioritairement)
+                for m in parsed_json.get("matchings", []):
+                    for p in m.get("propositions", []):
+                        p["rank"] = 99
+                
+                # Assigner le Rank 1 équitablement
+                for prop in all_propositions:
+                    ent_idx = prop["ent_idx"]
+                    coach_id = prop["coach_id"]
+                    
+                    if ent_idx not in assigned_ents and coach_assignments.get(coach_id, 0) < max_capacity:
+                        parsed_json["matchings"][ent_idx]["propositions"][prop["prop_idx"]]["rank"] = 1
+                        assigned_ents.add(ent_idx)
+                        coach_assignments[coach_id] = coach_assignments.get(coach_id, 0) + 1
+                        
+                # Optionnel: Réordonner les rangs 2, 3... pour chaque entrepreneur
+                for m in parsed_json.get("matchings", []):
+                    # Trier les propositions de cet entrepreneur par rang (1 d'abord) puis par score
+                    m["propositions"].sort(key=lambda x: (x.get("rank", 99), -x.get("score_final", 0)))
+                    # Ré-indexer les rangs
+                    for rank_idx, p in enumerate(m["propositions"]):
+                        p["rank"] = rank_idx + 1
+
+        except Exception as e:
+            logger.error(f"Erreur lors de la distribution équitable: {e}")
+
+        return parsed_json
 
     async def generate_report(self, payload: dict) -> Dict[str, Any]:
         programme_name = payload.get("programme_name", "N/A")

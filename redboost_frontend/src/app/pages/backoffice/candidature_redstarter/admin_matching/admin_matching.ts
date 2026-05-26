@@ -302,80 +302,59 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
                 </button>
               </div>
 
-              <div *ngFor="let group of groupedResults; let gi = index" class="match-row">
-                <div class="match-score-col">
-                  <div class="score-circle"
-                    [class.score-high]="getTopMatch(group).scoreIa >= 76"
-                    [class.score-mid]="getTopMatch(group).scoreIa >= 50 && getTopMatch(group).scoreIa < 76"
-                    [class.score-low]="getTopMatch(group).scoreIa < 50">
-                    {{ getTopMatch(group).scoreIa | number:'1.0-0' }}%
+              <div class="scrollable-list">
+                <div *ngFor="let group of groupedResults; let gi = index" class="match-row">
+                  <div class="match-score-col">
+                    <div class="score-circle"
+                      [class.score-high]="getTopMatch(group).scoreIa >= 76"
+                      [class.score-mid]="getTopMatch(group).scoreIa >= 50 && getTopMatch(group).scoreIa < 76"
+                      [class.score-low]="getTopMatch(group).scoreIa < 50">
+                      {{ getTopMatch(group).scoreIa | number:'1.0-0' }}%
+                    </div>
+                    <div class="score-label-text"
+                      [class.color-high]="getTopMatch(group).scoreIa >= 76"
+                      [class.color-mid]="getTopMatch(group).scoreIa >= 50 && getTopMatch(group).scoreIa < 76"
+                      [class.color-low]="getTopMatch(group).scoreIa < 50">
+                      {{ scoreLabel(getTopMatch(group).scoreIa) }}
+                    </div>
                   </div>
-                  <div class="score-label-text"
-                    [class.color-high]="getTopMatch(group).scoreIa >= 76"
-                    [class.color-mid]="getTopMatch(group).scoreIa >= 50 && getTopMatch(group).scoreIa < 76"
-                    [class.color-low]="getTopMatch(group).scoreIa < 50">
-                    {{ scoreLabel(getTopMatch(group).scoreIa) }}
-                  </div>
-                </div>
-                <div class="match-main-col">
-                  <div class="match-card">
-                    <div class="match-card-header">
-                      <div class="profile-block">
-                        <div class="profile-label">Entrepreneur</div>
-                        <div class="profile-name">{{ group.entrepreneur?.nom || 'Entrepreneur #' + group.entrepreneurId }}</div>
-                        <div class="profile-meta">
-                          <span *ngIf="group.entrepreneur?.entreprise">{{ group.entrepreneur.entreprise }}</span>
-                          <span class="meta-sep" *ngIf="group.entrepreneur?.entreprise && group.entrepreneur?.secteur"> · </span>
-                          <span *ngIf="group.entrepreneur?.secteur">{{ group.entrepreneur.secteur }}</span>
+                  <div class="match-main-col">
+                    <div class="match-card">
+                      <div class="match-card-header">
+                        <div class="profile-block">
+                          <div class="profile-label">Entrepreneur</div>
+                          <div class="profile-name">{{ group.entrepreneur?.nom || 'Entrepreneur #' + group.entrepreneurId }}</div>
+                          <div class="profile-meta">
+                            <span *ngIf="group.entrepreneur?.entreprise">{{ group.entrepreneur.entreprise }}</span>
+                            <span class="meta-sep" *ngIf="group.entrepreneur?.entreprise && group.entrepreneur?.secteur"> · </span>
+                            <span *ngIf="group.entrepreneur?.secteur">{{ group.entrepreneur.secteur }}</span>
+                          </div>
+                          <div class="profile-oneliner" *ngIf="group.entrepreneur?.description" title="{{ group.entrepreneur.description }}">
+                            {{ group.entrepreneur.description }}
+                          </div>
+                        </div>
+                        <div class="match-divider"><i class="pi pi-arrow-right"></i><div class="match-divider-label">Recommandé IA</div></div>
+                        <div class="profile-block">
+                          <div class="profile-label">Coach</div>
+                          <div class="profile-name">{{ getTopMatch(group).coach?.prenom }} {{ getTopMatch(group).coach?.nom }}</div>
+                          <div class="profile-meta">
+                            <span *ngIf="getTopMatch(group).coach?.expertise">{{ getTopMatch(group).coach.expertise }}</span>
+                          </div>
                         </div>
                       </div>
-                      <div class="match-divider"><i class="pi pi-arrow-right"></i><div class="match-divider-label">Recommandé IA</div></div>
-                      <div class="profile-block">
-                        <div class="profile-label">Coach</div>
-                        <div class="profile-name">{{ getTopMatch(group).coach?.prenom }} {{ getTopMatch(group).coach?.nom }}</div>
-                        <div class="profile-meta">
-                          <span *ngIf="getTopMatch(group).coach?.expertise">{{ getTopMatch(group).coach.expertise }}</span>
-                        </div>
+                      <div class="match-justification" *ngIf="getTopMatch(group).justification">
+                        <span class="justification-label"><i class="pi pi-bolt" style="color:#ec407a;margin-right:4px;"></i>Analyse Groq :</span> {{ getTopMatch(group).justification }}
                       </div>
-                    </div>
-                    <div class="match-justification" *ngIf="getTopMatch(group).justification">
-                      <span class="justification-label"><i class="pi pi-bolt" style="color:#ec407a;margin-right:4px;"></i>Analyse Groq :</span> {{ getTopMatch(group).justification }}
-                    </div>
-                    <div class="match-actions">
-                      <button class="btn-accept" (click)="validateSingle(getTopMatch(group).matchingId)" [disabled]="singleLoading[getTopMatch(group).matchingId]">
-                        <i class="pi pi-check"></i> {{ singleLoading[getTopMatch(group).matchingId] ? 'Validation...' : 'Accepter' }}
-                      </button>
-                      <button class="btn-details" (click)="toggleExpand(gi)">
-                        <i [class]="expandedCards[gi] ? 'pi pi-chevron-up' : 'pi pi-eye'"></i>
-                        {{ expandedCards[gi] ? 'Masquer' : 'Détails' }}
-                      </button>
-                      <button class="btn-change" *ngIf="group.propositions.length > 1" (click)="toggleAlternatives(group.entrepreneurId)">
-                        <i class="pi pi-list"></i> {{ showAlternatives[group.entrepreneurId] ? 'Masquer' : 'Changer de coach' }}
-                      </button>
-                    </div>
+                      <div class="match-actions">
+                        <button class="btn-accept" (click)="validateSingle(getTopMatch(group).matchingId)" [disabled]="singleLoading[getTopMatch(group).matchingId]">
+                          <i class="pi pi-check"></i> {{ singleLoading[getTopMatch(group).matchingId] ? 'Validation...' : 'Accepter' }}
+                        </button>
+                        <button class="btn-change" *ngIf="group.propositions.length > 1" (click)="toggleAlternatives(group.entrepreneurId)">
+                          <i class="pi pi-list"></i> {{ showAlternatives[group.entrepreneurId] ? 'Masquer Alternatives' : 'Changer de coach' }}
+                        </button>
+                      </div>
 
-                    <!-- Expanded details -->
-                    <div *ngIf="expandedCards[gi]" class="details-panel">
-                      <div class="details-section">
-                        <h4 class="details-title"><i class="pi pi-user"></i> Profil Entrepreneur</h4>
-                        <div class="details-grid">
-                          <div class="detail-item" *ngIf="group.entrepreneur?.email"><span class="detail-key">Email</span><span class="detail-val">{{ group.entrepreneur.email }}</span></div>
-                          <div class="detail-item" *ngIf="group.entrepreneur?.telephone"><span class="detail-key">Téléphone</span><span class="detail-val">{{ group.entrepreneur.telephone }}</span></div>
-                          <div class="detail-item" *ngIf="group.entrepreneur?.region"><span class="detail-key">Région</span><span class="detail-val">{{ group.entrepreneur.region }}</span></div>
-                          <div class="detail-item full-width" *ngIf="group.entrepreneur?.description"><span class="detail-key">Description</span><span class="detail-val">{{ group.entrepreneur.description }}</span></div>
-                        </div>
-                      </div>
-                      <div class="details-section" *ngIf="getTopMatch(group).parsedScoresDetail">
-                        <h4 class="details-title"><i class="pi pi-chart-bar"></i> Détail du score IA</h4>
-                        <div *ngFor="let entry of objectEntries(getTopMatch(group).parsedScoresDetail)" class="score-bar-row">
-                          <div class="score-bar-label">{{ formatScoreLabel(entry[0]) }}</div>
-                          <div class="score-bar-bg"><div class="score-bar-fill" [style.width.%]="entry[1]" [class.bar-high]="entry[1] >= 76" [class.bar-mid]="entry[1] >= 50 && entry[1] < 76" [class.bar-low]="entry[1] < 50"></div></div>
-                          <div class="score-bar-val">{{ entry[1] }}</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Alternatives -->
+                      <!-- Alternatives -->
                     <div *ngIf="showAlternatives[group.entrepreneurId]" class="alternatives-panel">
                       <div class="alt-header">Alternatives</div>
                       <div *ngFor="let alt of getAlternatives(group)" class="alt-row">
@@ -495,23 +474,25 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
 
               <div *ngIf="thematiqueMatchingsLoading" class="loading-box">Chargement...</div>
 
-              <div *ngIf="!thematiqueMatchingsLoading && thematiqueMatchings.length === 0" class="empty-state-inline">
-                <p>Aucun matching pour cette thématique.</p>
+              <div *ngIf="!thematiqueMatchingsLoading && filteredThematiqueMatchings.length === 0" class="empty-state-inline">
+                <p>Aucun matching <strong>VALIDE</strong> pour cette thématique.</p>
               </div>
 
-              <div *ngFor="let m of filteredThematiqueMatchings" class="history-card" [class.history-valide]="m.statut === 'VALIDE'" [class.history-propose]="m.statut === 'PROPOSE'" [class.history-termine]="m.statut === 'TERMINE'" [class.history-libere]="m.statut === 'LIBERE'">
-                <div class="hc-left">
-                  <div class="hc-pair"><div><p class="hc-role">Entrepreneur</p><p class="hc-name">{{ m.entrepreneur?.nom || 'N/A' }}</p></div></div>
-                  <div class="hc-arrow"><i class="pi pi-arrow-right"></i></div>
-                  <div class="hc-pair"><div><p class="hc-role">Coach</p><p class="hc-name">{{ m.coach?.prenom }} {{ m.coach?.nom }}</p></div></div>
-                </div>
-                <div class="hc-right">
-                  <p class="hc-score" [style.color]="scoreColor(m.scoreIa)">{{ m.scoreIa ? (m.scoreIa + '%') : 'Manuel' }}</p>
-                  <p class="hc-score-label">Score</p>
-                  <span class="status-badge" [class.active]="m.statut === 'VALIDE'" [class.proposed]="m.statut === 'PROPOSE'" [class.expired]="m.statut === 'TERMINE' || m.statut === 'LIBERE'">{{ m.statut }}</span>
-                  <button *ngIf="m.statut === 'VALIDE' || m.statut === 'PROPOSE'" class="btn-sm" style="margin-top: 8px; display: block; margin-left: auto; margin-right: auto;" (click)="editMatching(m)" title="Modifier ce matching">
-                    <i class="pi pi-pencil"></i> Modifier
-                  </button>
+              <div class="scrollable-list">
+                <div *ngFor="let m of filteredThematiqueMatchings" class="history-card" [class.history-valide]="m.statut === 'VALIDE'" [class.history-propose]="m.statut === 'PROPOSE'" [class.history-termine]="m.statut === 'TERMINE'" [class.history-libere]="m.statut === 'LIBERE'">
+                  <div class="hc-left">
+                    <div class="hc-pair"><div><p class="hc-role">Entrepreneur</p><p class="hc-name">{{ m.entrepreneur?.nom || 'N/A' }}</p></div></div>
+                    <div class="hc-arrow"><i class="pi pi-arrow-right"></i></div>
+                    <div class="hc-pair"><div><p class="hc-role">Coach</p><p class="hc-name">{{ m.coach?.prenom }} {{ m.coach?.nom }}</p></div></div>
+                  </div>
+                  <div class="hc-right">
+                    <p class="hc-score" [style.color]="scoreColor(m.scoreIa)">{{ m.scoreIa ? (m.scoreIa + '%') : 'Manuel' }}</p>
+                    <p class="hc-score-label">Score</p>
+                    <span class="status-badge" [class.active]="m.statut === 'VALIDE'" [class.proposed]="m.statut === 'PROPOSE'" [class.expired]="m.statut === 'TERMINE' || m.statut === 'LIBERE'">{{ m.statut }}</span>
+                    <button *ngIf="m.statut === 'VALIDE' || m.statut === 'PROPOSE'" class="btn-sm" style="margin-top: 8px; display: block; margin-left: auto; margin-right: auto;" (click)="editMatching(m)" title="Modifier ce matching">
+                      <i class="pi pi-pencil"></i> Modifier
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -593,8 +574,11 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
       .thematique-add-form { margin-top: 20px; padding-top: 20px; border-top: 1px solid #F3F4F6; }
       .thematique-add-form h4 { margin: 0 0 16px; font-size: 15px; font-weight: 700; color: #2c3e50; }
 
-      /* Thematique section */
       .thematique-section { }
+      .scrollable-list { max-height: 400px; overflow-y: auto; padding-right: 8px; }
+      .scrollable-list::-webkit-scrollbar { width: 6px; }
+      .scrollable-list::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
+      
       .th-card-header { background: #fff; border-radius: 20px; padding: 24px; box-shadow: 0 2px 16px rgba(0,0,0,0.07); margin-bottom: 16px; }
       .th-card-title-row { display: flex; align-items: center; gap: 12px; }
       .th-card-icon { font-size: 24px; }
@@ -855,9 +839,10 @@ export class AdminMatchingComponent implements OnInit {
     searchMatching: string = '';
 
     get filteredThematiqueMatchings(): any[] {
-        if (!this.searchMatching) return this.thematiqueMatchings;
+        let list = this.thematiqueMatchings.filter(m => m.statut === 'VALIDE');
+        if (!this.searchMatching) return list;
         const lowerSearch = this.searchMatching.toLowerCase();
-        return this.thematiqueMatchings.filter(m => {
+        return list.filter(m => {
             const entName = (m.entrepreneur?.nom || '').toLowerCase();
             const coachName = (m.coach?.prenom + ' ' + m.coach?.nom).toLowerCase();
             return entName.includes(lowerSearch) || coachName.includes(lowerSearch);
