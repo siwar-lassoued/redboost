@@ -36,7 +36,7 @@ def get_pdf_service():
 async def compare_programs(
     recent_program: UploadFile = File(...),
     reference_programs: List[UploadFile] = File(...),
-    model: str = Form("mistral")
+    model: str = Form("groq")
 ):
     try:
         pdf_service = get_pdf_service()

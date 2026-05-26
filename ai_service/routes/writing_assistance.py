@@ -26,8 +26,8 @@ def get_gemini_service():
 @router.post("/check", response_model=WritingResponse)
 async def check_writing(request: WritingRequest):
     try:
-        # Choose the service based on the model parameter
-        service = get_groq_service() if request.model == "groq" else get_gemini_service()
+        # Use Groq for everything
+        service = get_groq_service()
         result = await service.check_writing(request.text, request.context)
         return WritingResponse(
             original_text=request.text,
@@ -41,8 +41,8 @@ async def check_writing(request: WritingRequest):
 @router.post("/improve", response_model=WritingResponse)
 async def improve_writing(request: WritingRequest):
     try:
-        # Choose the service based on the model parameter
-        service = get_groq_service() if request.model == "groq" else get_gemini_service()
+        # Use Groq for everything
+        service = get_groq_service()
         result = await service.improve_writing(request.text, request.context)
         return WritingResponse(
             original_text=request.text,

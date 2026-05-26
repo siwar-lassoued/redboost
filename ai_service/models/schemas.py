@@ -5,7 +5,7 @@ class WritingRequest(BaseModel):
     text: str
     type: str  # "check", "improve", "rephrase"
     context: Optional[str] = None
-    model: Optional[str] = "gemini"  # "gemini" (default) or "groq"
+    model: Optional[str] = "groq"  # "groq" (default) or "gemini"
 
 class WritingResponse(BaseModel):
     original_text: str
