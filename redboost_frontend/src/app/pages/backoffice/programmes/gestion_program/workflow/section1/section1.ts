@@ -355,7 +355,7 @@ export class RapportSection1Component implements OnInit, OnChanges {
             text: text.trim(),
             type,
             context: this.programmeName ?? '',
-            model: 'mistral',
+            model: 'gemini',
         }).subscribe({
             next: (response) => {
                 this.aiResponse = response;

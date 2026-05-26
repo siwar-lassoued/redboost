@@ -1,15 +1,15 @@
-import google.generativeai as genai
 import os
 from typing import List, Dict, Any
 import json
+from groq import AsyncGroq
 
-class GeminiService:
+class GroqService:
     def __init__(self):
-        api_key = os.getenv("GEMINI_API_KEY")
+        api_key = os.getenv("GROQ_API_KEY")
         if not api_key:
-            raise ValueError("GEMINI_API_KEY environment variable not set")
-        genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-2.0-flash')
+            raise ValueError("GROQ_API_KEY environment variable not set")
+        self.client = AsyncGroq(api_key=api_key)
+        self.model = 'llama-3.3-70b-versatile'
 
     async def check_writing(self, text: str, context: str = None) -> Dict[str, Any]:
         prompt = f"""
@@ -24,11 +24,15 @@ class GeminiService:
         {{
             "improved_text": "The corrected version of the text",
             "feedback": ["List of specific corrections and explanations"],
-            "score": 85 (an integer score from 0-100 based on quality)
+            "score": 85
         }}
         """
-        response = self.model.generate_content(prompt)
-        return self._parse_json_response(response.text)
+        response = await self.client.chat.completions.create(
+            model=self.model,
+            messages=[{"role": "user", "content": prompt}],
+            response_format={"type": "json_object"}
+        )
+        return self._parse_json_response(response.choices[0].message.content)
 
     async def improve_writing(self, text: str, context: str = None) -> Dict[str, Any]:
         prompt = f"""
@@ -43,11 +47,15 @@ class GeminiService:
         {{
             "improved_text": "The improved version of the text",
             "feedback": ["List of improvements made (e.g., better vocabulary, sentence structure)"],
-            "score": 90 (an integer score from 0-100 based on quality)
+            "score": 90
         }}
         """
-        response = self.model.generate_content(prompt)
-        return self._parse_json_response(response.text)
+        response = await self.client.chat.completions.create(
+            model=self.model,
+            messages=[{"role": "user", "content": prompt}],
+            response_format={"type": "json_object"}
+        )
+        return self._parse_json_response(response.choices[0].message.content)
 
     async def analyze_programs(self, recent_program_text: str, reference_programs_texts: List[str]) -> Dict[str, Any]:
         prompt = f"""
@@ -72,16 +80,14 @@ class GeminiService:
             "custom_feedback": "Paragraphe de synthèse critique en français"
         }}
         """
-        response = self.model.generate_content(prompt)
-        return self._parse_json_response(response.text)
+        response = await self.client.chat.completions.create(
+            model=self.model,
+            messages=[{"role": "user", "content": prompt}],
+            response_format={"type": "json_object"}
+        )
+        return self._parse_json_response(response.choices[0].message.content)
 
     async def run_enriched_matching(self, payload: dict) -> Dict[str, Any]:
-        """
-        Matching enrichi — reçoit les données pré-collectées depuis Spring Boot :
-        texte des CV extrait via l'endpoint OCR (/api/ocr/extract), réponses
-        au questionnaire de candidature, et profils coaches.
-        Retourne le TOP 3 coaches par entrepreneur.
-        """
         coaches = payload.get("coaches", [])
         entrepreneurs = payload.get("entrepreneurs", [])
         programme = payload.get("programme", {})
@@ -149,8 +155,8 @@ Ajouter une alerte si :
 - nb_entrepreneurs_actifs >= 5 → "COACH_SURCHARGE"
 - secteurs incompatibles → "MISMATCH_SECTORIEL"
 
-━━━ SORTIE — TOP 3 PAR ENTREPRENEUR ━━━
-Pour CHAQUE entrepreneur, évaluer TOUS les coachs et retourner les 3 meilleurs.
+━━━ SORTIE — ÉVALUATION GLOBALE ━━━
+Pour CHAQUE entrepreneur, évaluer TOUS les coachs disponibles et retourner une proposition pour CHACUN.
 Trier par score_final décroissant. Rank 1 = meilleur recommandé.
 
 RÈGLE ABSOLUE : Retourne UNIQUEMENT du JSON valide, zéro texte avant ou après."""
@@ -199,23 +205,77 @@ Schéma JSON attendu :
   "alertes": []
 }}"""
 
-        full_prompt = f"{system_prompt}\n\n{user_prompt}"
-        response = self.model.generate_content(full_prompt)
-        return self._parse_json_response(response.text)
+        response = await self.client.chat.completions.create(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            response_format={"type": "json_object"}
+        )
+        parsed_json = self._parse_json_response(response.choices[0].message.content)
+
+        # --- Algorithme de Distribution Équitable (Greedy Capacitated Assignment) ---
+        try:
+            import math
+            num_entrepreneurs = len(entrepreneurs)
+            num_coaches = len(coaches)
+            
+            if num_entrepreneurs > 0 and num_coaches > 0:
+                max_capacity = math.ceil(num_entrepreneurs / num_coaches)
+                
+                all_propositions = []
+                # Aplatir toutes les propositions avec leurs indices pour les retrouver
+                for i, m in enumerate(parsed_json.get("matchings", [])):
+                    for j, p in enumerate(m.get("propositions", [])):
+                        all_propositions.append({
+                            "ent_idx": i,
+                            "prop_idx": j,
+                            "coach_id": p.get("coach_id"),
+                            "score": p.get("score_final", 0)
+                        })
+                
+                # Trier toutes les propositions par score décroissant
+                all_propositions.sort(key=lambda x: x["score"], reverse=True)
+                
+                coach_assignments = {c["id"]: 0 for c in coaches}
+                assigned_ents = set()
+                
+                # Réinitialiser tous les rangs à 99 (non assigné prioritairement)
+                for m in parsed_json.get("matchings", []):
+                    for p in m.get("propositions", []):
+                        p["rank"] = 99
+                
+                # Assigner le Rank 1 équitablement
+                for prop in all_propositions:
+                    ent_idx = prop["ent_idx"]
+                    coach_id = prop["coach_id"]
+                    
+                    if ent_idx not in assigned_ents and coach_assignments.get(coach_id, 0) < max_capacity:
+                        parsed_json["matchings"][ent_idx]["propositions"][prop["prop_idx"]]["rank"] = 1
+                        assigned_ents.add(ent_idx)
+                        coach_assignments[coach_id] = coach_assignments.get(coach_id, 0) + 1
+                        
+                # Optionnel: Réordonner les rangs 2, 3... pour chaque entrepreneur
+                for m in parsed_json.get("matchings", []):
+                    # Trier les propositions de cet entrepreneur par rang (1 d'abord) puis par score
+                    m["propositions"].sort(key=lambda x: (x.get("rank", 99), -x.get("score_final", 0)))
+                    # Ré-indexer les rangs
+                    for rank_idx, p in enumerate(m["propositions"]):
+                        p["rank"] = rank_idx + 1
+
+        except Exception as e:
+            logger.error(f"Erreur lors de la distribution équitable: {e}")
+
+        return parsed_json
 
     async def generate_report(self, payload: dict) -> Dict[str, Any]:
-        """
-        Generate an AI-powered coaching report based on planning data.
-        Spring Boot collects all sessions, tasks, livrables from the admin planning
-        page and sends pre-computed stats + extracted document text.
-        """
         programme_name = payload.get("programme_name", "N/A")
         date_debut = payload.get("date_debut", "")
         date_fin = payload.get("date_fin", "")
         binomes = payload.get("binomes", [])
         context_text = payload.get("context_text", "")
 
-        # Pre-computed metrics
         total_sessions = payload.get("total_sessions", 0)
         sessions_realisees = payload.get("sessions_realisees", 0)
         sessions_planifiees = payload.get("sessions_planifiees", 0)
@@ -230,7 +290,6 @@ Schéma JSON attendu :
         total_livrables = payload.get("total_livrables", 0)
         livrables_approuves = payload.get("livrables_approuves", 0)
 
-        # Build binôme summary for prompt
         binome_lines = []
         for b in binomes:
             binome_lines.append(
@@ -291,13 +350,18 @@ Génère la réponse selon ce format JSON :
   "coach_a_surveiller": {{ "id": 0, "nom": "...", "raison": "..." }}
 }}"""
 
-        full_prompt = f"{system_prompt}\n\n{user_prompt}"
-        response = self.model.generate_content(full_prompt)
-        return self._parse_json_response(response.text)
+        response = await self.client.chat.completions.create(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            response_format={"type": "json_object"}
+        )
+        return self._parse_json_response(response.choices[0].message.content)
 
     def _parse_json_response(self, response_text: str) -> Dict[str, Any]:
         try:
-            # Clean up potential markdown formatting
             clean_text = response_text.replace("```json", "").replace("```", "").strip()
             return json.loads(clean_text)
         except json.JSONDecodeError:
@@ -311,4 +375,3 @@ Génère la réponse selon ce format JSON :
                 "recommendations": [],
                 "custom_feedback": "Error parsing AI response"
             }
-

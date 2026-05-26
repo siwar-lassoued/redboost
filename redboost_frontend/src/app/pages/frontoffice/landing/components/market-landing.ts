@@ -1018,7 +1018,7 @@ export class MarketLandingComponent implements AfterViewInit {
 
     private processLogoUrl(logoUrl: string | undefined): string {
         if (!logoUrl) return '/assets/images/default-project.png';
-        if (logoUrl.includes('cloudinary.com') || logoUrl.startsWith('http')) {
+        if (logoUrl.startsWith('http') || logoUrl.startsWith('https')) {
             return logoUrl;
         }
         return `https://redboost.tn/${logoUrl.replace(/^\/+/, '')}`;

@@ -21,11 +21,11 @@ type MoisOption = 'current' | 'last' | 'custom';
       <div class="matching-header">
         <div>
           <h1 class="matching-title">Reporting & Performance</h1>
-          <p class="matching-subtitle">Générez des rapports analytiques et holistiques sur vos programmes</p>
+          <p class="matching-subtitle">Rapports analytiques générés par IA (Llama 3.3 70B via Groq) sur vos programmes</p>
         </div>
         <div class="header-actions">
           <div class="ia-badge">
-            <i class="pi pi-star"></i> IA RedBoost
+            <i class="pi pi-bolt"></i> Groq · Llama 3.3
           </div>
         </div>
       </div>
@@ -36,7 +36,7 @@ type MoisOption = 'current' | 'last' | 'custom';
           <div class="card-icon"><i class="pi pi-plus-circle"></i></div>
           <div>
             <h2 class="card-title">Générer un rapport Stratégique</h2>
-            <p class="hint" style="margin-top:2px;">Croisement automatique des sessions, tâches, et livrables (documents partagés).</p>
+            <p class="hint" style="margin-top:2px;">Analyse croisée par LLM (Groq Llama 3.3 70B) des sessions, tâches et livrables du programme sélectionné.</p>
           </div>
         </div>
 
@@ -211,6 +211,41 @@ type MoisOption = 'current' | 'last' | 'custom';
                      {{ r }}
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Performances Individuelles -->
+          <div style="margin-top: 24px;">
+            <h3 class="section-title purple-title" style="color: #7C3AED; margin-bottom:16px; font-size:16px; font-weight:700;"><i class="pi pi-users" style="margin-right:8px;"></i> Performances Individuelles</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+              
+              <!-- Entrepreneur Plus Actif -->
+              <div class="perf-card" *ngIf="getParsedObject(report.meilleurEntrepreneurJson) as bestEnt">
+                <div class="perf-header"><i class="pi pi-star-fill" style="color:#22C55E"></i> Entrepreneur Plus Actif</div>
+                <div class="perf-name">{{ bestEnt.nom }}</div>
+                <div class="perf-reason">{{ bestEnt.raison }}</div>
+              </div>
+
+              <!-- Entrepreneur Moins Actif -->
+              <div class="perf-card" *ngIf="getParsedObject(report.entrepreneurEnDifficulteJson) as worstEnt">
+                <div class="perf-header"><i class="pi pi-exclamation-circle" style="color:#EF4444"></i> Entrepreneur En Difficulté</div>
+                <div class="perf-name">{{ worstEnt.nom }}</div>
+                <div class="perf-reason">{{ worstEnt.raison }}</div>
+              </div>
+
+              <!-- Coach Plus Actif -->
+              <div class="perf-card" *ngIf="getParsedObject(report.meilleurCoachJson) as bestCoach">
+                <div class="perf-header"><i class="pi pi-star-fill" style="color:#3B82F6"></i> Coach Plus Actif</div>
+                <div class="perf-name">{{ bestCoach.nom }}</div>
+                <div class="perf-reason">{{ bestCoach.raison }}</div>
+              </div>
+
+              <!-- Coach Moins Actif -->
+              <div class="perf-card" *ngIf="getParsedObject(report.coachASurveillerJson) as worstCoach">
+                <div class="perf-header"><i class="pi pi-exclamation-circle" style="color:#F59E0B"></i> Coach À Surveiller</div>
+                <div class="perf-name">{{ worstCoach.nom }}</div>
+                <div class="perf-reason">{{ worstCoach.raison }}</div>
               </div>
             </div>
           </div>
@@ -417,10 +452,12 @@ type MoisOption = 'current' | 'last' | 'custom';
     .alert-type { display: block; font-size: 10px; font-weight: 900; color: #DC2626; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
     .alert-msg { font-size: 14px; font-weight: 500; line-height: 1.4; }
 
-    .reco-item {
-      padding: 16px; border-radius: 16px; background: #EFF6FF; border: 1px solid #DBEAFE;
-      color: #1E3A8A; font-size: 14px; font-weight: 500; line-height: 1.6;
-    }
+    .reco-item { background: #E0F2FE; color: #0284C7; padding: 12px 16px; border-radius: 12px; font-size: 14px; line-height: 1.5; font-weight: 500; }
+    
+    .perf-card { background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+    .perf-header { font-size: 12px; font-weight: 700; color: #6B7280; text-transform: uppercase; display: flex; align-items: center; gap: 6px; }
+    .perf-name { font-size: 16px; font-weight: 800; color: #111827; }
+    .perf-reason { font-size: 13px; color: #4B5563; line-height: 1.5; }
 
     /* Table */
     .history-table { width: 100%; border-collapse: collapse; }
@@ -471,9 +508,10 @@ export class AdminReportingIaComponent implements OnInit {
   ];
 
   inclusionItems = [
-    { label: 'Tâches (Statut & Descriptions)', icon: 'check-square' },
-    { label: 'Sessions de Coaching (Entretiens)', icon: 'users' },
-    { label: 'Livrables Partagés (Analyse du contenu PDF)', icon: 'book-open' }
+    { label: 'Tâches — statut, descriptions, retards', icon: 'check-square' },
+    { label: 'Sessions de coaching — comptes-rendus', icon: 'users' },
+    { label: 'Livrables PDF — résumé du contenu par LLM', icon: 'book-open' },
+    { label: 'Moteur IA : Groq / Llama 3.3 70B (ultra-rapide)', icon: 'bolt' }
   ];
 
   programmes = signal<any[]>([]);
@@ -529,7 +567,7 @@ export class AdminReportingIaComponent implements OnInit {
       error: (e) => {
         console.error(e);
         this.loading.set(false);
-        alert("Erreur lors de la génération avec l'IA. Vérifiez la clé API.");
+        alert("Erreur lors de la génération. Vérifiez que le service IA (Groq) est démarré et que GROQ_API_KEY est configurée dans ai_service/.env.");
       }
     });
   }
@@ -557,6 +595,15 @@ export class AdminReportingIaComponent implements OnInit {
       return Array.isArray(parsed) ? parsed : [];
     } catch {
       return [{ message: jsonStr }];
+    }
+  }
+
+  getParsedObject(jsonStr: string | undefined): any {
+    if (!jsonStr) return null;
+    try {
+      return JSON.parse(jsonStr);
+    } catch {
+      return null;
     }
   }
 

@@ -90,6 +90,18 @@ public class AiReporting {
     @Column(name = "tendances", columnDefinition = "TEXT")
     private String tendances;
 
+    @Column(name = "meilleur_entrepreneur_json", columnDefinition = "TEXT")
+    private String meilleurEntrepreneurJson;
+
+    @Column(name = "entrepreneur_en_difficulte_json", columnDefinition = "TEXT")
+    private String entrepreneurEnDifficulteJson;
+
+    @Column(name = "meilleur_coach_json", columnDefinition = "TEXT")
+    private String meilleurCoachJson;
+
+    @Column(name = "coach_a_surveiller_json", columnDefinition = "TEXT")
+    private String coachASurveillerJson;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

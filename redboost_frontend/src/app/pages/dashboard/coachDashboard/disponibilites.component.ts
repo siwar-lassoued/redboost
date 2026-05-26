@@ -404,7 +404,7 @@ interface DateGroupView {
     </div>
   `,
   styles: [`
-    .calendar-page { padding: 2rem; background: #f8f9fa; min-height: calc(100vh - 70px); font-family: var(--font-family); margin-top: -1rem; }
+    .calendar-page { padding: 0 2rem 2rem; background: #f8f9fa; min-height: calc(100vh - 70px); font-family: var(--font-family); margin-top: 0; }
     .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
     .page-title-row { display: flex; align-items: center; gap: 1rem; }
     .page-icon { width: 50px; height: 50px; background: linear-gradient(135deg, #FFF5F7, #FFE0E8); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
@@ -489,7 +489,7 @@ interface DateGroupView {
     .tf-option:hover:not(.active) { background: #EDF2F7; }
     .tf-dates { font-size: 10px; opacity: 0.8; margin-left: 4px; }
 
-    .thematique-info-bar { display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: #FFF5F7; border: 1px solid #FFD0DE; border-radius: 12px; margin-bottom: 12px; font-size: 13px; color: #C0392B; }
+    .thematique-info-bar { display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: #F0FFF4; border: 1px solid #C6F6D5; border-radius: 12px; margin-bottom: 12px; font-size: 13px; color: #276749; }
     .thematique-info-bar i { font-size: 16px; flex-shrink: 0; }
     .tib-hint { margin-left: auto; font-size: 11px; color: #A0AEC0; font-style: italic; }
 
