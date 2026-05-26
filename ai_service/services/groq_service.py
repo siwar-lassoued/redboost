@@ -1,15 +1,15 @@
-import google.generativeai as genai
 import os
 from typing import List, Dict, Any
 import json
+from groq import AsyncGroq
 
-class GeminiService:
+class GroqService:
     def __init__(self):
-        api_key = os.getenv("GEMINI_API_KEY")
+        api_key = os.getenv("GROQ_API_KEY")
         if not api_key:
-            raise ValueError("GEMINI_API_KEY environment variable not set")
-        genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-2.0-flash')
+            raise ValueError("GROQ_API_KEY environment variable not set")
+        self.client = AsyncGroq(api_key=api_key)
+        self.model = 'llama-3.3-70b-versatile'
 
     async def check_writing(self, text: str, context: str = None) -> Dict[str, Any]:
         prompt = f"""
@@ -24,11 +24,15 @@ class GeminiService:
         {{
             "improved_text": "The corrected version of the text",
             "feedback": ["List of specific corrections and explanations"],
-            "score": 85 (an integer score from 0-100 based on quality)
+            "score": 85
         }}
         """
-        response = self.model.generate_content(prompt)
-        return self._parse_json_response(response.text)
+        response = await self.client.chat.completions.create(
+            model=self.model,
+            messages=[{"role": "user", "content": prompt}],
+            response_format={"type": "json_object"}
+        )
+        return self._parse_json_response(response.choices[0].message.content)
 
     async def improve_writing(self, text: str, context: str = None) -> Dict[str, Any]:
         prompt = f"""
@@ -43,11 +47,15 @@ class GeminiService:
         {{
             "improved_text": "The improved version of the text",
             "feedback": ["List of improvements made (e.g., better vocabulary, sentence structure)"],
-            "score": 90 (an integer score from 0-100 based on quality)
+            "score": 90
         }}
         """
-        response = self.model.generate_content(prompt)
-        return self._parse_json_response(response.text)
+        response = await self.client.chat.completions.create(
+            model=self.model,
+            messages=[{"role": "user", "content": prompt}],
+            response_format={"type": "json_object"}
+        )
+        return self._parse_json_response(response.choices[0].message.content)
 
     async def analyze_programs(self, recent_program_text: str, reference_programs_texts: List[str]) -> Dict[str, Any]:
         prompt = f"""
@@ -72,16 +80,14 @@ class GeminiService:
             "custom_feedback": "Paragraphe de synthèse critique en français"
         }}
         """
-        response = self.model.generate_content(prompt)
-        return self._parse_json_response(response.text)
+        response = await self.client.chat.completions.create(
+            model=self.model,
+            messages=[{"role": "user", "content": prompt}],
+            response_format={"type": "json_object"}
+        )
+        return self._parse_json_response(response.choices[0].message.content)
 
     async def run_enriched_matching(self, payload: dict) -> Dict[str, Any]:
-        """
-        Matching enrichi — reçoit les données pré-collectées depuis Spring Boot :
-        texte des CV extrait via l'endpoint OCR (/api/ocr/extract), réponses
-        au questionnaire de candidature, et profils coaches.
-        Retourne le TOP 3 coaches par entrepreneur.
-        """
         coaches = payload.get("coaches", [])
         entrepreneurs = payload.get("entrepreneurs", [])
         programme = payload.get("programme", {})
@@ -199,23 +205,23 @@ Schéma JSON attendu :
   "alertes": []
 }}"""
 
-        full_prompt = f"{system_prompt}\n\n{user_prompt}"
-        response = self.model.generate_content(full_prompt)
-        return self._parse_json_response(response.text)
+        response = await self.client.chat.completions.create(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            response_format={"type": "json_object"}
+        )
+        return self._parse_json_response(response.choices[0].message.content)
 
     async def generate_report(self, payload: dict) -> Dict[str, Any]:
-        """
-        Generate an AI-powered coaching report based on planning data.
-        Spring Boot collects all sessions, tasks, livrables from the admin planning
-        page and sends pre-computed stats + extracted document text.
-        """
         programme_name = payload.get("programme_name", "N/A")
         date_debut = payload.get("date_debut", "")
         date_fin = payload.get("date_fin", "")
         binomes = payload.get("binomes", [])
         context_text = payload.get("context_text", "")
 
-        # Pre-computed metrics
         total_sessions = payload.get("total_sessions", 0)
         sessions_realisees = payload.get("sessions_realisees", 0)
         sessions_planifiees = payload.get("sessions_planifiees", 0)
@@ -230,7 +236,6 @@ Schéma JSON attendu :
         total_livrables = payload.get("total_livrables", 0)
         livrables_approuves = payload.get("livrables_approuves", 0)
 
-        # Build binôme summary for prompt
         binome_lines = []
         for b in binomes:
             binome_lines.append(
@@ -291,13 +296,18 @@ Génère la réponse selon ce format JSON :
   "coach_a_surveiller": {{ "id": 0, "nom": "...", "raison": "..." }}
 }}"""
 
-        full_prompt = f"{system_prompt}\n\n{user_prompt}"
-        response = self.model.generate_content(full_prompt)
-        return self._parse_json_response(response.text)
+        response = await self.client.chat.completions.create(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            response_format={"type": "json_object"}
+        )
+        return self._parse_json_response(response.choices[0].message.content)
 
     def _parse_json_response(self, response_text: str) -> Dict[str, Any]:
         try:
-            # Clean up potential markdown formatting
             clean_text = response_text.replace("```json", "").replace("```", "").strip()
             return json.loads(clean_text)
         except json.JSONDecodeError:
@@ -311,4 +321,3 @@ Génère la réponse selon ce format JSON :
                 "recommendations": [],
                 "custom_feedback": "Error parsing AI response"
             }
-

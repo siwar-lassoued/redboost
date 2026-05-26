@@ -1,22 +1,24 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, Form
 from typing import List
 from models.schemas import ProgramAnalysisResponse
-from services.gemini_service import GeminiService
+from services.groq_service import GroqService
 from services.mistral_service import MistralService
 from services.pdf_service import PDFService
+import logging
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 # Initialize services lazily
-_gemini_service = None
+_groq_service = None
 _mistral_service = None
 _pdf_service = None
 
-def get_gemini_service():
-    global _gemini_service
-    if _gemini_service is None:
-        _gemini_service = GeminiService()
-    return _gemini_service
+def get_groq_service():
+    global _groq_service
+    if _groq_service is None:
+        _groq_service = GroqService()
+    return _groq_service
 
 def get_mistral_service():
     global _mistral_service
@@ -38,7 +40,7 @@ async def compare_programs(
 ):
     try:
         pdf_service = get_pdf_service()
-        llm_service = get_mistral_service() if model == "mistral" else get_gemini_service()
+        llm_service = get_mistral_service() if model == "mistral" else get_groq_service()
         
         # Extract text from recent program
         recent_text = await pdf_service.extract_text(recent_program)

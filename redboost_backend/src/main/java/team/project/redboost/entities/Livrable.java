@@ -24,9 +24,6 @@ public class Livrable {
     @Column(name = "fichier_url")
     private String fichierUrl;
 
-    @Column(name = "cloudinary_public_id")
-    private String cloudinaryPublicId;
-
     @Column(name = "fichier_retour_url")
     private String fichierRetourUrl;
 
@@ -112,8 +109,6 @@ public class Livrable {
     public void setDescription(String description) { this.description = description; }
     public String getFichierUrl() { return fichierUrl; }
     public void setFichierUrl(String fichierUrl) { this.fichierUrl = fichierUrl; }
-    public String getCloudinaryPublicId() { return cloudinaryPublicId; }
-    public void setCloudinaryPublicId(String cloudinaryPublicId) { this.cloudinaryPublicId = cloudinaryPublicId; }
     public String getFichierRetourUrl() { return fichierRetourUrl; }
     public void setFichierRetourUrl(String fichierRetourUrl) { this.fichierRetourUrl = fichierRetourUrl; }
     public String getFileRetourSize() { return fileRetourSize; }

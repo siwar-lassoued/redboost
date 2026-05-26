@@ -21,11 +21,11 @@ type MoisOption = 'current' | 'last' | 'custom';
       <div class="matching-header">
         <div>
           <h1 class="matching-title">Reporting & Performance</h1>
-          <p class="matching-subtitle">Générez des rapports analytiques et holistiques sur vos programmes</p>
+          <p class="matching-subtitle">Rapports analytiques générés par IA (Llama 3.3 70B via Groq) sur vos programmes</p>
         </div>
         <div class="header-actions">
           <div class="ia-badge">
-            <i class="pi pi-star"></i> IA RedBoost
+            <i class="pi pi-bolt"></i> Groq · Llama 3.3
           </div>
         </div>
       </div>
@@ -36,7 +36,7 @@ type MoisOption = 'current' | 'last' | 'custom';
           <div class="card-icon"><i class="pi pi-plus-circle"></i></div>
           <div>
             <h2 class="card-title">Générer un rapport Stratégique</h2>
-            <p class="hint" style="margin-top:2px;">Croisement automatique des sessions, tâches, et livrables (documents partagés).</p>
+            <p class="hint" style="margin-top:2px;">Analyse croisée par LLM (Groq Llama 3.3 70B) des sessions, tâches et livrables du programme sélectionné.</p>
           </div>
         </div>
 
@@ -471,9 +471,10 @@ export class AdminReportingIaComponent implements OnInit {
   ];
 
   inclusionItems = [
-    { label: 'Tâches (Statut & Descriptions)', icon: 'check-square' },
-    { label: 'Sessions de Coaching (Entretiens)', icon: 'users' },
-    { label: 'Livrables Partagés (Analyse du contenu PDF)', icon: 'book-open' }
+    { label: 'Tâches — statut, descriptions, retards', icon: 'check-square' },
+    { label: 'Sessions de coaching — comptes-rendus', icon: 'users' },
+    { label: 'Livrables PDF — résumé du contenu par LLM', icon: 'book-open' },
+    { label: 'Moteur IA : Groq / Llama 3.3 70B (ultra-rapide)', icon: 'bolt' }
   ];
 
   programmes = signal<any[]>([]);
@@ -529,7 +530,7 @@ export class AdminReportingIaComponent implements OnInit {
       error: (e) => {
         console.error(e);
         this.loading.set(false);
-        alert("Erreur lors de la génération avec l'IA. Vérifiez la clé API.");
+        alert("Erreur lors de la génération. Vérifiez que le service IA (Groq) est démarré et que GROQ_API_KEY est configurée dans ai_service/.env.");
       }
     });
   }

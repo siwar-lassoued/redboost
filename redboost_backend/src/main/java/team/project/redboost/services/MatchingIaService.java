@@ -10,8 +10,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 import team.project.redboost.entities.*;
 import team.project.redboost.repositories.*;
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.text.PDFTextStripper;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -199,172 +197,65 @@ public class MatchingIaService {
             m.values().removeIf(Objects::isNull);
             return m;
         }).collect(Collectors.toList());
+        // ── 6. Envoyer les données enrichies au service IA FastAPI ─────
 
-        // ── 6. Construire & envoyer le prompt Gemini ─────────────────
+        Map<String, Object> aiPayload = new LinkedHashMap<>();
+        aiPayload.put("coaches", coachesData);
+        aiPayload.put("entrepreneurs", entrepreneursData);
 
-        String systemPrompt = buildSystemPrompt(thematique, programme);
+        Map<String, Object> progMap = new LinkedHashMap<>();
+        progMap.put("nom", programme.getNom());
+        progMap.put("description", programme.getDescription());
+        progMap.put("dateDebut", programme.getDateDebut());
+        progMap.put("dateFin", programme.getDateFin());
+        aiPayload.put("programme", progMap);
 
-        String coachesStr, entrepreneursStr;
-        try {
-            coachesStr = objectMapper.writeValueAsString(coachesData.subList(0, Math.min(20, coachesData.size())));
-            entrepreneursStr = objectMapper.writeValueAsString(entrepreneursData.subList(0, Math.min(20, entrepreneursData.size())));
-        } catch (Exception e) {
-            throw new RuntimeException("Erreur de sérialisation JSON des profils", e);
+        if (thematique != null) {
+            Map<String, Object> thMap = new LinkedHashMap<>();
+            thMap.put("nom", thematique.getNom());
+            thMap.put("description", thematique.getDescription());
+            thMap.put("dateDebut", thematique.getDateDebut());
+            thMap.put("dateFin", thematique.getDateFin());
+            aiPayload.put("thematique", thMap);
         }
 
-        String userPrompt = buildUserPrompt(programme.getNom(), coachesStr, entrepreneursStr);
-        String finalPrompt = systemPrompt + "\n\n" + userPrompt;
+        log.info("Envoi au service IA: {} coachs | {} entrepreneurs", coachesData.size(), entrepreneursData.size());
 
-        log.info("Prompt envoyé à Gemini: {} chars | {} coachs | {} entrepreneurs",
-                finalPrompt.length(), coachesData.size(), entrepreneursData.size());
-
-        // ── 7. Appel API Gemini ───────────────────────────────────────
-        String aiResponse = callGeminiApi(finalPrompt);
+        // ── 7. Appel HTTP au service IA FastAPI ───────────────────────
+        String aiResponse = callAiServiceMatching(aiPayload);
 
         // ── 8. Parser la réponse et sauvegarder les matchings ────────
         return parseAndSaveTop3(aiResponse, programme, thematique, programmeId, thematiqueId);
     }
 
-    // ─── Prompt Builder ───────────────────────────────────────────
-
-    private String buildSystemPrompt(ThematiqueCoaching thematique, Programme programme) {
-        return "Tu es un expert RH senior spécialisé dans l'accompagnement de startups en Tunisie (contexte MENA).\n" +
-               "Tu effectues le matching coach/entrepreneur pour le programme RedBoost.\n\n" +
-               "━━━ CONTEXTE LOCAL TUNISIE ━━━\n" +
-               "Favorise les coachs ayant :\n" +
-               "- Expérience avec startups tunisiennes / écosystème MENA\n" +
-               "- Connaissance : Startup Act, BFPME, SICAR, mécanismes de financement locaux\n" +
-               "- Réseau actif (incubateurs tunisiens, investisseurs, corporate)\n\n" +
-               "━━━ THÉMATIQUE ACTIVE (OBLIGATOIRE) ━━━\n" +
-               "Nom : " + thematique.getNom() + "\n" +
-               "Description : " + (thematique.getDescription() != null ? thematique.getDescription() : "N/A") + "\n" +
-               "Période : " + thematique.getDateDebut() + " → " + thematique.getDateFin() + "\n\n" +
-               "PRIORITÉ ABSOLUE : L'expertise du coach DOIT correspondre à cette thématique.\n" +
-               "   Si non couverte → score alignement_global plafonné à 60/100 maximum.\n" +
-               "   Si secteur incompatible → score alignement_global plafonné à 50/100 maximum.\n\n" +
-               "━━━ SCORING — 5 CRITÈRES PONDÉRÉS (total 100 points) ━━━\n\n" +
-               "1. alignement_global (30%)\n" +
-               "   Combine thématique (prioritaire) + secteur/industrie.\n\n" +
-               "2. competences_complementaires (25%)\n" +
-               "   Skills coach ↔ besoins_accompagnement + besoins_formation de l'entrepreneur.\n" +
-               "   Analyse : formulaire, documents, bio, certifications.\n\n" +
-               "3. stade_maturite (20%)\n" +
-               "   Phase startup ↔ expérience coach (stades déjà accompagnés, années, succès clients).\n\n" +
-               "4. compatibilite_humaine (15%)\n" +
-               "   Style coaching déduit (directif/participatif) ↔ personnalité entrepreneur (déduite des réponses).\n" +
-               "   Capacité d'accompagnement réel avec la charge actuelle.\n\n" +
-               "5. charge_coach (10%)\n" +
-               "   = score_charge_precalcule déjà calculé et fourni dans les données du coach.\n" +
-               "   Formule appliquée : (1 - nb_actifs/5) * 70 + (rating_moyen/5) * 30\n\n" +
-               "━━━ RÈGLES D'ANALYSE ━━━\n" +
-               "- Analyse TOUS les champs fournis (bio, reponses_formulaire, documents_extrait)\n" +
-               "- Données manquantes → utiliser score neutre 50 (JAMAIS 0 sauf incompatibilité évidente)\n" +
-               "- Déduire la maturité réelle et la personnalité entrepreneur des réponses formulaire\n" +
-               "- score_final = somme pondérée : (alignement*0.30) + (competences*0.25) + (maturite*0.20) + (humaine*0.15) + (charge*0.10)\n" +
-               "- Tous les scores entre 0 et 100. Éviter les scores > 95 sans justification forte.\n\n" +
-               "━━━ DÉTECTION DES RISQUES (OBLIGATOIRE) ━━━\n" +
-               "Ajouter une alerte dans 'alertes' si :\n" +
-               "- score_final < 40 → type: \"SCORE_FAIBLE\"\n" +
-               "- nb_entrepreneurs_actifs >= 5 → type: \"COACH_SURCHARGE\"\n" +
-               "- secteurs clairement incompatibles → type: \"MISMATCH_SECTORIEL\"\n" +
-               "- compétences insuffisantes par rapport aux besoins → type: \"MISMATCH_COMPETENCES\"\n" +
-               "- aucune expérience coach identifiable → type: \"EXPERIENCE_INSUFFISANTE\"\n" +
-               "- coach sans bio ou expertise renseignée → type: \"PROFIL_INCOMPLET_COACH\"\n" +
-               "- entrepreneur sans description ou besoins → type: \"PROFIL_INCOMPLET_ENTREPRENEUR\"\n" +
-               "Format alerte : { \"type\": \"...\", \"coach_id\": X, \"entrepreneur_id\": Y, \"message\": \"...\" }\n\n" +
-               "━━━ SORTIE OBLIGATOIRE — TOP 3 PAR ENTREPRENEUR ━━━\n" +
-               "Pour CHAQUE entrepreneur, évaluer TOUS les coachs et retourner les 3 meilleurs.\n" +
-               "Trier par score_final décroissant. Rank 1 = meilleur recommandé.\n" +
-               "Si moins de 3 coachs disponibles, retourner ceux disponibles.\n\n" +
-               "RÈGLE ABSOLUE : Retourne UNIQUEMENT du JSON valide, zéro texte avant ou après.";
-    }
-
-    private String buildUserPrompt(String programmeName, String coachesStr, String entrepreneursStr) {
-        String schema = "{\n" +
-            "  \"matchings\": [\n" +
-            "    {\n" +
-            "      \"entrepreneur_id\": 0,\n" +
-            "      \"propositions\": [\n" +
-            "        {\n" +
-            "          \"rank\": 1,\n" +
-            "          \"coach_id\": 0,\n" +
-            "          \"score_final\": 0,\n" +
-            "          \"scores_detail\": {\n" +
-            "            \"alignement_global\": 0,\n" +
-            "            \"competences_complementaires\": 0,\n" +
-            "            \"stade_maturite\": 0,\n" +
-            "            \"compatibilite_humaine\": 0,\n" +
-            "            \"charge_coach\": 0\n" +
-            "          },\n" +
-            "          \"justification\": \"Explication synthétique du matching\",\n" +
-            "          \"points_forts\": [\"...\"],\n" +
-            "          \"points_attention\": [\"...\"],\n" +
-            "          \"recommandation_session_1\": \"Suggestion concrète pour la première séance\",\n" +
-            "          \"decision_support\": {\n" +
-            "            \"pourquoi_ce_coach\": \"Raison principale de recommandation\",\n" +
-            "            \"pourquoi_pas_ideal\": \"Limites ou risques à considérer\",\n" +
-            "            \"cas_ou_choisir_ce_coach\": \"Dans quel cas choisir ce coach malgré son rang\"\n" +
-            "          }\n" +
-            "        }\n" +
-            "      ]\n" +
-            "    }\n" +
-            "  ],\n" +
-            "  \"alertes\": []\n" +
-            "}";
-
-        return "Programme : " + programmeName + "\n\n" +
-               "COACHES DISPONIBLES :\n" + coachesStr + "\n\n" +
-               "ENTREPRENEURS :\n" + entrepreneursStr + "\n\n" +
-               "Schéma JSON attendu (respecter EXACTEMENT cette structure) :\n" + schema;
-    }
-
-    // ─── Gemini API Call ──────────────────────────────────────────
+    // ─── AI Service Call ──────────────────────────────────────────
 
     @SuppressWarnings("unchecked")
-    private String callGeminiApi(String finalPrompt) {
-        if ("unconfigured".equals(geminiApiKey) || geminiApiKey.isEmpty()) {
-            throw new RuntimeException("La clé API Gemini (gemini.api.key) n'est pas configurée dans application.properties.");
+    private String callAiServiceMatching(Map<String, Object> payload) {
+        String aiServiceUrl = System.getenv("AI_SERVICE_BASE_URL");
+        if (aiServiceUrl == null || aiServiceUrl.isEmpty()) {
+            aiServiceUrl = "http://localhost:8000";
         }
-
-        Map<String, Object> geminiRequest = new LinkedHashMap<>();
-        Map<String, Object> part = new LinkedHashMap<>();
-        part.put("text", finalPrompt);
-        Map<String, Object> content = new LinkedHashMap<>();
-        content.put("parts", List.of(part));
-        geminiRequest.put("contents", List.of(content));
-
-        // Ask Gemini to return JSON directly
-        Map<String, Object> generationConfig = new LinkedHashMap<>();
-        generationConfig.put("responseMimeType", "application/json");
-        geminiRequest.put("generationConfig", generationConfig);
+        String endpoint = aiServiceUrl + "/api/matching/run-enriched";
 
         try {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(geminiRequest, headers);
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(payload, headers);
 
-            String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + geminiApiKey;
-            ResponseEntity<Map> response = restTemplate.postForEntity(url, entity, Map.class);
+            log.info("Appel à FastAPI: {}", endpoint);
+            ResponseEntity<String> response = restTemplate.postForEntity(endpoint, entity, String.class);
 
-            Map<String, Object> body = response.getBody();
-            if (body != null && body.containsKey("candidates")) {
-                List<Map<String, Object>> candidates = (List<Map<String, Object>>) body.get("candidates");
-                if (!candidates.isEmpty()) {
-                    List<Map<String, Object>> parts = (List<Map<String, Object>>) ((Map<String, Object>) candidates.get(0).get("content")).get("parts");
-                    if (!parts.isEmpty()) {
-                        String aiResponse = (String) parts.get(0).get("text");
-                        if (aiResponse != null) {
-                            return aiResponse.replace("```json", "").replace("```", "").trim();
-                        }
-                    }
-                }
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                return response.getBody();
             }
-            throw new RuntimeException("Réponse vide de Gemini");
+            throw new RuntimeException("Erreur HTTP " + response.getStatusCode());
         } catch (Exception e) {
-            log.error("Erreur appel API Gemini: {}", e.getMessage());
-            throw new RuntimeException("Erreur de l'API Gemini : " + e.getMessage());
+            log.error("Erreur appel service IA FastAPI: {}", e.getMessage());
+            throw new RuntimeException("Erreur communication avec ai-service : " + e.getMessage());
         }
     }
+
 
     // ─── Parse Top-3 Response & Save ─────────────────────────────
 
@@ -1121,13 +1012,26 @@ public class MatchingIaService {
             if (!file.exists() || !file.isFile()) return null;
             if (!filename.toLowerCase().endsWith(".pdf")) return null;
 
-            try (PDDocument document = PDDocument.load(file)) {
-                PDFTextStripper stripper = new PDFTextStripper();
-                String text = stripper.getText(document);
+            String aiServiceUrl = System.getenv("AI_SERVICE_BASE_URL");
+            if (aiServiceUrl == null || aiServiceUrl.isEmpty()) {
+                aiServiceUrl = "http://localhost:8000";
+            }
+            String endpoint = aiServiceUrl + "/api/ocr/extract";
+
+            org.springframework.util.LinkedMultiValueMap<String, Object> body = new org.springframework.util.LinkedMultiValueMap<>();
+            body.add("file", new org.springframework.core.io.FileSystemResource(file));
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+            HttpEntity<org.springframework.util.MultiValueMap<String, Object>> entity = new HttpEntity<>(body, headers);
+
+            ResponseEntity<Map> response = restTemplate.postForEntity(endpoint, entity, Map.class);
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                String text = (String) response.getBody().get("text");
                 return (text != null && !text.trim().isEmpty()) ? text.trim() : null;
             }
         } catch (Exception e) {
-            log.warn("Impossible de lire le document PDF {}: {}", filename, e.getMessage());
+            log.warn("Impossible d'extraire le texte via l'IA pour {}: {}", filename, e.getMessage());
         }
         return null;
     }

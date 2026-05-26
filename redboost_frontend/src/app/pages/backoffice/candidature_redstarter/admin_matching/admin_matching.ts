@@ -19,7 +19,12 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
       <div class="matching-header">
         <div>
           <h1 class="matching-title">Matching Coach / Entrepreneur</h1>
-          <p class="matching-subtitle">Vue unifiée — sélectionnez un programme puis gérez vos thématiques et matchings</p>
+          <p class="matching-subtitle">Propulsé par Groq · Llama 3.3 70B — sélectionnez un programme, gérez thematiques et matchings</p>
+        </div>
+        <div style="display:flex; align-items:center;">
+          <span style="display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border-radius:12px; font-size:13px; font-weight:700; color:#fff; background: linear-gradient(135deg,#ec407a,#d81b60);">
+            <i class="pi pi-bolt"></i> Groq · Llama 3.3
+          </span>
         </div>
       </div>
 
@@ -274,8 +279,8 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
 
             <!-- Action Buttons -->
             <div class="th-action-bar">
-              <button class="btn-launch" (click)="runMatchingIA()" [disabled]="isLoading || selectedThematiqueObj?.statut !== 'ACTIVE'">
-                <i class="pi pi-bolt"></i> {{ isLoading ? loadingText : 'Lancer Matching IA' }}
+              <button class="btn-launch" (click)="runMatchingIA()" [disabled]="isLoading || selectedThematiqueObj?.statut !== 'ACTIVE'" title="Analyse Groq Llama 3.3 70B">
+                <i class="pi pi-bolt"></i> {{ isLoading ? loadingText : 'Lancer Matching IA (Groq)' }}
               </button>
               <button class="btn-manual-toggle" (click)="toggleManualPanel()" [class.active]="showManualPanel">
                 <i class="pi pi-users"></i> {{ showManualPanel ? 'Masquer Manuel' : 'Matching Manuel' }}
@@ -289,7 +294,7 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
             <div *ngIf="currentSession" class="results-section">
               <div class="results-header">
                 <div>
-                  <h3>Propositions IA</h3>
+                  <h3>Propositions IA <span style="font-size:11px; font-weight:600; opacity:.6; margin-left:6px;">Groq · Llama 3.3</span></h3>
                   <p class="results-meta">Session #{{ currentSession.id }} · {{ groupedResults.length }} entrepreneur(s)</p>
                 </div>
                 <button class="btn-validate-all" (click)="validateSession()" [disabled]="bulkLoading">
@@ -334,7 +339,7 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
                       </div>
                     </div>
                     <div class="match-justification" *ngIf="getTopMatch(group).justification">
-                      <span class="justification-label">Analyse IA :</span> {{ getTopMatch(group).justification }}
+                      <span class="justification-label"><i class="pi pi-bolt" style="color:#ec407a;margin-right:4px;"></i>Analyse Groq :</span> {{ getTopMatch(group).justification }}
                     </div>
                     <div class="match-actions">
                       <button class="btn-accept" (click)="validateSingle(getTopMatch(group).matchingId)" [disabled]="singleLoading[getTopMatch(group).matchingId]">
