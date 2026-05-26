@@ -598,6 +598,15 @@ export class AdminReportingIaComponent implements OnInit {
     }
   }
 
+  getParsedObject(jsonStr: string | undefined): any {
+    if (!jsonStr) return null;
+    try {
+      return JSON.parse(jsonStr);
+    } catch {
+      return null;
+    }
+  }
+
   private calculateDates(): { start: string | null, end: string | null } {
     const pt = this.periodType();
     const today = new Date();

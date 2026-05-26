@@ -32,6 +32,12 @@ export interface AiReporting {
     recommandationsJson: string; // Serialized JSON string array
     analyseLivrables: string;
     tendances: string;
+    
+    // Individual Performances
+    meilleurEntrepreneurJson?: string;
+    entrepreneurEnDifficulteJson?: string;
+    meilleurCoachJson?: string;
+    coachASurveillerJson?: string;
 }
 
 export interface GenerateReportRequest {

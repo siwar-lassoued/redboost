@@ -276,6 +276,7 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
                 </div>
               </div>
             </div>
+            </div>
 
             <!-- Action Buttons -->
             <div class="th-action-bar">
@@ -499,11 +500,7 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
           </div>
         </ng-container>
 
-        
-
-      </ng-container>
-
-      <!-- ═══ All Thématiques Overview ═══
+      <!-- ═══ All Thématiques Overview ═══ -->
       <ng-container *ngIf="!selectedThematiqueId">
         <div *ngIf="thematiques.length === 0" class="empty-state-inline" style="margin-top:20px">
           <i class="pi pi-info-circle" style="font-size:32px;color:#9CA3AF;display:block;margin-bottom:12px"></i>
@@ -511,7 +508,7 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
           <p *ngIf="!selectedProgId">Aucune thématique trouvée au total.</p>
         </div>
 
-        <div *ngFor="let t of thematiques" class="th-overview-card" (click)="selectThematiqueFromOverview(t)">
+        <div *ngFor="let t of thematiques" class="th-overview-card" (click)="goToDetail(t.id!)">
           <div class="th-overview-left">
             <div class="th-overview-icon">📌</div>
             <div>
@@ -529,8 +526,9 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
             </div>
           </div>
         </div>
-      </ng-container> -->
+      </ng-container>
 
+      </ng-container>
     </div>
     `,
     styles: [`
