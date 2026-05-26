@@ -577,7 +577,7 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
           </div>
         </div>
       </ng-container>
-    </div>
+
     `,
     styles: [`
       :host { display: block; }
