@@ -777,9 +777,11 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
       .status-badge.active { background: #D1FAE5; color: #065F46; }
       .status-badge.proposed { background: #FEF3C7; color: #92400E; }
       .status-badge.expired { background: #FEE2E2; color: #991B1B; }
-      .btn-sm { padding: 6px 10px; border-radius: 8px; font-size: 12px; border: 1px solid #E5E7EB; background: #fff; cursor: pointer; }
+      .btn-sm { padding: 6px 10px; border-radius: 8px; font-size: 12px; border: 1px solid #E5E7EB; background: #fff; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
       .btn-sm:hover { background: #F3F4F6; }
-      .btn-sm-danger:hover { background: #FEE2E2; }
+      .btn-sm-danger { border-color: #FECACA; background: #FEF2F2; color: #DC2626; }
+      .btn-sm-danger:hover { background: #FEE2E2; border-color: #FCA5A5; }
+      .btn-sm-danger:disabled { opacity: 0.5; cursor: not-allowed; }
 
       /* Overview cards */
       .th-overview-card { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; background: #fff; border-radius: 20px; box-shadow: 0 2px 16px rgba(0,0,0,0.07); margin-bottom: 12px; cursor: pointer; transition: all .2s; border-left: 4px solid #ec407a; }
