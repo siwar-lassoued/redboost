@@ -609,4 +609,5 @@ export class AdminSupervisionDashboardComponent implements OnInit {
     if (['xls', 'xlsx'].includes(ext!)) return { icon: 'pi-file-excel', color: '#10b981', bg: '#f0fdf4' };
     return { icon: 'pi-file', color: '#95a5a6', bg: '#f8f9fa' };
   }
+  
 }

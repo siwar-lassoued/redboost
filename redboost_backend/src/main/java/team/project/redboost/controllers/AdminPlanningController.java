@@ -66,90 +66,101 @@ public class AdminPlanningController {
     }
 
     @GetMapping("/coaches")
-    public ResponseEntity<List<Map<String, Object>>> getAllCoachesPlanning() {
-        // Only get coaches that have at least one valid matching
-        List<Matching> allValidMatchings = matchingRepository.findAll().stream()
-                .filter(m -> m.getStatut() == Matching.StatutMatching.VALIDE)
+public ResponseEntity<List<Map<String, Object>>> getAllCoachesPlanning(
+        @RequestParam(required = false) Long programmeId) {
+
+    List<Matching> allValidMatchings = matchingRepository.findAll().stream()
+            .filter(m -> m.getStatut() == Matching.StatutMatching.VALIDE)
+            .filter(m -> programmeId == null || programmeId.equals(m.getProgrammeId()))
+            .collect(Collectors.toList());
+
+    Set<Long> uniqueCoachIds = allValidMatchings.stream()
+            .map(Matching::getCoachId)
+            .collect(Collectors.toSet());
+    List<User> coaches = userRepository.findAllById(uniqueCoachIds);
+
+    List<Map<String, Object>> result = coaches.stream().map(coach -> {
+        Map<String, Object> coachData = new HashMap<>();
+        coachData.put("id", coach.getId().toString());
+        coachData.put("coachId", coach.getId());
+        coachData.put("firstName", coach.getFirstName() != null ? coach.getFirstName() : "Coach");
+        coachData.put("lastName", coach.getLastName() != null ? coach.getLastName() : coach.getId().toString());
+        coachData.put("coachName", formatName(coach));
+        coachData.put("email", coach.getEmail());
+        coachData.put("specialty", "Coach");
+
+        List<String> coachProgrammes = allValidMatchings.stream()
+                .filter(m -> m.getCoachId().equals(coach.getId()))
+                .map(m -> {
+                    Programme p = programmeRepository.findById(m.getProgrammeId()).orElse(null);
+                    return p != null ? p.getNom() : null;
+                })
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+        coachData.put("programmes", coachProgrammes);
+
+        List<Session> sessions = sessionRepository.findByCoachId(coach.getId());
+        coachData.put("sessions", sessions.stream().map(this::mapSession).collect(Collectors.toList()));
+        return coachData;
+    }).collect(Collectors.toList());
+
+    return ResponseEntity.ok(result);
+}
+
+    @GetMapping("/entrepreneurs")
+    public ResponseEntity<List<Map<String, Object>>> getAllEntrepreneursPlanning(
+        @RequestParam(required = false) Long programmeId) {
+
+    List<Matching> allValidMatchings = matchingRepository.findAll().stream()
+            .filter(m -> m.getStatut() == Matching.StatutMatching.VALIDE)
+            .filter(m -> programmeId == null || programmeId.equals(m.getProgrammeId()))
+            .collect(Collectors.toList());
+
+    Set<Long> uniqueEntIds = allValidMatchings.stream()
+            .map(Matching::getEntrepreneurId)
+            .collect(Collectors.toSet());
+    List<User> entrepreneurs = userRepository.findAllById(uniqueEntIds);
+
+    List<Map<String, Object>> result = entrepreneurs.stream().map(ent -> {
+        Map<String, Object> entData = new HashMap<>();
+        entData.put("id", ent.getId().toString());
+        entData.put("entrepreneurId", ent.getId());
+        entData.put("firstName", ent.getFirstName() != null ? ent.getFirstName() : "Entrepreneur");
+        entData.put("lastName", ent.getLastName() != null ? ent.getLastName() : ent.getId().toString());
+        entData.put("entrepreneurName", formatName(ent));
+        entData.put("email", ent.getEmail());
+
+        List<Matching> entMatchings = allValidMatchings.stream()
+                .filter(m -> m.getEntrepreneurId().equals(ent.getId()))
                 .collect(Collectors.toList());
 
-        Set<Long> uniqueCoachIds = allValidMatchings.stream().map(Matching::getCoachId).collect(Collectors.toSet());
-        List<User> coaches = userRepository.findAllById(uniqueCoachIds);
+        if (!entMatchings.isEmpty()) {
+            Matching m = entMatchings.get(0);
+            entData.put("coachId", m.getCoachId());
+            userRepository.findById(m.getCoachId())
+                    .ifPresent(c -> entData.put("coachName", formatName(c)));
+            programmeRepository.findById(m.getProgrammeId())
+                    .ifPresent(p -> entData.put("programme", p.getNom()));
 
-        List<Map<String, Object>> result = coaches.stream().map(coach -> {
-            Map<String, Object> coachData = new HashMap<>();
-            coachData.put("id", coach.getId().toString());
-            coachData.put("coachId", coach.getId());
-            coachData.put("firstName", coach.getFirstName() != null ? coach.getFirstName() : "Coach");
-            coachData.put("lastName", coach.getLastName() != null ? coach.getLastName() : coach.getId().toString());
-            coachData.put("coachName", formatName(coach));
-            coachData.put("email", coach.getEmail());
-            coachData.put("specialty", "Coach");
-
-            // List of unique programmes for this coach via matchings
-            List<String> coachProgrammes = allValidMatchings.stream()
-                    .filter(m -> m.getCoachId().equals(coach.getId()))
-                    .map(m -> {
-                        Programme p = programmeRepository.findById(m.getProgrammeId()).orElse(null);
+            List<String> entProgrammes = entMatchings.stream()
+                    .map(match -> {
+                        Programme p = programmeRepository.findById(match.getProgrammeId()).orElse(null);
                         return p != null ? p.getNom() : null;
                     })
                     .filter(Objects::nonNull)
                     .distinct()
                     .collect(Collectors.toList());
-            coachData.put("programmes", coachProgrammes);
+            entData.put("programmes", entProgrammes);
+        }
 
-            List<Session> sessions = sessionRepository.findByCoachId(coach.getId());
-            coachData.put("sessions", sessions.stream().map(this::mapSession).collect(Collectors.toList()));
-            return coachData;
-        }).collect(Collectors.toList());
-        return ResponseEntity.ok(result);
-    }
+        List<Session> sessions = sessionRepository.findByEntrepreneurId(ent.getId());
+        entData.put("sessions", sessions.stream().map(this::mapSession).collect(Collectors.toList()));
+        return entData;
+    }).collect(Collectors.toList());
 
-    @GetMapping("/entrepreneurs")
-    public ResponseEntity<List<Map<String, Object>>> getAllEntrepreneursPlanning() {
-        // Only get entrepreneurs that have at least one valid matching
-        List<Matching> allValidMatchings = matchingRepository.findAll().stream()
-                .filter(m -> m.getStatut() == Matching.StatutMatching.VALIDE)
-                .collect(Collectors.toList());
-
-        Set<Long> uniqueEntIds = allValidMatchings.stream().map(Matching::getEntrepreneurId).collect(Collectors.toSet());
-        List<User> entrepreneurs = userRepository.findAllById(uniqueEntIds);
-
-        List<Map<String, Object>> result = entrepreneurs.stream().map(ent -> {
-            Map<String, Object> entData = new HashMap<>();
-            entData.put("id", ent.getId().toString());
-            entData.put("entrepreneurId", ent.getId());
-            entData.put("firstName", ent.getFirstName() != null ? ent.getFirstName() : "Entrepreneur");
-            entData.put("lastName", ent.getLastName() != null ? ent.getLastName() : ent.getId().toString());
-            entData.put("entrepreneurName", formatName(ent));
-            entData.put("email", ent.getEmail());
-
-            List<Matching> entMatchings = allValidMatchings.stream()
-                    .filter(m -> m.getEntrepreneurId().equals(ent.getId()))
-                    .collect(Collectors.toList());
-
-            if (!entMatchings.isEmpty()) {
-                Matching m = entMatchings.get(0);
-                entData.put("coachId", m.getCoachId());
-                userRepository.findById(m.getCoachId()).ifPresent(c -> entData.put("coachName", formatName(c)));
-                programmeRepository.findById(m.getProgrammeId()).ifPresent(p -> entData.put("programme", p.getNom()));
-                
-                List<String> entProgrammes = entMatchings.stream()
-                        .map(match -> {
-                            Programme p = programmeRepository.findById(match.getProgrammeId()).orElse(null);
-                            return p != null ? p.getNom() : null;
-                        })
-                        .filter(Objects::nonNull)
-                        .distinct()
-                        .collect(Collectors.toList());
-                entData.put("programmes", entProgrammes);
-            }
-
-            List<Session> sessions = sessionRepository.findByEntrepreneurId(ent.getId());
-            entData.put("sessions", sessions.stream().map(this::mapSession).collect(Collectors.toList()));
-            return entData;
-        }).collect(Collectors.toList());
-        return ResponseEntity.ok(result);
-    }
+    return ResponseEntity.ok(result);
+}
 
     @GetMapping("/todos")
     public ResponseEntity<List<Map<String, Object>>> getAllTodos() {
