@@ -2,6 +2,7 @@ import { Component, OnInit, signal, computed, inject, ChangeDetectionStrategy } 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LivrableAdminService, RapportSessionAdmin, RapportMissionAdmin } from './livrable-admin.service';
+import { ProgrammeService } from '../candidature_redstarter/services/programme.service';
 
 @Component({
   selector: 'rb-admin-livrables',
@@ -34,6 +35,11 @@ import { LivrableAdminService, RapportSessionAdmin, RapportMissionAdmin } from '
 
       <!-- Filters Wrapper -->
       <div class="bg-white rounded-3xl p-6 mb-8 shadow-sm border border-gray-100 flex flex-wrap items-center gap-4">
+        <select [(ngModel)]="selectedProgId" (ngModelChange)="onProgramChange()" class="text-gray-900 px-4 py-3 bg-white border border-gray-200 rounded-2xl text-xs font-bold focus:outline-none focus:ring-4 focus:ring-pink-100 cursor-pointer">
+          <option [ngValue]="0">Tous les programmes</option>
+          @for (p of incubationProgrammes(); track p.id) { <option [ngValue]="p.id">{{ p.nom }}</option> }
+        </select>
+
         <div class="relative flex-1 min-w-[200px]">
           <i class="pi pi-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
           <input [(ngModel)]="searchQuery" type="text" placeholder="Rechercher un coach, bénéficiaire..." 
@@ -178,21 +184,29 @@ import { LivrableAdminService, RapportSessionAdmin, RapportMissionAdmin } from '
 })
 export class AdminLivrablesComponent implements OnInit {
   private svc = inject(LivrableAdminService);
+  private progSvc = inject(ProgrammeService);
 
   activeTab = signal<'sessions'|'missions'>('sessions');
 
   sessionsList = signal<RapportSessionAdmin[]>([]);
   missionsList = signal<RapportMissionAdmin[]>([]);
+  incubationProgrammes = signal<any[]>([]);
 
   searchQuery = signal('');
   filterThematique = signal('all');
   filterCoach = signal('all');
   filterSession = signal('all');
+  selectedProgId = 0;
   filterProgramme = signal('all');
 
   ngOnInit(): void {
     this.svc.getAllSessionReports().subscribe(r => this.sessionsList.set(r || []));
     this.svc.getAllMissionReports().subscribe(r => this.missionsList.set(r || []));
+    this.progSvc.getAll().subscribe(p => this.incubationProgrammes.set(p || []));
+  }
+
+  onProgramChange() {
+    // Reset secondary filters if needed
   }
 
   thematiques = computed(() => {
@@ -229,8 +243,9 @@ export class AdminLivrablesComponent implements OnInit {
       const matchTheme = theme === 'all' || s.thematique?.nom === theme;
       const matchSession = sessionNum === 'all' || s.numeroSession === sessionNum;
       const matchCoach = coachFilter === 'all' || rawCoachName === coachFilter;
+      const matchProg = this.selectedProgId === 0 || s.programme?.id === this.selectedProgId;
       
-      return matchSearch && matchTheme && matchSession && matchCoach;
+      return matchSearch && matchTheme && matchSession && matchCoach && matchProg;
     });
   });
 
@@ -245,10 +260,11 @@ export class AdminLivrablesComponent implements OnInit {
       const coachName = rawCoachName.toLowerCase();
       const matchSearch = !search || coachName.includes(search);
       const matchTheme = theme === 'all' || m.thematique?.nom === theme;
-      const matchProg = prog === 'all' || m.programme?.nom === prog;
+      const matchProgLegacy = prog === 'all' || m.programme?.nom === prog;
+      const matchProgId = this.selectedProgId === 0 || m.programme?.id === this.selectedProgId;
       const matchCoach = coachFilter === 'all' || rawCoachName === coachFilter;
       
-      return matchSearch && matchTheme && matchProg && matchCoach;
+      return matchSearch && matchTheme && matchProgLegacy && matchProgId && matchCoach;
     });
   });
 

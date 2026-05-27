@@ -637,6 +637,7 @@ export class CoachRapportSessionComponent implements OnInit {
         coachId: this.coachId,
         entrepreneurId: this.selectedEntrepreneurId,
         thematiqueId: this.selectedThematiqueId,
+        programmeId: this.selectedProgrammeObj ? this.selectedProgrammeObj.id : 0,
         entrepriseNom: ent ? (ent.entreprise || ent.startupName || '') : '',
         secteurActivite: ent ? ent.secteur : '',
         gouvernorat: '',

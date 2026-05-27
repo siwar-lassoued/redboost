@@ -35,6 +35,11 @@ public class RapportSessionCoach {
     @JsonIgnoreProperties({"coach", "disponibilites", "matchings"})
     private ThematiqueCoaching thematique;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "programme_id")
+    @JsonIgnoreProperties({"sprints", "secteurs", "candidatures"})
+    private Programme programme;
+
     // Informations générales
     @Column(name = "entreprise_nom")
     private String entrepriseNom;

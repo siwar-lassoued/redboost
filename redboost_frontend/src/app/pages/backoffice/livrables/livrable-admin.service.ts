@@ -31,6 +31,7 @@ export interface RapportSessionAdmin {
     numeroSession?: string;
     dateSession?: string;
     thematique?: { nom: string };
+    programme?: { id: number, nom: string };
     pdfPath?: string;
     dateCreation?: string;
 }
@@ -38,7 +39,7 @@ export interface RapportSessionAdmin {
 export interface RapportMissionAdmin {
     id: number;
     coach?: { firstName: string, lastName: string };
-    programme?: { nom: string };
+    programme?: { id: number, nom: string };
     thematique?: { nom: string };
     dateDebut?: string;
     dateFin?: string;
