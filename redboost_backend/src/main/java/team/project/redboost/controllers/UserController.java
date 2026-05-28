@@ -234,6 +234,16 @@ public class UserController {
                 dto.put("region", region);
                 dto.put("entreprise", entreprise);
             }
+
+            // Include associated programme IDs
+            if (u.getProgrammes() != null) {
+                dto.put("programmes", u.getProgrammes().stream()
+                        .map(Programme::getId)
+                        .collect(Collectors.toList()));
+            } else {
+                dto.put("programmes", Collections.emptyList());
+            }
+
             return dto;
         }).collect(Collectors.toList());
 
@@ -639,6 +649,15 @@ public class UserController {
             response.put("descriptionProjet", user.getDescriptionProjet());
             response.put("stadeProjet", user.getStadeProjet());
             response.put("besoinsCoaching", user.getBesoinsCoaching());
+        }
+
+        // Add programme IDs
+        if (user.getProgrammes() != null) {
+            response.put("programmes", user.getProgrammes().stream()
+                    .map(Programme::getId)
+                    .collect(Collectors.toList()));
+        } else {
+            response.put("programmes", Collections.emptyList());
         }
 
         return response;

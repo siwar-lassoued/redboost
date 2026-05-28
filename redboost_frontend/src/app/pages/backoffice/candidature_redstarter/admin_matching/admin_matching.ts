@@ -67,7 +67,7 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
                    (click)="selectGlobalEnt(0)">
                 Tous les entrepreneurs
               </div>
-              <div *ngFor="let e of globalEntrepreneurs" 
+              <div *ngFor="let e of filteredGlobalEntrepreneurs" 
                    class="px-4 py-2 hover:bg-gray-50 rounded-lg cursor-pointer text-sm font-medium text-gray-700 transition-colors truncate"
                    [class.bg-[#fce4ec]]="selectedGlobalEntId === e.id" [class.text-[#ec407a]]="selectedGlobalEntId === e.id"
                    (click)="selectGlobalEnt(e.id)">
@@ -100,7 +100,7 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
                    (click)="selectGlobalCoach(0)">
                 Tous les coachs
               </div>
-              <div *ngFor="let c of globalCoaches" 
+              <div *ngFor="let c of filteredGlobalCoaches" 
                    class="px-4 py-2 hover:bg-gray-50 rounded-lg cursor-pointer text-sm font-medium text-gray-700 transition-colors truncate"
                    [class.bg-[#fce4ec]]="selectedGlobalCoachId === c.id" [class.text-[#ec407a]]="selectedGlobalCoachId === c.id"
                    (click)="selectGlobalCoach(c.id)">
@@ -896,6 +896,16 @@ export class AdminMatchingComponent implements OnInit {
             const coachName = (m.coach?.prenom + ' ' + m.coach?.nom).toLowerCase();
             return entName.includes(lowerSearch) || coachName.includes(lowerSearch);
         });
+    }
+
+    get filteredGlobalEntrepreneurs(): any[] {
+        if (!this.selectedProgId) return this.globalEntrepreneurs;
+        return this.globalEntrepreneurs.filter(e => e.programmes && e.programmes.includes(this.selectedProgId));
+    }
+
+    get filteredGlobalCoaches(): any[] {
+        if (!this.selectedProgId) return this.globalCoaches;
+        return this.globalCoaches.filter(c => c.programmes && c.programmes.includes(this.selectedProgId));
     }
 
     constructor(

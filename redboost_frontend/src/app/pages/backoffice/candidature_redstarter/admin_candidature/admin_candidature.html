@@ -5,9 +5,9 @@
       <h1 class="cand-title">Gestion des Candidatures</h1>
       <p class="cand-subtitle">Évaluez et traitez les candidatures reçues</p>
     </div>
-    <div class="cand-header-actions">
-      <button (click)="onExportCSV()" class="btn-outline">
-        <lucide-icon name="download" [size]="18"></lucide-icon> Exporter CSV
+    <div class="cand-header-actions">git
+      <button (click)="onExportCSV()" class="btn-export">
+        <lucide-icon name="download" [size]="16"></lucide-icon> Exporter CSV
       </button>
       @if (filterProgram !== 'all') {
         <button (click)="advanceRound()" class="btn-gradient-blue">
