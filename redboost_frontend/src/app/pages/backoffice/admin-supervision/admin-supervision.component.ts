@@ -451,92 +451,85 @@ export class AdminSupervisionDashboardComponent implements OnInit {
   loadUsers() {
     this.loadingUsers.set(true);
     const mode = this.viewMode();
-    if (this.selectedProgId > 0) {
-      let url = `${environment.apiUrl}/matching/history/${this.selectedProgId}`;
-      if (this.selectedThematiqueId > 0) url = `${environment.apiUrl}/matching/history/${this.selectedProgId}/thematique/${this.selectedThematiqueId}`;
-      this.http.get<any[]>(url, { headers: this.headers }).subscribe({
-        next: (matchings) => {
-          const uniqueUsersMap = new Map<number, any>();
-          matchings.forEach(m => {
-            const userData = mode === 'coach' ? m.coach : m.entrepreneur;
-            const rootId = mode === 'coach' ? m.coachId : m.entrepreneurId;
-            const finalId = userData?.id || rootId;
-            
-            if (finalId) {
-              const expectedRole = mode === 'coach' ? 'COACH' : 'ENTREPRENEUR';
-              if (userData && userData.role && userData.role !== expectedRole) return;
+    
+    if (mode === 'entrepreneur') {
+      const detailsUrl = `${environment.apiUrl}/backoffice/programmes/entrepreneurs-details`;
+      this.http.get<any[]>(detailsUrl, { headers: this.headers }).subscribe({
+        next: (data) => {
+          let users = data.map(e => ({
+            id: e.id,
+            fullName: `${e.firstName || ''} ${e.lastName || ''}`.trim() || e.email?.split('@')[0] || `Utilisateur #${e.id}`,
+            email: e.email || 'N/A',
+            programmes: e.programs?.map((p: any) => p.nom) || []
+          }));
 
-              const firstName = (userData?.firstName || userData?.prenom || '').trim();
-              const lastName = (userData?.lastName || userData?.nom || '').trim();
-              const nameFromData = (firstName + ' ' + lastName).trim();
-              
-              const fullName = (mode === 'coach' ? (m.coachName || nameFromData) : (m.entrepreneurName || nameFromData)) || 
-                               userData?.email?.split('@')[0] || 'Utilisateur #' + finalId;
-
-              const existing = uniqueUsersMap.get(finalId);
-              const progName = m.programmeName || m.programme?.nom;
-              const progs = existing ? existing.programmes : [];
-              if (progName && !progs.includes(progName)) progs.push(progName);
-
-              uniqueUsersMap.set(finalId, {
-                id: finalId,
-                fullName: fullName,
-                email: userData?.email || 'N/A',
-                programmes: progs
-              });
-            }
-          });
-          const users = Array.from(uniqueUsersMap.values());
+          if (this.selectedProgId > 0) {
+            users = users.filter(u => {
+              const entDetail = data.find(d => d.id === u.id);
+              return entDetail?.programs?.some((p: any) => p.id === this.selectedProgId);
+            });
+          }
+          
           this.allUsers.set(users);
           this.filterUsers();
           this.loadingUsers.set(false);
           this.cdr.markForCheck();
         },
-        error: () => { this.allUsers.set([]); this.filteredUsersData.set([]); this.loadingUsers.set(false); this.cdr.markForCheck(); }
+        error: () => { 
+          this.allUsers.set([]); 
+          this.filteredUsersData.set([]); 
+          this.loadingUsers.set(false); 
+          this.cdr.markForCheck(); 
+        }
       });
-    } else {
-      // General view: use the global matching history to ensure we only see matched users
-      this.http.get<any[]>(`${environment.apiUrl}/matching/history`, { headers: this.headers }).subscribe({
-        next: (matchings) => {
-          const uniqueUsersMap = new Map<number, any>();
-          matchings.filter(m => m.statut === 'VALIDE').forEach(m => {
-            const userData = mode === 'coach' ? m.coach : m.entrepreneur;
-            const rootId = mode === 'coach' ? m.coachId : m.entrepreneurId;
-            const finalId = userData?.id || rootId;
-            
-            if (finalId) {
-              const expectedRole = mode === 'coach' ? 'COACH' : 'ENTREPRENEUR';
-              if (userData && userData.role && userData.role !== expectedRole) return;
-
-              const firstName = (userData?.firstName || userData?.prenom || '').trim();
-              const lastName = (userData?.lastName || userData?.nom || '').trim();
-              const nameFromData = (firstName + ' ' + lastName).trim();
-              
-              const fullName = (mode === 'coach' ? (m.coachName || nameFromData) : (m.entrepreneurName || nameFromData)) || 
-                               userData?.email?.split('@')[0] || 'Utilisateur #' + finalId;
-
-              const existing = uniqueUsersMap.get(finalId);
-              const progName = m.programmeName || m.programme?.nom;
-              const progs = existing ? existing.programmes : [];
-              if (progName && !progs.includes(progName)) progs.push(progName);
-
-              uniqueUsersMap.set(finalId, {
-                id: finalId,
-                fullName: fullName || userData?.email?.split('@')[0] || 'Utilisateur #' + finalId,
-                email: userData?.email || 'N/A',
-                programmes: progs
-              });
-            }
-          });
-          const users = Array.from(uniqueUsersMap.values());
-          this.allUsers.set(users);
-          this.filterUsers();
-          this.loadingUsers.set(false);
-          this.cdr.markForCheck();
-        },
-        error: () => { this.allUsers.set([]); this.filteredUsersData.set([]); this.loadingUsers.set(false); this.cdr.markForCheck(); }
-      });
+      return;
     }
+
+    // Default logic for coaches
+    let url = this.selectedProgId > 0 
+      ? `${environment.apiUrl}/matching/history/${this.selectedProgId}`
+      : `${environment.apiUrl}/matching/history`;
+    
+    if (this.selectedProgId > 0 && this.selectedThematiqueId > 0) {
+      url = `${environment.apiUrl}/matching/history/${this.selectedProgId}/thematique/${this.selectedThematiqueId}`;
+    }
+
+    this.http.get<any[]>(url, { headers: this.headers }).subscribe({
+      next: (matchings) => {
+        const uniqueUsersMap = new Map<number, any>();
+        matchings.forEach(m => {
+          const userData = m.coach;
+          const rootId = m.coachId;
+          const finalId = userData?.id || rootId;
+          
+          if (finalId) {
+            if (userData && userData.role && userData.role !== 'COACH') return;
+
+            const firstName = (userData?.firstName || userData?.prenom || '').trim();
+            const lastName = (userData?.lastName || userData?.nom || '').trim();
+            const fullName = (m.coachName || (firstName + ' ' + lastName).trim()) || 
+                             userData?.email?.split('@')[0] || 'Coach #' + finalId;
+
+            const existing = uniqueUsersMap.get(finalId);
+            const progName = m.programmeName || m.programme?.nom;
+            const progs = existing ? existing.programmes : [];
+            if (progName && !progs.includes(progName)) progs.push(progName);
+
+            uniqueUsersMap.set(finalId, {
+              id: finalId,
+              fullName: fullName,
+              email: userData?.email || 'N/A',
+              programmes: progs
+            });
+          }
+        });
+        this.allUsers.set(Array.from(uniqueUsersMap.values()));
+        this.filterUsers();
+        this.loadingUsers.set(false);
+        this.cdr.markForCheck();
+      },
+      error: () => { this.allUsers.set([]); this.filteredUsersData.set([]); this.loadingUsers.set(false); this.cdr.markForCheck(); }
+    });
   }
 
   filterUsers() {
