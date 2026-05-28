@@ -103,7 +103,7 @@ import { CommonModule } from '@angular/common';
 
             /* Title */
             .title {
-                font-family: 'Poppins', sans-serif;
+                font-family: var(--font-family);
                 font-size: 4.2rem;
                 font-weight: 800;
                 background: linear-gradient(90deg, #db1e37, #0a4955);
@@ -175,7 +175,7 @@ import { CommonModule } from '@angular/common';
                 border-radius: 10px;
                 border: none;
                 color: #fff;
-                font-family: 'Poppins', sans-serif;
+                font-family: var(--font-family);
                 min-width: 250px;
                 box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12);
                 cursor: pointer;

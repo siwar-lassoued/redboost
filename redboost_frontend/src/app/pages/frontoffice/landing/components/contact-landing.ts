@@ -193,7 +193,7 @@ import { ScrollToTopComponent } from './ScrollToTopComponent';
                 --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
                 --border-radius: 16px;
                 --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                font-family: 'Inter', sans-serif;
+                font-family: var(--font-family);
             }
 
             .min-h-screen {
@@ -337,7 +337,7 @@ import { ScrollToTopComponent } from './ScrollToTopComponent';
             }
 
             .section-title {
-                font-family: 'Poppins', sans-serif;
+                font-family: var(--font-family);
                 font-size: 2.5rem;
                 font-weight: 700;
                 color: var(--secondary-color);
@@ -382,7 +382,7 @@ import { ScrollToTopComponent } from './ScrollToTopComponent';
                 width: 100%;
                 padding: 12px 16px;
                 font-size: 1rem;
-                font-family: 'Inter', sans-serif;
+                font-family: var(--font-family);
                 color: var(--text-color);
                 background: #fafafa;
                 border: 2px solid transparent;

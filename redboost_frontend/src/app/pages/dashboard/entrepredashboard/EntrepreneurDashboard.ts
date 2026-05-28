@@ -382,7 +382,7 @@ interface DashboardStats {
                 background: #f8fafc;
                 min-height: 100vh;
                 padding: 0;
-                font-family: 'Inter', 'Poppins', Arial, sans-serif;
+                font-family: var(--font-family);
             }
             .ent-page-header {
                 display: flex;
@@ -534,7 +534,7 @@ interface DashboardStats {
                 border-radius: 1.5rem;
                 box-shadow: 0 8px 32px rgba(44, 62, 80, 0.1);
                 padding: 1.5rem;
-                font-family: 'Poppins', Arial, sans-serif;
+                font-family: var(--font-family);
                 width: 100%;
                 height: 550px;
             }

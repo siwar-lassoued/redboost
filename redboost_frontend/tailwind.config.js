@@ -10,6 +10,11 @@ module.exports = {
     ],
     plugins: [primeui],
     theme: {
+        extend: {
+            fontFamily: {
+                sans: ["Poppins", "sans-serif"],
+            },
+        },
         screens: {
             sm: "576px",
             md: "768px",

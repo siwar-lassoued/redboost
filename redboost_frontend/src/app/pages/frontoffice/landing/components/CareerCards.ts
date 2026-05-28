@@ -53,7 +53,7 @@ import { Router } from '@angular/router';
                 margin: 0 auto;
                 padding: 40px 20px;
                 text-align: center;
-                font-family: 'Arial', sans-serif;
+                font-family: var(--font-family);
                 background-color: #f5f5f5;
                 color: #333;
             }

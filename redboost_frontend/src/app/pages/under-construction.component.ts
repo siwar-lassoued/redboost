@@ -81,7 +81,7 @@ import { CommonModule } from '@angular/common';
         `
             :host {
                 display: block;
-                font-family: 'Inter', 'Poppins', sans-serif;
+                font-family: var(--font-family);
             }
 
             /* Background pulse animation */

@@ -201,7 +201,7 @@ import { EntrepreneurialFaqComponent } from './entrepreneurial-faq.component';
             }
 
             .main-title {
-                font-family: 'Poppins', sans-serif;
+                font-family: var(--font-family);
                 font-size: 4.5rem;
                 font-weight: 800;
                 margin: 0;
@@ -245,7 +245,7 @@ import { EntrepreneurialFaqComponent } from './entrepreneurial-faq.component';
             }
 
             .subtitle {
-                font-family: 'Inter', sans-serif;
+                font-family: var(--font-family);
                 font-size: 1.6rem;
                 font-weight: 400;
                 margin: 24px auto 24px;

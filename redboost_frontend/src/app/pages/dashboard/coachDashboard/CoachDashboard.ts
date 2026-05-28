@@ -263,7 +263,7 @@ interface NoteDeSynthese {
             .coach-dashboard {
                 background: #f8f9fa;
                 padding: 2rem;
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                font-family: var(--font-family);
                 color: #2D3748;
                 margin-top: -1rem; /* Adjust padding added by layout */
             }
