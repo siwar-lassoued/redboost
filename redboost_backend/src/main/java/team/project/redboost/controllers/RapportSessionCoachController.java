@@ -18,6 +18,8 @@ import team.project.redboost.repositories.RapportSessionCoachRepository;
 import team.project.redboost.repositories.UserRepository;
 import team.project.redboost.entities.ThematiqueCoaching;
 import team.project.redboost.repositories.ThematiqueRepository;
+import team.project.redboost.entities.Programme;
+import team.project.redboost.repositories.ProgrammeRepository;
 import team.project.redboost.services.ReportPdfService;
 
 import java.awt.*;
@@ -37,6 +39,7 @@ public class RapportSessionCoachController {
     private final RapportSessionCoachRepository repository;
     private final UserRepository userRepository;
     private final ThematiqueRepository thematiqueRepository;
+    private final ProgrammeRepository programmeRepository;
     private final ReportPdfService pdfService;
 
     @GetMapping("/all")
@@ -110,6 +113,11 @@ public class RapportSessionCoachController {
         if (payload.containsKey("thematiqueId") && payload.get("thematiqueId") != null) {
             Optional<ThematiqueCoaching> thematique = thematiqueRepository.findById(Long.valueOf(payload.get("thematiqueId").toString()));
             thematique.ifPresent(rapport::setThematique);
+        }
+
+        if (payload.containsKey("programmeId") && payload.get("programmeId") != null) {
+            Optional<Programme> programme = programmeRepository.findById(Long.valueOf(payload.get("programmeId").toString()));
+            programme.ifPresent(rapport::setProgramme);
         }
         
         rapport.setEntrepriseNom((String) payload.get("entrepriseNom"));

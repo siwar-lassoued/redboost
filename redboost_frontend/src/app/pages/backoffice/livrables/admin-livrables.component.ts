@@ -33,37 +33,30 @@ import { ProgrammeService } from '../candidature_redstarter/services/programme.s
         </button>
       </div>
 
-      <!-- Filters Wrapper -->
-      <div class="bg-white rounded-3xl p-6 mb-8 shadow-sm border border-gray-100 flex flex-wrap items-center gap-4">
-        <select [(ngModel)]="selectedProgId" (ngModelChange)="onProgramChange()" class="text-gray-900 px-4 py-3 bg-white border border-gray-200 rounded-2xl text-xs font-bold focus:outline-none focus:ring-4 focus:ring-pink-100 cursor-pointer">
+        <select [ngModel]="selectedProgId()" (ngModelChange)="selectedProgId.set($event)" class="text-gray-900 px-4 py-3 bg-white border border-gray-200 rounded-2xl text-xs font-bold focus:outline-none focus:ring-4 focus:ring-pink-100 cursor-pointer">
           <option [ngValue]="0">Tous les programmes</option>
           @for (p of incubationProgrammes(); track p.id) { <option [ngValue]="p.id">{{ p.nom }}</option> }
         </select>
 
         <div class="relative flex-1 min-w-[200px]">
           <i class="pi pi-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-          <input [(ngModel)]="searchQuery" type="text" placeholder="Rechercher un coach, bénéficiaire..." 
+          <input [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" type="text" placeholder="Rechercher un coach, bénéficiaire..." 
             class="text-gray-900 w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-pink-100 focus:border-pink-300 transition-all">
         </div>
 
-        <select [(ngModel)]="filterThematique" class="text-gray-900 px-4 py-3 bg-white border border-gray-200 rounded-2xl text-xs font-bold focus:outline-none focus:ring-4 focus:ring-pink-100 cursor-pointer">
+        <select [ngModel]="filterThematique()" (ngModelChange)="filterThematique.set($event)" class="text-gray-900 px-4 py-3 bg-white border border-gray-200 rounded-2xl text-xs font-bold focus:outline-none focus:ring-4 focus:ring-pink-100 cursor-pointer">
           <option value="all">Toutes les thématiques</option>
           @for (t of thematiques(); track t) { <option [value]="t">{{ t }}</option> }
         </select>
 
-        <select [(ngModel)]="filterCoach" class="text-gray-900 px-4 py-3 bg-white border border-gray-200 rounded-2xl text-xs font-bold focus:outline-none focus:ring-4 focus:ring-pink-100 cursor-pointer">
+        <select [ngModel]="filterCoach()" (ngModelChange)="filterCoach.set($event)" class="text-gray-900 px-4 py-3 bg-white border border-gray-200 rounded-2xl text-xs font-bold focus:outline-none focus:ring-4 focus:ring-pink-100 cursor-pointer">
           <option value="all">Tous les coachs</option>
           @for (c of coaches(); track c) { <option [value]="c">{{ c }}</option> }
         </select>
         
-        <select *ngIf="activeTab() === 'sessions'" [(ngModel)]="filterSession" class="text-gray-900 px-4 py-3 bg-white border border-gray-200 rounded-2xl text-xs font-bold focus:outline-none focus:ring-4 focus:ring-pink-100 cursor-pointer">
+        <select *ngIf="activeTab() === 'sessions'" [ngModel]="filterSession()" (ngModelChange)="filterSession.set($event)" class="text-gray-900 px-4 py-3 bg-white border border-gray-200 rounded-2xl text-xs font-bold focus:outline-none focus:ring-4 focus:ring-pink-100 cursor-pointer">
           <option value="all">Toutes les sessions</option>
           @for (s of sessionNumbers(); track s) { <option [value]="s">Session {{ s }}</option> }
-        </select>
-        
-        <select *ngIf="activeTab() === 'missions'" [(ngModel)]="filterProgramme" class="text-gray-900 px-4 py-3 bg-white border border-gray-200 rounded-2xl text-xs font-bold focus:outline-none focus:ring-4 focus:ring-pink-100 cursor-pointer">
-          <option value="all">Tous les programmes</option>
-          @for (p of programmes(); track p) { <option [value]="p">{{ p }}</option> }
         </select>
       </div>
 
@@ -196,8 +189,7 @@ export class AdminLivrablesComponent implements OnInit {
   filterThematique = signal('all');
   filterCoach = signal('all');
   filterSession = signal('all');
-  selectedProgId = 0;
-  filterProgramme = signal('all');
+  selectedProgId = signal(0);
 
   ngOnInit(): void {
     this.svc.getAllSessionReports().subscribe(r => this.sessionsList.set(r || []));
@@ -243,7 +235,7 @@ export class AdminLivrablesComponent implements OnInit {
       const matchTheme = theme === 'all' || s.thematique?.nom === theme;
       const matchSession = sessionNum === 'all' || s.numeroSession === sessionNum;
       const matchCoach = coachFilter === 'all' || rawCoachName === coachFilter;
-      const matchProg = this.selectedProgId === 0 || s.programme?.id === this.selectedProgId;
+      const matchProg = this.selectedProgId() === 0 || s.programme?.id == this.selectedProgId();
       
       return matchSearch && matchTheme && matchSession && matchCoach && matchProg;
     });
@@ -252,7 +244,6 @@ export class AdminLivrablesComponent implements OnInit {
   filteredMissions = computed(() => {
     const search = this.searchQuery().toLowerCase();
     const theme = this.filterThematique();
-    const prog = this.filterProgramme();
     const coachFilter = this.filterCoach();
 
     return this.missionsList().filter(m => {
@@ -260,11 +251,10 @@ export class AdminLivrablesComponent implements OnInit {
       const coachName = rawCoachName.toLowerCase();
       const matchSearch = !search || coachName.includes(search);
       const matchTheme = theme === 'all' || m.thematique?.nom === theme;
-      const matchProgLegacy = prog === 'all' || m.programme?.nom === prog;
-      const matchProgId = this.selectedProgId === 0 || m.programme?.id === this.selectedProgId;
+      const matchProgId = this.selectedProgId() === 0 || m.programme?.id == this.selectedProgId();
       const matchCoach = coachFilter === 'all' || rawCoachName === coachFilter;
       
-      return matchSearch && matchTheme && matchProgLegacy && matchProgId && matchCoach;
+      return matchSearch && matchTheme && matchProgId && matchCoach;
     });
   });
 
