@@ -29,6 +29,11 @@ interface DateGroupView {
   sessions: SessionView[];
 }
 
+interface SessionGroupView {
+  titre: string;
+  dateGroups: DateGroupView[];
+}
+
 @Component({
   selector: 'app-coach-disponibilites',
   standalone: true,
@@ -320,70 +325,70 @@ interface DateGroupView {
                     <span>Thématique sélectionnée : <strong>{{ selectedEditThematiqueObj.nom }}</strong> ({{ selectedEditThematiqueObj.dateDebut | date:'dd/MM/yyyy' }} → {{ selectedEditThematiqueObj.dateFin | date:'dd/MM/yyyy' }})</span>
                   </div>
 
-                  <div *ngIf="selectedEditThematiqueId && groupedEditDatesView.length === 0 && !loading && dispoIdsForActiveTheme.length === 0" class="error-banner">
-                    <i class="pi pi-info-circle"></i> Aucune disponibilité trouvée pour cette thématique.
-                  </div>
-
-                  <div class="form-group" *ngIf="selectedEditThematiqueId && groupedEditDatesView.length === 0 && !loading && dispoIdsForActiveTheme.length > 0">
-                    <div class="error-banner" style="margin-bottom: 1rem; background: #EBF8FF; border-color: #BEE3F8; color: #2B6CB0;">
-                      <i class="pi pi-info-circle"></i> La thématique possède une disponibilité, mais aucun créneau.
-                    </div>
-                    <button class="btn-outline" style="width:100%" (click)="addEmptyDateGroupForTheme()">
-                      <i class="pi pi-calendar-plus"></i> Ajouter une première date
-                    </button>
-                  </div>
-
-                  <div class="form-group" *ngIf="groupedEditDatesView.length > 0">
-                    <label>Disponibilités & Créneaux</label>
-                    <div *ngFor="let group of groupedEditDatesView; let gi = index" class="date-slot-group edit-date-group">
-                      <div class="dsg-header">
-                        <div class="dsg-date-row">
-                          <span *ngIf="group.date !== ''" class="dsg-badge"> {{ group.date | date:'dd/MM/yyyy' }}</span>
-                          <input *ngIf="group.date === ''" type="date" class="premium-input dsg-date-input" style="padding: 4px;font-size: 0.9rem;" [(ngModel)]="group.date" [min]="getMinDate(selectedEditThematiqueObj?.dateDebut)" [max]="selectedEditThematiqueObj?.dateFin || ''">
-                        </div>
+                  <!-- SESSION GROUPS -->
+                  <div *ngIf="sessionGroupsView.length > 0">
+                    <div *ngFor="let sg of sessionGroupsView; let sgi = index" class="session-group-box mb-6">
+                      <div class="session-group-header">
+                        <i class="pi pi-bookmark text-pink-500"></i>
+                        <span class="session-title-label">Session :</span>
+                        <input type="text" class="session-title-input" [(ngModel)]="sg.titre" placeholder="Titre de la session...">
                       </div>
-                      <div class="dsg-slots">
-                        <div *ngFor="let sv of group.sessions; let si = index" class="slot-card edit-slot-card" [class.editing]="sv.isEditing">
-                          
-                          <!-- VIEW MODE -->
-                          <div *ngIf="!sv.isEditing" class="slot-read-only">
-                            <div class="slot-time">
-                              <i class="pi pi-clock"></i>
-                              <span>{{ sv.session?.heureDebut }} à {{ sv.session?.heureFin }}</span>
-                            </div>
-                            <div class="slot-actions">
-                              <button class="btn-icon-edit" title="Modifier" (click)="startEditSession(sv)"><i class="pi pi-pencil"></i></button>
-                              <button class="btn-icon-danger" title="Supprimer" (click)="deleteSession(sv, group, si)"><i class="pi pi-trash"></i></button>
-                            </div>
+
+                      <div *ngFor="let group of sg.dateGroups; let gi = index" class="date-slot-group edit-date-group">
+                        <div class="dsg-header">
+                          <div class="dsg-date-row">
+                            <span *ngIf="group.date !== ''" class="dsg-badge"> {{ group.date | date:'dd/MM/yyyy' }}</span>
+                            <input *ngIf="group.date === ''" type="date" class="premium-input dsg-date-input" style="padding: 4px;font-size: 0.9rem;" [(ngModel)]="group.date" [min]="getMinDate(selectedEditThematiqueObj?.dateDebut)" [max]="selectedEditThematiqueObj?.dateFin || ''">
                           </div>
-                          
-                          <!-- EDIT MODE -->
-                          <div *ngIf="sv.isEditing" class="slot-edit-mode">
-                            <div class="slot-grid" style="margin-bottom: 0.5rem;">
-                              <div>
-                                <label class="slot-label">Début</label>
-                                <input type="time" class="premium-input" [(ngModel)]="sv.editStart">
+                        </div>
+                        <div class="dsg-slots">
+                          <div *ngFor="let sv of group.sessions; let si = index" class="slot-card edit-slot-card" [class.editing]="sv.isEditing">
+                            
+                            <!-- VIEW MODE -->
+                            <div *ngIf="!sv.isEditing" class="slot-read-only">
+                              <div class="slot-time">
+                                <i class="pi pi-clock"></i>
+                                <span>{{ sv.session?.heureDebut }} à {{ sv.session?.heureFin }}</span>
                               </div>
-                              <div>
-                                <label class="slot-label">Fin</label>
-                                <input type="time" class="premium-input" [(ngModel)]="sv.editEnd">
+                              <div class="slot-actions">
+                                <button class="btn-icon-edit" title="Modifier" (click)="startEditSession(sv)"><i class="pi pi-pencil"></i></button>
+                                <button class="btn-icon-danger" title="Supprimer" (click)="deleteSession(sv, group, si)"><i class="pi pi-trash"></i></button>
                               </div>
                             </div>
-                            <div class="edit-actions">
-                              <button class="btn-outline-sm" (click)="cancelEditSession(group, sv, si)">Annuler</button>
-                              <button *ngIf="!sv.isNew" class="btn-primary-sm" (click)="saveSessionEdit(sv, group)">Enregistrer</button>
-                              <button *ngIf="sv.isNew" class="btn-primary-sm" (click)="saveNewSession(sv, group)">Créer</button>
+                            
+                            <!-- EDIT MODE -->
+                            <div *ngIf="sv.isEditing" class="slot-edit-mode">
+                              <div class="slot-grid" style="margin-bottom: 0.5rem;">
+                                <div>
+                                  <label class="slot-label">Début</label>
+                                  <input type="time" class="premium-input" [(ngModel)]="sv.editStart">
+                                </div>
+                                <div>
+                                  <label class="slot-label">Fin</label>
+                                  <input type="time" class="premium-input" [(ngModel)]="sv.editEnd">
+                                </div>
+                              </div>
+                              <div class="edit-actions">
+                                <button class="btn-outline-sm" (click)="cancelEditSession(group, sv, si)">Annuler</button>
+                                <button *ngIf="!sv.isNew" class="btn-primary-sm" (click)="saveSessionEdit(sv, group)">Enregistrer</button>
+                                <button *ngIf="sv.isNew" class="btn-primary-sm" (click)="saveNewSession(sv, group)">Créer</button>
+                              </div>
                             </div>
+                            
                           </div>
-                          
+                          <button class="btn-inline-slot mt-1" (click)="addNewSessionToDate(group)">
+                            <i class="pi pi-plus"></i> Ajouter un créneau à cette date
+                          </button>
                         </div>
-                        <button class="btn-inline-slot mt-1" (click)="addNewSessionToDate(group)">
-                          <i class="pi pi-plus"></i> Ajouter un créneau à cette date
-                        </button>
                       </div>
+
+                      <button class="btn-outline-sm mt-3" style="width: 100%; border-style: dashed;" (click)="addEmptyDateGroupToSession(sg)">
+                        <i class="pi pi-calendar-plus"></i> Ajouter une autre date à cette session
+                      </button>
                     </div>
-                    <button class="btn-outline mt-3" style="width: 100%" (click)="addEmptyDateGroupForTheme()">
-                      <i class="pi pi-calendar-plus"></i> Ajouter une autre date
+
+                    <button class="btn-secondary mt-2" style="width: 100%; border-radius: 12px; padding: 12px;" (click)="addNewSessionGroup()">
+                      <i class="pi pi-plus-circle"></i> Ajouter une nouvelle session
                     </button>
                   </div>
 
@@ -422,11 +427,51 @@ interface DateGroupView {
     .nav-btn:hover { background: #F7FAFC; }
     .day-headers { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 0.5rem; }
     .day-header { text-align: center; font-size: 0.8rem; font-weight: 700; color: #A0AEC0; text-transform: uppercase; padding: 0.5rem; }
-    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); border-top: 1px solid #EDF2F7; border-left: 1px solid #EDF2F7; }
-    .calendar-cell { min-height: 90px; border-right: 1px solid #EDF2F7; border-bottom: 1px solid #EDF2F7; padding: 0.4rem; }
-    .calendar-cell.other-month { background: #FCFCFD; }
-    .calendar-cell.other-month .cell-day { color: #CBD5E0; }
-    .calendar-cell.today { background: rgba(66,153,225,0.04); }
+    /* Edit Modal Session Grouping */
+    .session-group-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 1.5rem;
+      position: relative;
+    }
+    .session-group-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .session-title-label {
+      font-size: 0.85rem;
+      font-weight: 800;
+      color: #718096;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .session-title-input {
+      flex: 1;
+      border: 1px solid transparent;
+      background: transparent;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #2D3748;
+      padding: 0.4rem 0.75rem;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+    .session-title-input:hover {
+      background: rgba(255, 61, 145, 0.05);
+      border-color: rgba(255, 61, 145, 0.2);
+    }
+    .session-title-input:focus {
+      background: white;
+      border-color: #FF4D85;
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(255, 61, 145, 0.1);
+    }
+    
     .cell-day { font-size: 0.85rem; font-weight: 500; color: #4A5568; padding: 0.2rem 0.4rem; }
     .today-circle { background: #4299E1; color: white !important; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
     .cell-events { display: flex; flex-direction: column; gap: 2px; margin-top: 2px; }
@@ -604,7 +649,7 @@ export class DisponibilitesComponent implements OnInit {
   selectedThematiqueColor: string = '#FF4D85';
 // ===== EDIT DISPONIBILITE =====
 selectedEditThematiqueId: number | null = null;
-groupedEditDatesView: DateGroupView[] = [];
+sessionGroupsView: SessionGroupView[] = [];
 dispoIdsForActiveTheme: number[] = [];
   selectedFilterThematiqueId: number | null = null;
   activeFilterThematique: ThematiqueCoachingDTO | null = null;
@@ -716,7 +761,7 @@ dispoIdsForActiveTheme: number[] = [];
   openEditDispoModal(dispo?: DisponibiliteDTO): void {
     this.showEditDispoModal = true;
     this.editValidationError = null;
-    this.groupedEditDatesView = [];
+    this.sessionGroupsView = [];
     if (dispo?.thematiqueId) {
       this.selectedEditThematiqueId = dispo.thematiqueId;
       this.onEditThematiqueSelected(dispo.thematiqueId);
@@ -736,7 +781,7 @@ dispoIdsForActiveTheme: number[] = [];
   }
 
   onEditThematiqueSelected(thematiqueId: number | null): void {
-    this.groupedEditDatesView = [];
+    this.sessionGroupsView = [];
     this.dispoIdsForActiveTheme = [];
     this.editValidationError = null;
     if (!thematiqueId) return;
@@ -755,36 +800,52 @@ dispoIdsForActiveTheme: number[] = [];
       .then((sessionsByDispo: SessionCoachDTO[][]) => {
         const mergedSessions = sessionsByDispo.flat();
         
-        const groupedMap = new Map<string, SessionCoachDTO[]>();
+        // Group by titre
+        const titleGroups = new Map<string, SessionCoachDTO[]>();
         mergedSessions.forEach(s => {
-          if (!groupedMap.has(s.dateSession)) {
-            groupedMap.set(s.dateSession, []);
+          const title = s.titre || 'Session sans titre';
+          if (!titleGroups.has(title)) {
+            titleGroups.set(title, []);
           }
-          groupedMap.get(s.dateSession)!.push(s);
+          titleGroups.get(title)!.push(s);
         });
 
-        const dates = Array.from(groupedMap.keys()).sort();
-        this.groupedEditDatesView = dates.map(date => {
-          const sessions = groupedMap.get(date)!;
-          sessions.sort((a,b) => a.heureDebut.localeCompare(b.heureDebut));
-          
-          return {
-            date,
-            disponibiliteId: sessions[0].disponibiliteId,
-            sessions: sessions.map(s => ({
-              session: s,
-              isEditing: false,
-              isNew: false,
-              editStart: s.heureDebut.slice(0,5),
-              editEnd: s.heureFin.slice(0,5)
-            }))
-          };
+        this.sessionGroupsView = Array.from(titleGroups.entries()).map(([titre, sessionsForTitle]) => {
+          // Inside each title, group by date
+          const dateMap = new Map<string, SessionCoachDTO[]>();
+          sessionsForTitle.forEach(s => {
+             if (!dateMap.has(s.dateSession)) {
+               dateMap.set(s.dateSession, []);
+             }
+             dateMap.get(s.dateSession)!.push(s);
+          });
+
+          const dates = Array.from(dateMap.keys()).sort();
+          const dateGroups = dates.map(date => {
+            const slots = dateMap.get(date)!;
+            slots.sort((a,b) => a.heureDebut.localeCompare(b.heureDebut));
+            return {
+              date,
+              disponibiliteId: slots[0].disponibiliteId,
+              sessions: slots.map(s => ({
+                session: s,
+                isEditing: false,
+                isNew: false,
+                editStart: s.heureDebut.slice(0,5),
+                editEnd: s.heureFin.slice(0,5)
+              }))
+            };
+          });
+
+          return { titre, dateGroups };
         });
+
         this.loading = false;
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error("Error loading sessions for edit:", err);
         this.editValidationError = 'Impossible de charger les créneaux de la thématique sélectionnée.';
-        this.groupedEditDatesView = [];
+        this.sessionGroupsView = [];
         this.loading = false;
       });
   }
@@ -972,8 +1033,16 @@ dispoIdsForActiveTheme: number[] = [];
     
     const startObj = sv.editStart.length === 5 ? `${sv.editStart}:00` : sv.editStart;
     const endObj = sv.editEnd.length === 5 ? `${sv.editEnd}:00` : sv.editEnd;
+
+    // Find parent session group to get the title
+    const parentGroup = this.sessionGroupsView.find(sg => sg.dateGroups.some(dg => dg === group));
     
-    const updateData = { ...sv.session!, heureDebut: startObj, heureFin: endObj };
+    const updateData = { 
+      ...sv.session!, 
+      titre: parentGroup?.titre || sv.session?.titre || 'Session',
+      heureDebut: startObj, 
+      heureFin: endObj 
+    };
     
     this.loading = true;
     this.coachService.updateSession(updateData.id!, updateData).subscribe({
@@ -997,7 +1066,12 @@ dispoIdsForActiveTheme: number[] = [];
         next: () => {
           group.sessions.splice(idx, 1);
           if (group.sessions.length === 0) {
-            this.groupedEditDatesView = this.groupedEditDatesView.filter(g => g !== group);
+            // Remove group from its parent SessionGroupView
+            this.sessionGroupsView.forEach(sg => {
+              sg.dateGroups = sg.dateGroups.filter(dg => dg !== group);
+            });
+            // Remove empty session groups
+            this.sessionGroupsView = this.sessionGroupsView.filter(sg => sg.dateGroups.length > 0);
           }
           this.loading = false;
           this.loadData();
@@ -1020,10 +1094,10 @@ dispoIdsForActiveTheme: number[] = [];
     });
   }
 
-  addEmptyDateGroupForTheme() {
+  addEmptyDateGroupToSession(sessionGroup: SessionGroupView) {
     if (this.dispoIdsForActiveTheme.length === 0) return;
     this.editValidationError = null;
-    this.groupedEditDatesView.push({
+    sessionGroup.dateGroups.push({
       date: '',
       disponibiliteId: this.dispoIdsForActiveTheme[0],
       sessions: [{
@@ -1032,6 +1106,13 @@ dispoIdsForActiveTheme: number[] = [];
         editStart: '',
         editEnd: ''
       }]
+    });
+  }
+
+  addNewSessionGroup() {
+    this.sessionGroupsView.push({
+      titre: '',
+      dateGroups: []
     });
   }
 
@@ -1053,9 +1134,12 @@ dispoIdsForActiveTheme: number[] = [];
     const startObj = sv.editStart.length === 5 ? `${sv.editStart}:00` : sv.editStart;
     const endObj = sv.editEnd.length === 5 ? `${sv.editEnd}:00` : sv.editEnd;
 
+    // Find parent session group to get the title
+    const parentGroup = this.sessionGroupsView.find(sg => sg.dateGroups.some(dg => dg === group));
+    
     const newSession: SessionCoachDTO = {
       disponibiliteId: group.disponibiliteId,
-      titre: 'Session',
+      titre: parentGroup?.titre || 'Session',
       dateSession: group.date,
       heureDebut: startObj,
       heureFin: endObj,
