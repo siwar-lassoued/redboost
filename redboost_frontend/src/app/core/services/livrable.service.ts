@@ -38,6 +38,10 @@ export class LivrableService {
         return this.http.get<Livrable>(`${this.baseUrl}/${id}`);
     }
 
+    create(livrable: any): Observable<any> {
+        return this.http.post<any>(this.baseUrl, livrable);
+    }
+
     /**
      * Upload a file to the server and create livrable records.
      * @param programmeId  optional programme ID

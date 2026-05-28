@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { CoachService, CoachEntrepreneurDetailDTO } from './services/coach.service';
 import { TacheService } from '../../../core/services/tache.service';
+import { LivrableService } from '../../../core/services/livrable.service';
 import { AuthService } from '../../frontoffice/service/auth.service';
 import { ToastrService } from 'ngx-toastr';
 import { environment } from '../../../../environment';
@@ -333,6 +334,23 @@ import { environment } from '../../../../environment';
                 <label class="block text-sm font-semibold text-gray-700 mb-2">Date limite *</label>
                 <input type="date" [(ngModel)]="newTask.dateLimite" class="w-full border border-gray-200 rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:border-[#ff3d91] transition-colors" />
               </div>
+              
+              <div class="pt-2 border-t border-gray-50 mt-2">
+                <label class="block text-sm font-semibold text-gray-700 mb-2 flex items-center justify-between">
+                  <span>Lier à un livrable template</span>
+                  <span *ngIf="isLoadingTemplates" class="text-[10px] text-gray-400 font-normal italic">Chargement...</span>
+                </label>
+                <select [(ngModel)]="newTask.templateId" class="w-full border border-gray-200 rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:border-[#ff3d91] bg-white transition-colors">
+                  <option [ngValue]="null">--- Aucun (Tâche classique) ---</option>
+                  <option *ngFor="let t of availableTemplates" [ngValue]="t.id">
+                    {{ t.titre }}
+                  </option>
+                </select>
+                <p class="text-[11px] text-gray-400 mt-1.5 leading-relaxed">
+                  <i class="pi pi-info-circle mr-1" style="font-size: 10px;"></i>
+                  Si sélectionné, le template sera automatiquement envoyé à l'entrepreneur.
+                </p>
+              </div>
             </div>
             <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-end gap-3" style="background: #fafafa;">
               <button (click)="showTaskModal = false" class="px-4 py-2 rounded-xl text-sm font-medium text-gray-600 border border-gray-200 hover:bg-gray-50 transition-colors">Annuler</button>
@@ -407,8 +425,11 @@ export class CoachEntrepreneurDetailComponent implements OnInit {
     description: '',
     priorite: 'Moyenne',
     dateDebut: '',
-    dateLimite: ''
+    dateLimite: '',
+    templateId: null as number | null
   };
+  availableTemplates: any[] = [];
+  isLoadingTemplates: boolean = false;
   newTaskFile: File | null = null;
   isCreatingTask: boolean = false;
 
@@ -422,6 +443,7 @@ export class CoachEntrepreneurDetailComponent implements OnInit {
     private http: HttpClient,
     private coachService: CoachService,
     private tacheService: TacheService,
+    private livrableService: LivrableService,
     private authService: AuthService,
     private toastr: ToastrService,
     private cdr: ChangeDetectorRef
@@ -557,7 +579,34 @@ export class CoachEntrepreneurDetailComponent implements OnInit {
       dateLimite: ''
     };
     this.newTaskFile = null;
+    this.availableTemplates = [];
+    this.loadAvailableTemplates();
     this.showTaskModal = true;
+  }
+
+  loadAvailableTemplates(): void {
+    if (!this.coachId) return;
+    this.isLoadingTemplates = true;
+    this.livrableService.getSent(this.coachId).subscribe({
+      next: (res: any[]) => {
+        // Filter unique templates by title/file (templates don't have fichierRetourUrl)
+        const templates: any[] = [];
+        const seen = new Set();
+        res.forEach((l: any) => {
+          if (!l.fichierRetourUrl && !seen.has(l.fichierUrl)) {
+            templates.push(l);
+            seen.add(l.fichierUrl);
+          }
+        });
+        this.availableTemplates = templates;
+        this.isLoadingTemplates = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.isLoadingTemplates = false;
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   triggerFileInput(taskId: number): void {
@@ -674,6 +723,32 @@ export class CoachEntrepreneurDetailComponent implements OnInit {
         } else {
           this.finalizeTaskCreation(createdTask);
         }
+        
+        // Handle Template Association if selected
+        if (this.newTask.templateId) {
+          const selectedTemplate = this.availableTemplates.find(t => t.id === Number(this.newTask.templateId));
+          if (selectedTemplate) {
+            const newLivrable = {
+              titre: selectedTemplate.titre,
+              type: selectedTemplate.type || 'Document',
+              fichierUrl: selectedTemplate.fichierUrl,
+              fileSize: selectedTemplate.fileSize,
+              statut: 'TRAVAIL_DEMANDE',
+              entrepreneur: { id: this.entrepreneur!.id },
+              coachEmail: this.coachProfile?.email || selectedTemplate.coachEmail,
+              coachName: (this.coachProfile ? `${this.coachProfile.firstName} ${this.coachProfile.lastName}` : selectedTemplate.coachName),
+              programme: selectedTemplate.programme ? { id: selectedTemplate.programme.id } : null,
+              thematiqueName: selectedTemplate.thematiqueName,
+              sessionName: selectedTemplate.sessionName,
+              tache: { id: createdTask.id }
+            };
+
+            this.livrableService.create(newLivrable).subscribe({
+              next: () => console.log('Livrable template sent to entrepreneur'),
+              error: (err: any) => console.error('Failed to send livrable template:', err)
+            });
+          }
+        }
       },
       error: (err) => {
         console.error('Erreur création tâche:', err);
@@ -691,7 +766,7 @@ export class CoachEntrepreneurDetailComponent implements OnInit {
     this.toastr.success('Tâche créée avec succès', 'Succès');
     this.showTaskModal = false;
     this.isCreatingTask = false;
-    this.newTask = { titre: '', description: '', priorite: 'Moyenne', dateDebut: '', dateLimite: '' };
+    this.newTask = { titre: '', description: '', priorite: 'Moyenne', dateDebut: '', dateLimite: '', templateId: null };
     this.newTaskFile = null;
     this.cdr.detectChanges();
   }
