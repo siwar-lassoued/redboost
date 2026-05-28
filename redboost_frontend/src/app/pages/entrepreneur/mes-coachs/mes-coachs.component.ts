@@ -1,4 +1,4 @@
-import { Component, signal, inject, ChangeDetectionStrategy, OnInit } from '@angular/core';
+import { Component, signal, inject, ChangeDetectionStrategy, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatchingService, MatchingView } from '../../../core/services/matching.service';
@@ -66,11 +66,29 @@ import { MatSnackBar } from '@angular/material/snack-bar';
           </button>
         </div>
       </div>
+      
+      <!-- Thematic Filter Bar -->
+      @if (availableThematiques().length > 0) {
+        <div class="flex items-center gap-3 mb-8 pb-4 border-b border-gray-100 overflow-x-auto custom-scrollbar no-wrap">
+          <button (click)="selectedThematiqueId.set(null)"
+            [class]="!selectedThematiqueId() ? 'bg-[#3aafff] text-white shadow-md' : 'bg-white text-gray-500 hover:bg-gray-50 border-gray-100'"
+            class="px-5 py-2 rounded-full text-xs font-bold transition-all duration-300 border whitespace-nowrap">
+            Toutes les thématiques
+          </button>
+          @for (them of availableThematiques(); track them.id) {
+            <button (click)="selectedThematiqueId.set(them.id)"
+              [class]="selectedThematiqueId() === them.id ? 'bg-[#3aafff] text-white shadow-md' : 'bg-white text-gray-500 hover:bg-gray-50 border-gray-100'"
+              class="px-5 py-2 rounded-full text-xs font-bold transition-all duration-300 border whitespace-nowrap">
+              {{ them.name }}
+            </button>
+          }
+        </div>
+      }
 
       @if (selectedTab === 'mes-coachs') {
-        @if (extendedMatchings().length > 0) {
+        @if (filteredMatchings().length > 0) {
 
-        @for (coach of extendedMatchings(); track coach.id) {
+        @for (coach of filteredMatchings(); track coach.id) {
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
             
             <!-- Left: Coach Profile -->
@@ -311,12 +329,12 @@ import { MatSnackBar } from '@angular/material/snack-bar';
         }
       } @else {
         <div class="flex flex-col items-center justify-center py-40 bg-white rounded-2xl shadow-sm border border-gray-100">
-           <div class="relative mb-6">
-             <div class="w-16 h-16 rounded-full border-4 border-[#3aafff]/20 border-t-[#3aafff] animate-spin"></div>
-             <i class="pi pi-users absolute inset-0 flex items-center justify-center text-[#3aafff] text-xl"></i>
-           </div>
-           <h3 class="text-lg font-bold text-[#1A1A2E]">Chargement de vos accompagnements...</h3>
-           <p class="text-sm text-gray-400 mt-2">Nous préparons les profils de vos coachs.</p>
+           <i class="pi pi-search text-5xl text-gray-200 mb-4"></i>
+           <h3 class="text-lg font-bold text-[#1A1A2E]">Aucun accompagnement trouvé</h3>
+           <p class="text-sm text-gray-400 mt-2">Aucun de vos coachs ne propose de sessions pour cette thématique.</p>
+           <button (click)="selectedThematiqueId.set(null)" class="mt-6 text-[#3aafff] font-bold hover:underline bg-transparent border-none cursor-pointer">
+             Voir tout mon planning
+           </button>
         </div>
       }
     } @else {
@@ -461,6 +479,37 @@ export class MesCoachsComponent implements OnInit {
   private readonly snackBar = inject(MatSnackBar);
 
   extendedMatchings = signal<ExtendedMatching[]>([]);
+  availableThematiques = signal<{id: string, name: string}[]>([]);
+  selectedThematiqueId = signal<string | null>(null);
+
+  // Computed signal for filtered display
+  filteredMatchings = computed(() => {
+    const all = this.extendedMatchings();
+    const filterId = this.selectedThematiqueId();
+    if (!filterId) return all;
+
+    return all.map(coach => {
+      // Filter programs and thematics within each coach
+      const filteredPrograms = coach.groupedByProgram?.map(prog => {
+        const matchingThematiques = prog.thematiques.filter(t => {
+          // Find matching by name or just check if it's the one (since we mapped it)
+          // To be robust, we'll check if the thematic name matches the one associated with the ID
+          const targetThem = this.availableThematiques().find(at => at.id === filterId);
+          return t.name === targetThem?.name;
+        });
+
+        if (matchingThematiques.length > 0) {
+          return { ...prog, thematiques: matchingThematiques };
+        }
+        return null;
+      }).filter(p => p !== null) as ProgramGroup[];
+
+      if (filteredPrograms.length > 0 || (coach.exceptionalGroup && !filterId)) {
+        return { ...coach, groupedByProgram: filteredPrograms };
+      }
+      return null;
+    }).filter(c => c !== null) as ExtendedMatching[];
+  });
 
   // Booking states
   selectedSlot: any | null = null;
@@ -501,6 +550,18 @@ loadAllData(userId: any) {
         });
 
         const uniqueMatchings = Array.from(uniqueMatchingsMap.values());
+        
+        // Extract available thematics for filtering
+        const themMap = new Map<string, string>();
+        matchings.forEach(m => {
+          if (m.thematiqueId && m.thematiqueName) {
+            themMap.set(String(m.thematiqueId), m.thematiqueName);
+          }
+        });
+        this.availableThematiques.set(
+          Array.from(themMap.entries()).map(([id, name]) => ({ id, name }))
+        );
+
         const requests = uniqueMatchings.map(m => {
           const coachId = Number(m.id);
           const entId = Number(userId);
