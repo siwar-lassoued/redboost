@@ -14,7 +14,7 @@ import { environment } from '../../../../environment';
   standalone: true,
   imports: [CommonModule, RouterModule, FormsModule],
   template: `
-    <div class="p-6 md:p-8 min-h-screen" style="background: #fcfdfe; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+    <div class="p-6 md:p-8 min-h-screen" style="background: #fcfdfe; font-family: var(--font-family);">
       <div *ngIf="isLoading" class="flex flex-col items-center justify-center h-64 text-gray-500">
         <i class="pi pi-spin pi-spinner text-4xl mb-4" style="color: #ff3d91;"></i>
         <p>Chargement du profil...</p>
@@ -205,16 +205,14 @@ import { environment } from '../../../../environment';
             </div>
 
             <div *ngFor="let del of entrepreneur?.livrables" 
-                 class="rounded-xl overflow-hidden bg-white"
-                 style="box-shadow: 0 2px 8px rgba(0,0,0,0.06);"
-                 [style.border-left]="del.statut === 'ACCEPTED' || del.statut === 'VALIDE' || del.statut === 'APPROUVE' ? '4px solid #22C55E' : (del.statut === 'REVISION' || del.statut === 'EN_REVISION' ? '4px solid #F97316' : '4px solid #F59E0B')">
+                 class="rounded-xl overflow-hidden bg-white mb-4"
+                 style="box-shadow: 0 2px 8px rgba(0,0,0,0.06); border-left: 4px solid;"
+                 [style.border-left-color]="getStatusInfo(del.statut).color">
               <div class="p-4">
-                <div class="flex items-start justify-between gap-3 mb-3">
+                <div class="flex items-start justify-between gap-3 mb-4">
                   <div class="flex items-start gap-2 flex-1 min-w-0">
                     <span class="text-base mt-0.5 flex-shrink-0">
-                      <i *ngIf="del.statut === 'ACCEPTED' || del.statut === 'VALIDE' || del.statut === 'APPROUVE'" class="pi pi-check-circle text-green-500"></i>
-                      <i *ngIf="del.statut === 'REVISION' || del.statut === 'EN_REVISION'" class="pi pi-refresh text-orange-400"></i>
-                      <i *ngIf="!['ACCEPTED', 'VALIDE', 'APPROUVE', 'REVISION', 'EN_REVISION'].includes(del.statut)" class="pi pi-clock text-amber-400"></i>
+                      <i [class]="getStatusInfo(del.statut).icon" [style.color]="getStatusInfo(del.statut).color"></i>
                     </span>
                     <div class="min-w-0">
                       <p class="text-sm font-semibold text-[#1A1A2E] leading-snug">{{ del.tacheTitre || 'Livrable' }}</p>
@@ -223,28 +221,52 @@ import { environment } from '../../../../environment';
                   </div>
                   <div class="flex items-center gap-2 flex-shrink-0">
                     <span class="text-xs px-2.5 py-1 rounded-full font-semibold"
-                          [style.background]="['ACCEPTED', 'VALIDE', 'APPROUVE'].includes(del.statut) ? '#D1FAE5' : (['REVISION', 'EN_REVISION'].includes(del.statut) ? '#FEF3C7' : '#FEF9C3')"
-                          [style.color]="['ACCEPTED', 'VALIDE', 'APPROUVE'].includes(del.statut) ? '#065F46' : (['REVISION', 'EN_REVISION'].includes(del.statut) ? '#B45309' : '#92400E')">
-                      {{ ['ACCEPTED', 'VALIDE', 'APPROUVE'].includes(del.statut) ? 'Accepté' : (['REVISION', 'EN_REVISION'].includes(del.statut) ? 'À réviser' : 'En attente') }}
+                          [style.background]="getStatusInfo(del.statut).bgColor"
+                          [style.color]="getStatusInfo(del.statut).color">
+                      {{ getStatusInfo(del.statut).text }}
                     </span>
                   </div>
                 </div>
 
-                <div class="space-y-3">
-                  <div class="flex items-center gap-2 p-2.5 rounded-lg bg-gray-50">
-                    <span class="text-lg"><i class="pi" [ngClass]="del.nom.endsWith('.pdf') ? 'pi-file-pdf text-red-500' : 'pi-file text-blue-500'"></i></span>
-                    <div class="flex-1 min-w-0">
-                      <p class="text-xs font-medium text-gray-800 truncate">{{ del.nom }}</p>
-                      <p class="text-[10px] text-gray-400 flex items-center gap-1">Document <i class="pi pi-calendar" style="font-size:9px"></i> {{ del.dateUpload | date:'d MMM yyyy' }}</p>
-                    </div>
-                    <div class="flex gap-1.5">
-                      <a [href]="del.url" target="_blank" class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors" style="text-decoration:none;">
-                        <i class="pi pi-eye" style="font-size: 12px;"></i> Voir
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <!-- Coach Document (Template) -->
+                  <div class="p-3 rounded-lg border border-gray-100 bg-gray-50/50">
+                    <p class="text-[10px] uppercase font-bold text-gray-400 mb-2">Document Coach (Template)</p>
+                    <div class="flex items-center gap-3">
+                      <i class="pi pi-file-pdf text-red-400" style="font-size: 20px;"></i>
+                      <div class="flex-1 min-w-0">
+                        <p class="text-xs font-semibold text-gray-700 truncate">Document initial</p>
+                        <p class="text-[9px] text-gray-400">Modèle de référence</p>
+                      </div>
+                      <a [href]="del.url" target="_blank" class="p-1.5 rounded-lg hover:bg-gray-200 text-gray-500 transition-colors">
+                        <i class="pi pi-eye"></i>
                       </a>
-                      <a [href]="del.url" download class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-gray-200 text-gray-600 hover:bg-gray-300 transition-colors" style="text-decoration:none;">
-                        <i class="pi pi-download" style="font-size: 12px;"></i> DL
-                      </a>
                     </div>
+                  </div>
+
+                  <!-- Entrepreneur Return -->
+                  <div class="p-3 rounded-lg border border-pink-100 bg-pink-50/20" *ngIf="del.nom">
+                    <p class="text-[10px] uppercase font-bold text-[#ff3d91] mb-2">Réponse Entrepreneur</p>
+                    <div class="flex items-center gap-3">
+                      <i class="pi pi-file text-blue-400" style="font-size: 20px;"></i>
+                      <div class="flex-1 min-w-0">
+                        <p class="text-xs font-semibold text-gray-800 truncate">{{ del.nom }}</p>
+                        <p class="text-[9px] text-gray-400">{{ del.dateUpload | date:'d MMM yyyy' }}</p>
+                      </div>
+                      <div class="flex gap-1">
+                        <a [href]="del.url" target="_blank" class="p-1.5 rounded-lg hover:bg-pink-100 text-[#ff3d91] transition-colors">
+                          <i class="pi pi-eye"></i>
+                        </a>
+                        <a [href]="del.url" download class="p-1.5 rounded-lg hover:bg-pink-100 text-[#ff3d91] transition-colors">
+                          <i class="pi pi-download"></i>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Not Submitted yet -->
+                  <div class="p-3 rounded-lg border border-dashed border-gray-200 flex items-center justify-center text-gray-400 italic text-xs" *ngIf="!del.nom">
+                    En attente de soumission par l'entrepreneur
                   </div>
                 </div>
               </div>
@@ -363,19 +385,19 @@ export class CoachEntrepreneurDetailComponent implements OnInit {
       case 'VALIDE':
       case 'APPROVED':
       case 'APPROUVE':
-        return { text: 'Accepté', class: 'status-accepted', icon: 'pi pi-check-circle' };
+        return { text: 'Accepté', bgColor: '#D1FAE5', color: '#059669', icon: 'pi pi-check-circle' };
       case 'REVISION':
       case 'EN_REVISION':
-        return { text: 'À réviser', class: 'status-revision', icon: 'pi pi-refresh' };
+        return { text: 'À réviser', bgColor: '#FEE2E2', color: '#DC2626', icon: 'pi pi-refresh' };
       case 'REJECTED':
       case 'REJETE':
-        return { text: 'Rejeté', class: 'status-rejected', icon: 'pi pi-times-circle' };
+        return { text: 'Rejeté', bgColor: '#F3F4F6', color: '#6B7280', icon: 'pi pi-times-circle' };
       case 'PENDING':
       case 'PENDING_REVIEW':
       case 'SOUMIS':
       case 'SUBMITTED':
       default:
-        return { text: 'En attente', class: 'status-pending', icon: 'pi pi-clock' };
+        return { text: 'En attente', bgColor: '#FEF3C7', color: '#D97706', icon: 'pi pi-clock' };
     }
   }
 

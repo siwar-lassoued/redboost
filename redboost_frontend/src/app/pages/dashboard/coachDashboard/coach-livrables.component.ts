@@ -15,8 +15,8 @@ import { environment } from '../../../../environment';
     <div class="livrables-page">
       <div class="page-header">
           <div class="header-content">
-              <h1 class="page-title">Mes Livrables</h1>
-              <p class="page-subtitle">Gérez les documents reçus et déposés pour vos entrepreneurs</p>
+              <h1 class="page-title">Nos Templates de Livrables</h1>
+              <p class="page-subtitle">Consultez et gérez les modèles de documents disponibles pour vos entrepreneurs</p>
           </div>
           <div class="header-actions">
               <button class="add-event-btn" (click)="openDepotModal()" style="background: #ea5073; color: white; padding: 10px 24px; border-radius: 12px; font-weight: 500; border: none; cursor: pointer; box-shadow: 0 4px 12px rgba(234, 80, 115, 0.3);">
@@ -90,20 +90,11 @@ import { environment } from '../../../../environment';
                       </div>
 
                       <div class="info-cell document">
-                          <span class="cell-label">Document Coach</span>
+                          <span class="cell-label">Template / Document</span>
                           <div class="doc-link-wrap clickable" *ngIf="liv.fichierUrl" (click)="download(liv.fichierUrl)">
                               <i class="pi" [class]="getFileIconConfig(liv.fichierUrl).icon" [style.color]="getFileIconConfig(liv.fichierUrl).color"></i>
                               <span class="doc-title">{{ liv.titre }}</span>
                           </div>
-                      </div>
-
-                      <div class="info-cell document">
-                          <span class="cell-label">Retour Entrepreneur</span>
-                          <div class="doc-link-wrap clickable" *ngIf="liv.fichierRetourUrl" (click)="download(liv.fichierRetourUrl)">
-                              <i class="pi" [class]="getFileIconConfig(liv.fichierRetourUrl).icon" [style.color]="getFileIconConfig(liv.fichierRetourUrl).color"></i>
-                              <span class="doc-title">Retour de {{ liv.entrepreneurName }}</span>
-                          </div>
-                          <span class="empty-doc" *ngIf="!liv.fichierRetourUrl">—</span>
                       </div>
 
                       <div class="info-cell comments-cell">
@@ -136,16 +127,7 @@ import { environment } from '../../../../environment';
                   </div>
 
                   <div class="livrable-actions">
-                      <div class="validation-actions" *ngIf="liv.statut === 'SUBMITTED' || liv.statut === 'SOUMIS' || liv.statut === 'RESOUMIS'">
-                          <button class="action-btn validate" (click)="promptStatusUpdate(liv, 'ACCEPTE')" title="Accepter">
-                              <i class="pi pi-check"></i>
-                          </button>
-                          <button class="action-btn revision" (click)="promptStatusUpdate(liv, 'EN_REVISION')" title="Demander Révision">
-                              <i class="pi pi-sync"></i>
-                          </button>
-                      </div>
-                      
-                      <button class="action-btn delete" *ngIf="liv.statut !== 'ACCEPTE'" (click)="deleteLivrable(liv.id)" title="Supprimer">
+                      <button class="action-btn delete" (click)="deleteLivrable(liv.id)" title="Supprimer">
                           <i class="pi pi-trash"></i>
                       </button>
                   </div>
@@ -159,7 +141,7 @@ import { environment } from '../../../../environment';
               <i class="pi pi-folder-open"></i>
           </div>
           <h2>Aucun livrable</h2>
-          <p>Vous n'avez pas encore déposé ou reçu de documents pour vos entrepreneurs.</p>
+          <p>Créez et envoyez des modèles de documents pour guider vos entrepreneurs.</p>
       </div>
 
       <div *ngIf="loading && !showDepotModal" class="global-loader-wrap">
@@ -533,35 +515,20 @@ export class CoachLivrablesComponent implements OnInit {
     if (!this.coachId) return;
     this.loading = true;
     
-    // Fetch both Received and Sent and merge
-    const received$ = this.livrableService.getReceived(this.coachId);
-    const sent$ = this.livrableService.getSent(this.coachId);
-
-    // Simplest way without forkJoin: handle both statefully
-    let recvDone = false;
-    let sentDone = false;
-    let tempRecv: any[] = [];
-    let tempSent: any[] = [];
-
-    const checkDone = () => {
-        if (recvDone && sentDone) {
-            const map = new Map<number, any>();
-            tempRecv.forEach(l => map.set(l.id, l));
-            tempSent.forEach(l => map.set(l.id, l));
-            this.allLivrables = Array.from(map.values()).sort((a, b) => new Date(b.dateSoumission).getTime() - new Date(a.dateSoumission).getTime());
-            this.updateView();
-            this.loading = false;
-        }
-    };
-
-    received$.subscribe({
-      next: (res: any[]) => { tempRecv = res; recvDone = true; checkDone(); },
-      error: () => { recvDone = true; checkDone(); }
-    });
-
-    sent$.subscribe({
-      next: (res: any[]) => { tempSent = res; sentDone = true; checkDone(); },
-      error: () => { sentDone = true; checkDone(); }
+    // Fetch only Sent deliverables (templates)
+    this.livrableService.getSent(this.coachId).subscribe({
+      next: (res: any[]) => {
+        // Filter out those that have a return file (already submitted/processed)
+        const templatesOnly = res.filter(l => !l.fichierRetourUrl);
+        this.allLivrables = templatesOnly.sort((a, b) => new Date(b.dateSoumission).getTime() - new Date(a.dateSoumission).getTime());
+        this.updateView();
+        this.loading = false;
+      },
+      error: () => {
+        this.loading = false;
+        this.allLivrables = [];
+        this.updateView();
+      }
     });
   }
 

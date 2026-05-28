@@ -404,7 +404,7 @@ interface DateGroupView {
     </div>
   `,
   styles: [`
-    .calendar-page { padding: 0 2rem 2rem; background: #f8f9fa; min-height: calc(100vh - 70px); font-family: var(--font-family); margin-top: -1.5rem; }
+    .calendar-page { padding: 0 2rem 2rem; background: #f8f9fa; min-height: calc(100vh - 70px); font-family: var(--font-family); margin-top: -1.5cm; }
     .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
     .page-title-row { display: flex; align-items: center; gap: 1rem; }
     .page-icon { width: 50px; height: 50px; background: linear-gradient(135deg, #FFF5F7, #FFE0E8); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }

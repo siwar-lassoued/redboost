@@ -13,7 +13,7 @@ type DetailTab = 'sessions' | 'taches' | 'livrables';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="p-8 bg-[#f8f9fa] min-h-screen font-sans">
+    <div class="p-8 bg-[#f8f9fa] min-h-screen" style="font-family: var(--font-family);">
       <!-- HEADER -->
       <div class="flex items-center justify-between mb-10">
         <div>

@@ -65,13 +65,7 @@ import { RippleModule } from 'primeng/ripple';
         `
             :host {
                 display: block;
-                font-family:
-                    'Inter',
-                    -apple-system,
-                    BlinkMacSystemFont,
-                    'Segoe UI',
-                    Roboto,
-                    sans-serif;
+                font-family: var(--font-family);
             }
 
             /* Button hover effect */
