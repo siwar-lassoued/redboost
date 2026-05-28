@@ -432,6 +432,7 @@ public class MatchingIaService {
             coach.put("bio", c.getBio());
             coach.put("yearsOfExperience", c.getYearsOfExperience());
             coach.put("phoneNumber", c.getPhoneNumber());
+            coach.put("role", c.getRole().name());
             
             long activeCount = matchingRepo.findByCoachIdAndStatut(c.getId(), Matching.StatutMatching.VALIDE).size();
             coach.put("nbEntrepreneursActifs", activeCount);
@@ -454,6 +455,7 @@ public class MatchingIaService {
             ent.put("phaseMaturite", u.getStadeProjet());
             ent.put("description", u.getDescriptionProjet());
             ent.put("region", u.getRegion());
+            ent.put("role", u.getRole().name());
             ent.put("isUser", true);
 
             // Enrich with latest accepted candidature by email if available
@@ -481,6 +483,7 @@ public class MatchingIaService {
                 ent.put("nom", c.getNomPrenom());
                 ent.put("email", c.getEmail());
                 ent.put("entreprise", c.getNomEntreprise());
+                ent.put("role", "ENTREPRENEUR");
                 ent.put("isUser", false);
                 view.put("entrepreneur", ent);
                 view.put("entrepreneurName", c.getNomPrenom());
@@ -571,6 +574,7 @@ public class MatchingIaService {
                 ent.put("nom", c.getNomPrenom());
                 ent.put("email", c.getEmail());
                 ent.put("entreprise", c.getNomEntreprise());
+                ent.put("role", user.getRole().name());
                 
                 virtual.put("entrepreneur", ent);
                 virtual.put("entrepreneurName", ent.get("nom"));
@@ -633,6 +637,7 @@ public class MatchingIaService {
                 coach.put("bio", c.getBio());
                 coach.put("yearsOfExperience", c.getYearsOfExperience());
                 coach.put("phoneNumber", c.getPhoneNumber());
+                coach.put("role", c.getRole().name());
                 long activeCount = matchingRepo.findByCoachIdAndStatut(c.getId(), Matching.StatutMatching.VALIDE).size();
                 coach.put("nbEntrepreneursActifs", activeCount);
                 double ratingMoyen = coachRatingRepo.findAverageRatingByCoachId(c.getId()).orElse(0.0);
@@ -653,6 +658,7 @@ public class MatchingIaService {
                 ent.put("phaseMaturite", u.getStadeProjet());
                 ent.put("description", u.getDescriptionProjet());
                 ent.put("region", u.getRegion());
+                ent.put("role", u.getRole().name());
                 ent.put("besoinsAccompagnement", u.getBesoinsCoaching());
 
                 // Enrich with latest accepted candidature by email for full metadata
@@ -703,6 +709,7 @@ public class MatchingIaService {
                     ent.put("email", c.getEmail());
                     ent.put("entreprise", c.getNomEntreprise());
                     ent.put("description", c.getBreveDescription());
+                    ent.put("role", "ENTREPRENEUR");
                     view.put("entrepreneur", ent);
                 });
             });

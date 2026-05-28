@@ -466,6 +466,9 @@ export class AdminSupervisionDashboardComponent implements OnInit {
             const finalId = userData?.id || rootId;
             
             if (finalId) {
+              const expectedRole = mode === 'coach' ? 'COACH' : 'ENTREPRENEUR';
+              if (userData && userData.role && userData.role !== expectedRole) return;
+
               const nameFromData = ((userData?.firstName || userData?.prenom || '').trim() + ' ' + 
                                    (userData?.lastName || userData?.nom || '').trim()).trim();
               
@@ -504,6 +507,9 @@ export class AdminSupervisionDashboardComponent implements OnInit {
             const finalId = userData?.id || rootId;
             
             if (finalId) {
+              const expectedRole = mode === 'coach' ? 'COACH' : 'ENTREPRENEUR';
+              if (userData && userData.role && userData.role !== expectedRole) return;
+
               const nameFromData = ((userData?.firstName || userData?.prenom || '').trim() + ' ' + 
                                    (userData?.lastName || userData?.nom || '').trim()).trim();
               
