@@ -900,12 +900,20 @@ export class AdminMatchingComponent implements OnInit {
 
     get filteredGlobalEntrepreneurs(): any[] {
         if (!this.selectedProgId) return this.globalEntrepreneurs;
-        return this.globalEntrepreneurs.filter(e => e.programmes && e.programmes.includes(this.selectedProgId));
+        const pid = Number(this.selectedProgId);
+        return this.globalEntrepreneurs.filter(e => {
+            if (!e.programmes) return false;
+            return e.programmes.some((p: any) => Number(p) === pid);
+        });
     }
 
     get filteredGlobalCoaches(): any[] {
         if (!this.selectedProgId) return this.globalCoaches;
-        return this.globalCoaches.filter(c => c.programmes && c.programmes.includes(this.selectedProgId));
+        const pid = Number(this.selectedProgId);
+        return this.globalCoaches.filter(c => {
+            if (!c.programmes) return false;
+            return c.programmes.some((p: any) => Number(p) === pid);
+        });
     }
 
     constructor(
