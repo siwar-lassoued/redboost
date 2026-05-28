@@ -476,7 +476,7 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
               <div *ngIf="thematiqueMatchingsLoading" class="loading-box">Chargement...</div>
 
               <div *ngIf="!thematiqueMatchingsLoading && filteredThematiqueMatchings.length === 0" class="empty-state-inline">
-                <p>Aucun matching <strong>VALIDE</strong> pour cette thématique.</p>
+                <p>Aucun matching pour cette thématique.</p>
               </div>
 
 <div class="scrollable-list">
@@ -890,7 +890,7 @@ export class AdminMatchingComponent implements OnInit {
     searchMatching: string = '';
 
     get filteredThematiqueMatchings(): any[] {
-        let list = this.thematiqueMatchings.filter(m => m.statut === 'VALIDE');
+        let list = this.thematiqueMatchings.filter(m => ['VALIDE', 'PROPOSE', 'TERMINE', 'LIBERE'].includes(m.statut));
         if (!this.searchMatching) return list;
         const lowerSearch = this.searchMatching.toLowerCase();
         return list.filter(m => {
@@ -1106,7 +1106,7 @@ export class AdminMatchingComponent implements OnInit {
 
     loadThematiqueMatchings(): void {
         const pId = this.selectedThematiqueObj?.programmeId || this.selectedProgId;
-        if (!pId) return;
+        if (!pId || !this.selectedThematiqueId) return;
 
         this.thematiqueMatchingsLoading = true;
         this.matchingSvc.getHistoryByThematique(pId, this.selectedThematiqueId).subscribe({
