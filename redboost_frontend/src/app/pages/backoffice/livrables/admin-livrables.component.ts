@@ -33,33 +33,58 @@ import { ProgrammeService } from '../candidature_redstarter/services/programme.s
         </button>
       </div>
 
-        <select [ngModel]="selectedProgId()" (ngModelChange)="selectedProgId.set($event)" class="text-gray-900 px-4 py-3 bg-white border border-gray-200 rounded-2xl text-xs font-bold focus:outline-none focus:ring-4 focus:ring-pink-100 cursor-pointer">
-          <option [ngValue]="0">Tous les programmes</option>
-          @for (p of incubationProgrammes(); track p.id) { <option [ngValue]="p.id">{{ p.nom }}</option> }
-        </select>
+      <!-- FILTERS -->
+<div class="flex flex-wrap gap-4 mb-8">
 
-        <div class="relative flex-1 min-w-[200px]">
-          <i class="pi pi-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-          <input [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" type="text" placeholder="Rechercher un coach, bénéficiaire..." 
-            class="text-gray-900 w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-pink-100 focus:border-pink-300 transition-all">
-        </div>
+  <select [ngModel]="selectedProgId()" (ngModelChange)="selectedProgId.set($event)"
+    class="text-gray-900 px-4 py-3 bg-white border border-gray-200 rounded-2xl text-xs font-bold focus:outline-none focus:ring-4 focus:ring-pink-100 cursor-pointer">
+    <option [ngValue]="0">Tous les programmes</option>
+    @for (p of incubationProgrammes(); track p.id) {
+      <option [ngValue]="p.id">{{ p.nom }}</option>
+    }
+  </select>
 
-        <select [ngModel]="filterThematique()" (ngModelChange)="filterThematique.set($event)" class="text-gray-900 px-4 py-3 bg-white border border-gray-200 rounded-2xl text-xs font-bold focus:outline-none focus:ring-4 focus:ring-pink-100 cursor-pointer">
-          <option value="all">Toutes les thématiques</option>
-          @for (t of thematiques(); track t) { <option [value]="t">{{ t }}</option> }
-        </select>
+  <div class="relative flex-1 min-w-[200px]">
+    <i class="pi pi-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
 
-        <select [ngModel]="filterCoach()" (ngModelChange)="filterCoach.set($event)" class="text-gray-900 px-4 py-3 bg-white border border-gray-200 rounded-2xl text-xs font-bold focus:outline-none focus:ring-4 focus:ring-pink-100 cursor-pointer">
-          <option value="all">Tous les coachs</option>
-          @for (c of coaches(); track c) { <option [value]="c">{{ c }}</option> }
-        </select>
-        
-        <select *ngIf="activeTab() === 'sessions'" [ngModel]="filterSession()" (ngModelChange)="filterSession.set($event)" class="text-gray-900 px-4 py-3 bg-white border border-gray-200 rounded-2xl text-xs font-bold focus:outline-none focus:ring-4 focus:ring-pink-100 cursor-pointer">
-          <option value="all">Toutes les sessions</option>
-          @for (s of sessionNumbers(); track s) { <option [value]="s">Session {{ s }}</option> }
-        </select>
-      </div>
+    <input
+      [ngModel]="searchQuery()"
+      (ngModelChange)="searchQuery.set($event)"
+      type="text"
+      placeholder="Rechercher un coach, bénéficiaire..."
+      class="text-gray-900 w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-pink-100 focus:border-pink-300 transition-all">
+  </div>
 
+  <select [ngModel]="filterThematique()" (ngModelChange)="filterThematique.set($event)"
+    class="text-gray-900 px-4 py-3 bg-white border border-gray-200 rounded-2xl text-xs font-bold focus:outline-none focus:ring-4 focus:ring-pink-100 cursor-pointer">
+    <option value="all">Toutes les thématiques</option>
+    @for (t of thematiques(); track t) {
+      <option [value]="t">{{ t }}</option>
+    }
+  </select>
+
+  <select [ngModel]="filterCoach()" (ngModelChange)="filterCoach.set($event)"
+    class="text-gray-900 px-4 py-3 bg-white border border-gray-200 rounded-2xl text-xs font-bold focus:outline-none focus:ring-4 focus:ring-pink-100 cursor-pointer">
+    <option value="all">Tous les coachs</option>
+    @for (c of coaches(); track c) {
+      <option [value]="c">{{ c }}</option>
+    }
+  </select>
+
+  <select *ngIf="activeTab() === 'sessions'"
+    [ngModel]="filterSession()"
+    (ngModelChange)="filterSession.set($event)"
+    class="text-gray-900 px-4 py-3 bg-white border border-gray-200 rounded-2xl text-xs font-bold focus:outline-none focus:ring-4 focus:ring-pink-100 cursor-pointer">
+
+    <option value="all">Toutes les sessions</option>
+
+    @for (s of sessionNumbers(); track s) {
+      <option [value]="s">Session {{ s }}</option>
+    }
+
+  </select>
+
+</div>
       <!-- Table Section -->
       <div class="bg-white rounded-3xl shadow-sm overflow-hidden border border-gray-100">
         <div class="overflow-x-auto min-w-full">
