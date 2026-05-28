@@ -102,16 +102,13 @@ type DetailTab = 'sessions' | 'taches' | 'livrables';
                   [class.border-[#e91e63]]="selectedUser()?.id === u.id"
                   (click)="selectUser(u)">
                   <div class="flex-1 min-w-0">
-                    <p class="text-[15px] font-black text-[#2c3e50] leading-tight truncate uppercase tracking-tight group-hover:text-[#e91e63] transition-colors">
+                    <p class="text-[14px] font-bold text-[#2c3e50] leading-tight group-hover:text-[#e91e63] transition-colors">
                       {{ u.fullName }}
                     </p>
-                    <div class="flex flex-wrap gap-1 mt-2">
-                      @for (p of u.programmes; track p) {
-                        <span class="px-2 py-0.5 bg-[#f0f0f0] text-[#7f8c8d] text-[9px] font-black rounded uppercase tracking-tighter">{{ p }}</span>
-                      }
-                      @if (!u.programmes || u.programmes.length === 0) {
-                        <span class="text-[11px] text-[#95a5a6] font-bold truncate">{{ u.email }}</span>
-                      }
+                    <div class="mt-1 flex flex-col gap-0.5">
+                      <p class="text-[11px] font-semibold text-[#7f8c8d] opacity-90">
+                        {{ u.programmes.join(', ') || u.email }}
+                      </p>
                     </div>
                   </div>
                   @if (selectedUser()?.id === u.id) {
@@ -460,7 +457,7 @@ export class AdminSupervisionDashboardComponent implements OnInit {
       this.http.get<any[]>(url, { headers: this.headers }).subscribe({
         next: (matchings) => {
           const uniqueUsersMap = new Map<number, any>();
-          matchings.filter(m => m.statut === 'VALIDE').forEach(m => {
+          matchings.forEach(m => {
             const userData = mode === 'coach' ? m.coach : m.entrepreneur;
             const rootId = mode === 'coach' ? m.coachId : m.entrepreneurId;
             const finalId = userData?.id || rootId;
@@ -469,8 +466,9 @@ export class AdminSupervisionDashboardComponent implements OnInit {
               const expectedRole = mode === 'coach' ? 'COACH' : 'ENTREPRENEUR';
               if (userData && userData.role && userData.role !== expectedRole) return;
 
-              const nameFromData = ((userData?.firstName || userData?.prenom || '').trim() + ' ' + 
-                                   (userData?.lastName || userData?.nom || '').trim()).trim();
+              const firstName = (userData?.firstName || userData?.prenom || '').trim();
+              const lastName = (userData?.lastName || userData?.nom || '').trim();
+              const nameFromData = (firstName + ' ' + lastName).trim();
               
               const fullName = (mode === 'coach' ? (m.coachName || nameFromData) : (m.entrepreneurName || nameFromData)) || 
                                userData?.email?.split('@')[0] || 'Utilisateur #' + finalId;
@@ -482,7 +480,7 @@ export class AdminSupervisionDashboardComponent implements OnInit {
 
               uniqueUsersMap.set(finalId, {
                 id: finalId,
-                fullName: fullName || userData?.email?.split('@')[0] || 'Utilisateur #' + finalId,
+                fullName: fullName,
                 email: userData?.email || 'N/A',
                 programmes: progs
               });
@@ -510,8 +508,9 @@ export class AdminSupervisionDashboardComponent implements OnInit {
               const expectedRole = mode === 'coach' ? 'COACH' : 'ENTREPRENEUR';
               if (userData && userData.role && userData.role !== expectedRole) return;
 
-              const nameFromData = ((userData?.firstName || userData?.prenom || '').trim() + ' ' + 
-                                   (userData?.lastName || userData?.nom || '').trim()).trim();
+              const firstName = (userData?.firstName || userData?.prenom || '').trim();
+              const lastName = (userData?.lastName || userData?.nom || '').trim();
+              const nameFromData = (firstName + ' ' + lastName).trim();
               
               const fullName = (mode === 'coach' ? (m.coachName || nameFromData) : (m.entrepreneurName || nameFromData)) || 
                                userData?.email?.split('@')[0] || 'Utilisateur #' + finalId;
