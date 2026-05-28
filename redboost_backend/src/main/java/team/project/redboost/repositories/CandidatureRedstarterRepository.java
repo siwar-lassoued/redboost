@@ -74,6 +74,20 @@ public interface CandidatureRedstarterRepository extends JpaRepository<Candidatu
     @Query("SELECT c FROM CandidatureRedstarter c WHERE c.statut = :statut")
     List<CandidatureRedstarter> findAllByStatut(@Param("statut") CandidatureRedstarter.StatutCandidature statut);
 
+    @Query("SELECT c FROM CandidatureRedstarter c " +
+           "WHERE (:type IS NULL " +
+           "  OR (:type = 'spontanees' AND (c.formTemplateId IS NULL OR c.formTemplateId IN (SELECT t.id FROM FormTemplateEntity t WHERE UPPER(t.profileType) = 'SPONTANEE'))) " +
+           "  OR (:type = 'coaches' AND c.formTemplateId IN (SELECT t.id FROM FormTemplateEntity t WHERE UPPER(t.profileType) = 'COACH')) " +
+           "  OR (:type = 'entrepreneurs' AND c.formTemplateId IN (SELECT t.id FROM FormTemplateEntity t WHERE UPPER(t.profileType) = 'ENTREPRENEUR'))) " +
+           "AND (:statut IS NULL OR c.statut = :statut) " +
+           "AND (:programme IS NULL OR c.formTemplateId IN (SELECT t.id FROM FormTemplateEntity t WHERE t.program = :programme) OR (:programme = 'Candidature Spontanée' AND c.formTemplateId IS NULL)) " +
+           "AND (:search IS NULL OR LOWER(c.nomPrenom) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(c.nomEntreprise) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(c.email) LIKE LOWER(CONCAT('%', :search, '%')))")
+    List<CandidatureRedstarter> findAllFiltered(
+            @Param("type") String type,
+            @Param("statut") CandidatureRedstarter.StatutCandidature statut,
+            @Param("programme") String programme,
+            @Param("search") String search);
+
     @Query("SELECT c FROM CandidatureRedstarter c WHERE c.statut = :statut AND (LOWER(c.roleEntreprise) LIKE '%coach%' OR c.formTemplateId IN (SELECT t.id FROM FormTemplateEntity t WHERE LOWER(t.profileType) LIKE '%coach%'))")
     List<CandidatureRedstarter> findAcceptedCoaches(@Param("statut") CandidatureRedstarter.StatutCandidature statut);
 }

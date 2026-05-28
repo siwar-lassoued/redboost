@@ -218,6 +218,29 @@ public class CandidatureRedstarterController {
     }
     
    
+    @GetMapping("/admin/export-csv")
+    public ResponseEntity<byte[]> exportCandidatures(
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) String programme,
+            @RequestParam(required = false) String statut,
+            @RequestParam(required = false) String search) {
+        
+        try {
+            byte[] csvData = candidatureService.exportCandidaturesToCSV(type, programme, statut, search);
+            
+            String filename = "candidatures_" + java.time.LocalDate.now() + ".csv";
+            
+            return ResponseEntity.ok()
+                    .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                    .contentType(MediaType.parseMediaType("text/csv"))
+                    .body(csvData);
+                    
+        } catch (Exception e) {
+            log.error("Error exporting candidatures to CSV", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
     @GetMapping("/admin/search")
     public ResponseEntity<Page<team.project.redboost.dto.CandidatureRedstarterResponseDTO>> searchCandidatures(
             @RequestParam String query,

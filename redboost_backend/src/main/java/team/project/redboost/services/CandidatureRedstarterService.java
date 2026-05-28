@@ -484,6 +484,118 @@ public class CandidatureRedstarterService {
     }
     
     @Transactional(readOnly = true)
+    public byte[] exportCandidaturesToCSV(String type, String programme, String statut, String search) {
+        log.info("Exporting candidatures to CSV: type={}, programme={}, statut={}, search={}", type, programme, statut, search);
+        
+        CandidatureRedstarter.StatutCandidature statutEnum = null;
+        if (statut != null && !statut.isEmpty() && !statut.equalsIgnoreCase("ALL") && !statut.equalsIgnoreCase("HISTORIQUE")) {
+            try {
+                statutEnum = CandidatureRedstarter.StatutCandidature.valueOf(statut.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                log.warn("Invalid status for export: {}", statut);
+            }
+        }
+        
+        // Handle "all" or specific program
+        String progFilter = (programme != null && !programme.equalsIgnoreCase("all")) ? programme : null;
+        
+        // Fetch all matching candidatures
+        List<CandidatureRedstarter> entities = candidatureRepository.findAllFiltered(
+            (type != null && !type.isEmpty()) ? type : null,
+            statutEnum,
+            progFilter,
+            (search != null && !search.isEmpty()) ? search : null
+        );
+        
+        log.info("Found {} candidatures for export", entities.size());
+        
+        // Map to DTOs to get enriched info (Programme, ProfileType)
+        List<team.project.redboost.dto.CandidatureRedstarterResponseDTO> dtos = entities.stream()
+            .map(this::mapToResponseDto)
+            .collect(Collectors.toList());
+            
+        // Collect all unique dynamic question labels
+        Set<String> dynamicQuestions = new LinkedHashSet<>();
+        for (team.project.redboost.dto.CandidatureRedstarterResponseDTO dto : dtos) {
+            Map<String, Object> answers = parseDynamicAnswers(dto.getDynamicAnswers());
+            if (answers != null) {
+                dynamicQuestions.addAll(answers.keySet());
+            }
+        }
+        
+        StringBuilder csv = new StringBuilder();
+        
+        // Header Row
+        List<String> headers = new ArrayList<>(Arrays.asList(
+            "ID", "Nom & Prénom", "Email", "Téléphone", "Genre", "Age", 
+            "Entreprise/Startup", "Role", "Programme", "Profil", "Statut", 
+            "Date Soumission", "Région", "Phase Maturité", "Innovation", 
+            "Impact Environnemental", "Impact Social", "Viabilité", "Valeur Ajoutée"
+        ));
+        headers.addAll(dynamicQuestions);
+        
+        csv.append(headers.stream().map(this::escapeCSV).collect(Collectors.joining(","))).append("\n");
+        
+        // Data Rows
+        for (team.project.redboost.dto.CandidatureRedstarterResponseDTO dto : dtos) {
+            Map<String, Object> answers = parseDynamicAnswers(dto.getDynamicAnswers());
+            
+            List<String> row = new ArrayList<>();
+            row.add(String.valueOf(dto.getId()));
+            row.add(dto.getNomPrenom());
+            row.add(dto.getEmail());
+            row.add(dto.getNumeroTelephone());
+            row.add(dto.getGenre());
+            row.add(dto.getAge() != null ? String.valueOf(dto.getAge()) : "");
+            row.add(dto.getNomEntreprise());
+            row.add(dto.getRoleEntreprise());
+            row.add(dto.getProgramme());
+            row.add(dto.getProfileType());
+            row.add(dto.getStatut());
+            row.add(dto.getDateCreationCandidature() != null ? dto.getDateCreationCandidature().toString() : "");
+            row.add(dto.getRegionBasee());
+            row.add(dto.getPhaseMaturite());
+            row.add(dto.getComposanteInnovation());
+            row.add(dto.getImpactEnvironnemental());
+            row.add(dto.getImpactSocial());
+            row.add(dto.getViabiliteCommerciale());
+            row.add(dto.getValeurAjoutee());
+            
+            // Dynamic Answers
+            for (String question : dynamicQuestions) {
+                Object val = (answers != null) ? answers.get(question) : null;
+                row.add(val != null ? val.toString() : "");
+            }
+            
+            csv.append(row.stream().map(this::escapeCSV).collect(Collectors.joining(","))).append("\n");
+        }
+        
+        return csv.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+    }
+    
+    private Map<String, Object> parseDynamicAnswers(String json) {
+        if (json == null || json.isEmpty()) return null;
+        try {
+            Map<String, Object> rootMap = MAPPER.readValue(json, new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
+            if (rootMap.containsKey("answers") && rootMap.get("answers") instanceof Map) {
+                return (Map<String, Object>) rootMap.get("answers");
+            }
+            return rootMap;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+    
+    private String escapeCSV(String value) {
+        if (value == null) return "";
+        String escaped = value.replace("\"", "\"\"");
+        if (escaped.contains(",") || escaped.contains("\"") || escaped.contains("\n") || escaped.contains("\r")) {
+            return "\"" + escaped + "\"";
+        }
+        return escaped;
+    }
+    
+    @Transactional(readOnly = true)
     public long countByStatut(CandidatureRedstarter.StatutCandidature statut) {
         if (statut == null) return candidatureRepository.count();
         

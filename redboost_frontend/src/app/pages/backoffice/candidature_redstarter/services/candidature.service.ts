@@ -264,4 +264,17 @@ export class CandidatureService {
     migrateLegacy(): Observable<any> {
         return this.http.post<any>(`${this.baseUrl}/admin/migrate-legacy`, {});
     }
+
+    exportCSV(filters?: CandidatureFilters): Observable<Blob> {
+        let params = new HttpParams();
+        if (filters?.programme) params = params.set('programme', filters.programme);
+        if (filters?.statut) params = params.set('statut', filters.statut);
+        if (filters?.type) params = params.set('type', filters.type);
+        if (filters?.search) params = params.set('search', filters.search);
+
+        return this.http.get(`${this.baseUrl}/admin/export-csv`, {
+            params,
+            responseType: 'blob'
+        });
+    }
 }

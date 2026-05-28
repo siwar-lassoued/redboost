@@ -234,6 +234,30 @@ export class AdminCandidaturesComponent implements OnInit {
     }
   }
 
+  onExportCSV(): void {
+    const filters = {
+      type: this.activeTab(),
+      programme: this.filterProgram !== 'all' ? this.filterProgram : undefined,
+      statut: this.statusFilter !== 'ALL' && this.statusFilter !== 'HISTORIQUE' ? this.statusFilter as any : undefined,
+      search: this.searchQuery || undefined
+    };
+
+    this.svc.exportCSV(filters).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `candidatures_${new Date().toISOString().split('T')[0]}.csv`;
+        link.click();
+        window.URL.revokeObjectURL(url);
+      },
+      error: (err) => {
+        console.error('Export failed:', err);
+        alert('Erreur lors de l\'export CSV');
+      }
+    });
+  }
+
   loadHistorique(): void {
     const id = this.selected()?.id;
     if (!id) return;
