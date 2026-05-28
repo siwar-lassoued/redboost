@@ -411,6 +411,7 @@ public class MatchingIaService {
         view.put("id", m.getId());
         view.put("matchingId", m.getId());
         view.put("scoreIa", m.getScoreIa());
+        view.put("isManual", m.getScoreIa() == null || m.getScoreIa() == 0.0);
         view.put("statut", m.getStatut());
         view.put("dateValidation", m.getDateValidation());
         view.put("justification", m.getJustification());

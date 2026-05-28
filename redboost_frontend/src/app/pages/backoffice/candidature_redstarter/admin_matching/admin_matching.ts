@@ -508,11 +508,13 @@ interface Programme { id: number; nom: string; typeProgramme: string; dateDebut:
     </div>
 
     <div class="hc-right">
+      <div *ngIf="m.isManual" class="manual-badge" style="margin-bottom: 8px;">Manuel</div>
+
       <p class="hc-score" [style.color]="scoreColor(m.scoreIa)">
-        {{ m.scoreIa ? (m.scoreIa + '%') : 'Manuel' }}
+        {{ m.isManual ? 'N/A' : (m.scoreIa + '%') }}
       </p>
 
-      <p class="hc-score-label">Score</p>
+      <p class="hc-score-label">{{ m.isManual ? 'Matching Manuel' : 'Score IA' }}</p>
 
       <span class="status-badge"
             [class.active]="m.statut === 'VALIDE'"
