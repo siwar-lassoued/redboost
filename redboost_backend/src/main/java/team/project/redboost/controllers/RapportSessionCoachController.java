@@ -44,7 +44,35 @@ public class RapportSessionCoachController {
 
     @GetMapping("/all")
     public ResponseEntity<List<RapportSessionCoach>> getAll() {
-        return ResponseEntity.ok(repository.findAllByOrderByDateCreationDesc());
+        List<RapportSessionCoach> rapports = repository.findAllByOrderByDateCreationDesc();
+        populateMissingProgrammes(rapports);
+        return ResponseEntity.ok(rapports);
+    }
+
+    private void populateMissingProgrammes(List<RapportSessionCoach> rapports) {
+        if (rapports == null || rapports.isEmpty()) return;
+        
+        // Optimize by pre-fetching relevant programs
+        java.util.Set<Long> missingProgIds = rapports.stream()
+            .filter(r -> r.getProgramme() == null && r.getThematique() != null)
+            .map(r -> r.getThematique().getProgrammeId())
+            .filter(java.util.Objects::nonNull)
+            .collect(java.util.stream.Collectors.toSet());
+            
+        if (missingProgIds.isEmpty()) return;
+        
+        java.util.Map<Long, Programme> progMap = java.util.stream.StreamSupport.stream(
+                programmeRepository.findAllById(missingProgIds).spliterator(), false)
+            .collect(java.util.stream.Collectors.toMap(Programme::getId, p -> p));
+            
+        for (RapportSessionCoach r : rapports) {
+            if (r.getProgramme() == null && r.getThematique() != null) {
+                Long progId = r.getThematique().getProgrammeId();
+                if (progId != null && progMap.containsKey(progId)) {
+                    r.setProgramme(progMap.get(progId));
+                }
+            }
+        }
     }
 
     @GetMapping("/{id}/pdf")
@@ -70,7 +98,9 @@ public class RapportSessionCoachController {
 
     @GetMapping("/coach/{coachId}")
     public ResponseEntity<List<RapportSessionCoach>> getHistory(@PathVariable Long coachId) {
-        return ResponseEntity.ok(repository.findByCoachIdOrderByDateCreationDesc(coachId));
+        List<RapportSessionCoach> rapports = repository.findByCoachIdOrderByDateCreationDesc(coachId);
+        populateMissingProgrammes(rapports);
+        return ResponseEntity.ok(rapports);
     }
 
     @GetMapping("/coach/{coachId}/thematique/{thematiqueId}")

@@ -94,6 +94,7 @@ import { ProgrammeService } from '../candidature_redstarter/services/programme.s
               <tr class="bg-gray-50 border-b border-gray-100">
                 <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500">Coach</th>
                 <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500">Bénéficiaire (Entreprise)</th>
+                <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500">Programme</th>
                 <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500">Thématique</th>
                 <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500">Date Session</th>
                 <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500">Soumis le</th>
@@ -110,6 +111,7 @@ import { ProgrammeService } from '../candidature_redstarter/services/programme.s
                     <p class="text-sm font-bold text-gray-900">{{ s.beneficiaireNom || 'N/A' }}</p>
                     <p class="text-[11px] text-gray-500">{{ s.entrepriseNom }}</p>
                   </td>
+                  <td class="px-6 py-5 text-sm font-bold text-gray-900">{{ s.programme?.nom || 'N/A' }}</td>
                   <td class="px-6 py-5 text-sm font-medium text-gray-600">{{ s.thematique?.nom || 'N/A' }}</td>
                   <td class="px-6 py-5">
                     <span class="text-[10px] px-2 py-1 rounded-lg bg-teal-50 text-teal-600 font-black uppercase tracking-tighter">Session {{ s.numeroSession || '#' }}</span>
