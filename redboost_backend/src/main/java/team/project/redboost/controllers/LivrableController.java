@@ -91,7 +91,7 @@ public class LivrableController {
     public ResponseEntity<List<Livrable>> uploadLivrable(
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "programmeId", required = false) Long programmeId,
-            @RequestParam("entrepreneurIds") List<Long> entrepreneurIds,
+            @RequestParam(value = "entrepreneurIds", required = false) List<Long> entrepreneurIds,
             @RequestParam("titre") String titre,
             @RequestParam("type") String type,
             @RequestParam(value = "deadline", required = false) String deadlineStr,
@@ -150,45 +150,57 @@ public class LivrableController {
                 }
             }
 
-            // 5. Create one Livrable per entrepreneur
-            // 5. Create one Livrable per entrepreneur
+            // 5. Create either a generic template or one livrable per selected entrepreneur
             java.util.List<Livrable> created = new java.util.ArrayList<>();
-            for (Long entId : entrepreneurIds) {
-                User entrepreneur = userRepository.findById(entId).orElse(null);
-                if (entrepreneur == null) {
-                    System.err.println("WARNING: Entrepreneur with ID " + entId + " not found.");
-                    continue;
-                }
+            java.util.List<Long> targetEntrepreneurIds = entrepreneurIds != null ? entrepreneurIds : java.util.Collections.emptyList();
 
-                Livrable livrable = new Livrable();
-                livrable.setTitre(titre);
-                livrable.setType(type);
-                livrable.setFichierUrl(fileUrl); // Ici c'est le fichier "structure"
-                livrable.setFileSize(sizeStr);
-                livrable.setEntrepreneur(entrepreneur);
-                livrable.setProgramme(finalProgramme);
-                livrable.setStatut(Livrable.Statut.TRAVAIL_DEMANDE);
-                livrable.setDeadline(deadline);
-                livrable.setThematiqueName(thematiqueName);
-                livrable.setSessionName(sessionName);
-                livrable.setCommentaire(commentaire);
-                // On n'enregistre pas de date de soumission car c'est juste une demande
-
-                if (finalCoach != null) {
-                    livrable.setCoachEmail(finalCoach.getEmail());
-                    String coachFullName = (finalCoach.getFirstName() != null ? finalCoach.getFirstName() : "") +
-                                           " " +
-                                           (finalCoach.getLastName() != null ? finalCoach.getLastName() : "");
-                    livrable.setCoachName(coachFullName.trim());
-                }
-
+            if (targetEntrepreneurIds.isEmpty()) {
+                Livrable livrable = buildUploadedLivrable(
+                        titre,
+                        type,
+                        fileUrl,
+                        sizeStr,
+                        null,
+                        finalProgramme,
+                        deadline,
+                        thematiqueName,
+                        sessionName,
+                        commentaire,
+                        finalCoach
+                );
                 Livrable saved = livrableService.createLivrable(livrable);
                 if (saved != null) {
                     created.add(saved);
                 }
+            } else {
+                for (Long entId : targetEntrepreneurIds) {
+                    User entrepreneur = userRepository.findById(entId).orElse(null);
+                    if (entrepreneur == null) {
+                        System.err.println("WARNING: Entrepreneur with ID " + entId + " not found.");
+                        continue;
+                    }
+
+                    Livrable livrable = buildUploadedLivrable(
+                            titre,
+                            type,
+                            fileUrl,
+                            sizeStr,
+                            entrepreneur,
+                            finalProgramme,
+                            deadline,
+                            thematiqueName,
+                            sessionName,
+                            commentaire,
+                            finalCoach
+                    );
+                    Livrable saved = livrableService.createLivrable(livrable);
+                    if (saved != null) {
+                        created.add(saved);
+                    }
+                }
             }
 
-            System.out.println("SUCCESS: Uploaded livrable for " + created.size() + " entrepreneurs.");
+            System.out.println("SUCCESS: Uploaded livrable template with " + created.size() + " record(s).");
             return ResponseEntity.ok(created);
 
         } catch (Exception e) {
@@ -198,6 +210,44 @@ public class LivrableController {
                     .header("X-Error-Reason", e.getMessage() != null ? e.getMessage().replaceAll("[\\r\\n]", " ") : "Unknown error")
                     .build();
         }
+    }
+
+
+    private Livrable buildUploadedLivrable(
+            String titre,
+            String type,
+            String fileUrl,
+            String sizeStr,
+            User entrepreneur,
+            team.project.redboost.entities.Programme programme,
+            LocalDateTime deadline,
+            String thematiqueName,
+            String sessionName,
+            String commentaire,
+            User coach) {
+        Livrable livrable = new Livrable();
+        livrable.setTitre(titre);
+        livrable.setType(type);
+        livrable.setFichierUrl(fileUrl); // Ici c'est le fichier "structure"
+        livrable.setFileSize(sizeStr);
+        livrable.setEntrepreneur(entrepreneur);
+        livrable.setProgramme(programme);
+        livrable.setStatut(Livrable.Statut.TRAVAIL_DEMANDE);
+        livrable.setDeadline(deadline);
+        livrable.setThematiqueName(thematiqueName);
+        livrable.setSessionName(sessionName);
+        livrable.setCommentaire(commentaire);
+        // On n'enregistre pas de date de soumission car c'est juste une demande
+
+        if (coach != null) {
+            livrable.setCoachEmail(coach.getEmail());
+            String coachFullName = (coach.getFirstName() != null ? coach.getFirstName() : "") +
+                                   " " +
+                                   (coach.getLastName() != null ? coach.getLastName() : "");
+            livrable.setCoachName(coachFullName.trim());
+        }
+
+        return livrable;
     }
 
     @PostMapping("/{id}/submit")

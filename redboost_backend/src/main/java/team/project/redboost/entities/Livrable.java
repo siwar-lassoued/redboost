@@ -39,7 +39,7 @@ public class Livrable {
     private LocalDateTime deadline;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "entrepreneur_id", nullable = false)
+    @JoinColumn(name = "entrepreneur_id")
     private User entrepreneur;
 
     @ManyToOne(fetch = FetchType.LAZY)
