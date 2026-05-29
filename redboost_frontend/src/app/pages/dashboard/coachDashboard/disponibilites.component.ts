@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CoachService, DisponibiliteDTO, SessionCoachDTO, ThematiqueCoachingDTO, CoachCalendarEventDTO, ProgrammeDTO } from './services/coach.service';
@@ -160,9 +160,12 @@ interface SessionGroupView {
       <div *ngIf="showDispoModal" class="modal-backdrop" (click)="showDispoModal = false">
           <div class="modal-content" (click)="$event.stopPropagation()">
               <div class="modal-header">
-                  <div>
+                  <div style="flex: 1;">
                       <h2>Ajouter une disponibilité</h2>
-                      <p class="text-sm text-gray-500 mt-1">Définissez une session et ses créneaux</p>
+                      <div class="modal-tabs">
+                        <button class="modal-tab" [class.active]="!isIntelligentMode" (click)="isIntelligentMode = false">Saisie manuelle</button>
+                        <button class="modal-tab" [class.active]="isIntelligentMode" (click)="isIntelligentMode = true">Génération intelligente</button>
+                      </div>
                   </div>
                   <button class="close-btn" (click)="showDispoModal = false"><i class="pi pi-times"></i></button>
               </div>
@@ -195,12 +198,62 @@ interface SessionGroupView {
                     </div>
                 </div>
 
-                <div *ngIf="selectedThematiqueObj" class="thematique-dates-banner">
-                    <i class="pi pi-info-circle"></i>
-                    <span>Disponibilités du <strong>{{ selectedThematiqueObj.dateDebut | date:'dd/MM/yyyy' }}</strong> au <strong>{{ selectedThematiqueObj.dateFin | date:'dd/MM/yyyy' }}</strong></span>
                 </div>
-                  <!-- STEP 2: Sessions List -->
-                <div *ngIf="selectedThematiqueId" class="sessions-batch-container">
+
+                <!-- INTELLIGENT MODE CONFIG -->
+                <div *ngIf="selectedThematiqueId && isIntelligentMode" class="intelligent-config-panel">
+                  <div class="batch-instruction">
+                    <i class="pi pi-bolt"></i>
+                    <span>Paramétrez votre récurrence pour générer automatiquement tous les créneaux de la période.</span>
+                  </div>
+                  
+                  <div class="form-group">
+                    <label class="premium-label">Titre des sessions générées</label>
+                    <input type="text" class="premium-input" [(ngModel)]="intelConfig.title" placeholder="Ex: Coaching Individuel">
+                  </div>
+
+                  <div class="form-group">
+                    <label class="premium-label">Jours de la semaine</label>
+                    <div class="days-selector">
+                      <button *ngFor="let day of daysOfWeek" 
+                              class="day-toggle" 
+                              [class.active]="intelConfig.days.includes(day.id)"
+                              (click)="toggleIntelDay(day.id)">
+                        {{ day.label }}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="grid grid-cols-3 gap-4">
+                    <div class="form-group">
+                      <label class="premium-label">Heure début</label>
+                      <input type="time" class="premium-input" [(ngModel)]="intelConfig.start">
+                    </div>
+                    <div class="form-group">
+                      <label class="premium-label">Heure fin</label>
+                      <input type="time" class="premium-input" [(ngModel)]="intelConfig.end">
+                    </div>
+                    <div class="form-group">
+                      <label class="premium-label">Durée (min)</label>
+                      <select class="premium-input" [(ngModel)]="intelConfig.duration">
+                        <option [ngValue]="30">30 min</option>
+                        <option [ngValue]="45">45 min</option>
+                        <option [ngValue]="60">1 heure</option>
+                        <option [ngValue]="90">1h 30min</option>
+                        <option [ngValue]="120">2 heures</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <button class="btn-generate-intelligent" (click)="generateIntelligentSlots()" [disabled]="intelConfig.days.length === 0">
+                    <i class="pi pi-magic" *ngIf="!isLoadingGen"></i>
+                    <i class="pi pi-spin pi-spinner" *ngIf="isLoadingGen"></i>
+                    Générer les créneaux
+                  </button>
+                </div>
+
+                <!-- STEP 2: Sessions List (Manual or Result of Generation) -->
+                <div *ngIf="selectedThematiqueId && (!isIntelligentMode || sessionForms.length > 0)" class="sessions-batch-container" [class.mt-6]="isIntelligentMode">
                   <div class="batch-instruction">
                     <i class="pi pi-info-circle"></i>
                     <span>Définissez vos sessions pour cette thématique. Chaque session peut avoir plusieurs dates et créneaux.</span>
@@ -406,7 +459,8 @@ interface SessionGroupView {
       <div *ngIf="loading" class="loading-overlay">
           <div class="spinner"></div>
       </div>
-    </div>
+    
+    
   `,
   styles: [`
     .calendar-page { padding: 0 2rem 2rem; background: #f8f9fa; min-height: calc(100vh - 70px); font-family: var(--font-family); margin-top: -1.5cm; }
@@ -427,50 +481,11 @@ interface SessionGroupView {
     .nav-btn:hover { background: #F7FAFC; }
     .day-headers { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 0.5rem; }
     .day-header { text-align: center; font-size: 0.8rem; font-weight: 700; color: #A0AEC0; text-transform: uppercase; padding: 0.5rem; }
-    /* Edit Modal Session Grouping */
-    .session-group-box {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 16px;
-      padding: 1.5rem;
-      position: relative;
-    }
-    .session-group-header {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      margin-bottom: 1.25rem;
-      padding-bottom: 1rem;
-      border-bottom: 1px solid #e2e8f0;
-    }
-    .session-title-label {
-      font-size: 0.85rem;
-      font-weight: 800;
-      color: #718096;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-    .session-title-input {
-      flex: 1;
-      border: 1px solid transparent;
-      background: transparent;
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: #2D3748;
-      padding: 0.4rem 0.75rem;
-      border-radius: 8px;
-      transition: all 0.2s;
-    }
-    .session-title-input:hover {
-      background: rgba(255, 61, 145, 0.05);
-      border-color: rgba(255, 61, 145, 0.2);
-    }
-    .session-title-input:focus {
-      background: white;
-      border-color: #FF4D85;
-      outline: none;
-      box-shadow: 0 0 0 3px rgba(255, 61, 145, 0.1);
-    }
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); border-top: 1px solid #EDF2F7; border-left: 1px solid #EDF2F7; }
+    .calendar-cell { min-height: 90px; border-right: 1px solid #EDF2F7; border-bottom: 1px solid #EDF2F7; padding: 0.4rem; }
+    .calendar-cell.other-month { background: #FCFCFD; }
+    .calendar-cell.other-month .cell-day { color: #CBD5E0; }
+    .calendar-cell.today { background: rgba(66,153,225,0.04); }
     
     .cell-day { font-size: 0.85rem; font-weight: 500; color: #4A5568; padding: 0.2rem 0.4rem; }
     .today-circle { background: #4299E1; color: white !important; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
@@ -590,7 +605,6 @@ interface SessionGroupView {
     
     .edit-actions { display: flex; gap: 10px; justify-content: flex-end; }
     .btn-outline-sm { background: white; border: 1px solid #E2E8F0; color: #4A5568; padding: 6px 12px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: background .2s; }
-    .btn-outline-sm:hover { background: #F7FAFC; }
     .btn-primary-sm { background: var(--gradient-pink); color: white; border: none; padding: 6px 16px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: transform .2s; }
     .btn-primary-sm:hover { transform: translateY(-1px); }
 
@@ -658,8 +672,24 @@ dispoIdsForActiveTheme: number[] = [];
   sessions: SessionCoachDTO[] = [];
   thematiques: ThematiqueCoachingDTO[] = [];
   programmes: ProgrammeDTO[] = [];
-  calendarEvents: any[] = [];
+  calendarEvents: CoachCalendarEventDTO[] = [];
   upcomingEvents: any[] = [];
+  
+  // Intelligent Mode Properties
+  isIntelligentMode: boolean = false;
+  intelConfig = {
+    days: [] as number[],
+    start: '09:00',
+    end: '12:00',
+    duration: 60,
+    title: 'Session de Coaching'
+  };
+  daysOfWeek = [
+    { id: 1, label: 'Lun' }, { id: 2, label: 'Mar' }, { id: 3, label: 'Mer' },
+    { id: 4, label: 'Jeu' }, { id: 5, label: 'Ven' }, { id: 6, label: 'Sam' },
+    { id: 0, label: 'Dim' }
+  ];
+  isLoadingGen: boolean = false;
 
   get filteredDisponibilites(): DisponibiliteDTO[] {
     if (!this.activeFilterThematique) return this.disponibilites;
@@ -675,7 +705,8 @@ dispoIdsForActiveTheme: number[] = [];
 
   constructor(
     private coachService: CoachService,
-    private authService: AuthService
+    private authService: AuthService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -901,7 +932,7 @@ dispoIdsForActiveTheme: number[] = [];
       .map(e => ({
         title: e.title,
         date: new Date(e.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }),
-        time: e.time || '—',
+        time: (e as any).startTime || '—',
         startTime: e.startTime || '',
         endTime: e.endTime || '',
         dateFormatted: new Date(e.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }),
@@ -996,6 +1027,82 @@ dispoIdsForActiveTheme: number[] = [];
       typeSession: 'EN_LIGNE',
       dateSlotGroups: [{ date: '', slots: [{ start: '', end: '' }] }]
     });
+  }
+
+  toggleIntelDay(dayId: number) {
+    const idx = this.intelConfig.days.indexOf(dayId);
+    if (idx > -1) {
+      this.intelConfig.days.splice(idx, 1);
+    } else {
+      this.intelConfig.days.push(dayId);
+    }
+  }
+
+  generateIntelligentSlots() {
+    if (!this.selectedThematiqueId || !this.selectedThematiqueObj) return;
+    this.isLoadingGen = true;
+    
+    setTimeout(() => {
+      const dates: string[] = [];
+      const current = new Date(this.selectedThematiqueObj!.dateDebut);
+      const end = new Date(this.selectedThematiqueObj!.dateFin);
+      
+      while (current <= end) {
+        if (this.intelConfig.days.includes(current.getDay())) {
+          dates.push(current.toISOString().split('T')[0]);
+        }
+        current.setDate(current.getDate() + 1);
+      }
+
+      if (dates.length === 0) {
+        this.dispoValidationError = "Aucun jour correspondant trouvé dans la période de la thématique.";
+        this.isLoadingGen = false;
+        return;
+      }
+
+      // Time slots generation
+      const slots: { start: string, end: string }[] = [];
+      let [startH, startM] = this.intelConfig.start.split(':').map(Number);
+      let [endH, endM] = this.intelConfig.end.split(':').map(Number);
+      
+      let currentMinutes = startH * 60 + startM;
+      const endMinutes = endH * 60 + endM;
+      
+      while (currentMinutes + this.intelConfig.duration <= endMinutes) {
+        const sH = Math.floor(currentMinutes / 60);
+        const sM = currentMinutes % 60;
+        const eH = Math.floor((currentMinutes + this.intelConfig.duration) / 60);
+        const eM = (currentMinutes + this.intelConfig.duration) % 60;
+        
+        slots.push({
+          start: `${sH.toString().padStart(2, '0')}:${sM.toString().padStart(2, '0')}`,
+          end: `${eH.toString().padStart(2, '0')}:${eM.toString().padStart(2, '0')}`
+        });
+        
+        currentMinutes += this.intelConfig.duration;
+      }
+
+      if (slots.length === 0) {
+        this.dispoValidationError = "La plage horaire est trop courte pour une session de cette durée.";
+        this.isLoadingGen = false;
+        return;
+      }
+
+      // Populate sessionForms
+      const newForm: SessionFormGroup = {
+        titre: this.intelConfig.title || 'Session de Coaching',
+        typeSession: 'EN_LIGNE',
+        dateSlotGroups: dates.map(d => ({
+          date: d,
+          slots: JSON.parse(JSON.stringify(slots))
+        }))
+      };
+
+      this.sessionForms = [newForm];
+      this.isLoadingGen = false;
+      this.dispoValidationError = null;
+      this.cdr.detectChanges();
+    }, 500);
   }
 
   removeSessionForm(idx: number): void {
