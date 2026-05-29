@@ -154,7 +154,7 @@ import { environment } from '../../../../environment';
               <div class="modal-header">
                   <div class="modal-header-info">
                       <h2 class="modal-name">Déposer un livrable</h2>
-                      <p class="modal-subtitle">Envoyez un document à vos entrepreneurs</p>
+                      <p class="modal-subtitle">Ajoutez un template de livrable</p>
                   </div>
                   <button class="modal-close" (click)="showDepotModal = false"><i class="pi pi-times"></i></button>
               </div>
@@ -163,31 +163,6 @@ import { environment } from '../../../../environment';
                   <div class="form-group" style="margin-bottom: 16px;">
                       <label class="form-label">Titre du document *</label>
                       <input type="text" class="search-input-alt" [(ngModel)]="newLivrable.titre" placeholder="Ex: Plan d'action stratégique" />
-                  </div>
-
-                  <div class="form-group" style="margin-bottom: 16px;">
-                      <label class="form-label">Thématique *</label>
-                      <select class="search-input-alt" [(ngModel)]="newLivrable.thematiqueName" (change)="onThematiqueChange()">
-                          <option [ngValue]="''">Sélectionner une thématique...</option>
-                          <option *ngFor="let t of formThematiques" [value]="t.nom">{{t.nom}}</option>
-                      </select>
-                  </div>
-
-                  <div class="form-group" style="margin-bottom: 16px;" *ngIf="newLivrable.thematiqueName && selectedProgrammeObj">
-                      <label class="form-label">Nom du programme</label>
-                      <div class="search-input-alt" style="background: #EDF2F7; color: #4A5568; cursor: not-allowed; border-color: #E2E8F0; font-weight: 600; min-height: 42px; display: flex; align-items: center;">
-                        {{ selectedProgrammeObj.nom }}
-                      </div>
-                  </div>
-
-                  <div class="form-group" style="margin-bottom: 16px;">
-                      <label class="form-label">Commentaire de demande</label>
-                      <textarea class="search-input-alt" [(ngModel)]="newLivrable.commentaire" rows="2" placeholder="Consignes pour l'entrepreneur..."></textarea>
-                  </div>
-
-                  <div class="form-group" style="margin-bottom: 16px;">
-                      <label class="form-label">Deadline</label>
-                      <input type="date" class="search-input-alt" [(ngModel)]="newLivrable.deadline" />
                   </div>
 
                   <div class="form-group" style="margin-bottom: 16px;">
@@ -214,34 +189,11 @@ import { environment } from '../../../../environment';
                       </div>
                   </div>
 
-                  <div class="form-group">
-                      <label class="form-label">Destinataires (Entrepreneurs) *</label>
-                      <div class="premium-dest-selector">
-                          <div class="search-inner">
-                              <i class="pi pi-search"></i>
-                              <input type="text" placeholder="Rechercher par nom..." [(ngModel)]="entrepreneurSearch" />
-                          </div>
-                          <div class="dest-list">
-                              <div *ngFor="let e of getFilteredEntrepreneurs()" 
-                                   class="dest-item-premium" 
-                                   [class.selected]="e.selected" 
-                                   (click)="e.selected = !e.selected">
-                                  <div class="dest-checkbox-premium">
-                                      <i class="pi pi-check" *ngIf="e.selected"></i>
-                                  </div>
-                                  <div class="dest-info">
-                                      <span class="dest-name">{{e.firstName}} {{e.lastName}}</span>
-                                      <span class="dest-sub">{{e.entreprise || 'Entrepreneur'}}</span>
-                                  </div>
-                              </div>
-                          </div>
-                      </div>
-                  </div>
               </div>
 
               <div class="modal-footer">
                   <button class="btn-close-modal" (click)="showDepotModal = false" style="margin-right: 12px;">Annuler</button>
-                  <button class="btn-detail" (click)="deposerLivrable()" [disabled]="loading || !selectedFile || !newLivrable.titre || !newLivrable.thematiqueName" style="background: #ea5073; color: white;">
+                  <button class="btn-detail" (click)="deposerLivrable()" [disabled]="loading || !selectedFile || !newLivrable.titre" style="background: #ea5073; color: white;">
                       <i class="pi" [class.pi-check]="!loading" [class.pi-spin]="loading" [class.pi-spinner]="loading" style="margin-right: 6px;"></i>
                       {{ loading ? 'Dépôt en cours...' : 'Confirmer le dépôt' }}
                   </button>
@@ -701,18 +653,17 @@ export class CoachLivrablesComponent implements OnInit {
   }
 
   deposerLivrable() {
-    const selectedEnts = this.entrepreneurs.filter(e => e.selected);
-    if (!this.newLivrable.titre || !this.selectedFile || selectedEnts.length === 0 || !this.newLivrable.thematiqueName) {
+    if (!this.newLivrable.titre || !this.selectedFile) {
       return;
     }
     this.loading = true;
 
-    const entrepreneurIds = selectedEnts.map(e => e.id.toString());
+    const entrepreneurIds: string[] = [];
     this.livrableService.upload(
       this.newLivrable.programmeId?.toString() || '',
       entrepreneurIds,
       this.selectedFile,
-      { titre: this.newLivrable.titre, type: 'Document', thematiqueName: this.newLivrable.thematiqueName, sessionName: this.newLivrable.sessionName, commentaire: this.newLivrable.commentaire, deadline: this.newLivrable.deadline },
+      { titre: this.newLivrable.titre, type: 'Document' },
       this.coachId ?? undefined
     ).subscribe({
       next: () => {
@@ -721,7 +672,6 @@ export class CoachLivrablesComponent implements OnInit {
         this.newLivrable = { titre: '', programmeId: null, thematiqueName: '', sessionName: '', commentaire: '', deadline: '' };
         this.selectedProgrammeObj = null;
         this.selectedFile = null;
-        this.entrepreneurs.forEach(e => e.selected = false);
         this.loading = false;
       },
       error: (err) => {
